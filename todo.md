@@ -35,10 +35,11 @@
 - [x] Tạo biểu đồ trạng thái hóa đơn (pie chart)
 - [x] Tạo bảng hóa đơn gần đây
 - [x] Tạo login page (simple password)
-- [ ] Nâng cấp Dashboard UI (gradient, icon đẹp, layout chuyên nghiệp)
-- [ ] Thêm hamburger menu button vào header
-- [ ] Tạo sidebar collapse/expand animation
-- [ ] Responsive sidebar trên mobile
+- [x] Nâng cấp Dashboard UI (gradient, icon đẹp, layout chuyên nghiệp)
+- [x] Thêm hamburger menu button vào header
+- [x] Tạo sidebar collapse/expand animation
+- [x] Responsive sidebar trên mobile
+- [ ] Fix responsive design mobile (spacing, padding, font size, layout)
 
 ## Phase 4: Frontend - Create Invoice
 - [ ] Tạo form tạo hóa đơn
