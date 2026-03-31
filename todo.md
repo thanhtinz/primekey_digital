@@ -28,13 +28,17 @@
 - [ ] Viết unit tests cho tất cả routers
 
 ## Phase 3: Frontend - Dashboard & Navigation
-- [ ] Tạo DashboardLayout component với sidebar
-- [ ] Tạo navigation menu items
-- [ ] Tạo Dashboard page với KPI cards
-- [ ] Tạo biểu đồ doanh thu (line chart)
-- [ ] Tạo biểu đồ trạng thái hóa đơn (pie chart)
-- [ ] Tạo bảng hóa đơn gần đây
-- [ ] Tạo login page (simple password)
+- [x] Tạo DashboardLayout component với sidebar
+- [x] Tạo navigation menu items
+- [x] Tạo Dashboard page với KPI cards
+- [x] Tạo biểu đồ doanh thu (line chart)
+- [x] Tạo biểu đồ trạng thái hóa đơn (pie chart)
+- [x] Tạo bảng hóa đơn gần đây
+- [x] Tạo login page (simple password)
+- [ ] Nâng cấp Dashboard UI (gradient, icon đẹp, layout chuyên nghiệp)
+- [ ] Thêm hamburger menu button vào header
+- [ ] Tạo sidebar collapse/expand animation
+- [ ] Responsive sidebar trên mobile
 
 ## Phase 4: Frontend - Create Invoice
 - [ ] Tạo form tạo hóa đơn
