@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Save } from "lucide-react";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 
 interface InvoiceItem {
@@ -83,23 +84,47 @@ export default function CreateInvoice() {
 
   const handleCreateInvoice = () => {
     if (!customerInfo.name.trim()) {
-      alert("Vui lòng nhập tên khách hàng");
+      toast.error("Vui lòng nhập tên khách hàng");
       return;
     }
     if (items.length === 0 || items.every((item) => !item.description.trim())) {
-      alert("Vui lòng thêm ít nhất một sản phẩm/dịch vụ");
+      toast.error("Vui lòng thêm ít nhất một sản phẩm/dịch vụ");
       return;
     }
-    console.log({
-      customerInfo,
-      items,
-      currency,
-      discountPercent,
-      notes,
-      template,
-      total,
-    });
-    alert("Hóa đơn đã được tạo thành công!");
+    
+    for (const item of items) {
+      if (!item.description.trim()) continue;
+      if (item.quantity <= 0) {
+        toast.error("Số lượng phải lớn hơn 0");
+        return;
+      }
+      if (item.unitPrice < 0) {
+        toast.error("Giá không thể âm");
+        return;
+      }
+    }
+    
+    if (discountPercent < 0 || discountPercent > 100) {
+      toast.error("Giảm giá phải từ 0-100%");
+      return;
+    }
+    
+    toast.loading("Đang tạo hóa đơn...");
+    
+    setTimeout(() => {
+      console.log({
+        customerInfo,
+        items,
+        currency,
+        discountPercent,
+        notes,
+        template,
+        total,
+      });
+      toast.success("Hóa đơn đã được tạo thành công!", {
+        description: `Tổng tiền: ${formatCurrency(total)}`,
+      });
+    }, 1000);
   };
 
   const formatCurrency = (value: number) => {
