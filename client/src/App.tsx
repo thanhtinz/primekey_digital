@@ -8,11 +8,14 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CreateInvoice from "./pages/CreateInvoice";
 import InvoiceHistory from "./pages/InvoiceHistory";
+import InvoiceDetail from "./pages/InvoiceDetail";
 import Customers from "./pages/Customers";
 import Products from "./pages/Products";
+import InvoiceTemplates from "./pages/InvoiceTemplates";
 import PayOSSettings from "./pages/PayOSSettings";
 import PayPalSettings from "./pages/PayPalSettings";
 import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import DashboardLayout from "./components/DashboardLayoutCustom";
 
 // Placeholder pages
@@ -65,11 +68,12 @@ function Router() {
       <Route path="/dashboard" component={() => <Dashboard />} />
       <Route path="/create-invoice" component={() => <CreateInvoice />} />
       <Route path="/invoices" component={() => <InvoiceHistory />} />
+      <Route path="/invoices/:id" component={() => <InvoiceDetail />} />
       <Route path="/customers" component={() => <Customers />} />
       <Route path="/products" component={() => <Products />} />
-      <Route path="/templates" component={() => <PlaceholderPage title="Mẫu Hóa Đơn" />} />
+      <Route path="/templates" component={() => <InvoiceTemplates />} />
       <Route path="/reports" component={() => <Reports />} />
-      <Route path="/settings" component={() => <PlaceholderPage title="Cài Đặt" />} />
+      <Route path="/settings" component={() => <Settings />} />
       <Route path="/settings/payos" component={() => <PayOSSettings />} />
       <Route path="/settings/paypal" component={() => <PayPalSettings />} />
       <Route path="/" component={() => {
