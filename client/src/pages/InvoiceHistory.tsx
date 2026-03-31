@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Eye, Download, Trash2, Search } from "lucide-react";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 
 interface Invoice {
@@ -88,6 +89,44 @@ export default function InvoiceHistory() {
     );
   };
 
+  const handleDelete = (invoiceNumber: string) => {
+    toast.error(`Xác nhận xóa hóa đơn ${invoiceNumber}?`, {
+      action: {
+        label: "Xóa",
+        onClick: () => {
+          toast.loading("Đang xóa...");
+          setTimeout(() => {
+            toast.success(`Hóa đơn ${invoiceNumber} đã được xóa thành công!`);
+          }, 800);
+        },
+      },
+    });
+  };
+
+  const handleDownload = (invoiceNumber: string) => {
+    toast.loading(`Đang tải xuống hóa đơn ${invoiceNumber}...`);
+    setTimeout(() => {
+      toast.success(`Hóa đơn ${invoiceNumber} đã được tải xuống!`);
+    }, 1200);
+  };
+
+  const handleView = (invoiceNumber: string) => {
+    toast.info(`Đang mở chi tiết hóa đơn ${invoiceNumber}...`);
+  };
+
+  const formatCurrency = (value: number, currency: string) => {
+    if (currency === "USD") {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(value);
+    }
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -133,8 +172,16 @@ export default function InvoiceHistory() {
                 </SelectContent>
               </Select>
 
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Tạo Hóa Đơn Mới
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterStatus("all");
+                  setFilterCurrency("all");
+                  toast.success("Đã reset bộ lọc!");
+                }}
+              >
+                Reset Bộ Lọc
               </Button>
             </div>
           </CardContent>
@@ -144,59 +191,72 @@ export default function InvoiceHistory() {
         <Card>
           <CardHeader>
             <CardTitle>Danh Sách Hóa Đơn</CardTitle>
-            <CardDescription>Tổng cộng {filteredInvoices.length} hóa đơn</CardDescription>
+            <CardDescription>Tổng cộng: {filteredInvoices.length} hóa đơn</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="border-b bg-gray-50">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold">Số HĐ</th>
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-semibold">Số Hóa Đơn</th>
                     <th className="text-left py-3 px-4 font-semibold">Khách Hàng</th>
                     <th className="text-left py-3 px-4 font-semibold">Ngày Tạo</th>
                     <th className="text-left py-3 px-4 font-semibold">Hạn Thanh Toán</th>
-                    <th className="text-right py-3 px-4 font-semibold">Tổng Tiền</th>
+                    <th className="text-right py-3 px-4 font-semibold">Số Tiền</th>
                     <th className="text-left py-3 px-4 font-semibold">Trạng Thái</th>
                     <th className="text-center py-3 px-4 font-semibold">Hành Động</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-mono text-blue-600 font-semibold">
-                        {invoice.invoiceNumber}
-                      </td>
-                      <td className="py-3 px-4">{invoice.customer}</td>
-                      <td className="py-3 px-4">{invoice.date}</td>
-                      <td className="py-3 px-4">{invoice.dueDate}</td>
-                      <td className="py-3 px-4 text-right font-semibold">
-                        {invoice.amount.toLocaleString()} {invoice.currency}
-                      </td>
-                      <td className="py-3 px-4">{getStatusBadge(invoice.status)}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button className="p-1 hover:bg-gray-200 rounded" title="Xem chi tiết">
-                            <Eye className="h-4 w-4 text-blue-600" />
-                          </button>
-                          <button className="p-1 hover:bg-gray-200 rounded" title="Tải PDF">
-                            <Download className="h-4 w-4 text-green-600" />
-                          </button>
-                          <button className="p-1 hover:bg-gray-200 rounded" title="Xóa">
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </button>
-                        </div>
+                  {filteredInvoices.length > 0 ? (
+                    filteredInvoices.map((invoice) => (
+                      <tr key={invoice.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium">{invoice.invoiceNumber}</td>
+                        <td className="py-3 px-4">{invoice.customer}</td>
+                        <td className="py-3 px-4">{invoice.date}</td>
+                        <td className="py-3 px-4">{invoice.dueDate}</td>
+                        <td className="py-3 px-4 text-right font-semibold">
+                          {formatCurrency(invoice.amount, invoice.currency)}
+                        </td>
+                        <td className="py-3 px-4">{getStatusBadge(invoice.status)}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleView(invoice.invoiceNumber)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDownload(invoice.invoiceNumber)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDelete(invoice.invoiceNumber)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-gray-500">
+                        Không tìm thấy hóa đơn nào
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
-
-            {filteredInvoices.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <p>Không tìm thấy hóa đơn nào phù hợp với bộ lọc</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

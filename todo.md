@@ -39,7 +39,8 @@
 - [x] Thêm hamburger menu button vào header
 - [x] Tạo sidebar collapse/expand animation
 - [x] Responsive sidebar trên mobile
-- [ ] Fix responsive design mobile (spacing, padding, font size, layout)
+- [x] Fix responsive design mobile (spacing, padding, font size, layout)
+- [ ] Thêm toast notifications cho tất cả các pages
 
 ## Phase 4: Frontend - Create Invoice
 - [x] Tạo form tạo hóa đơn
