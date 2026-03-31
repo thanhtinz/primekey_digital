@@ -42,14 +42,14 @@
 - [ ] Fix responsive design mobile (spacing, padding, font size, layout)
 
 ## Phase 4: Frontend - Create Invoice
-- [ ] Tạo form tạo hóa đơn
-- [ ] Tạo component chọn khách hàng
-- [ ] Tạo component thêm sản phẩm/dịch vụ
-- [ ] Tạo component tính toán realtime (subtotal, tax, discount, total)
-- [ ] Tạo component chọn loại tiền tệ (VND/USD)
-- [ ] Tạo component preview hóa đơn
-- [ ] Tạo component chọn mẫu hóa đơn
-- [ ] Tạo component ghi chú
+- [x] Tạo form tạo hóa đơn
+- [x] Tạo component nhập thông tin khách hàng (tên, email, phone, address)
+- [x] Tạo component thêm sản phẩm/dịch vụ
+- [x] Tạo component tính toán realtime (subtotal, tax, discount, total)
+- [x] Tạo component chọn loại tiền tế (VND/USD)
+- [x] Tạo component chọn mẫu hóa đơn
+- [x] Tạo component ghi chú
+- [x] Tạo component tóm tắt (summary sidebar)
 
 ## Phase 5: Frontend - Invoice Details
 - [ ] Tạo trang chi tiết hóa đơn
