@@ -8,9 +8,11 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CreateInvoice from "./pages/CreateInvoice";
 import InvoiceHistory from "./pages/InvoiceHistory";
-import Customers from "./pages/Customers";
-import Products from "./pages/Products";
-import InvoiceTemplates from "./pages/InvoiceTemplates";
+// import Customers from "./pages/Customers";
+// import Products from "./pages/Products";
+// import InvoiceTemplates from "./pages/InvoiceTemplates";
+// import InvoiceTemplatePreview from "./pages/InvoiceTemplatePreview";
+// import EditInvoiceTemplate from "./pages/EditInvoiceTemplate";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import PayOSSettings from "./pages/PayOSSettings";
@@ -27,18 +29,9 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </DashboardLayout>
 );
 
-function RedirectToDashboard() {
-  const [, setLocation] = useLocation();
-  
-  useEffect(() => {
-    setLocation("/dashboard");
-  }, [setLocation]);
-  
-  return null;
-}
-
 function Router() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     // Check if user is logged in by trying to fetch auth info
@@ -73,17 +66,22 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/create-invoice" component={CreateInvoice} />
-      <Route path="/invoices" component={InvoiceHistory} />
-      <Route path="/customers" component={Customers} />
-      <Route path="/products" component={Products} />
-      <Route path="/templates" component={InvoiceTemplates} />
-      <Route path="/reports" component={Reports} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/settings/payos" component={PayOSSettings} />
-      <Route path="/settings/paypal" component={PayPalSettings} />
-      <Route path="/" component={RedirectToDashboard} />
+      <Route path="/dashboard" component={() => <Dashboard />} />
+      <Route path="/create-invoice" component={() => <CreateInvoice />} />
+      <Route path="/invoices" component={() => <InvoiceHistory />} />
+      <Route path="/customers" component={() => <PlaceholderPage title="Quản Lý Khách Hàng" />} />
+      <Route path="/products" component={() => <PlaceholderPage title="Quản Lý Sản Phẩm" />} />
+      <Route path="/templates" component={() => <PlaceholderPage title="Mẫu Hóa Đơn" />} />
+      {/* <Route path="/templates/:id/preview" component={() => <InvoiceTemplatePreview />} />
+      <Route path="/templates/:id/edit" component={() => <EditInvoiceTemplate />} /> */}
+      <Route path="/reports" component={() => <Reports />} />
+      <Route path="/settings" component={() => <Settings />} />
+      <Route path="/settings/payos" component={() => <PayOSSettings />} />
+      <Route path="/settings/paypal" component={() => <PayPalSettings />} />
+      <Route path="/" component={() => {
+        setLocation("/dashboard");
+        return null;
+      }} />
       <Route component={() => <PlaceholderPage title="404 - Không Tìm Thấy" />} />
     </Switch>
   );

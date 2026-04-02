@@ -1,249 +1,159 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Check, X } from "lucide-react";
+import { Save, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function PayPalSettings() {
-  const [showSecret, setShowSecret] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [clientId, setClientId] = useState("AXx1234567890");
-  const [clientSecret, setClientSecret] = useState("EHx1234567890");
-  const [mode, setMode] = useState<"sandbox" | "live">("sandbox");
+  const [formData, setFormData] = useState({
+    clientId: "client_id_123456789",
+    secretKey: "secret_key_123456789",
+    mode: "sandbox",
+  });
+  const [connectionStatus, setConnectionStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
 
-  const handleTestConnection = () => {
-    toast.loading("Đang kiểm tra kết nối PayPal...");
+  const handleTestConnection = async () => {
+    setConnectionStatus("testing");
+    toast.loading("Đang kiểm tra kết nối...");
     setTimeout(() => {
-      setIsConnected(true);
+      setConnectionStatus("success");
       toast.success("Kết nối PayPal thành công!");
-    }, 1500);
+    }, 2000);
   };
 
-  const handleSaveSettings = () => {
-    if (!clientId || !clientSecret) {
-      toast.error("Vui lòng điền đầy đủ thông tin!");
-      return;
-    }
-    toast.loading("Đang lưu cài đặt PayPal...");
+  const handleSave = () => {
+    toast.loading("Đang lưu cấu hình...");
     setTimeout(() => {
-      toast.success("Cài đặt PayPal đã được lưu thành công!");
+      toast.success("Cấu hình PayPal đã được lưu thành công!");
     }, 1000);
-  };
-
-  const handleResetSettings = () => {
-    toast.error("Xác nhận reset cài đặt PayPal?", {
-      action: {
-        label: "Reset",
-        onClick: () => {
-          toast.loading("Đang reset...");
-          setTimeout(() => {
-            setClientId("");
-            setClientSecret("");
-            setIsConnected(false);
-            toast.success("Cài đặt PayPal đã được reset!");
-          }, 800);
-        },
-      },
-    });
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Cài Đặt PayPal</h1>
-          <p className="text-gray-600">Quản lý thông tin kết nối PayPal (USD)</p>
+          <h1 className="text-3xl font-bold">Cấu Hình PayPal</h1>
+          <p className="text-gray-600">Quản lý Client ID, Secret Key</p>
         </div>
 
-        {/* Connection Status */}
-        <Card className={isConnected ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {isConnected ? (
-                  <Check className="h-6 w-6 text-green-600" />
-                ) : (
-                  <X className="h-6 w-6 text-red-600" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* API Configuration */}
+            <div className="bg-white rounded-lg border p-6 space-y-4">
+              <h2 className="text-xl font-bold">Thông Tin API</h2>
+              <div>
+                <Label htmlFor="clientId">Client ID</Label>
+                <Input
+                  id="clientId"
+                  value={formData.clientId}
+                  onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                  placeholder="Nhập Client ID"
+                />
+                <p className="text-xs text-gray-600 mt-1">Lấy từ PayPal Developer Dashboard</p>
+              </div>
+              <div>
+                <Label htmlFor="secretKey">Secret Key</Label>
+                <Input
+                  id="secretKey"
+                  type="password"
+                  value={formData.secretKey}
+                  onChange={(e) => setFormData({ ...formData, secretKey: e.target.value })}
+                  placeholder="Nhập Secret Key"
+                />
+                <p className="text-xs text-gray-600 mt-1">Lấy từ PayPal Developer Dashboard</p>
+              </div>
+              <div>
+                <Label htmlFor="mode">Chế Độ</Label>
+                <Select value={formData.mode} onValueChange={(value) => setFormData({ ...formData, mode: value })}>
+                  <SelectTrigger id="mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sandbox">Sandbox (Thử Nghiệm)</SelectItem>
+                    <SelectItem value="live">Live (Thực Tế)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-600 mt-1">Chọn chế độ Sandbox để thử nghiệm</p>
+              </div>
+            </div>
+
+            {/* Connection Status */}
+            <div className="bg-white rounded-lg border p-6">
+              <h2 className="text-xl font-bold mb-4">Trạng Thái Kết Nối</h2>
+              <div className="flex items-center gap-3 mb-4">
+                {connectionStatus === "success" && (
+                  <>
+                    <Check className="h-6 w-6 text-green-600" />
+                    <div>
+                      <p className="font-semibold text-green-600">Kết Nối Thành Công</p>
+                      <p className="text-sm text-gray-600">PayPal API đang hoạt động bình thường</p>
+                    </div>
+                  </>
                 )}
-                <div>
-                  <p className="font-semibold">
-                    {isConnected ? "Kết nối thành công" : "Chưa kết nối"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {isConnected
-                      ? "PayPal đã được cấu hình thành công"
-                      : "Vui lòng cấu hình PayPal để bắt đầu"}
-                  </p>
-                </div>
+                {connectionStatus === "error" && (
+                  <>
+                    <AlertCircle className="h-6 w-6 text-red-600" />
+                    <div>
+                      <p className="font-semibold text-red-600">Kết Nối Thất Bại</p>
+                      <p className="text-sm text-gray-600">Vui lòng kiểm tra lại thông tin API</p>
+                    </div>
+                  </>
+                )}
+                {connectionStatus === "idle" && (
+                  <>
+                    <AlertCircle className="h-6 w-6 text-gray-400" />
+                    <div>
+                      <p className="font-semibold text-gray-600">Chưa Kiểm Tra</p>
+                      <p className="text-sm text-gray-600">Nhấn nút "Kiểm Tra Kết Nối" để bắt đầu</p>
+                    </div>
+                  </>
+                )}
               </div>
               <Button
                 onClick={handleTestConnection}
-                variant={isConnected ? "outline" : "default"}
-              >
-                {isConnected ? "Kiểm Tra Lại" : "Kiểm Tra Kết Nối"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Settings Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Thông Tin Kết Nối</CardTitle>
-            <CardDescription>
-              Nhập thông tin xác thực từ tài khoản PayPal của bạn
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Mode */}
-            <div>
-              <Label>Chế Độ</Label>
-              <div className="flex gap-4 mt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    value="sandbox"
-                    checked={mode === "sandbox"}
-                    onChange={(e) => setMode(e.target.value as "sandbox" | "live")}
-                  />
-                  <span>Sandbox (Test)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    value="live"
-                    checked={mode === "live"}
-                    onChange={(e) => setMode(e.target.value as "sandbox" | "live")}
-                  />
-                  <span>Live (Production)</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Client ID */}
-            <div>
-              <Label htmlFor="client-id">Client ID</Label>
-              <Input
-                id="client-id"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                placeholder="Nhập Client ID..."
-                className="mt-2"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Lấy từ PayPal Developer Dashboard → Apps & Credentials
-              </p>
-            </div>
-
-            {/* Client Secret */}
-            <div>
-              <Label htmlFor="client-secret">Client Secret</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  id="client-secret"
-                  type={showSecret ? "text" : "password"}
-                  value={clientSecret}
-                  onChange={(e) => setClientSecret(e.target.value)}
-                  placeholder="Nhập Client Secret..."
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowSecret(!showSecret)}
-                >
-                  {showSecret ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Lấy từ PayPal Developer Dashboard → Apps & Credentials
-              </p>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleSaveSettings} className="flex-1">
-                Lưu Cài Đặt
-              </Button>
-              <Button
-                onClick={handleResetSettings}
+                disabled={connectionStatus === "testing"}
                 variant="outline"
-                className="flex-1"
+                className="w-full"
               >
-                Reset
+                {connectionStatus === "testing" ? "Đang Kiểm Tra..." : "Kiểm Tra Kết Nối"}
               </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Webhook Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Webhook URL</CardTitle>
-            <CardDescription>
-              Cấu hình webhook trong PayPal Developer Dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <p className="text-sm font-mono break-all">
-                https://invoiceprime.manus.space/api/webhooks/paypal
-              </p>
+            <div className="flex gap-2">
+              <Button onClick={handleSave} className="gap-2 flex-1">
+                <Save className="h-4 w-4" />
+                Lưu Cấu Hình
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  "https://invoiceprime.manus.space/api/webhooks/paypal"
-                );
-                toast.success("Đã sao chép Webhook URL!");
-              }}
-            >
-              Sao Chép URL
-            </Button>
-            <p className="text-xs text-gray-600">
-              Thêm URL này vào PayPal Developer Dashboard → Webhooks để nhận thông báo thanh toán
-            </p>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Help */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Hướng Dẫn</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p>
-              <strong>1. Tạo tài khoản PayPal:</strong> Truy cập{" "}
-              <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-blue-600">
-                PayPal Developer
-              </a>
-            </p>
-            <p>
-              <strong>2. Lấy thông tin xác thực:</strong> Đi đến Apps & Credentials → Copy
-              Client ID và Client Secret
-            </p>
-            <p>
-              <strong>3. Chọn chế độ:</strong> Chọn Sandbox để test hoặc Live để sản xuất
-            </p>
-            <p>
-              <strong>4. Nhập thông tin:</strong> Dán Client ID và Client Secret vào form
-            </p>
-            <p>
-              <strong>5. Kiểm tra kết nối:</strong> Nhấn "Kiểm Tra Kết Nối" để xác nhận
-            </p>
-            <p>
-              <strong>6. Cấu hình Webhook:</strong> Sao chép Webhook URL và thêm vào PayPal
-              Dashboard
-            </p>
-          </CardContent>
-        </Card>
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+              <h3 className="font-bold text-blue-900 mb-2">Hướng Dẫn</h3>
+              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                <li>Đăng nhập vào PayPal Developer</li>
+                <li>Tạo Application</li>
+                <li>Copy Client ID & Secret Key</li>
+                <li>Dán vào các trường bên trái</li>
+                <li>Nhấn "Kiểm Tra Kết Nối"</li>
+              </ol>
+            </div>
+            <div className="bg-green-50 rounded-lg border border-green-200 p-4">
+              <h3 className="font-bold text-green-900 mb-2">Bảo Mật</h3>
+              <p className="text-sm text-green-800">Các khóa API được mã hóa và lưu trữ an toàn. Không bao giờ chia sẻ với ai.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

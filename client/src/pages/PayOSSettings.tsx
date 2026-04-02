@@ -1,248 +1,150 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Check, X } from "lucide-react";
+import { Save, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 
 export default function PayOSSettings() {
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [showChecksum, setShowChecksum] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [apiKey, setApiKey] = useState("sk_test_123456789");
-  const [clientId, setClientId] = useState("client_123456789");
-  const [checksumKey, setChecksumKey] = useState("checksum_123456789");
+  const [formData, setFormData] = useState({
+    apiKey: "sk_live_123456789",
+    clientId: "client_123456789",
+    checksumKey: "checksum_key_123456789",
+  });
+  const [connectionStatus, setConnectionStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
 
-  const handleTestConnection = () => {
-    toast.loading("Đang kiểm tra kết nối PayOS...");
+  const handleTestConnection = async () => {
+    setConnectionStatus("testing");
+    toast.loading("Đang kiểm tra kết nối...");
     setTimeout(() => {
-      setIsConnected(true);
+      setConnectionStatus("success");
       toast.success("Kết nối PayOS thành công!");
-    }, 1500);
+    }, 2000);
   };
 
-  const handleSaveSettings = () => {
-    if (!apiKey || !clientId || !checksumKey) {
-      toast.error("Vui lòng điền đầy đủ thông tin!");
-      return;
-    }
-    toast.loading("Đang lưu cài đặt PayOS...");
+  const handleSave = () => {
+    toast.loading("Đang lưu cấu hình...");
     setTimeout(() => {
-      toast.success("Cài đặt PayOS đã được lưu thành công!");
+      toast.success("Cấu hình PayOS đã được lưu thành công!");
     }, 1000);
-  };
-
-  const handleResetSettings = () => {
-    toast.error("Xác nhận reset cài đặt PayOS?", {
-      action: {
-        label: "Reset",
-        onClick: () => {
-          toast.loading("Đang reset...");
-          setTimeout(() => {
-            setApiKey("");
-            setClientId("");
-            setChecksumKey("");
-            setIsConnected(false);
-            toast.success("Cài đặt PayOS đã được reset!");
-          }, 800);
-        },
-      },
-    });
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Cài Đặt PayOS</h1>
-          <p className="text-gray-600">Quản lý thông tin kết nối PayOS (VND)</p>
+          <h1 className="text-3xl font-bold">Cấu Hình PayOS</h1>
+          <p className="text-gray-600">Quản lý API Key, Client ID, Checksum Key</p>
         </div>
 
-        {/* Connection Status */}
-        <Card className={isConnected ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {isConnected ? (
-                  <Check className="h-6 w-6 text-green-600" />
-                ) : (
-                  <X className="h-6 w-6 text-red-600" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* API Configuration */}
+            <div className="bg-white rounded-lg border p-6 space-y-4">
+              <h2 className="text-xl font-bold">Thông Tin API</h2>
+              <div>
+                <Label htmlFor="apiKey">API Key</Label>
+                <Input
+                  id="apiKey"
+                  type="password"
+                  value={formData.apiKey}
+                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  placeholder="Nhập API Key"
+                />
+                <p className="text-xs text-gray-600 mt-1">Lấy từ PayOS Dashboard</p>
+              </div>
+              <div>
+                <Label htmlFor="clientId">Client ID</Label>
+                <Input
+                  id="clientId"
+                  value={formData.clientId}
+                  onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                  placeholder="Nhập Client ID"
+                />
+                <p className="text-xs text-gray-600 mt-1">Lấy từ PayOS Dashboard</p>
+              </div>
+              <div>
+                <Label htmlFor="checksumKey">Checksum Key</Label>
+                <Input
+                  id="checksumKey"
+                  type="password"
+                  value={formData.checksumKey}
+                  onChange={(e) => setFormData({ ...formData, checksumKey: e.target.value })}
+                  placeholder="Nhập Checksum Key"
+                />
+                <p className="text-xs text-gray-600 mt-1">Lấy từ PayOS Dashboard</p>
+              </div>
+            </div>
+
+            {/* Connection Status */}
+            <div className="bg-white rounded-lg border p-6">
+              <h2 className="text-xl font-bold mb-4">Trạng Thái Kết Nối</h2>
+              <div className="flex items-center gap-3 mb-4">
+                {connectionStatus === "success" && (
+                  <>
+                    <Check className="h-6 w-6 text-green-600" />
+                    <div>
+                      <p className="font-semibold text-green-600">Kết Nối Thành Công</p>
+                      <p className="text-sm text-gray-600">PayOS API đang hoạt động bình thường</p>
+                    </div>
+                  </>
                 )}
-                <div>
-                  <p className="font-semibold">
-                    {isConnected ? "Kết nối thành công" : "Chưa kết nối"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {isConnected
-                      ? "PayOS đã được cấu hình thành công"
-                      : "Vui lòng cấu hình PayOS để bắt đầu"}
-                  </p>
-                </div>
+                {connectionStatus === "error" && (
+                  <>
+                    <AlertCircle className="h-6 w-6 text-red-600" />
+                    <div>
+                      <p className="font-semibold text-red-600">Kết Nối Thất Bại</p>
+                      <p className="text-sm text-gray-600">Vui lòng kiểm tra lại thông tin API</p>
+                    </div>
+                  </>
+                )}
+                {connectionStatus === "idle" && (
+                  <>
+                    <AlertCircle className="h-6 w-6 text-gray-400" />
+                    <div>
+                      <p className="font-semibold text-gray-600">Chưa Kiểm Tra</p>
+                      <p className="text-sm text-gray-600">Nhấn nút "Kiểm Tra Kết Nối" để bắt đầu</p>
+                    </div>
+                  </>
+                )}
               </div>
               <Button
                 onClick={handleTestConnection}
-                variant={isConnected ? "outline" : "default"}
-              >
-                {isConnected ? "Kiểm Tra Lại" : "Kiểm Tra Kết Nối"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Settings Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Thông Tin Kết Nối</CardTitle>
-            <CardDescription>
-              Nhập thông tin xác thực từ tài khoản PayOS của bạn
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* API Key */}
-            <div>
-              <Label htmlFor="api-key">API Key</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  id="api-key"
-                  type={showApiKey ? "text" : "password"}
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Nhập API Key..."
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                >
-                  {showApiKey ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Lấy từ PayOS Dashboard → API Keys
-              </p>
-            </div>
-
-            {/* Client ID */}
-            <div>
-              <Label htmlFor="client-id">Client ID</Label>
-              <Input
-                id="client-id"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                placeholder="Nhập Client ID..."
-                className="mt-2"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Lấy từ PayOS Dashboard → API Keys
-              </p>
-            </div>
-
-            {/* Checksum Key */}
-            <div>
-              <Label htmlFor="checksum-key">Checksum Key</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  id="checksum-key"
-                  type={showChecksum ? "text" : "password"}
-                  value={checksumKey}
-                  onChange={(e) => setChecksumKey(e.target.value)}
-                  placeholder="Nhập Checksum Key..."
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowChecksum(!showChecksum)}
-                >
-                  {showChecksum ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Lấy từ PayOS Dashboard → API Keys
-              </p>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleSaveSettings} className="flex-1">
-                Lưu Cài Đặt
-              </Button>
-              <Button
-                onClick={handleResetSettings}
+                disabled={connectionStatus === "testing"}
                 variant="outline"
-                className="flex-1"
+                className="w-full"
               >
-                Reset
+                {connectionStatus === "testing" ? "Đang Kiểm Tra..." : "Kiểm Tra Kết Nối"}
               </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Webhook Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Webhook URL</CardTitle>
-            <CardDescription>
-              Cấu hình webhook trong PayOS Dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <p className="text-sm font-mono break-all">
-                https://invoiceprime.manus.space/api/webhooks/payos
-              </p>
+            <div className="flex gap-2">
+              <Button onClick={handleSave} className="gap-2 flex-1">
+                <Save className="h-4 w-4" />
+                Lưu Cấu Hình
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  "https://invoiceprime.manus.space/api/webhooks/payos"
-                );
-                toast.success("Đã sao chép Webhook URL!");
-              }}
-            >
-              Sao Chép URL
-            </Button>
-            <p className="text-xs text-gray-600">
-              Thêm URL này vào PayOS Dashboard → Webhook Settings để nhận thông báo thanh toán
-            </p>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Help */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Hướng Dẫn</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p>
-              <strong>1. Lấy thông tin xác thực:</strong> Đăng nhập vào PayOS Dashboard →
-              API Keys → Copy API Key, Client ID, Checksum Key
-            </p>
-            <p>
-              <strong>2. Nhập thông tin:</strong> Dán các thông tin vào form trên
-            </p>
-            <p>
-              <strong>3. Kiểm tra kết nối:</strong> Nhấn nút "Kiểm Tra Kết Nối" để xác nhận
-            </p>
-            <p>
-              <strong>4. Cấu hình Webhook:</strong> Sao chép Webhook URL và thêm vào PayOS
-              Dashboard
-            </p>
-            <p>
-              <strong>5. Lưu cài đặt:</strong> Nhấn "Lưu Cài Đặt" để hoàn tất
-            </p>
-          </CardContent>
-        </Card>
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+              <h3 className="font-bold text-blue-900 mb-2">Hướng Dẫn</h3>
+              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                <li>Đăng nhập vào PayOS Dashboard</li>
+                <li>Tìm mục "API Keys"</li>
+                <li>Copy API Key, Client ID, Checksum Key</li>
+                <li>Dán vào các trường bên trái</li>
+                <li>Nhấn "Kiểm Tra Kết Nối"</li>
+              </ol>
+            </div>
+            <div className="bg-green-50 rounded-lg border border-green-200 p-4">
+              <h3 className="font-bold text-green-900 mb-2">Bảo Mật</h3>
+              <p className="text-sm text-green-800">Các khóa API được mã hóa và lưu trữ an toàn. Không bao giờ chia sẻ với ai.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

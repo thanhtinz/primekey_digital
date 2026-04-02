@@ -16,15 +16,15 @@
 - [x] Tạo auth routes (login, logout, register)
 
 ## Phase 2: Backend API (tRPC Routers)
-- [x] Tạo router invoices (create, read, update, delete, list)
-- [x] Tạo router customers (create, read, update, delete, list)
-- [x] Tạo router products (create, read, update, delete, list)
-- [x] Tạo router invoice_templates (create, read, update, delete, list)
-- [x] Tạo router taxes (create, read, update, delete, list)
-- [x] Tạo router discount_codes (create, read, update, delete, list)
-- [x] Tạo router payment_gateways (get, update, test connection)
-- [x] Tạo router reports (get revenue, get invoice stats, get customer stats, get product stats)
-- [x] Tạo router auth (me, logout)
+- [ ] Tạo router invoices (create, read, update, delete, list)
+- [ ] Tạo router customers (create, read, update, delete, list)
+- [ ] Tạo router products (create, read, update, delete, list)
+- [ ] Tạo router invoice_templates (create, read, update, delete, list)
+- [ ] Tạo router taxes (create, read, update, delete, list)
+- [ ] Tạo router discount_codes (create, read, update, delete, list)
+- [ ] Tạo router payment_gateways (get, update, test connection)
+- [ ] Tạo router reports (get revenue, get invoice stats, get customer stats, get product stats)
+- [ ] Tạo router auth (me, logout)
 - [ ] Viết unit tests cho tất cả routers
 
 ## Phase 3: Frontend - Dashboard & Navigation
@@ -53,39 +53,39 @@
 - [x] Tạo component tóm tắt (summary sidebar)
 
 ## Phase 5: Frontend - Invoice Details
-- [x] Tạo trang chi tiết hóa đơn
-- [x] Tạo component hiển thị thông tin hóa đơn
-- [x] Tạo component QR code thanh toán
-- [x] Tạo component countdown hết hạn
-- [x] Tạo component trạng thái thanh toán
-- [x] Tạo nút xuất PDF
-- [x] Tạo nút gửi email
-- [x] Tạo nút chỉnh sửa/hủy
+- [ ] Tạo trang chi tiết hóa đơn
+- [ ] Tạo component hiển thị thông tin hóa đơn
+- [ ] Tạo component QR code thanh toán
+- [ ] Tạo component countdown hết hạn
+- [ ] Tạo component trạng thái thanh toán
+- [ ] Tạo nút xuất PDF
+- [ ] Tạo nút gửi email
+- [ ] Tạo nút chỉnh sửa/hủy
 
 ## Phase 6: Frontend - Invoice History, Customers, Products
-- [x] Tạo trang lịch sử hóa đơn với bảng, filter, tìm kiếm
-- [x] Tạo trang quản lý khách hàng với CRUD
+- [ ] Tạo trang lịch sử hóa đơn với bảng, filter, tìm kiếm
+- [ ] Tạo trang quản lý khách hàng với CRUD
 - [ ] Tạo trang chi tiết khách hàng (lịch sử giao dịch)
-- [x] Tạo trang quản lý sản phẩm/dịch vụ với CRUD
+- [ ] Tạo trang quản lý sản phẩm/dịch vụ với CRUD
 - [ ] Tạo dialog thêm/sửa khách hàng
 - [ ] Tạo dialog thêm/sửa sản phẩm
 
 ## Phase 7: Frontend - Templates, Reports, Settings
-- [x] Tạo trang quản lý mẫu hóa đơn
+- [ ] Tạo trang quản lý mẫu hóa đơn
 - [ ] Tạo dialog chỉnh sửa mẫu hóa đơn
-- [x] Tạo trang báo cáo & thống kê
-- [x] Tạo các biểu đồ báo cáo (doanh thu, top khách hàng, top sản phẩm)
-- [x] Tạo nút xuất báo cáo (Excel, PDF)
-- [x] Tạo trang cài đặt chung (dark mode, ngôn ngữ, thông báo, email)
+- [ ] Tạo trang báo cáo & thống kê
+- [ ] Tạo các biểu đồ báo cáo (doanh thu, top khách hàng, top sản phẩm)
+- [ ] Tạo nút xuất báo cáo (Excel, PDF)
+- [ ] Tạo trang cài đặt chung (dark mode, ngôn ngữ, thông báo, email)
 
 ## Phase 8: Frontend - Payment Gateway Configuration
-- [x] Tạo trang cấu hình PayOS
-- [x] Tạo form nhập API Key, Client ID, Checksum Key
-- [x] Tạo nút kiểm tra kết nối PayOS
-- [x] Tạo trang cấu hình PayPal
-- [x] Tạo form nhập Client ID, Secret Key
-- [x] Tạo nút kiểm tra kết nối PayPal
-- [x] Tạo component hiển thị trạng thái kết nối
+- [ ] Tạo trang cấu hình PayOS
+- [ ] Tạo form nhập API Key, Client ID, Checksum Key
+- [ ] Tạo nút kiểm tra kết nối PayOS
+- [ ] Tạo trang cấu hình PayPal
+- [ ] Tạo form nhập Client ID, Secret Key
+- [ ] Tạo nút kiểm tra kết nối PayPal
+- [ ] Tạo component hiển thị trạng thái kết nối
 
 ## Phase 9: Backend - Payment Integration
 - [ ] Tích hợp PayOS API (tạo payment link, QR code)
