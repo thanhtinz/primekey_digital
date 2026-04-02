@@ -8,9 +8,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CreateInvoice from "./pages/CreateInvoice";
 import InvoiceHistory from "./pages/InvoiceHistory";
-// import Customers from "./pages/Customers";
-// import Products from "./pages/Products";
-// import InvoiceTemplates from "./pages/InvoiceTemplates";
+import Customers from "./pages/Customers";
+import Products from "./pages/Products";
+import InvoiceTemplates from "./pages/InvoiceTemplates";
 // import InvoiceTemplatePreview from "./pages/InvoiceTemplatePreview";
 // import EditInvoiceTemplate from "./pages/EditInvoiceTemplate";
 import Reports from "./pages/Reports";
@@ -69,9 +69,9 @@ function Router() {
       <Route path="/dashboard" component={() => <Dashboard />} />
       <Route path="/create-invoice" component={() => <CreateInvoice />} />
       <Route path="/invoices" component={() => <InvoiceHistory />} />
-      <Route path="/customers" component={() => <PlaceholderPage title="Quản Lý Khách Hàng" />} />
-      <Route path="/products" component={() => <PlaceholderPage title="Quản Lý Sản Phẩm" />} />
-      <Route path="/templates" component={() => <PlaceholderPage title="Mẫu Hóa Đơn" />} />
+      <Route path="/customers" component={() => <Customers />} />
+      <Route path="/products" component={() => <Products />} />
+      <Route path="/templates" component={() => <InvoiceTemplates />} />
       {/* <Route path="/templates/:id/preview" component={() => <InvoiceTemplatePreview />} />
       <Route path="/templates/:id/edit" component={() => <EditInvoiceTemplate />} /> */}
       <Route path="/reports" component={() => <Reports />} />
