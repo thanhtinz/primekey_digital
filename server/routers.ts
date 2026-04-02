@@ -54,8 +54,27 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        // TODO: Implement invoice creation
-        return { success: true };
+        return db.createInvoice(ctx.user.id, input);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.enum(["draft", "sent", "paid", "expired"]).optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.updateInvoice(ctx.user.id, input.id, input);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.deleteInvoice(ctx.user.id, input.id);
       }),
   }),
 
@@ -89,8 +108,30 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        // TODO: Implement customer creation
-        return { success: true };
+        return db.createCustomer(ctx.user.id, input);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          email: z.string().email().optional(),
+          phone: z.string().optional(),
+          address: z.string().optional(),
+          taxId: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.updateCustomer(ctx.user.id, input.id, input);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.deleteCustomer(ctx.user.id, input.id);
       }),
   }),
 
@@ -112,8 +153,29 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        // TODO: Implement product creation
-        return { success: true };
+        return db.createProduct(ctx.user.id, input);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          description: z.string().optional(),
+          price: z.number().optional(),
+          unit: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.updateProduct(ctx.user.id, input.id, input);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.deleteProduct(ctx.user.id, input.id);
       }),
   }),
 
@@ -139,6 +201,72 @@ export const appRouter = router({
       if (!ctx.user) throw new Error("Unauthorized");
       return db.getInvoiceTemplatesByUserId(ctx.user.id);
     }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string(),
+          companyName: z.string(),
+          companyLogo: z.string().optional(),
+          companyAddress: z.string(),
+          companyPhone: z.string(),
+          companyEmail: z.string().email(),
+          taxId: z.string().optional(),
+          bankInfo: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.createInvoiceTemplate(ctx.user.id, input);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          companyName: z.string().optional(),
+          companyLogo: z.string().optional(),
+          companyAddress: z.string().optional(),
+          companyPhone: z.string().optional(),
+          companyEmail: z.string().email().optional(),
+          taxId: z.string().optional(),
+          bankInfo: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { id, ...data } = input;
+        return db.updateInvoiceTemplate(id, data);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.deleteInvoiceTemplate(input.id);
+      }),
+  }),
+
+  // Reports
+  reports: router({
+    getDashboardStats: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      return db.getDashboardStats(ctx.user.id);
+    }),
+
+    getInvoicesByStatus: protectedProcedure
+      .input(z.object({ status: z.string().optional() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.getInvoicesByUserId(ctx.user.id);
+      }),
+
+
+
+
   }),
 
   // Payment Gateways Config
@@ -160,8 +288,11 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        // TODO: Implement payment gateway config update
-        return { success: true };
+        const config = await db.getPaymentGatewaysConfigByUserId(ctx.user.id);
+        if (config) {
+          return db.updatePaymentGatewayConfig(config.id, input);
+        }
+        return db.createPaymentGatewayConfig({ userId: ctx.user.id, ...input });
       }),
   }),
 });

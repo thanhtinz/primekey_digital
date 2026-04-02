@@ -123,25 +123,23 @@ export async function getPaymentGatewaysConfigByUserId(userId: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add more feature queries here as your schema grows
-
 // Create operations
-export async function createCustomer(data: any) {
+export async function createInvoice(userId: number, data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(customers).values(data);
+  return db.insert(invoices).values({ userId, ...data });
 }
 
-export async function createProduct(data: any) {
+export async function createCustomer(userId: number, data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(products).values(data);
+  return db.insert(customers).values({ userId, ...data });
 }
 
-export async function createInvoice(data: any) {
+export async function createProduct(userId: number, data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(invoices).values(data);
+  return db.insert(products).values({ userId, ...data });
 }
 
 export async function createInvoiceItem(data: any) {
@@ -162,10 +160,10 @@ export async function createDiscountCode(data: any) {
   return db.insert(discountCodes).values(data);
 }
 
-export async function createInvoiceTemplate(data: any) {
+export async function createInvoiceTemplate(userId: number, data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(invoiceTemplates).values(data);
+  return db.insert(invoiceTemplates).values({ userId, ...data });
 }
 
 export async function createPaymentGatewayConfig(data: any) {
@@ -175,22 +173,28 @@ export async function createPaymentGatewayConfig(data: any) {
 }
 
 // Update operations
-export async function updateCustomer(id: number, data: any) {
+export async function updateInvoice(userId: number, id: number, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(invoices).set(data).where(eq(invoices.id, id));
+}
+
+export async function updateCustomer(userId: number, id: number, data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.update(customers).set(data).where(eq(customers.id, id));
 }
 
-export async function updateProduct(id: number, data: any) {
+export async function updateProduct(userId: number, id: number, data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.update(products).set(data).where(eq(products.id, id));
 }
 
-export async function updateInvoice(id: number, data: any) {
+export async function updateInvoiceTemplate(id: number, data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.update(invoices).set(data).where(eq(invoices.id, id));
+  return db.update(invoiceTemplates).set(data).where(eq(invoiceTemplates.id, id));
 }
 
 export async function updatePaymentGatewayConfig(id: number, data: any) {
@@ -200,28 +204,34 @@ export async function updatePaymentGatewayConfig(id: number, data: any) {
 }
 
 // Delete operations
-export async function deleteCustomer(id: number) {
+export async function deleteInvoice(userId: number, id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(invoices).where(eq(invoices.id, id));
+}
+
+export async function deleteCustomer(userId: number, id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(customers).where(eq(customers.id, id));
 }
 
-export async function deleteProduct(id: number) {
+export async function deleteProduct(userId: number, id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(products).where(eq(products.id, id));
-}
-
-export async function deleteInvoice(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.delete(invoices).where(eq(invoices.id, id));
 }
 
 export async function deleteInvoiceItem(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(invoiceItems).where(eq(invoiceItems.id, id));
+}
+
+export async function deleteInvoiceTemplate(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(invoiceTemplates).where(eq(invoiceTemplates.id, id));
 }
 
 // Audit log
@@ -235,4 +245,22 @@ export async function getAuditLogsByUserId(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(auditLogs).where(eq(auditLogs.userId, userId));
+}
+
+// Dashboard stats
+export async function getDashboardStats(userId: number) {
+  const db = await getDb();
+  if (!db) return { totalRevenue: 0, totalInvoices: 0, paidInvoices: 0, pendingInvoices: 0 };
+  
+  const userInvoices = await db.select().from(invoices).where(eq(invoices.userId, userId));
+  const totalRevenue = userInvoices.reduce((sum, inv) => sum + (typeof inv.totalAmount === 'number' ? inv.totalAmount : 0), 0);
+  const paidInvoices = userInvoices.filter(inv => inv.status === 'PAID').length;
+  const pendingInvoices = userInvoices.filter(inv => inv.status === 'PENDING').length;
+  
+  return {
+    totalRevenue,
+    totalInvoices: userInvoices.length,
+    paidInvoices,
+    pendingInvoices,
+  };
 }
