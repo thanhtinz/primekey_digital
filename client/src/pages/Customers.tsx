@@ -2,9 +2,18 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Customer {
   id: string;
@@ -49,6 +58,14 @@ const mockCustomers: Customer[] = [
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -58,26 +75,63 @@ export default function Customers() {
   );
 
   const handleAddCustomer = () => {
-    toast.success("Mở form thêm khách hàng mới!");
+    setEditingCustomer(null);
+    setFormData({ name: "", email: "", phone: "", address: "" });
+    setIsOpen(true);
   };
 
-  const handleEditCustomer = (name: string) => {
-    toast.info(`Đang chỉnh sửa khách hàng: ${name}`);
+  const handleEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+    });
+    setIsOpen(true);
   };
 
-  const handleDeleteCustomer = (name: string) => {
+  const handleDeleteCustomer = (id: string, name: string) => {
     toast.error(`Xác nhận xóa khách hàng ${name}?`, {
       action: {
         label: "Xóa",
         onClick: () => {
           toast.loading("Đang xóa...");
           setTimeout(() => {
-            setCustomers(customers.filter((c) => c.name !== name));
+            setCustomers(customers.filter((c) => c.id !== id));
             toast.success(`Khách hàng ${name} đã được xóa thành công!`);
           }, 800);
         },
       },
     });
+  };
+
+  const handleSaveCustomer = () => {
+    if (!formData.name || !formData.email || !formData.phone) {
+      toast.error("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    if (editingCustomer) {
+      setCustomers(
+        customers.map((c) =>
+          c.id === editingCustomer.id
+            ? { ...c, ...formData }
+            : c
+        )
+      );
+      toast.success("Cập nhật khách hàng thành công!");
+    } else {
+      const newCustomer: Customer = {
+        id: Date.now().toString(),
+        ...formData,
+        totalInvoices: 0,
+        totalSpent: 0,
+      };
+      setCustomers([...customers, newCustomer]);
+      toast.success("Thêm khách hàng thành công!");
+    }
+    setIsOpen(false);
   };
 
   const formatCurrency = (value: number) => {
@@ -102,85 +156,135 @@ export default function Customers() {
         </div>
 
         {/* Search */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Tìm kiếm khách hàng..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
         {/* Customers Table */}
         <Card>
           <CardHeader>
             <CardTitle>Danh Sách Khách Hàng</CardTitle>
-            <CardDescription>Tổng cộng: {filteredCustomers.length} khách hàng</CardDescription>
+            <CardDescription>{filteredCustomers.length} khách hàng</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-semibold">Tên Khách Hàng</th>
+                    <th className="text-left py-3 px-4 font-semibold">Tên</th>
                     <th className="text-left py-3 px-4 font-semibold">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold">Số Điện Thoại</th>
-                    <th className="text-left py-3 px-4 font-semibold">Địa Chỉ</th>
-                    <th className="text-center py-3 px-4 font-semibold">Số HĐ</th>
-                    <th className="text-right py-3 px-4 font-semibold">Tổng Chi Tiêu</th>
-                    <th className="text-center py-3 px-4 font-semibold">Hành Động</th>
+                    <th className="text-left py-3 px-4 font-semibold">Điện Thoại</th>
+                    <th className="text-left py-3 px-4 font-semibold">Hóa Đơn</th>
+                    <th className="text-left py-3 px-4 font-semibold">Tổng Chi</th>
+                    <th className="text-left py-3 px-4 font-semibold">Hành Động</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCustomers.length > 0 ? (
-                    filteredCustomers.map((customer) => (
-                      <tr key={customer.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium">{customer.name}</td>
-                        <td className="py-3 px-4">{customer.email}</td>
-                        <td className="py-3 px-4">{customer.phone}</td>
-                        <td className="py-3 px-4 text-xs">{customer.address}</td>
-                        <td className="py-3 px-4 text-center">{customer.totalInvoices}</td>
-                        <td className="py-3 px-4 text-right font-semibold">
-                          {formatCurrency(customer.totalSpent)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex justify-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEditCustomer(customer.name)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleDeleteCustomer(customer.name)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-gray-500">
-                        Không tìm thấy khách hàng nào
+                  {filteredCustomers.map((customer) => (
+                    <tr key={customer.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">{customer.name}</td>
+                      <td className="py-3 px-4">{customer.email}</td>
+                      <td className="py-3 px-4">{customer.phone}</td>
+                      <td className="py-3 px-4">{customer.totalInvoices}</td>
+                      <td className="py-3 px-4 font-semibold">{formatCurrency(customer.totalSpent)}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditCustomer(customer)}
+                            className="gap-1"
+                          >
+                            <Edit className="h-3 w-3" />
+                            Sửa
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteCustomer(customer.id, customer.name)}
+                            className="gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Xóa
+                          </Button>
+                        </div>
                       </td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
+
+        {/* Add/Edit Dialog */}
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCustomer ? "Chỉnh Sửa Khách Hàng" : "Thêm Khách Hàng Mới"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingCustomer
+                  ? "Cập nhật thông tin khách hàng"
+                  : "Nhập thông tin khách hàng mới"}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Tên Khách Hàng</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Nhập tên khách hàng"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Nhập email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Điện Thoại</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Nhập số điện thoại"
+                />
+              </div>
+              <div>
+                <Label htmlFor="address">Địa Chỉ</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Nhập địa chỉ"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                  Hủy
+                </Button>
+                <Button onClick={handleSaveCustomer}>
+                  {editingCustomer ? "Cập Nhật" : "Thêm"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
