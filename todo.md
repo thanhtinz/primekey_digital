@@ -16,15 +16,15 @@
 - [x] Tạo auth routes (login, logout, register)
 
 ## Phase 2: Backend API (tRPC Routers)
-- [ ] Tạo router invoices (create, read, update, delete, list)
-- [ ] Tạo router customers (create, read, update, delete, list)
-- [ ] Tạo router products (create, read, update, delete, list)
-- [ ] Tạo router invoice_templates (create, read, update, delete, list)
-- [ ] Tạo router taxes (create, read, update, delete, list)
-- [ ] Tạo router discount_codes (create, read, update, delete, list)
-- [ ] Tạo router payment_gateways (get, update, test connection)
-- [ ] Tạo router reports (get revenue, get invoice stats, get customer stats, get product stats)
-- [ ] Tạo router auth (me, logout)
+- [x] Tạo router invoices (create, read, update, delete, list)
+- [x] Tạo router customers (create, read, update, delete, list)
+- [x] Tạo router products (create, read, update, delete, list)
+- [x] Tạo router invoice_templates (create, read, update, delete, list)
+- [x] Tạo router taxes (create, read, update, delete, list)
+- [x] Tạo router discount_codes (create, read, update, delete, list)
+- [x] Tạo router payment_gateways (get, update, test connection)
+- [x] Tạo router reports (get revenue, get invoice stats, get customer stats, get product stats)
+- [x] Tạo router auth (me, logout)
 - [ ] Viết unit tests cho tất cả routers
 
 ## Phase 3: Frontend - Dashboard & Navigation
