@@ -12,7 +12,7 @@ import Customers from "./pages/Customers";
 import Products from "./pages/Products";
 import InvoiceTemplates from "./pages/InvoiceTemplates";
 // import InvoiceTemplatePreview from "./pages/InvoiceTemplatePreview";
-// import EditInvoiceTemplate from "./pages/EditInvoiceTemplate";
+import EditInvoiceTemplate from "./pages/EditInvoiceTemplate";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import PayOSSettings from "./pages/PayOSSettings";
@@ -72,8 +72,7 @@ function Router() {
       <Route path="/customers" component={() => <Customers />} />
       <Route path="/products" component={() => <Products />} />
       <Route path="/templates" component={() => <InvoiceTemplates />} />
-      {/* <Route path="/templates/:id/preview" component={() => <InvoiceTemplatePreview />} />
-      <Route path="/templates/:id/edit" component={() => <EditInvoiceTemplate />} /> */}
+      <Route path="/templates/:id/edit" component={() => <EditInvoiceTemplate />} />
       <Route path="/reports" component={() => <Reports />} />
       <Route path="/settings" component={() => <Settings />} />
       <Route path="/settings/payos" component={() => <PayOSSettings />} />
