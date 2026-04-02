@@ -63,16 +63,18 @@
 - [ ] Tạo nút chỉnh sửa/hủy
 
 ## Phase 6: Frontend - Invoice History, Customers, Products
-- [ ] Tạo trang lịch sử hóa đơn với bảng, filter, tìm kiếm
-- [ ] Tạo trang quản lý khách hàng với CRUD
+- [x] Tạo trang lịch sử hóa đơn với bảng, filter, tìm kiếm
+- [x] Tạo trang quản lý khách hàng với CRUD
 - [ ] Tạo trang chi tiết khách hàng (lịch sử giao dịch)
-- [ ] Tạo trang quản lý sản phẩm/dịch vụ với CRUD
-- [ ] Tạo dialog thêm/sửa khách hàng
-- [ ] Tạo dialog thêm/sửa sản phẩm
+- [x] Tạo trang quản lý sản phẩm/dịch vụ với CRUD
+- [x] Tạo dialog thêm/sửa khách hàng
+- [x] Tạo dialog thêm/sửa sản phẩm
+- [ ] Fix table mobile - horizontal scroll/card layout (Customers, Products, InvoiceHistory)
 
 ## Phase 7: Frontend - Templates, Reports, Settings
-- [ ] Tạo trang quản lý mẫu hóa đơn
-- [ ] Tạo dialog chỉnh sửa mẫu hóa đơn
+- [x] Tạo trang quản lý mẫu hóa đơn
+- [ ] Tạo editor cho mẫu hóa đơn - chỉnh sửa layout, màu sắc, font
+- [ ] Tạo trang tạo mẫu hóa đơn mới
 - [ ] Tạo trang báo cáo & thống kê
 - [ ] Tạo các biểu đồ báo cáo (doanh thu, top khách hàng, top sản phẩm)
 - [ ] Tạo nút xuất báo cáo (Excel, PDF)

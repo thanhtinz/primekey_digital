@@ -195,7 +195,7 @@ export default function InvoiceHistory() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 font-semibold">Số Hóa Đơn</th>

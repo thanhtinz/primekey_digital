@@ -101,8 +101,8 @@ export default function Products() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-lg border overflow-x-auto">
+          <table className="w-full min-w-max">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Tên Sản Phẩm</th>
