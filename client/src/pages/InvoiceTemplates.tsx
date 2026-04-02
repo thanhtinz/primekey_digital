@@ -1,9 +1,19 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Edit, Trash2, Eye, Star } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Template {
   id: string;
@@ -39,27 +49,40 @@ const mockTemplates: Template[] = [
 
 export default function InvoiceTemplates() {
   const [templates, setTemplates] = useState<Template[]>(mockTemplates);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+  });
 
   const handleAddTemplate = () => {
-    toast.success("Mở form tạo mẫu hóa đơn mới!");
+    setEditingTemplate(null);
+    setFormData({ name: "", description: "" });
+    setIsOpen(true);
   };
 
-  const handleEditTemplate = (name: string) => {
-    toast.info(`Đang chỉnh sửa mẫu: ${name}`);
+  const handleEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setFormData({
+      name: template.name,
+      description: template.description,
+    });
+    setIsOpen(true);
   };
 
   const handlePreviewTemplate = (name: string) => {
     toast.info(`Xem trước mẫu: ${name}`);
   };
 
-  const handleDeleteTemplate = (name: string) => {
+  const handleDeleteTemplate = (id: string, name: string) => {
     toast.error(`Xác nhận xóa mẫu ${name}?`, {
       action: {
         label: "Xóa",
         onClick: () => {
           toast.loading("Đang xóa...");
           setTimeout(() => {
-            setTemplates(templates.filter((t) => t.name !== name));
+            setTemplates(templates.filter((t) => t.id !== id));
             toast.success(`Mẫu ${name} đã được xóa thành công!`);
           }, 800);
         },
@@ -67,17 +90,46 @@ export default function InvoiceTemplates() {
     });
   };
 
-  const handleSetDefault = (name: string) => {
+  const handleSetDefault = (id: string, name: string) => {
     toast.loading("Đang đặt làm mẫu mặc định...");
     setTimeout(() => {
       setTemplates(
         templates.map((t) => ({
           ...t,
-          isDefault: t.name === name,
+          isDefault: t.id === id,
         }))
       );
       toast.success(`Mẫu ${name} đã được đặt làm mặc định!`);
     }, 800);
+  };
+
+  const handleSaveTemplate = () => {
+    if (!formData.name || !formData.description) {
+      toast.error("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    if (editingTemplate) {
+      setTemplates(
+        templates.map((t) =>
+          t.id === editingTemplate.id
+            ? { ...t, name: formData.name, description: formData.description }
+            : t
+        )
+      );
+      toast.success("Cập nhật mẫu thành công!");
+    } else {
+      const newTemplate: Template = {
+        id: Date.now().toString(),
+        name: formData.name,
+        description: formData.description,
+        isDefault: false,
+        createdAt: new Date().toLocaleDateString("vi-VN"),
+      };
+      setTemplates([...templates, newTemplate]);
+      toast.success("Tạo mẫu thành công!");
+    }
+    setIsOpen(false);
   };
 
   return (
@@ -97,60 +149,64 @@ export default function InvoiceTemplates() {
         {/* Templates Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map((template) => (
-            <Card key={template.id} className="hover:shadow-lg transition-shadow">
+            <Card
+              key={template.id}
+              className={`hover:shadow-lg transition-shadow ${
+                template.isDefault ? "border-blue-500 border-2" : ""
+              }`}
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {template.isDefault && (
-                      <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-semibold">
-                        Mặc Định
-                      </span>
-                    )}
+                    <CardTitle className="flex items-center gap-2">
+                      {template.name}
+                      {template.isDefault && (
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      )}
+                    </CardTitle>
+                    <CardDescription>{template.createdAt}</CardDescription>
                   </div>
                 </div>
-                <CardDescription>{template.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-xs text-gray-500">Tạo: {template.createdAt}</p>
-                <div className="flex gap-2">
+                <p className="text-sm">{template.description}</p>
+                <div className="flex gap-2 flex-wrap">
                   <Button
-                    size="sm"
                     variant="outline"
-                    className="flex-1 gap-2"
+                    size="sm"
                     onClick={() => handlePreviewTemplate(template.name)}
+                    className="gap-1"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-3 w-3" />
                     Xem Trước
                   </Button>
                   <Button
-                    size="sm"
                     variant="outline"
-                    className="flex-1 gap-2"
-                    onClick={() => handleEditTemplate(template.name)}
-                  >
-                    <Edit className="h-4 w-4" />
-                    Chỉnh Sửa
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  {!template.isDefault && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleSetDefault(template.name)}
-                    >
-                      Đặt Làm Mặc Định
-                    </Button>
-                  )}
-                  <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-red-600 hover:text-red-700"
-                    onClick={() => handleDeleteTemplate(template.name)}
+                    onClick={() => handleEditTemplate(template)}
+                    className="gap-1"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Edit className="h-3 w-3" />
+                    Sửa
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSetDefault(template.id, template.name)}
+                    disabled={template.isDefault}
+                    className="gap-1"
+                  >
+                    <Star className="h-3 w-3" />
+                    Mặc Định
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteTemplate(template.id, template.name)}
+                    className="gap-1"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Xóa
                   </Button>
                 </div>
               </CardContent>
@@ -158,26 +214,50 @@ export default function InvoiceTemplates() {
           ))}
         </div>
 
-        {/* Template Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Hướng Dẫn Tạo Mẫu</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm">
-              <strong>1. Tạo Mẫu Mới:</strong> Nhấn nút "Tạo Mẫu Mới" để bắt đầu tạo một mẫu hóa đơn mới.
-            </p>
-            <p className="text-sm">
-              <strong>2. Tùy Chỉnh:</strong> Chỉnh sửa bố cục, màu sắc, font chữ, logo, và thông tin công ty.
-            </p>
-            <p className="text-sm">
-              <strong>3. Xem Trước:</strong> Xem trước mẫu trước khi lưu để đảm bảo nó trông đúng như mong muốn.
-            </p>
-            <p className="text-sm">
-              <strong>4. Đặt Làm Mặc Định:</strong> Chọn mẫu bạn muốn sử dụng khi tạo hóa đơn mới.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Add/Edit Dialog */}
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingTemplate ? "Chỉnh Sửa Mẫu Hóa Đơn" : "Tạo Mẫu Hóa Đơn Mới"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingTemplate
+                  ? "Cập nhật thông tin mẫu hóa đơn"
+                  : "Nhập thông tin mẫu hóa đơn mới"}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Tên Mẫu</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Nhập tên mẫu hóa đơn"
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Mô Tả</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Nhập mô tả mẫu hóa đơn"
+                  rows={4}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                  Hủy
+                </Button>
+                <Button onClick={handleSaveTemplate}>
+                  {editingTemplate ? "Cập Nhật" : "Tạo"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
