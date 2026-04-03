@@ -6,54 +6,109 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
-
-const mockCustomers = [
-  { id: 1, name: "Công Ty A", email: "contact@ctyA.com", phone: "0901234567", address: "123 Đường ABC, TP HCM" },
-  { id: 2, name: "Công Ty B", email: "info@ctyB.com", phone: "0912345678", address: "456 Đường XYZ, Hà Nội" },
-  { id: 3, name: "Công Ty C", email: "sales@ctyC.com", phone: "0923456789", address: "789 Đường DEF, Đà Nẵng" },
-];
+import { trpc } from "@/lib/trpc";
 
 export default function Customers() {
-  const [customers, setCustomers] = useState(mockCustomers);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
 
+  // Fetch customers
+  const { data: customers = [], isLoading, refetch } = trpc.customers.list.useQuery();
+
+  // Mutations
+  const createCustomer = trpc.customers.create.useMutation({
+    onSuccess: () => {
+      toast.success("Thêm khách hàng thành công!");
+      refetch();
+      setFormData({ name: "", email: "", phone: "", address: "" });
+      setIsOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Lỗi khi thêm khách hàng");
+    },
+  });
+
+  const updateCustomer = trpc.customers.update.useMutation({
+    onSuccess: () => {
+      toast.success("Cập nhật khách hàng thành công!");
+      refetch();
+      setFormData({ name: "", email: "", phone: "", address: "" });
+      setEditingId(null);
+      setIsOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Lỗi khi cập nhật khách hàng");
+    },
+  });
+
+  const deleteCustomer = trpc.customers.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Xóa khách hàng thành công!");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Lỗi khi xóa khách hàng");
+    },
+  });
+
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.name) {
       toast.error("Vui lòng nhập tên khách hàng");
       return;
     }
-    if (editingId) {
-      setCustomers(customers.map(c => c.id === editingId ? { ...c, ...formData } : c));
-      toast.success("Cập nhật khách hàng thành công!");
-    } else {
-      setCustomers([...customers, { id: Date.now(), ...formData }]);
-      toast.success("Thêm khách hàng thành công!");
+    if (!formData.email) {
+      toast.error("Vui lòng nhập email");
+      return;
     }
-    setFormData({ name: "", email: "", phone: "", address: "" });
-    setEditingId(null);
-    setIsOpen(false);
+
+    if (editingId) {
+      await updateCustomer.mutateAsync({
+        id: editingId,
+        ...formData,
+      });
+    } else {
+      await createCustomer.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        address: formData.address || undefined,
+      });
+    }
   };
 
-  const handleEdit = (customer: typeof mockCustomers[0]) => {
-    setFormData(customer);
+  const handleEdit = (customer: typeof customers[0]) => {
+    setFormData({
+      name: customer.name,
+      email: customer.email || "",
+      phone: customer.phone || "",
+      address: customer.address || "",
+    });
     setEditingId(customer.id);
     setIsOpen(true);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("Bạn chắc chắn muốn xóa khách hàng này?")) {
-      setCustomers(customers.filter(c => c.id !== id));
-      toast.success("Xóa khách hàng thành công!");
+      deleteCustomer.mutate({ id });
     }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-gray-500">Đang tải...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -81,7 +136,7 @@ export default function Customers() {
                 </div>
                 <div>
                   <Label>Email</Label>
-                  <Input value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="Nhập email" />
+                  <Input value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="Nhập email" type="email" />
                 </div>
                 <div>
                   <Label>Số Điện Thoại</Label>
@@ -91,7 +146,9 @@ export default function Customers() {
                   <Label>Địa Chỉ</Label>
                   <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Nhập địa chỉ" />
                 </div>
-                <Button onClick={handleAdd} className="w-full">Lưu</Button>
+                <Button onClick={handleAdd} className="w-full" disabled={createCustomer.isPending || updateCustomer.isPending}>
+                  {createCustomer.isPending || updateCustomer.isPending ? "Đang lưu..." : "Lưu"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -101,41 +158,56 @@ export default function Customers() {
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input placeholder="Tìm kiếm khách hàng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+            <Input
+              placeholder="Tìm kiếm khách hàng..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-max">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Tên Khách Hàng</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Số Điện Thoại</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Địa Chỉ</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold">Hành Động</th>
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-3 px-4 font-semibold">Tên Khách Hàng</th>
+                <th className="text-left py-3 px-4 font-semibold">Email</th>
+                <th className="text-left py-3 px-4 font-semibold">Số Điện Thoại</th>
+                <th className="text-left py-3 px-4 font-semibold">Địa Chỉ</th>
+                <th className="text-left py-3 px-4 font-semibold">Hành Động</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCustomers.map(customer => (
-                <tr key={customer.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-3">{customer.name}</td>
-                  <td className="px-6 py-3 text-gray-600">{customer.email}</td>
-                  <td className="px-6 py-3 text-gray-600">{customer.phone}</td>
-                  <td className="px-6 py-3 text-gray-600">{customer.address}</td>
-                  <td className="px-6 py-3 text-right flex gap-2 justify-end">
-                    <Button onClick={() => handleEdit(customer)} variant="outline" size="sm" className="gap-2">
-                      <Edit className="h-4 w-4" />
-                      Sửa
-                    </Button>
-                    <Button onClick={() => handleDelete(customer.id)} variant="outline" size="sm" className="gap-2 text-red-600">
-                      <Trash2 className="h-4 w-4" />
-                      Xóa
-                    </Button>
+              {filteredCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-8 text-gray-500">
+                    Không có khách hàng nào
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredCustomers.map(customer => (
+                  <tr key={customer.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">{customer.name}</td>
+                    <td className="py-3 px-4">{customer.email}</td>
+                    <td className="py-3 px-4">{customer.phone}</td>
+                    <td className="py-3 px-4">{customer.address}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-2">
+                        <Button onClick={() => handleEdit(customer)} variant="outline" size="sm" className="gap-2">
+                          <Edit className="h-4 w-4" />
+                          Sửa
+                        </Button>
+                        <Button onClick={() => handleDelete(customer.id)} variant="outline" size="sm" className="gap-2 text-red-600" disabled={deleteCustomer.isPending}>
+                          <Trash2 className="h-4 w-4" />
+                          Xóa
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
