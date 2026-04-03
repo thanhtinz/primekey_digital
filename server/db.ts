@@ -236,3 +236,32 @@ export async function getAuditLogsByUserId(userId: number) {
   if (!db) return [];
   return db.select().from(auditLogs).where(eq(auditLogs.userId, userId));
 }
+
+// Additional query helpers
+export async function getProductById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getInvoiceTemplateById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(invoiceTemplates).where(eq(invoiceTemplates.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateInvoiceTemplate(id: number, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(invoiceTemplates).set(data).where(eq(invoiceTemplates.id, id));
+}
+
+export async function deleteInvoiceTemplate(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(invoiceTemplates).where(eq(invoiceTemplates.id, id));
+}
