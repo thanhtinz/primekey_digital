@@ -53,7 +53,7 @@ export default function EditInvoiceTemplate() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setLocation("/invoice-templates")}
+              onClick={() => setLocation("/templates")}
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>

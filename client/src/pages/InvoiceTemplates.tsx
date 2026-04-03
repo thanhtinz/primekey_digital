@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ const mockTemplates = [
 ];
 
 export default function InvoiceTemplates() {
+  const [, setLocation] = useLocation();
   const [templates, setTemplates] = useState(mockTemplates);
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -109,7 +111,7 @@ export default function InvoiceTemplates() {
                   <Eye className="h-4 w-4" />
                   Xem
                 </Button>
-                <Button onClick={() => handleEdit(template)} variant="outline" size="sm" className="gap-2 flex-1">
+                <Button onClick={() => setLocation(`/templates/${template.id}/edit`)} variant="outline" size="sm" className="gap-2 flex-1">
                   <Edit className="h-4 w-4" />
                   Sửa
                 </Button>

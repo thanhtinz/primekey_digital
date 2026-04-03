@@ -73,7 +73,7 @@
 
 ## Phase 7: Frontend - Templates, Reports, Settings
 - [x] Tạo trang quản lý mẫu hóa đơn
-- [ ] Tạo editor cho mẫu hóa đơn - chỉnh sửa layout, màu sắc, font
+- [x] Tạo editor cho mẫu hóa đơn - chỉnh sửa layout, màu sắc, font
 - [ ] Tạo trang tạo mẫu hóa đơn mới
 - [ ] Tạo trang báo cáo & thống kê
 - [ ] Tạo các biểu đồ báo cáo (doanh thu, top khách hàng, top sản phẩm)
