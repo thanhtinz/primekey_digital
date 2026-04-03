@@ -4,6 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { generateInvoicePDF } from "./pdf";
+import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHTML } from "./email";
 
 export const appRouter = router({
   system: systemRouter,
@@ -481,6 +483,100 @@ export const appRouter = router({
       
       return stats;
     }),
+  }),
+
+  // PDF Export
+  pdf: router({
+    exportInvoice: protectedProcedure
+      .input(z.object({ invoiceId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoice = await db.getInvoiceById(input.invoiceId);
+        if (!invoice || invoice.userId !== ctx.user.id) {
+          throw new Error("Invoice not found");
+        }
+        
+        // TODO: Fetch invoice items and customer details
+        // For now, return a placeholder
+        const pdfBuffer = await generateInvoicePDF({
+          invoiceNumber: invoice.invoiceNumber,
+          issueDate: invoice.createdAt,
+          dueDate: invoice.expiresAt || undefined,
+          customerName: "Customer Name",
+          customerEmail: "customer@example.com",
+          companyName: "Your Company",
+          items: [],
+          subtotal: typeof invoice.subtotal === "string" ? parseFloat(invoice.subtotal) : invoice.subtotal,
+          taxAmount: typeof invoice.taxAmount === "string" ? parseFloat(invoice.taxAmount) : (invoice.taxAmount || 0),
+          discountAmount: typeof invoice.discountAmount === "string" ? parseFloat(invoice.discountAmount) : (invoice.discountAmount || 0),
+          totalAmount: typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount,
+          currency: invoice.currency || "VND",
+          notes: invoice.notes || undefined,
+        });
+        
+        return {
+          success: true,
+          buffer: pdfBuffer.toString("base64"),
+          filename: `${invoice.invoiceNumber}.pdf`,
+        };
+      }),
+  }),
+
+  // Email Notifications
+  email: router({
+    sendInvoice: protectedProcedure
+      .input(z.object({ invoiceId: z.number(), recipientEmail: z.string().email() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoice = await db.getInvoiceById(input.invoiceId);
+        if (!invoice || invoice.userId !== ctx.user.id) {
+          throw new Error("Invoice not found");
+        }
+        
+        const html = generateInvoiceEmailHTML({
+          invoiceNumber: invoice.invoiceNumber,
+          customerName: "Customer Name",
+          totalAmount: typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount,
+          currency: invoice.currency || "VND",
+          companyName: "Your Company",
+          paymentUrl: invoice.paymentUrl || undefined,
+        });
+        
+        const success = await sendEmail({
+          to: input.recipientEmail,
+          subject: `Hóa Đơn ${invoice.invoiceNumber}`,
+          html,
+        });
+        
+        return { success };
+      }),
+
+    sendPaymentConfirmation: protectedProcedure
+      .input(z.object({ invoiceId: z.number(), recipientEmail: z.string().email() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoice = await db.getInvoiceById(input.invoiceId);
+        if (!invoice || invoice.userId !== ctx.user.id) {
+          throw new Error("Invoice not found");
+        }
+        
+        const html = generatePaymentConfirmationEmailHTML({
+          invoiceNumber: invoice.invoiceNumber,
+          customerName: "Customer Name",
+          totalAmount: typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount,
+          currency: invoice.currency || "VND",
+          paidAt: invoice.paidAt || new Date(),
+          companyName: "Your Company",
+        });
+        
+        const success = await sendEmail({
+          to: input.recipientEmail,
+          subject: `Xác Nhận Thanh Toán - ${invoice.invoiceNumber}`,
+          html,
+        });
+        
+        return { success };
+      }),
   }),
 });
 
