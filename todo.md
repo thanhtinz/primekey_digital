@@ -406,3 +406,12 @@
 - [x] Thêm CTA section cuối trang với gradient card
 - [x] Footer 3 cột: brand, quick links, liên hệ (email, phone, address)
 - [x] TypeScript: 0 errors
+
+## Feature: Landing Page - Thông Tin Thực & Animations
+
+- [x] Tạo public procedure settings.getPublicInfo - trả về companyName, email, phone, address, website
+- [x] LandingPage footer lấy thông tin từ settings.getPublicInfo (email, phone, address, website, companyName)
+- [x] Brand name trong footer hiển thị companyName từ Settings
+- [x] Thêm hook useScrollReveal với Intersection Observer (threshold 0.12)
+- [x] Áp dụng fade-in-up animation cho 7 sections: hero, stats, howItWorks, features, quickAccess, testimonials, cta
+- [x] TypeScript: 0 errors

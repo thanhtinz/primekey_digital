@@ -1123,6 +1123,22 @@ export const appRouter = router({
   }),
   // User Settingss
   settings: router({
+    // Public procedure - không cần auth, trả về thông tin công ty cho landing page
+    getPublicInfo: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      const { userSettings } = await import("../drizzle/schema");
+      if (!drizzleDb) return null;
+      // Lấy settings của owner (user đầu tiên trong hệ thống)
+      const rows = await drizzleDb.select({
+        companyName: userSettings.companyName,
+        companyEmail: userSettings.companyEmail,
+        companyPhone: userSettings.companyPhone,
+        companyAddress: userSettings.companyAddress,
+        website: userSettings.website,
+      }).from(userSettings).limit(1);
+      return rows[0] ?? null;
+    }),
      get: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
       const settings = await db.getUserSettings(ctx.user.id);

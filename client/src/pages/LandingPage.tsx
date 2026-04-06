@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,10 +8,34 @@ import {
   Clock, Smartphone, Lock, TrendingUp, Package, ChevronRight,
   Mail, Phone, MapPin, Building2, Receipt, Send
 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+
+// Hook scroll animation dùng Intersection Observer
+function useScrollReveal() {
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const observe = useCallback((id: string) => {
+    return (el: HTMLElement | null) => {
+      if (!el) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setRevealed(prev => { const next = new Set(prev); next.add(id); return next; });
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      );
+      observer.observe(el);
+    };
+  }, []);
+  return { revealed, observe };
+}
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { revealed, observe } = useScrollReveal();
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
 
   const navLinks = [
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
@@ -172,7 +196,12 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 md:py-32">
+      <section
+        ref={observe("hero")}
+        className={`relative overflow-hidden py-20 md:py-32 transition-all duration-700 ${
+          revealed.has("hero") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-3xl" />
@@ -239,7 +268,12 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="py-12 border-y border-white/10 bg-white/2">
+      <section
+        ref={observe("stats")}
+        className={`py-12 border-y border-white/10 bg-white/2 transition-all duration-700 delay-100 ${
+          revealed.has("stats") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => {
@@ -261,7 +295,12 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20">
+      <section
+        ref={observe("howItWorks")}
+        className={`py-20 transition-all duration-700 ${
+          revealed.has("howItWorks") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-slate-400 text-xs mb-4">
@@ -305,7 +344,12 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 border-t border-white/10">
+      <section
+        ref={observe("features")}
+        className={`py-20 border-t border-white/10 transition-all duration-700 ${
+          revealed.has("features") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-slate-400 text-xs mb-4">
@@ -340,7 +384,12 @@ export default function LandingPage() {
       </section>
 
       {/* Customer Quick Access */}
-      <section className="py-20 border-t border-white/10">
+      <section
+        ref={observe("quickAccess")}
+        className={`py-20 border-t border-white/10 transition-all duration-700 ${
+          revealed.has("quickAccess") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-slate-400 text-xs mb-4">
@@ -402,7 +451,12 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 border-t border-white/10">
+      <section
+        ref={observe("testimonials")}
+        className={`py-20 border-t border-white/10 transition-all duration-700 ${
+          revealed.has("testimonials") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-slate-400 text-xs mb-4">
@@ -445,7 +499,12 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 border-t border-white/10">
+      <section
+        ref={observe("cta")}
+        className={`py-20 border-t border-white/10 transition-all duration-700 ${
+          revealed.has("cta") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+      >
         <div className="max-w-3xl mx-auto px-4 text-center">
           <div className="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-blue-500/20 rounded-3xl p-10 md:p-14">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30">
@@ -489,9 +548,9 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <span className="text-white font-bold text-sm">IP</span>
+                  <span className="text-white font-bold text-sm">{publicInfo?.companyName ? publicInfo.companyName.slice(0,2).toUpperCase() : "IP"}</span>
                 </div>
-                <span className="font-bold text-white text-lg">Invoice Prime</span>
+                <span className="font-bold text-white text-lg">{publicInfo?.companyName || "Invoice Prime"}</span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">
                 Nền tảng hóa đơn và thanh toán chuyên nghiệp cho doanh nghiệp Việt Nam.
@@ -518,18 +577,46 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Liên Hệ</h4>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm">
-                  <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>support@invoiceprime.vn</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-500 text-sm">
-                  <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>1800 xxxx (Miễn phí)</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-500 text-sm">
-                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>TP. Hồ Chí Minh, Việt Nam</span>
-                </div>
+                {(publicInfo?.companyEmail || publicInfo?.companyName) && (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>{publicInfo?.companyEmail || "support@invoiceprime.vn"}</span>
+                  </div>
+                )}
+                {!publicInfo?.companyEmail && (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>support@invoiceprime.vn</span>
+                  </div>
+                )}
+                {publicInfo?.companyPhone ? (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>{publicInfo.companyPhone}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>Liên hệ qua email</span>
+                  </div>
+                )}
+                {publicInfo?.companyAddress ? (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>{publicInfo.companyAddress}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>Việt Nam</span>
+                  </div>
+                )}
+                {publicInfo?.website && (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm">
+                    <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+                    <a href={publicInfo.website} target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">{publicInfo.website.replace(/^https?:\/\//, "")}</a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
