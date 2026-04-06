@@ -136,7 +136,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Tổng quan hoạt động kinh doanh</p>
+            <p className="hidden sm:block text-sm text-gray-500 mt-0.5">Tổng quan hoạt động kinh doanh</p>
           </div>
           <div className="flex gap-1.5">
             <Button
@@ -161,7 +161,7 @@ export default function Dashboard() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
           {statsLoading ? (
             Array(4).fill(0).map((_, i) => <StatCardSkeleton key={i} />)
           ) : (
@@ -169,21 +169,21 @@ export default function Dashboard() {
               const Icon = card.icon;
               return (
                 <Card key={i} className={`${card.bg} border-0 shadow-sm hover:shadow-md transition-shadow`}>
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                      <div className={`bg-gradient-to-br ${card.gradient} p-2.5 rounded-xl shadow-sm`}>
-                        <Icon className="h-4 w-4 text-white" />
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="flex items-start justify-between mb-2 sm:mb-3">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 leading-tight">{card.title}</p>
+                      <div className={`bg-gradient-to-br ${card.gradient} p-2 sm:p-2.5 rounded-lg sm:rounded-xl shadow-sm flex-shrink-0 ml-1`}>
+                        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold text-gray-900">{card.value}</span>
-                        <span className="text-xs text-gray-500">{card.unit}</span>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl sm:text-2xl font-bold text-gray-900">{card.value}</span>
+                        <span className="text-xs text-gray-500 truncate">{card.unit}</span>
                       </div>
-                      <div className={`flex items-center gap-1 text-xs font-medium ${card.positive ? "text-green-600" : "text-orange-600"}`}>
-                        <ArrowUpRight className="h-3 w-3" />
-                        {card.change}
+                      <div className={`flex items-center gap-0.5 text-xs font-medium ${card.positive ? "text-green-600" : "text-orange-600"}`}>
+                        <ArrowUpRight className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{card.change}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -441,6 +441,15 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* FAB - Mobile only: Floating Action Button tạo đơn nhanh */}
+      <button
+        onClick={() => setLocation("/create-invoice")}
+        className="sm:hidden fixed bottom-6 right-5 z-50 flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full shadow-lg shadow-blue-500/40 transition-all duration-200 active:scale-95"
+        aria-label="Tạo hóa đơn mới"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
     </DashboardLayout>
   );
 }

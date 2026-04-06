@@ -375,3 +375,9 @@
 ## Fix: Nút Tạo Hóa Đơn Mobile
 
 - [x] Giảm kích thước nút "Tạo Hóa Đơn" trên mobile: h-8 px-2.5 text-xs, text rút gọn "Tạo Đơn" trên mobile, ẩn text "Làm mới" trên mobile (chỉ hiện icon)
+
+## Fix: Mobile Dashboard Improvements
+
+- [x] Ẩn mô tả phụ "Tổng quan hoạt động kinh doanh" trên mobile (hidden sm:block)
+- [x] Thêm FAB button cố định góc phải dưới trên mobile (sm:hidden, z-50, shadow-lg)
+- [x] KPI cards 2 cột trên mobile (grid-cols-2), padding/font nhỏ hơn, truncate text
