@@ -8,7 +8,7 @@ import { generateInvoicePDF } from "./pdf";
 import { generateInvoiceExcel } from "./excel";
 import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHTML, generateStatusUpdateEmailHTML } from "./email";
 import crypto from "crypto";
-import { createPayOSPaymentLink } from "./payos";
+import { createPayOSPaymentLink, getPayOSPaymentStatus } from "./payos";
 
 export const appRouter = router({
   system: systemRouter,
@@ -331,6 +331,8 @@ export const appRouter = router({
               const origin = input.origin || "";
               const reviewUrl = reviewToken ? `${origin}/review/${reviewToken}` : undefined;
               const trackUrl = `${origin}/track-order`;
+              // Use custom payment page URL instead of PayOS checkout URL directly
+              const paymentPageUrl = origin ? `${origin}/pay/${invoice.id}` : (paymentUrl || "");
               const emailType = input.newStatus as "CREATED" | "PAID" | "SHIPPING" | "WARRANTY";
               const customTemplate = await db.getEmailTemplateByType(ctx.user.id, emailType).catch(() => null);
               const replaceVars = (str: string) => str
@@ -341,7 +343,7 @@ export const appRouter = router({
                 .replace(/{{trackUrl}}/g, trackUrl)
                 .replace(/{{reviewUrl}}/g, reviewUrl || "")
                 .replace(/{{companyName}}/g, companyName)
-                .replace(/{{paymentUrl}}/g, paymentUrl || "");
+                .replace(/{{paymentUrl}}/g, paymentPageUrl);
               let html: string;
               let subject: string;
               if (customTemplate) {
@@ -358,7 +360,7 @@ export const appRouter = router({
                   paidAt: new Date(),
                 });
                 subject = `Xác Nhận Thanh Toán Đơn Hàng ${invoice.invoiceNumber}`;
-              } else if (input.newStatus === "CREATED" && paymentUrl) {
+              } else if (input.newStatus === "CREATED" && paymentPageUrl) {
                 // Use invoice email template with payment link when regenerating QR
                 html = generateInvoiceEmailHTML({
                   invoiceNumber: invoice.invoiceNumber,
@@ -366,7 +368,7 @@ export const appRouter = router({
                   totalAmount: Number(invoice.totalAmount),
                   currency: invoice.currency || "VND",
                   companyName,
-                  paymentUrl,
+                  paymentUrl: paymentPageUrl,
                 });
                 subject = `Hóa Đơn ${invoice.invoiceNumber} - Link Thanh Toán Mới`;
               } else {
@@ -411,6 +413,80 @@ export const appRouter = router({
       }),
 
     // Public: get invoices by customer email (for order tracking page)
+    getPaymentInfo: publicProcedure
+      .input(z.object({ invoiceId: z.number() }))
+      .query(async ({ input }) => {
+        const invoice = await db.getInvoiceById(input.invoiceId);
+        if (!invoice) throw new Error("Invoice not found");
+        // Only return safe public fields - no internal data
+        const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : undefined;
+        const items = await db.getInvoiceItemsByInvoiceId(invoice.id);
+        // Get company info from owner's settings
+        const settings = await db.getUserSettings(invoice.userId);
+        return {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          status: invoice.status,
+          totalAmount: invoice.totalAmount,
+          subtotal: invoice.subtotal,
+          taxAmount: invoice.taxAmount,
+          discountAmount: invoice.discountAmount,
+          currency: invoice.currency,
+          qrCode: invoice.qrCode,
+          paymentUrl: invoice.paymentUrl,
+          expiresAt: invoice.expiresAt,
+          createdAt: invoice.createdAt,
+          notes: invoice.notes,
+          customerName: customer?.name || "Khách Hàng",
+          companyName: settings?.companyName || "Công Ty",
+          companyPhone: settings?.companyPhone || "",
+          companyEmail: settings?.companyEmail || "",
+          items: items.map(item => ({
+            name: item.name,
+            quantity: typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity,
+            unitPrice: typeof item.unitPrice === "string" ? parseFloat(item.unitPrice) : item.unitPrice,
+            totalAmount: typeof item.totalAmount === "string" ? parseFloat(item.totalAmount) : item.totalAmount,
+          })),
+        };
+      }),
+    checkPaymentStatus: publicProcedure
+      .input(z.object({ invoiceId: z.number() }))
+      .query(async ({ input }) => {
+        const invoice = await db.getInvoiceById(input.invoiceId);
+        if (!invoice) throw new Error("Invoice not found");
+        // If already paid in our DB, return immediately
+        if (invoice.status === "PAID") {
+          return { status: "PAID", paid: true };
+        }
+        // If has paymentTransactionId (orderCode stored as string), check PayOS for latest status
+        if (invoice.paymentTransactionId) {
+          try {
+            const orderCode = parseInt(invoice.paymentTransactionId);
+            if (!isNaN(orderCode)) {
+              const gatewayConfig = await db.getPaymentGatewaysConfigByUserId(invoice.userId);
+              if (gatewayConfig?.payosClientId && gatewayConfig?.payosApiKey) {
+                const payosStatus = await getPayOSPaymentStatus(
+                  {
+                    clientId: gatewayConfig.payosClientId,
+                    apiKey: gatewayConfig.payosApiKey,
+                    checksumKey: gatewayConfig.payosChecksumKey || "",
+                  },
+                  orderCode
+                );
+                if (payosStatus.status === "PAID") {
+                  // Update our DB
+                  await db.updateInvoice(invoice.id, { status: "PAID", paidAt: new Date() });
+                  return { status: "PAID" as const, paid: true };
+                }
+                return { status: payosStatus.status, paid: false };
+              }
+            }
+          } catch (e) {
+            // Ignore PayOS check errors, return DB status
+          }
+        }
+        return { status: invoice.status ?? "CREATED", paid: false };
+      }),
     getByEmail: publicProcedure
       .input(z.object({ email: z.string().email() }))
       .query(async ({ input }) => {
@@ -1067,21 +1143,24 @@ export const appRouter = router({
   // Email Notificationss
   email: router({
     sendInvoice: protectedProcedure
-      .input(z.object({ invoiceId: z.number(), recipientEmail: z.string().email() }))
+      .input(z.object({ invoiceId: z.number(), recipientEmail: z.string().email(), origin: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
         const invoice = await db.getInvoiceById(input.invoiceId);
         if (!invoice || invoice.userId !== ctx.user.id) {
           throw new Error("Invoice not found");
         }
-        
+        const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+        const userSettings = await db.getUserSettings(ctx.user.id);
+        // Use custom payment page instead of PayOS checkout URL directly
+        const paymentPageUrl = input.origin ? `${input.origin}/pay/${invoice.id}` : (invoice.paymentUrl || undefined);
         const html = generateInvoiceEmailHTML({
           invoiceNumber: invoice.invoiceNumber,
-          customerName: "Customer Name",
+          customerName: customer?.name || "Khách Hàng",
           totalAmount: typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount,
           currency: invoice.currency || "VND",
-          companyName: "Your Company",
-          paymentUrl: invoice.paymentUrl || undefined,
+          companyName: userSettings?.companyName || "Công Ty",
+          paymentUrl: paymentPageUrl,
         });
         
         const success = await sendEmail({

@@ -36,6 +36,7 @@ const Reminders = lazy(() => import("./pages/Reminders"));
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
 const PublicFeedbacks = lazy(() => import("./pages/PublicFeedbacks"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 
 // Loading fallback
 const PageLoader = () => (
@@ -55,7 +56,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require auth (always accessible)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -88,6 +89,7 @@ function Router() {
           <Route path="/feedbacks-public" component={() => <PublicFeedbacks />} />
           <Route path="/review/:token" component={() => <ReviewPage />} />
           <Route path="/thank-you" component={() => <ThankYou />} />
+          <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
         </Switch>
       </Suspense>
     );

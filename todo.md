@@ -309,3 +309,12 @@
 - [x] Nhúng mã QR PayOS vào PDF hóa đơn (hiển thị khi có paymentUrl)
 - [x] Cập nhật InvoiceData interface để nhận paymentUrl
 - [x] Cập nhật các procedure gọi generateInvoicePDF để truyền paymentUrl
+
+## Tính Năng: Trang Thanh Toán Tùy Chỉnh
+
+- [x] Thêm procedure `invoices.getPaymentInfo` - trả về qrCode, thông tin hóa đơn (public, không cần login)
+- [x] Thêm procedure `invoices.checkPaymentStatus` - polling trạng thái thanh toán từ PayOS
+- [x] Tạo trang /pay/:invoiceId - hiển thị QR PayOS, thông tin đơn, đếm ngược hết hạn
+- [x] Trang tự động polling và redirect về /thank-you khi thanh toán thành công
+- [x] Cập nhật email template dùng link /pay/:invoiceId thay vì checkoutUrl PayOS trực tiếp
+- [x] Cập nhật InvoiceDetail để nút "Gửi Email" dùng /pay/:invoiceId trong email

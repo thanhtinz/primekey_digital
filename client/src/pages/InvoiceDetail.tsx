@@ -116,7 +116,7 @@ export default function InvoiceDetail() {
     }
     setIsSendingEmail(true);
     try {
-      await sendEmailMutation.mutateAsync({ invoiceId, recipientEmail: invoice.customerEmail });
+      await sendEmailMutation.mutateAsync({ invoiceId, recipientEmail: invoice.customerEmail, origin: window.location.origin });
       toast.success("Đã gửi email hóa đơn thành công");
     } catch (err: any) {
       toast.error(err.message || "Gửi email thất bại");
