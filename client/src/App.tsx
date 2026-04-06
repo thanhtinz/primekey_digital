@@ -1,41 +1,46 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation, Redirect } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import CreateInvoice from "./pages/CreateInvoice";
-import InvoiceHistory from "./pages/InvoiceHistory";
-import Customers from "./pages/Customers";
-import Products from "./pages/Products";
-import InvoiceTemplates from "./pages/InvoiceTemplates";
-// import InvoiceTemplatePreview from "./pages/InvoiceTemplatePreview";
-import EditInvoiceTemplate from "./pages/EditInvoiceTemplate";
-import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
-import PayOSSettings from "./pages/PayOSSettings";
-import PayPalSettings from "./pages/PayPalSettings";
-import DashboardLayout from "./components/DashboardLayoutCustom";
-import InvoiceDetail from "./pages/InvoiceDetail";
-import CustomerDetail from "./pages/CustomerDetail";
+import { Loader2 } from "lucide-react";
+
+// Lazy load all pages for code splitting
+const Login = lazy(() => import("./pages/Login"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CreateInvoice = lazy(() => import("./pages/CreateInvoice"));
+const InvoiceHistory = lazy(() => import("./pages/InvoiceHistory"));
+const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
+const Customers = lazy(() => import("./pages/Customers"));
+const CustomerDetail = lazy(() => import("./pages/CustomerDetail"));
+const Products = lazy(() => import("./pages/Products"));
+const InvoiceTemplates = lazy(() => import("./pages/InvoiceTemplates"));
+const EditInvoiceTemplate = lazy(() => import("./pages/EditInvoiceTemplate"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Settings = lazy(() => import("./pages/Settings"));
+const PayOSSettings = lazy(() => import("./pages/PayOSSettings"));
+const PayPalSettings = lazy(() => import("./pages/PayPalSettings"));
+
+// Loading fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-background">
+    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+  </div>
+);
 
 // Placeholder pages
 const PlaceholderPage = ({ title }: { title: string }) => (
-  <DashboardLayout>
-    <div className="text-center py-12">
-      <h1 className="text-3xl font-bold mb-4">{title}</h1>
-      <p className="text-gray-600">Trang này đang được phát triển...</p>
-    </div>
-  </DashboardLayout>
+  <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
+    <h1 className="text-3xl font-bold mb-4">{title}</h1>
+    <p className="text-muted-foreground">Trang này không tồn tại.</p>
+  </div>
 );
 
 function Router() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if user is logged in by trying to fetch auth info
     const checkAuth = async () => {
       try {
         const response = await fetch("/api/auth/me");
@@ -53,36 +58,40 @@ function Router() {
   }, []);
 
   if (isAuthenticated === null) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <PageLoader />;
   }
 
   if (!isAuthenticated) {
     return (
-      <Switch>
-        <Route path="/" component={() => <Login onLoginSuccess={() => setIsAuthenticated(true)} />} />
-        <Route component={() => <Login onLoginSuccess={() => setIsAuthenticated(true)} />} />
-      </Switch>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          <Route path="/" component={() => <Login onLoginSuccess={() => setIsAuthenticated(true)} />} />
+          <Route component={() => <Login onLoginSuccess={() => setIsAuthenticated(true)} />} />
+        </Switch>
+      </Suspense>
     );
   }
 
   return (
-    <Switch>
-      <Route path="/dashboard" component={() => <Dashboard />} />
-      <Route path="/create-invoice" component={() => <CreateInvoice />} />
-      <Route path="/invoices" component={() => <InvoiceHistory />} />
-      <Route path="/invoices/:id" component={() => <InvoiceDetail />} />
-      <Route path="/customers" component={() => <Customers />} />
-      <Route path="/customers/:id" component={() => <CustomerDetail />} />
-      <Route path="/products" component={() => <Products />} />
-      <Route path="/templates" component={() => <InvoiceTemplates />} />
-      <Route path="/templates/:id/edit" component={() => <EditInvoiceTemplate />} />
-      <Route path="/reports" component={() => <Reports />} />
-      <Route path="/settings" component={() => <Settings />} />
-      <Route path="/settings/payos" component={() => <PayOSSettings />} />
-      <Route path="/settings/paypal" component={() => <PayPalSettings />} />
-      <Route path="/"><Redirect to="/dashboard" /></Route>
-      <Route component={() => <PlaceholderPage title="404 - Không Tìm Thấy" />} />
-    </Switch>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
+        <Route path="/dashboard" component={() => <Dashboard />} />
+        <Route path="/create-invoice" component={() => <CreateInvoice />} />
+        <Route path="/invoices/:id" component={() => <InvoiceDetail />} />
+        <Route path="/invoices" component={() => <InvoiceHistory />} />
+        <Route path="/customers/:id" component={() => <CustomerDetail />} />
+        <Route path="/customers" component={() => <Customers />} />
+        <Route path="/products" component={() => <Products />} />
+        <Route path="/templates/:id/edit" component={() => <EditInvoiceTemplate />} />
+        <Route path="/templates" component={() => <InvoiceTemplates />} />
+        <Route path="/reports" component={() => <Reports />} />
+        <Route path="/settings/payos" component={() => <PayOSSettings />} />
+        <Route path="/settings/paypal" component={() => <PayPalSettings />} />
+        <Route path="/settings" component={() => <Settings />} />
+        <Route path="/"><Redirect to="/dashboard" /></Route>
+        <Route component={() => <PlaceholderPage title="404 - Không Tìm Thấy" />} />
+      </Switch>
+    </Suspense>
   );
 }
 
