@@ -415,3 +415,12 @@
 - [x] Thêm hook useScrollReveal với Intersection Observer (threshold 0.12)
 - [x] Áp dụng fade-in-up animation cho 7 sections: hero, stats, howItWorks, features, quickAccess, testimonials, cta
 - [x] TypeScript: 0 errors
+
+## Phase 25: Reset Users & UI Improvements
+
+- [x] Xóa toàn bộ users trong DB và tạo lại admin tinklh/tinklh (email: tinklh@invoiceprime.com, role: admin)
+- [x] Logo công ty vào navbar landing page (lấy từ defaultTemplate.logo, fallback initials)
+- [x] Logo công ty vào footer landing page (cùng nguồn)
+- [x] getPublicInfo cập nhật trả về companyLogo từ invoiceTemplates
+- [x] Testimonials lấy từ reviews.getPublic (tối đa 6), fallback về mẫu nếu chưa có
+- [x] TypeScript: 0 errors

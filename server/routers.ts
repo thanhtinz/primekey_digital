@@ -1127,7 +1127,7 @@ export const appRouter = router({
     getPublicInfo: publicProcedure.query(async () => {
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
-      const { userSettings } = await import("../drizzle/schema");
+      const { userSettings, invoiceTemplates } = await import("../drizzle/schema");
       if (!drizzleDb) return null;
       // Lấy settings của owner (user đầu tiên trong hệ thống)
       const rows = await drizzleDb.select({
@@ -1137,7 +1137,13 @@ export const appRouter = router({
         companyAddress: userSettings.companyAddress,
         website: userSettings.website,
       }).from(userSettings).limit(1);
-      return rows[0] ?? null;
+      // Lấy logo từ default template
+      const templateRows = await drizzleDb.select({
+        logo: invoiceTemplates.logo,
+      }).from(invoiceTemplates).limit(1);
+      const companyLogo = templateRows[0]?.logo ?? null;
+      const base = rows[0] ?? { companyName: null, companyEmail: null, companyPhone: null, companyAddress: null, website: null };
+      return { ...base, companyLogo };
     }),
      get: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");

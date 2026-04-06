@@ -36,6 +36,7 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { revealed, observe } = useScrollReveal();
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
+  const { data: realReviews } = trpc.reviews.getPublic.useQuery();
 
   const navLinks = [
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
@@ -152,10 +153,20 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <button onClick={() => setLocation("/")} className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <span className="text-white font-bold text-sm">IP</span>
-            </div>
-            <span className="font-bold text-lg hidden sm:block">Invoice Prime</span>
+            {publicInfo?.companyLogo ? (
+              <img
+                src={publicInfo.companyLogo}
+                alt={publicInfo?.companyName || "Logo"}
+                className="w-9 h-9 rounded-xl object-contain bg-white/10"
+              />
+            ) : (
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <span className="text-white font-bold text-sm">
+                  {publicInfo?.companyName ? publicInfo.companyName.slice(0, 2).toUpperCase() : "IP"}
+                </span>
+              </div>
+            )}
+            <span className="font-bold text-lg hidden sm:block">{publicInfo?.companyName || "Invoice Prime"}</span>
           </button>
 
           <div className="hidden md:flex items-center gap-1">
@@ -472,29 +483,68 @@ export default function LandingPage() {
             <p className="text-slate-400">Được tin dùng bởi hàng trăm khách hàng</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <Card key={i} className="bg-white/5 border-white/10 hover:bg-white/8 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-1 mb-4">
-                    {[1,2,3,4,5].map(s => (
-                      <Star key={s} className={`h-4 w-4 ${s <= t.stars ? "text-yellow-400 fill-yellow-400" : "text-slate-600"}`} />
-                    ))}
-                  </div>
-                  <p className="text-slate-300 text-sm leading-relaxed mb-5 italic">"{t.content}"</p>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 bg-gradient-to-br ${t.avatarColor} rounded-full flex items-center justify-center flex-shrink-0`}>
-                      <span className="text-white font-bold text-xs">{t.avatar}</span>
+          {/* Dùng reviews thực nếu có, fallback về testimonials mẫu nếu chưa có */}
+          {realReviews && realReviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {realReviews.slice(0, 6).map((review, i) => {
+                const avatarColors = [
+                  "from-pink-400 to-rose-500",
+                  "from-blue-400 to-indigo-500",
+                  "from-green-400 to-teal-500",
+                  "from-yellow-400 to-orange-500",
+                  "from-purple-400 to-violet-500",
+                  "from-cyan-400 to-sky-500",
+                ];
+                const name = review.customerName || "Khách hàng";
+                const initials = name.split(" ").map((w: string) => w[0]).slice(-2).join("").toUpperCase();
+                return (
+                  <Card key={review.id} className="bg-white/5 border-white/10 hover:bg-white/8 transition-all">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-1 mb-4">
+                        {[1,2,3,4,5].map(s => (
+                          <Star key={s} className={`h-4 w-4 ${s <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-slate-600"}`} />
+                        ))}
+                      </div>
+                      <p className="text-slate-300 text-sm leading-relaxed mb-5 italic">"{review.comment || "Sản phẩm tốt, dịch vụ chuyên nghiệp."}"</p>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 bg-gradient-to-br ${avatarColors[i % avatarColors.length]} rounded-full flex items-center justify-center flex-shrink-0`}>
+                          <span className="text-white font-bold text-xs">{initials}</span>
+                        </div>
+                        <div>
+                          <div className="text-white font-semibold text-sm">{name}</div>
+                          <div className="text-slate-500 text-xs">{review.productName || "Khách hàng"}</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {testimonials.map((t, i) => (
+                <Card key={i} className="bg-white/5 border-white/10 hover:bg-white/8 transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-1 mb-4">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={`h-4 w-4 ${s <= t.stars ? "text-yellow-400 fill-yellow-400" : "text-slate-600"}`} />
+                      ))}
                     </div>
-                    <div>
-                      <div className="text-white font-semibold text-sm">{t.name}</div>
-                      <div className="text-slate-500 text-xs">{t.role}</div>
+                    <p className="text-slate-300 text-sm leading-relaxed mb-5 italic">"{t.content}"</p>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 bg-gradient-to-br ${t.avatarColor} rounded-full flex items-center justify-center flex-shrink-0`}>
+                        <span className="text-white font-bold text-xs">{t.avatar}</span>
+                      </div>
+                      <div>
+                        <div className="text-white font-semibold text-sm">{t.name}</div>
+                        <div className="text-slate-500 text-xs">{t.role}</div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -547,9 +597,17 @@ export default function LandingPage() {
             {/* Brand */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <span className="text-white font-bold text-sm">{publicInfo?.companyName ? publicInfo.companyName.slice(0,2).toUpperCase() : "IP"}</span>
-                </div>
+                {publicInfo?.companyLogo ? (
+                  <img
+                    src={publicInfo.companyLogo}
+                    alt={publicInfo?.companyName || "Logo"}
+                    className="w-9 h-9 rounded-xl object-contain bg-white/10"
+                  />
+                ) : (
+                  <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <span className="text-white font-bold text-sm">{publicInfo?.companyName ? publicInfo.companyName.slice(0,2).toUpperCase() : "IP"}</span>
+                  </div>
+                )}
                 <span className="font-bold text-white text-lg">{publicInfo?.companyName || "Invoice Prime"}</span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">
