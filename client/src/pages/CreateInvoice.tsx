@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Save, Loader2, ArrowLeft, User, Package } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, ArrowLeft, User, Package, Eye, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -15,6 +15,11 @@ interface InvoiceItem {
   quantity: number;
   unitPrice: number;
   taxRate: number;
+}
+
+// Format date to YYYY-MM-DD for input[type=date]
+function toDateInputValue(date: Date): string {
+  return date.toISOString().split("T")[0];
 }
 
 export default function CreateInvoice() {
@@ -33,6 +38,11 @@ export default function CreateInvoice() {
   const [notes, setNotes] = useState("");
   const [templateId, setTemplateId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+
+  // Due date: default 7 ngày từ hôm nay
+  const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const [dueDateStr, setDueDateStr] = useState<string>(toDateInputValue(defaultDueDate));
 
   // Load customers, products and templates
   const { data: customers = [] } = trpc.customers.list.useQuery();
@@ -41,6 +51,7 @@ export default function CreateInvoice() {
 
   const createInvoiceMutation = trpc.invoices.create.useMutation();
   const createCustomerMutation = trpc.customers.create.useMutation();
+  const previewPDFMutation = trpc.pdf.previewInvoice.useMutation();
   const utils = trpc.useUtils();
 
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
@@ -89,6 +100,53 @@ export default function CreateInvoice() {
     return `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
   };
 
+  const getDueDate = (): Date => {
+    if (dueDateStr) {
+      const d = new Date(dueDateStr);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  };
+
+  const handlePreviewPDF = async () => {
+    const validItems = items.filter(item => item.description.trim());
+    if (validItems.length === 0) {
+      toast.error("Vui lòng thêm ít nhất một sản phẩm/dịch vụ để xem trước");
+      return;
+    }
+    setIsPreviewing(true);
+    try {
+      const result = await previewPDFMutation.mutateAsync({
+        invoiceNumber: generateInvoiceNumber(),
+        dueDate: getDueDate(),
+        customerName: customerName || "Khách Hàng",
+        customerEmail: customerEmail || "email@example.com",
+        customerAddress: customerAddress || undefined,
+        currency,
+        items: validItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          taxRate: item.taxRate,
+        })),
+        discountPercent: discountPercent || undefined,
+        notes: notes || undefined,
+      });
+
+      // Mở PDF trong tab mới
+      const byteArray = Uint8Array.from(atob(result.buffer), c => c.charCodeAt(0));
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      toast.success("Đang mở xem trước PDF...");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không thể tạo xem trước PDF");
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
   const handleCreateInvoice = async () => {
     if (!customerName.trim()) {
       toast.error("Vui lòng nhập tên khách hàng");
@@ -118,7 +176,7 @@ export default function CreateInvoice() {
 
       // Create new customer if not using existing
       if (!useExistingCustomer || !customerId) {
-        const result = await createCustomerMutation.mutateAsync({
+        await createCustomerMutation.mutateAsync({
           name: customerName,
           email: customerEmail,
           phone: customerPhone || undefined,
@@ -140,7 +198,7 @@ export default function CreateInvoice() {
         customerId: finalCustomerId,
         invoiceNumber: generateInvoiceNumber(),
         issueDate: new Date(),
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        dueDate: getDueDate(),
         currency,
         subtotal,
         taxAmount,
@@ -322,7 +380,7 @@ export default function CreateInvoice() {
                           />
                         )}
                       </div>
-                      {/* Delete button - visible on all sizes */}
+                      {/* Delete button - visible on mobile */}
                       <div className="col-span-1 sm:hidden flex justify-end">
                         <button
                           onClick={() => removeItem(item.id)}
@@ -462,6 +520,24 @@ export default function CreateInvoice() {
                   </Select>
                 </div>
 
+                {/* Due Date Picker */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                    Ngày Hết Hạn Thanh Toán
+                  </label>
+                  <Input
+                    type="date"
+                    value={dueDateStr}
+                    min={toDateInputValue(new Date())}
+                    onChange={(e) => setDueDateStr(e.target.value)}
+                    className="text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Mặc định: 7 ngày kể từ hôm nay
+                  </p>
+                </div>
+
                 {templates.length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Mẫu Hóa Đơn</label>
@@ -523,9 +599,23 @@ export default function CreateInvoice() {
 
             {/* Actions */}
             <div className="space-y-2">
+              {/* Preview PDF Button */}
+              <Button
+                onClick={handlePreviewPDF}
+                disabled={isPreviewing || isSubmitting}
+                variant="outline"
+                className="w-full gap-2 h-10 border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                {isPreviewing ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Đang tạo xem trước...</>
+                ) : (
+                  <><Eye className="h-4 w-4" />Xem Trước PDF</>
+                )}
+              </Button>
+
               <Button
                 onClick={handleCreateInvoice}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isPreviewing}
                 className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white h-11"
               >
                 {isSubmitting ? (
@@ -538,7 +628,7 @@ export default function CreateInvoice() {
                 variant="outline"
                 className="w-full"
                 onClick={() => setLocation("/invoices")}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isPreviewing}
               >
                 Hủy
               </Button>

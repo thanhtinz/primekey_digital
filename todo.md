@@ -280,3 +280,8 @@
 ### Nhóm 4: Tự Động Hóa
 - [x] Nhắc nhở đơn chưa thanh toán - trang /reminders quản lý + nút gửi ngay
 - [x] Lịch sử hoạt động - trang /activity-log hiển thị log hoạt động
+
+## Phase 22: Cải Tiến Form Tạo Hóa Đơn
+
+- [x] Due date tùy chỉnh trong form tạo hóa đơn (thay vì mặc định 7 ngày)
+- [x] Nút "Xem Trước PDF" trong form tạo hóa đơn trước khi lưu

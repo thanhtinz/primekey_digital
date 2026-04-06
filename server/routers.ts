@@ -66,15 +66,16 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
+        const { dueDate, issueDate, ...rest } = input;
         await db.createInvoice({
-          ...input,
+          ...rest,
           userId: ctx.user.id,
+          expiresAt: dueDate,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
         return { success: true };
       }),
-
     update: protectedProcedure
       .input(
         z.object({
@@ -836,9 +837,64 @@ export const appRouter = router({
           filename: `${invoice.invoiceNumber}.pdf`,
         };
       }),
+    previewInvoice: protectedProcedure
+      .input(z.object({
+        invoiceNumber: z.string(),
+        dueDate: z.date().optional(),
+        customerName: z.string(),
+        customerEmail: z.string(),
+        customerAddress: z.string().optional(),
+        currency: z.enum(["VND", "USD"]),
+        items: z.array(z.object({
+          description: z.string(),
+          quantity: z.number(),
+          unitPrice: z.number(),
+          taxRate: z.number(),
+        })),
+        discountPercent: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const userSettings = await db.getUserSettings(ctx.user.id);
+        const subtotal = input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+        const taxAmount = input.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * item.taxRate) / 100, 0);
+        const discountAmount = (subtotal * (input.discountPercent || 0)) / 100;
+        const totalAmount = subtotal + taxAmount - discountAmount;
+        const pdfBuffer = await generateInvoicePDF({
+          invoiceNumber: input.invoiceNumber || "PREVIEW",
+          issueDate: new Date(),
+          dueDate: input.dueDate,
+          customerName: input.customerName,
+          customerEmail: input.customerEmail,
+          customerAddress: input.customerAddress,
+          companyName: userSettings?.companyName || "Công Ty",
+          companyAddress: userSettings?.companyAddress || "",
+          companyPhone: userSettings?.companyPhone || "",
+          companyEmail: userSettings?.companyEmail || "",
+          companyTaxId: userSettings?.taxId || "",
+          items: input.items.map(item => ({
+            name: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            taxAmount: (item.quantity * item.unitPrice * item.taxRate) / 100,
+            totalAmount: item.quantity * item.unitPrice,
+          })),
+          subtotal,
+          taxAmount,
+          discountAmount,
+          totalAmount,
+          currency: input.currency,
+          notes: input.notes,
+        });
+        return {
+          success: true,
+          buffer: pdfBuffer.toString("base64"),
+          filename: `${input.invoiceNumber || "preview"}.pdf`,
+        };
+      }),
   }),
-
-  // Email Notifications
+  // Email Notificationss
   email: router({
     sendInvoice: protectedProcedure
       .input(z.object({ invoiceId: z.number(), recipientEmail: z.string().email() }))
