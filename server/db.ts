@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings, reviews, smtpConfig } from "../drizzle/schema";
+import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings, reviews, smtpConfig, emailTemplates } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -347,6 +347,32 @@ export async function deleteReview(id: number) {
   return db.delete(reviews).where(eq(reviews.id, id));
 }
 
+// Email Templates
+export async function getEmailTemplateByType(userId: number, type: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(emailTemplates)
+    .where(and(eq(emailTemplates.userId, userId), eq(emailTemplates.type, type as any)))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+export async function getEmailTemplatesByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailTemplates).where(eq(emailTemplates.userId, userId));
+}
+export async function upsertEmailTemplate(userId: number, type: string, data: { subject: string; htmlBody: string; isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await getEmailTemplateByType(userId, type);
+  if (existing) {
+    return db.update(emailTemplates).set({ ...data, updatedAt: new Date() })
+      .where(and(eq(emailTemplates.userId, userId), eq(emailTemplates.type, type as any)));
+  } else {
+    return db.insert(emailTemplates).values({ userId, type: type as any, ...data });
+  }
+}
+
 // SMTP Config
 export async function getSmtpConfig(userId: number) {
   const db = await getDb();
@@ -364,4 +390,11 @@ export async function upsertSmtpConfig(userId: number, data: any) {
   } else {
     return db.insert(smtpConfig).values({ userId, ...data });
   }
+}
+
+// Invoice Templates - unset all defaults for a user
+export async function unsetAllDefaultTemplates(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  return db.update(invoiceTemplates).set({ isDefault: false }).where(eq(invoiceTemplates.userId, userId));
 }

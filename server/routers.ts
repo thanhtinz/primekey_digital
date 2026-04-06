@@ -149,18 +149,35 @@ export const appRouter = router({
             const baseUrl = process.env.VITE_APP_URL || "";
             const reviewUrl = reviewToken ? `${baseUrl}/review/${reviewToken}` : undefined;
             const trackUrl = `${baseUrl}/track-order`;
-            const html = generateStatusUpdateEmailHTML({
-              invoiceNumber: invoice.invoiceNumber,
-              customerName: customer.name,
-              status: input.status,
-              statusLabel: statusLabels[input.status] || input.status,
-              companyName: userSettings?.companyName || "Invoice Prime",
-              reviewUrl,
-              trackUrl,
-            });
+            // Try to load custom email template from DB, fallback to default
+            const emailType = input.status as "CREATED" | "PAID" | "SHIPPING" | "WARRANTY" | "REVIEW";
+            const customTemplate = await db.getEmailTemplateByType(ctx.user.id, emailType).catch(() => null);
+            const companyName = userSettings?.companyName || "Invoice Prime";
+            const replaceVars = (str: string) => str
+              .replace(/{{customerName}}/g, customer.name)
+              .replace(/{{invoiceNumber}}/g, invoice.invoiceNumber)
+              .replace(/{{totalAmount}}/g, invoice.totalAmount ? `${Number(invoice.totalAmount).toLocaleString("vi-VN")} đ` : "")
+              .replace(/{{status}}/g, statusLabels[input.status] || input.status)
+              .replace(/{{trackUrl}}/g, trackUrl || "")
+              .replace(/{{reviewUrl}}/g, reviewUrl || "")
+              .replace(/{{companyName}}/g, companyName);
+            const html = customTemplate
+              ? replaceVars(customTemplate.htmlBody)
+              : generateStatusUpdateEmailHTML({
+                  invoiceNumber: invoice.invoiceNumber,
+                  customerName: customer.name,
+                  status: input.status,
+                  statusLabel: statusLabels[input.status] || input.status,
+                  companyName,
+                  reviewUrl,
+                  trackUrl,
+                });
+            const subject = customTemplate
+              ? replaceVars(customTemplate.subject)
+              : `Cập Nhật Đơn Hàng ${invoice.invoiceNumber} - ${statusLabels[input.status]}`;
             await sendEmail({
               to: customer.email,
-              subject: `Cập Nhật Đơn Hàng ${invoice.invoiceNumber} - ${statusLabels[input.status]}`,
+              subject,
               html,
               userId: ctx.user.id,
             });
@@ -1019,6 +1036,71 @@ export const appRouter = router({
           userId: ctx.user.id,
         });
         return { success };
+      }),
+  }),
+
+  emailTemplates: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      return db.getEmailTemplatesByUserId(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ type: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "REVIEW"]) }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.getEmailTemplateByType(ctx.user.id, input.type);
+      }),
+    upsert: protectedProcedure
+      .input(z.object({
+        type: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "REVIEW"]),
+        subject: z.string().min(1),
+        htmlBody: z.string().min(1),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { type, ...data } = input;
+        await db.upsertEmailTemplate(ctx.user.id, type, data);
+        return { success: true };
+      }),
+  }),
+
+  invoiceTemplates2: router({
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        companyName: z.string().optional(),
+        companyAddress: z.string().optional(),
+        companyPhone: z.string().optional(),
+        companyEmail: z.string().optional(),
+        companyTaxCode: z.string().optional(),
+        logo: z.string().optional(),
+        invoiceTitle: z.string().optional(),
+        footer: z.string().optional(),
+        headerColor: z.string().optional(),
+        accentColor: z.string().optional(),
+        textColor: z.string().optional(),
+        bgColor: z.string().optional(),
+        fontFamily: z.string().optional(),
+        showLogo: z.boolean().optional(),
+        showTaxCode: z.boolean().optional(),
+        showBankInfo: z.boolean().optional(),
+        bankInfo: z.string().optional(),
+        notes: z.string().optional(),
+        isDefault: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const template = await db.getInvoiceTemplateById(input.id);
+        if (!template || template.userId !== ctx.user.id) throw new Error("Not found");
+        const { id, ...updateData } = input;
+        // If setting as default, unset all other templates first
+        if (updateData.isDefault) {
+          await db.unsetAllDefaultTemplates(ctx.user.id);
+        }
+        await db.updateInvoiceTemplate(id, { ...updateData, updatedAt: new Date() });
+        return { success: true };
       }),
   }),
 });

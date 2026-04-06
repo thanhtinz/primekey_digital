@@ -25,6 +25,7 @@ const PayOSSettings = lazy(() => import("./pages/PayOSSettings"));
 const PayPalSettings = lazy(() => import("./pages/PayPalSettings"));
 const SmtpSettings = lazy(() => import("./pages/SmtpSettings"));
 const FeedbacksAdmin = lazy(() => import("./pages/FeedbacksAdmin"));
+const EmailTemplateEditor = lazy(() => import("./pages/EmailTemplateEditor"));
 
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
@@ -127,6 +128,7 @@ function Router() {
         <Route path="/settings/payos" component={() => isAdmin ? <PayOSSettings /> : <ForbiddenPage />} />
         <Route path="/settings/paypal" component={() => isAdmin ? <PayPalSettings /> : <ForbiddenPage />} />
         <Route path="/settings/smtp" component={() => isAdmin ? <SmtpSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/email-templates" component={() => isAdmin ? <EmailTemplateEditor /> : <ForbiddenPage />} />
         <Route path="/settings" component={() => isAdmin ? <Settings /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (

@@ -54,6 +54,7 @@ const adminNavGroups = [
     items: [
       { label: "Cài Đặt", href: "/settings", icon: Settings },
       { label: "Cấu Hình SMTP", href: "/settings/smtp", icon: Mail },
+      { label: "Mẫu Email", href: "/settings/email-templates", icon: MessageSquare },
     ],
   },
 ];

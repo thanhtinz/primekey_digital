@@ -235,3 +235,13 @@
 
 - [x] Fix sidebar bị giật/flash khi mở/đóng trên mobile - dùng CSS transform thay vì conditional render
 - [x] Loại bỏ re-render gây flash trắng khi toggle sidebar
+
+## Phase 18: Template Editors
+
+- [x] Invoice Template Editor: editor trực quan với live preview hóa đơn (màu sắc, font, logo, footer, ngân hàng)
+- [x] Invoice Template: chỉnh sửa màu sắc, logo, font, bố cục, header/footer
+- [x] Invoice Template: lưu nhiều mẫu, chọn mẫu mặc định
+- [x] Email Template Editor: editor HTML cho các mẫu email (CREATED, PAID, SHIPPING, WARRANTY, REVIEW)
+- [x] Email Template: live preview email trong iframe browser
+- [x] Email Template: lưu template vào DB, load khi gửi email
+- [x] Thêm link Mẫu Email vào sidebar admin

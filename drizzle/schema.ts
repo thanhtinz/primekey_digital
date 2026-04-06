@@ -1,4 +1,4 @@
-import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, mediumtext } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -97,6 +97,16 @@ export const invoiceTemplates = mysqlTable("invoiceTemplates", {
   logo: text("logo"), // URL to logo
   invoiceTitle: varchar("invoiceTitle", { length: 255 }).default("Hóa Đơn Bán Hàng"),
   footer: text("footer"),
+  headerColor: varchar("headerColor", { length: 20 }).default("#1e40af"),
+  accentColor: varchar("accentColor", { length: 20 }).default("#3b82f6"),
+  textColor: varchar("textColor", { length: 20 }).default("#111827"),
+  bgColor: varchar("bgColor", { length: 20 }).default("#ffffff"),
+  fontFamily: varchar("fontFamily", { length: 100 }).default("Arial"),
+  showLogo: boolean("showLogo").default(true),
+  showTaxCode: boolean("showTaxCode").default(true),
+  showBankInfo: boolean("showBankInfo").default(false),
+  bankInfo: text("bankInfo"),
+  notes: text("notes"),
   isDefault: boolean("isDefault").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -245,3 +255,18 @@ export const smtpConfig = mysqlTable("smtpConfig", {
 
 export type SmtpConfig = typeof smtpConfig.$inferSelect;
 export type InsertSmtpConfig = typeof smtpConfig.$inferInsert;
+
+// Email Templates table
+export const emailTemplates = mysqlTable("emailTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["CREATED", "PAID", "SHIPPING", "WARRANTY", "REVIEW"]).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  htmlBody: mediumtext("htmlBody").notNull(),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
