@@ -29,6 +29,13 @@
       "when": 1775486717452,
       "tag": "0003_light_doomsday",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1775488888521,
+      "tag": "0004_green_tigra",
+      "breakpoints": true
     }
   ]
 }

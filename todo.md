@@ -245,3 +245,9 @@
 - [x] Email Template: live preview email trong iframe browser
 - [x] Email Template: lưu template vào DB, load khi gửi email
 - [x] Thêm link Mẫu Email vào sidebar admin
+
+## Phase 19: Fix Invoice Template Editor
+
+- [x] Fix lỗi NOT NULL khi tạo mẫu hóa đơn (thêm default value cho companyName)
+- [x] Sau khi tạo mẫu, tự động redirect vào editor
+- [x] Editor hoạt động với live preview thực tế

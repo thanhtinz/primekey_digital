@@ -89,7 +89,7 @@ export const invoiceTemplates = mysqlTable("invoiceTemplates", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  companyName: varchar("companyName", { length: 255 }).notNull(),
+  companyName: varchar("companyName", { length: 255 }).default("").notNull(),
   companyAddress: text("companyAddress"),
   companyPhone: varchar("companyPhone", { length: 20 }),
   companyEmail: varchar("companyEmail", { length: 320 }),

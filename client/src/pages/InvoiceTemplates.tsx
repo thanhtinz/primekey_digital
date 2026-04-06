@@ -19,10 +19,14 @@ export default function InvoiceTemplates() {
   const utils = trpc.useUtils();
 
   const createTemplate = trpc.invoiceTemplates.create.useMutation({
-    onSuccess: () => {
-      toast.success("Thêm mẫu thành công!");
+    onSuccess: (data) => {
+      toast.success("Thêm mẫu thành công! Đang mở editor...");
       utils.invoiceTemplates.list.invalidate();
       resetForm();
+      // Redirect to editor immediately after creating
+      if (data?.id) {
+        setLocation(`/templates/${data.id}/edit`);
+      }
     },
     onError: (err) => toast.error(err.message || "Lỗi khi thêm mẫu"),
   });
@@ -164,12 +168,11 @@ export default function InvoiceTemplates() {
                   </Button>
                   <Button
                     onClick={() => setLocation(`/templates/${template.id}/edit`)}
-                    variant="outline"
                     size="sm"
-                    className="gap-1.5 flex-1"
+                    className="gap-1.5 flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <Edit className="h-3.5 w-3.5" />
-                    Sửa
+                    Chỉnh Sửa
                   </Button>
                   <Button
                     onClick={() => handleDelete(template.id)}

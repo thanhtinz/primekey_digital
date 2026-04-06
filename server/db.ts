@@ -165,7 +165,8 @@ export async function createDiscountCode(data: any) {
 export async function createInvoiceTemplate(data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(invoiceTemplates).values(data);
+  const result = await db.insert(invoiceTemplates).values(data);
+  return result;
 }
 
 export async function createPaymentGatewayConfig(data: any) {

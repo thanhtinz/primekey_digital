@@ -437,17 +437,17 @@ export const appRouter = router({
           isDefault: z.boolean().optional(),
         })
       )
-      .mutation(async ({ input, ctx }) => {
+       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        await db.createInvoiceTemplate({
+        const result = await db.createInvoiceTemplate({
           ...input,
           userId: ctx.user.id,
           createdAt: new Date(),
           updatedAt: new Date(),
-        });
-        return { success: true };
+        }) as any;
+        const insertId = result?.insertId || result?.[0]?.insertId;
+        return { success: true, id: insertId ? Number(insertId) : undefined };
       }),
-
     update: protectedProcedure
       .input(
         z.object({
