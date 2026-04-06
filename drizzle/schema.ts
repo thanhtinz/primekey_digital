@@ -295,3 +295,36 @@ export const reminderLogs = mysqlTable("reminderLogs", {
 
 export type ReminderLog = typeof reminderLogs.$inferSelect;
 export type InsertReminderLog = typeof reminderLogs.$inferInsert;
+// Email Campaigns table
+export const emailCampaigns = mysqlTable("emailCampaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  htmlBody: mediumtext("htmlBody").notNull(),
+  status: mysqlEnum("status", ["DRAFT", "SENDING", "SENT", "FAILED"]).default("DRAFT").notNull(),
+  targetType: mysqlEnum("targetType", ["ALL", "PAID", "UNPAID", "CUSTOM"]).default("ALL").notNull(),
+  totalRecipients: int("totalRecipients").default(0),
+  sentCount: int("sentCount").default(0),
+  failedCount: int("failedCount").default(0),
+  scheduledAt: timestamp("scheduledAt"),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
+export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
+
+// Email Campaign Recipients table
+export const emailCampaignRecipients = mysqlTable("emailCampaignRecipients", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  customerId: int("customerId"),
+  email: varchar("email", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }),
+  status: mysqlEnum("status", ["PENDING", "SENT", "FAILED"]).default("PENDING").notNull(),
+  sentAt: timestamp("sentAt"),
+  errorMessage: text("errorMessage"),
+});
+export type EmailCampaignRecipient = typeof emailCampaignRecipients.$inferSelect;
+export type InsertEmailCampaignRecipient = typeof emailCampaignRecipients.$inferInsert;

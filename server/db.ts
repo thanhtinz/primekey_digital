@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings, reviews, smtpConfig, emailTemplates } from "../drizzle/schema";
+import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings, reviews, smtpConfig, emailTemplates, emailCampaigns, emailCampaignRecipients, InsertEmailCampaign, InsertEmailCampaignRecipient } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -590,4 +590,101 @@ export async function getAllPaymentGatewaysConfigs() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(paymentGatewaysConfig);
+}
+
+export async function getTopProductsDaily(userId: number, date?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const { sql, asc } = await import("drizzle-orm");
+  const targetDate = date || new Date().toISOString().slice(0, 10);
+  return db.select({
+    name: invoiceItems.name,
+    totalQty: sql<number>`SUM(${invoiceItems.quantity})`,
+    totalRevenue: sql<number>`SUM(${invoiceItems.totalAmount})`,
+    orderCount: sql<number>`COUNT(DISTINCT ${invoiceItems.invoiceId})`,
+  }).from(invoiceItems)
+    .leftJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+    .where(and(
+      eq(invoices.userId, userId),
+      sql`DATE(${invoices.createdAt}) = ${targetDate}`,
+    ))
+    .groupBy(invoiceItems.name)
+    .orderBy(asc(sql`SUM(${invoiceItems.totalAmount})`));
+}
+
+export async function getTopCustomersByPeriod(userId: number, days: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { sql, desc, gte } = await import("drizzle-orm");
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  return db.select({
+    customerId: invoices.customerId,
+    customerName: customers.name,
+    customerEmail: customers.email,
+    orderCount: sql<number>`COUNT(*)`,
+    totalSpent: sql<number>`SUM(${invoices.totalAmount})`,
+    paidCount: sql<number>`SUM(CASE WHEN ${invoices.status} IN ('PAID','SHIPPING','WARRANTY') THEN 1 ELSE 0 END)`,
+  }).from(invoices)
+    .leftJoin(customers, eq(invoices.customerId, customers.id))
+    .where(and(
+      eq(invoices.userId, userId),
+      gte(invoices.createdAt, since),
+    ))
+    .groupBy(invoices.customerId, customers.name, customers.email)
+    .orderBy(desc(sql`SUM(${invoices.totalAmount})`))
+    .limit(20);
+}
+
+// ─── Email Campaigns ─────────────────────────────────────────────────────────
+export async function createEmailCampaign(data: InsertEmailCampaign) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(emailCampaigns).values(data);
+  return result.insertId as number;
+}
+
+export async function getEmailCampaignsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { desc } = await import("drizzle-orm");
+  return db.select().from(emailCampaigns).where(eq(emailCampaigns.userId, userId)).orderBy(desc(emailCampaigns.createdAt));
+}
+
+export async function getEmailCampaignById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(emailCampaigns).where(eq(emailCampaigns.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function updateEmailCampaign(id: number, data: Partial<InsertEmailCampaign>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(emailCampaigns).set(data).where(eq(emailCampaigns.id, id));
+}
+
+export async function deleteEmailCampaign(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.delete(emailCampaignRecipients).where(eq(emailCampaignRecipients.campaignId, id));
+  await db.delete(emailCampaigns).where(eq(emailCampaigns.id, id));
+}
+
+export async function createEmailCampaignRecipients(recipients: InsertEmailCampaignRecipient[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  if (recipients.length === 0) return;
+  await db.insert(emailCampaignRecipients).values(recipients);
+}
+
+export async function getEmailCampaignRecipients(campaignId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailCampaignRecipients).where(eq(emailCampaignRecipients.campaignId, campaignId));
+}
+
+export async function updateEmailCampaignRecipient(id: number, data: Partial<InsertEmailCampaignRecipient>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(emailCampaignRecipients).set(data).where(eq(emailCampaignRecipients.id, id));
 }

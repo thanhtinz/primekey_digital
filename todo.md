@@ -336,3 +336,38 @@
 - [x] Sửa DialogDescription warning trong 7 dialogs (Customers, InvoiceHistory, InvoiceTemplates, Products, StaffManagement x2)
 - [x] Kiểm tra TypeScript: 0 errors
 - [x] Kiểm tra console/network: không có lỗi mới
+
+## Phase 24: 5 Tính Năng Mới (Hoàn thành)
+
+### Tạo lại QR
+- [x] Thêm procedure invoices.regeneratePaymentLink (public) - tạo PayOS link mới cho invoice
+- [x] Thêm nút "Tạo lại QR" trong trang /pay/:invoiceId khi QR hết hạn hoặc chưa có
+- [x] Hiển thị loading state khi đang tạo QR mới, cập nhật QR và link thanh toán sau khi tạo
+
+### Thống kê sản phẩm & khách hàng
+- [x] Thêm procedure reports.topProductsDaily - top sản phẩm bán chạy hàng ngày, sắp xếp doanh thu thấp→cao
+- [x] Thêm procedure reports.topCustomersByPeriod - bảng xếp hạng khách hàng theo ngày/7 ngày/30 ngày
+- [x] Thêm procedure reports.getMonthlyComparison - so sánh đơn tạo vs đã thanh toán theo tháng
+- [x] Tích hợp vào trang /reports với tabs riêng biệt
+
+### Email Campaigns
+- [x] Tạo bảng email_campaigns và email_campaign_recipients trong DB schema
+- [x] Thêm procedure campaigns.create, list, send, delete, getRecipients
+- [x] Tạo trang /campaigns - quản lý campaigns (tạo, xem, gửi, xóa)
+- [x] Form tạo campaign: tiêu đề, nội dung HTML, chọn nhóm nhận (tất cả KH / theo trạng thái đơn)
+- [x] Gửi campaign email đến danh sách khách hàng đã chọn
+- [x] Hiển thị thống kê: số email đã gửi, trạng thái
+- [x] Thêm menu item "Email Campaigns" vào sidebar admin
+
+### Charts chuyên nghiệp
+- [x] Nâng cấp Reports.tsx với recharts: gradient, tooltip glass effect, responsive
+- [x] Revenue chart: AreaChart với gradient fill, ReferenceLine trung bình, tooltip chi tiết
+- [x] Invoice status chart: donut PieChart với gradient, hiển thị %
+- [x] Thêm ComposedChart (Bar + Line) so sánh đơn tạo vs đã TT + tỷ lệ chuyển đổi
+- [x] KPI cards với gradient background, ArrowUpRight/Down trend indicators
+
+### Bug Fixes
+- [x] Sửa emailTemplates.get trả về null thay vì undefined (fix "Query data cannot be undefined")
+- [x] Sửa settings.get trả về null thay vì undefined
+- [x] Sửa paymentGateways.get trả về null thay vì undefined
+- [x] TypeScript: 0 errors

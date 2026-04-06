@@ -43,6 +43,13 @@
       "when": 1775490753465,
       "tag": "0005_powerful_lizard",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1775505461571,
+      "tag": "0006_serious_master_chief",
+      "breakpoints": true
     }
   ]
 }

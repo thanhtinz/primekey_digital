@@ -39,13 +39,19 @@ export default function PaymentPage() {
 
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaid, setIsPaid] = useState(false);
+  // Local state for regenerated QR
+  const [localQrCode, setLocalQrCode] = useState<string | null>(null);
+  const [localPaymentUrl, setLocalPaymentUrl] = useState<string | null>(null);
+  const [localExpiresAt, setLocalExpiresAt] = useState<number | null>(null);
+
+  const utils = trpc.useUtils();
 
   const { data: invoice, isLoading, error } = trpc.invoices.getPaymentInfo.useQuery(
     { invoiceId: invoiceId! },
     { enabled: !!invoiceId, refetchOnWindowFocus: false }
   );
 
-  // Polling for payment status every 5 seconds
+  // Polling for payment status every 3 seconds
   const { data: statusData } = trpc.invoices.checkPaymentStatus.useQuery(
     { invoiceId: invoiceId! },
     {
@@ -54,6 +60,17 @@ export default function PaymentPage() {
       refetchOnWindowFocus: false,
     }
   );
+
+  const regenerateMutation = trpc.invoices.regeneratePaymentLink.useMutation({
+    onSuccess: (data) => {
+      setLocalQrCode(data.qrCode);
+      setLocalPaymentUrl(data.paymentUrl);
+      const expTs = new Date(data.expiresAt).getTime();
+      setLocalExpiresAt(expTs);
+      setCountdown(Math.floor((expTs - Date.now()) / 1000));
+      utils.invoices.getPaymentInfo.invalidate({ invoiceId: invoiceId! });
+    },
+  });
 
   // Watch for payment completion
   useEffect(() => {
@@ -65,18 +82,18 @@ export default function PaymentPage() {
     }
   }, [statusData, invoiceId, navigate]);
 
-  // Countdown timer
+  // Countdown timer - use localExpiresAt if available
   useEffect(() => {
-    if (!invoice?.expiresAt) return;
-    const expiresAt = new Date(invoice.expiresAt).getTime();
+    const expiresAtMs = localExpiresAt ?? (invoice?.expiresAt ? new Date(invoice.expiresAt).getTime() : null);
+    if (!expiresAtMs) return;
     const tick = () => {
-      const remaining = Math.floor((expiresAt - Date.now()) / 1000);
+      const remaining = Math.floor((expiresAtMs - Date.now()) / 1000);
       setCountdown(remaining);
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [invoice?.expiresAt]);
+  }, [invoice?.expiresAt, localExpiresAt]);
 
   if (!invoiceId) {
     return (
@@ -125,6 +142,9 @@ export default function PaymentPage() {
   const totalAmount = typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount;
   const companyLogo = (invoice as any).companyLogo as string | null;
   const accentColor = (invoice as any).accentColor as string || "#2563eb";
+  // Use local (regenerated) values if available
+  const displayQrCode = localQrCode || invoice.qrCode;
+  const displayPaymentUrl = localPaymentUrl || invoice.paymentUrl;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
@@ -177,13 +197,30 @@ export default function PaymentPage() {
           </Card>
         )}
 
-        {/* Expired state */}
+        {/* Expired state - with regenerate button */}
         {!alreadyPaid && isExpired && (
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-orange-200 bg-orange-50">
             <CardContent className="pt-6 pb-6 text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
-              <h2 className="text-xl font-bold text-red-700 mb-1">Hóa đơn đã hết hạn</h2>
-              <p className="text-red-600 text-sm">Vui lòng liên hệ người bán để được hỗ trợ.</p>
+              <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-3" />
+              <h2 className="text-xl font-bold text-orange-700 mb-2">Mã QR đã hết hạn</h2>
+              <p className="text-orange-600 text-sm mb-5">
+                Nhấn nút bên dưới để tạo mã QR mới và tiếp tục thanh toán.
+              </p>
+              <Button
+                onClick={() => regenerateMutation.mutate({ invoiceId: invoiceId!, origin: window.location.origin })}
+                disabled={regenerateMutation.isPending}
+                className="gap-2 text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                {regenerateMutation.isPending ? (
+                  <><RefreshCw className="w-4 h-4 animate-spin" /> Đang tạo mã mới...</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4" /> Tạo lại mã QR</>
+                )}
+              </Button>
+              {regenerateMutation.isError && (
+                <p className="text-red-500 text-xs mt-3">{regenerateMutation.error?.message}</p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -269,7 +306,7 @@ export default function PaymentPage() {
               </div>
 
               {/* QR Code */}
-              {invoice.qrCode ? (
+              {displayQrCode ? (
                 <div className="text-center">
                   <div className="flex items-center gap-1.5 justify-center text-xs text-slate-500 uppercase tracking-wide font-semibold mb-3">
                     <QrCode className="w-3.5 h-3.5" />
@@ -280,32 +317,73 @@ export default function PaymentPage() {
                     style={{ border: `2px solid ${accentColor}30` }}
                   >
                     <img
-                      src={`data:image/png;base64,${invoice.qrCode}`}
+                      src={`data:image/png;base64,${displayQrCode}`}
                       alt="QR Code thanh toán"
                       className="w-52 h-52 object-contain"
                     />
                   </div>
                   <p className="text-xs text-slate-500 mb-1">Hỗ trợ tất cả ứng dụng ngân hàng</p>
                   <p className="text-xs text-slate-400">MBBank · VietcomBank · Techcombank · VPBank và nhiều hơn nữa</p>
-
-                  {/* Auto-refresh indicator */}
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400">
-                    <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
-                    <span>Tự động kiểm tra trạng thái mỗi 5 giây</span>
+                  {/* Auto-refresh + regenerate */}
+                  <div className="mt-4 flex items-center justify-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
+                      <span>Tự động kiểm tra trạng thái mỗi 3 giây</span>
+                    </div>
+                    <button
+                      onClick={() => regenerateMutation.mutate({ invoiceId: invoiceId!, origin: window.location.origin })}
+                      disabled={regenerateMutation.isPending}
+                      className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 disabled:opacity-50 transition-colors"
+                    >
+                      {regenerateMutation.isPending ? "Đang tạo..." : "Tạo lại QR"}
+                    </button>
                   </div>
+                  {regenerateMutation.isError && (
+                    <p className="text-red-500 text-xs mt-2">{regenerateMutation.error?.message}</p>
+                  )}
+                  {/* Direct payment link */}
+                  {displayPaymentUrl && (
+                    <div className="mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(displayPaymentUrl, "_blank")}
+                        className="text-xs gap-1.5"
+                      >
+                        Mở trang thanh toán PayOS
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-6">
                   <QrCode className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 text-sm mb-3">Mã QR chưa được tạo</p>
-                  {invoice.paymentUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(invoice.paymentUrl!, "_blank")}
-                    >
-                      Thanh toán qua trang PayOS
-                    </Button>
+                  <p className="text-slate-500 text-sm mb-4">Mã QR chưa được tạo</p>
+                  <Button
+                    onClick={() => regenerateMutation.mutate({ invoiceId: invoiceId!, origin: window.location.origin })}
+                    disabled={regenerateMutation.isPending}
+                    className="gap-2 text-white mb-3"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {regenerateMutation.isPending ? (
+                      <><RefreshCw className="w-4 h-4 animate-spin" /> Đang tạo...</>
+                    ) : (
+                      <><RefreshCw className="w-4 h-4" /> Tạo mã QR thanh toán</>
+                    )}
+                  </Button>
+                  {regenerateMutation.isError && (
+                    <p className="text-red-500 text-xs mt-1">{regenerateMutation.error?.message}</p>
+                  )}
+                  {displayPaymentUrl && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(displayPaymentUrl, "_blank")}
+                      >
+                        Thanh toán qua trang PayOS
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}

@@ -493,6 +493,51 @@ export const appRouter = router({
         }
         return { status: invoice.status ?? "CREATED", paid: false };
       }),
+    regeneratePaymentLink: publicProcedure
+      .input(z.object({ invoiceId: z.number(), origin: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const invoice = await db.getInvoiceById(input.invoiceId);
+        if (!invoice) throw new Error("Invoice not found");
+        if (invoice.status === "PAID") throw new Error("Hóa đơn đã được thanh toán");
+        const gatewayConfig = await db.getPaymentGatewaysConfigByUserId(invoice.userId);
+        if (!gatewayConfig?.payosApiKey || !gatewayConfig?.payosClientId || !gatewayConfig?.payosChecksumKey) {
+          throw new Error("Chưa cấu hình PayOS");
+        }
+        const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+        const origin = input.origin || "";
+        const orderCode = Date.now() % 9007199254740991;
+        const payosResult = await createPayOSPaymentLink(
+          {
+            clientId: gatewayConfig.payosClientId,
+            apiKey: gatewayConfig.payosApiKey,
+            checksumKey: gatewayConfig.payosChecksumKey,
+          },
+          {
+            orderCode,
+            amount: Math.round(Number(invoice.totalAmount)),
+            description: `TT ${invoice.invoiceNumber}`.slice(0, 25),
+            buyerName: customer?.name || "Khach hang",
+            buyerEmail: customer?.email || "",
+            buyerPhone: customer?.phone || "",
+            buyerAddress: customer?.address || "",
+            returnUrl: `${origin}/track-order`,
+            cancelUrl: `${origin}/track-order`,
+            webhookUrl: `${origin}/api/webhooks/payos`,
+          }
+        );
+        const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+        await db.updateInvoice(invoice.id, {
+          paymentUrl: payosResult.checkoutUrl,
+          qrCode: payosResult.qrCode,
+          paymentTransactionId: String(orderCode),
+          expiresAt: newExpiresAt,
+        });
+        return {
+          qrCode: payosResult.qrCode,
+          paymentUrl: payosResult.checkoutUrl,
+          expiresAt: newExpiresAt,
+        };
+      }),
     getByEmail: publicProcedure
       .input(z.object({ email: z.string().email() }))
       .query(async ({ input }) => {
@@ -805,7 +850,8 @@ export const appRouter = router({
   paymentGateways: router({
     get: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
-      return db.getPaymentGatewaysConfigByUserId(ctx.user.id);
+      const config = await db.getPaymentGatewaysConfigByUserId(ctx.user.id);
+      return config ?? null;
     }),
 
     update: protectedProcedure
@@ -1012,7 +1058,6 @@ export const appRouter = router({
     getTopProducts: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
       const products = await db.getProductsByUserId(ctx.user.id);
-      // Return products with basic info (invoice items not tracked per product in current schema)
       return products.slice(0, 10).map(p => ({
         id: p.id,
         name: p.name,
@@ -1020,14 +1065,69 @@ export const appRouter = router({
         category: p.category || "",
       }));
     }),
+    topProductsDaily: protectedProcedure
+      .input(z.object({ date: z.string().optional() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const rows = await db.getTopProductsDaily(ctx.user.id, input.date);
+        return rows.map(r => ({
+          name: r.name,
+          totalQty: Number(r.totalQty) || 0,
+          totalRevenue: Number(r.totalRevenue) || 0,
+          orderCount: Number(r.orderCount) || 0,
+        }));
+      }),
+    topCustomersByPeriod: protectedProcedure
+      .input(z.object({ days: z.number().min(1).max(365).default(7) }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const rows = await db.getTopCustomersByPeriod(ctx.user.id, input.days);
+        return rows.map(r => ({
+          customerId: r.customerId,
+          customerName: r.customerName || "Khách hàng",
+          customerEmail: r.customerEmail || "",
+          orderCount: Number(r.orderCount) || 0,
+          totalSpent: Number(r.totalSpent) || 0,
+          paidCount: Number(r.paidCount) || 0,
+        }));
+      }),
+
+    getMonthlyComparison: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const invoices = await db.getInvoicesByUserId(ctx.user.id);
+      const byMonth: Record<string, { created: number; paid: number; revenue: number }> = {};
+      invoices.forEach(inv => {
+        if (!inv.createdAt) return;
+        const d = new Date(inv.createdAt);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (!byMonth[key]) byMonth[key] = { created: 0, paid: 0, revenue: 0 };
+        byMonth[key].created++;
+        if (inv.status === "PAID" || inv.status === "SHIPPING" || inv.status === "WARRANTY") {
+          byMonth[key].paid++;
+          const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
+          byMonth[key].revenue += amount;
+        }
+      });
+      return Object.entries(byMonth)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-12)
+        .map(([month, data]) => ({
+          month,
+          shortMonth: `T${parseInt(month.split("-")[1])}`,
+          created: data.created,
+          paid: data.paid,
+          revenue: data.revenue,
+          conversionRate: data.created > 0 ? Math.round(data.paid / data.created * 100) : 0,
+        }));
+    }),
   }),
   // User Settingss
   settings: router({
-    get: protectedProcedure.query(async ({ ctx }) => {
+     get: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
-      return db.getUserSettings(ctx.user.id);
+      const settings = await db.getUserSettings(ctx.user.id);
+      return settings ?? null;
     }),
-
     updateCompany: protectedProcedure
       .input(z.object({
         companyName: z.string().optional(),
@@ -1453,7 +1553,8 @@ export const appRouter = router({
       .input(z.object({ type: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "REVIEW"]) }))
       .query(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        return db.getEmailTemplateByType(ctx.user.id, input.type);
+        const template = await db.getEmailTemplateByType(ctx.user.id, input.type);
+        return template ?? null;
       }),
     upsert: protectedProcedure
       .input(z.object({
@@ -1641,6 +1742,174 @@ export const appRouter = router({
         }
         await db.updateInvoiceTemplate(id, { ...updateData, updatedAt: new Date() });
         return { success: true };
+      }),
+  }),
+
+  // ─── Email Campaigns ────────────────────────────────────────────────────────
+  campaigns: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      return db.getEmailCampaignsByUserId(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        subject: z.string().min(1),
+        htmlBody: z.string().min(1),
+        targetType: z.enum(["ALL", "PAID", "UNPAID", "CUSTOM"]).default("ALL"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const id = await db.createEmailCampaign({
+          userId: ctx.user.id,
+          name: input.name,
+          subject: input.subject,
+          htmlBody: input.htmlBody,
+          targetType: input.targetType,
+          status: "DRAFT",
+        });
+        return { id };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        subject: z.string().optional(),
+        htmlBody: z.string().optional(),
+        targetType: z.enum(["ALL", "PAID", "UNPAID", "CUSTOM"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const campaign = await db.getEmailCampaignById(input.id);
+        if (!campaign || campaign.userId !== ctx.user.id) throw new Error("Not found");
+        if (campaign.status === "SENDING") throw new Error("Không thể sửa chiến dịch đang gửi");
+        const { id, ...updateData } = input;
+        await db.updateEmailCampaign(id, updateData);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const campaign = await db.getEmailCampaignById(input.id);
+        if (!campaign || campaign.userId !== ctx.user.id) throw new Error("Not found");
+        if (campaign.status === "SENDING") throw new Error("Không thể xóa chiến dịch đang gửi");
+        await db.deleteEmailCampaign(input.id);
+        return { success: true };
+      }),
+
+    send: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const campaign = await db.getEmailCampaignById(input.id);
+        if (!campaign || campaign.userId !== ctx.user.id) throw new Error("Not found");
+        if (campaign.status === "SENDING") throw new Error("Chiến dịch đang được gửi");
+        if (campaign.status === "SENT") throw new Error("Chiến dịch đã được gửi");
+
+        // Get target customers
+        const allCustomers = await db.getCustomersByUserId(ctx.user.id);
+        let targetCustomers = allCustomers.filter(c => c.email);
+
+        if (campaign.targetType === "PAID") {
+          // Customers who have at least one paid invoice
+          const paidInvoices = await db.getInvoicesByUserId(ctx.user.id);
+          const paidCustomerIds = new Set(paidInvoices.filter(i => i.status === "PAID" || i.status === "SHIPPING" || i.status === "WARRANTY").map(i => i.customerId).filter((id): id is number => id !== null));
+          targetCustomers = targetCustomers.filter(c => paidCustomerIds.has(c.id));
+        } else if (campaign.targetType === "UNPAID") {
+          const allInvoices = await db.getInvoicesByUserId(ctx.user.id);
+          const unpaidCustomerIds = new Set(allInvoices.filter(i => i.status === "CREATED" || i.status === "EXPIRED").map(i => i.customerId).filter((id): id is number => id !== null));
+          targetCustomers = targetCustomers.filter(c => unpaidCustomerIds.has(c.id));
+        }
+
+        if (targetCustomers.length === 0) {
+          throw new Error("Không có khách hàng nào phù hợp để gửi email");
+        }
+
+        // Mark as SENDING
+        await db.updateEmailCampaign(input.id, { status: "SENDING", totalRecipients: targetCustomers.length });
+
+        // Create recipient records
+        await db.createEmailCampaignRecipients(targetCustomers.map(c => ({
+          campaignId: input.id,
+          customerId: c.id,
+          email: c.email!,
+          name: c.name,
+          status: "PENDING" as const,
+        })));
+
+        // Send emails
+        let sentCount = 0;
+        let failedCount = 0;
+        const recipients = await db.getEmailCampaignRecipients(input.id);
+
+        for (const recipient of recipients) {
+          try {
+            // Personalize HTML
+            const personalizedHtml = campaign.htmlBody
+              .replace(/\{\{name\}\}/g, recipient.name || "Quý khách")
+              .replace(/\{\{email\}\}/g, recipient.email);
+
+            const sent = await sendEmail({
+              userId: ctx.user.id,
+              to: recipient.email,
+              subject: campaign.subject,
+              html: personalizedHtml,
+            });
+
+            if (sent) {
+              sentCount++;
+              await db.updateEmailCampaignRecipient(recipient.id, { status: "SENT", sentAt: new Date() });
+            } else {
+              failedCount++;
+              await db.updateEmailCampaignRecipient(recipient.id, { status: "FAILED", errorMessage: "SMTP not configured" });
+            }
+          } catch (err: any) {
+            failedCount++;
+            await db.updateEmailCampaignRecipient(recipient.id, { status: "FAILED", errorMessage: err.message });
+          }
+        }
+
+        await db.updateEmailCampaign(input.id, {
+          status: failedCount === recipients.length ? "FAILED" : "SENT",
+          sentCount,
+          failedCount,
+          sentAt: new Date(),
+        });
+
+        return { sentCount, failedCount, total: recipients.length };
+      }),
+
+    getRecipients: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const campaign = await db.getEmailCampaignById(input.id);
+        if (!campaign || campaign.userId !== ctx.user.id) throw new Error("Not found");
+        return db.getEmailCampaignRecipients(input.id);
+      }),
+
+    previewRecipients: protectedProcedure
+      .input(z.object({ targetType: z.enum(["ALL", "PAID", "UNPAID", "CUSTOM"]) }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const allCustomers = await db.getCustomersByUserId(ctx.user.id);
+        let targetCustomers = allCustomers.filter(c => c.email);
+
+        if (input.targetType === "PAID") {
+          const paidInvoices = await db.getInvoicesByUserId(ctx.user.id);
+          const paidCustomerIds = new Set(paidInvoices.filter(i => i.status && ["PAID","SHIPPING","WARRANTY"].includes(i.status)).map(i => i.customerId).filter((id): id is number => id !== null));
+          targetCustomers = targetCustomers.filter(c => paidCustomerIds.has(c.id));
+        } else if (input.targetType === "UNPAID") {
+          const allInvoices = await db.getInvoicesByUserId(ctx.user.id);
+          const unpaidCustomerIds = new Set(allInvoices.filter(i => i.status && ["CREATED","EXPIRED"].includes(i.status)).map(i => i.customerId).filter((id): id is number => id !== null));
+          targetCustomers = targetCustomers.filter(c => unpaidCustomerIds.has(c.id));
+        }
+
+        return { count: targetCustomers.length, samples: targetCustomers.slice(0, 5).map(c => ({ name: c.name, email: c.email ?? "" })) };
       }),
   }),
 });

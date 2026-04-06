@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
-  Bell, User, Moon, Sun, Mail, MessageSquare, Search
+  Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -55,6 +55,7 @@ const adminNavGroups = [
     items: [
       { label: "Nhân Viên", href: "/staff", icon: Users },
       { label: "Nhắc Nhở", href: "/reminders", icon: Bell },
+      { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
       { label: "Lịch Sử HT", href: "/activity-log", icon: History },
       { label: "Cài Đặt", href: "/settings", icon: Settings },
       { label: "Cấu Hình SMTP", href: "/settings/smtp", icon: Mail },
