@@ -34,8 +34,9 @@ export default function CreateInvoice() {
   const [templateId, setTemplateId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load customers and templates
+  // Load customers, products and templates
   const { data: customers = [] } = trpc.customers.list.useQuery();
+  const { data: products = [] } = trpc.products.list.useQuery();
   const { data: templates = [] } = trpc.invoiceTemplates.list.useQuery();
 
   const createInvoiceMutation = trpc.invoices.create.useMutation();
@@ -58,6 +59,18 @@ export default function CreateInvoice() {
 
   const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const handleSelectProduct = (itemId: string, productId: string) => {
+    const product = products.find(p => p.id.toString() === productId);
+    if (product) {
+      const price = typeof product.price === "string" ? parseFloat(product.price) : (product.price || 0);
+      setItems(prev => prev.map(item => item.id === itemId ? {
+        ...item,
+        description: product.name,
+        unitPrice: price,
+      } : item));
+    }
   };
 
   const handleSelectCustomer = (id: string) => {
@@ -278,12 +291,25 @@ export default function CreateInvoice() {
                 {items.map((item, index) => (
                   <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-lg p-2">
                     <div className="col-span-12 sm:col-span-4">
-                      <Input
-                        placeholder={`Sản phẩm ${index + 1}`}
-                        value={item.description}
-                        onChange={(e) => updateItem(item.id, "description", e.target.value)}
-                        className="bg-white text-sm h-9"
-                      />
+                      {products.length > 0 ? (
+                        <Select onValueChange={(val) => handleSelectProduct(item.id, val)}>
+                          <SelectTrigger className="bg-white text-sm h-9">
+                            <SelectValue placeholder={item.description || `Sản phẩm ${index + 1}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map(p => (
+                              <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          placeholder={`Sản phẩm ${index + 1}`}
+                          value={item.description}
+                          onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                          className="bg-white text-sm h-9"
+                        />
+                      )}
                     </div>
                     <div className="col-span-4 sm:col-span-2">
                       <Input

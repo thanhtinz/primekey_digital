@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
-  Bell, User
+  Bell, User, Moon, Sun
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -61,6 +62,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [location, setLocation] = useLocation();
   const logoutMutation = trpc.auth.logout.useMutation();
   const { data: user } = trpc.auth.me.useQuery();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -96,7 +98,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     .find(item => isActive(item.href))?.label || "Invoice Prime";
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
       <aside
         className={`
@@ -191,12 +193,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-20 flex-shrink-0">
+        <header className="bg-background border-b border-border shadow-sm sticky top-0 z-20 flex-shrink-0">
           <div className="flex items-center justify-between px-4 sm:px-6 h-14">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
                 aria-label="Toggle sidebar"
               >
                 {sidebarOpen && !isMobile ? (
@@ -206,20 +208,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 )}
               </button>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400 hidden sm:block">Invoice Prime</span>
-                <ChevronRight className="h-3.5 w-3.5 text-gray-300 hidden sm:block" />
-                <span className="text-sm font-semibold text-gray-900">{currentPageTitle}</span>
+                <span className="text-sm text-muted-foreground hidden sm:block">Invoice Prime</span>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
+                <span className="text-sm font-semibold text-foreground">{currentPageTitle}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5">
               <button
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 relative"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-500 dark:text-slate-400 relative"
                 onClick={() => {}}
                 title="Thông báo"
               >
                 <Bell className="h-4.5 w-4.5" />
               </button>
+              {toggleTheme && (
+                <button
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-500 dark:text-slate-400"
+                  onClick={toggleTheme}
+                  title={theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}
+                >
+                  {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
+              )}
               {user && (
                 <button
                   onClick={() => setLocation("/settings")}
@@ -237,9 +248,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-          {children}
+        {/* Page Content */}        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">          {children}
         </main>
       </div>
     </div>

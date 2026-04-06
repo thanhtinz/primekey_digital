@@ -217,7 +217,7 @@ export default function InvoiceHistory() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setViewInvoice(inv)}
+                                onClick={() => setLocation(`/invoices/${inv.id}`)}
                                 className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
                                 title="Xem chi tiết"
                               >

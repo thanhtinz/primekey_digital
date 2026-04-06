@@ -35,7 +35,15 @@ export const appRouter = router({
         if (!invoice || invoice.userId !== ctx.user.id) {
           throw new Error("Invoice not found");
         }
-        return invoice;
+        // Fetch customer email if customerId exists
+        let customerEmail: string | null = null;
+        let customerName: string | null = null;
+        if (invoice.customerId) {
+          const customer = await db.getCustomerById(invoice.customerId);
+          customerEmail = customer?.email || null;
+          customerName = customer?.name || null;
+        }
+        return { ...invoice, customerEmail, customerName };
       }),
 
     create: protectedProcedure

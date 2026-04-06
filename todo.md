@@ -40,7 +40,7 @@
 - [x] Tạo sidebar collapse/expand animation
 - [x] Responsive sidebar trên mobile
 - [x] Fix responsive design mobile (spacing, padding, font size, layout)
-- [ ] Thêm toast notifications cho tất cả các pages
+- [x] Thêm toast notifications cho tất cả các pages
 
 ## Phase 4: Frontend - Create Invoice
 - [x] Tạo form tạo hóa đơn
@@ -53,14 +53,14 @@
 - [x] Tạo component tóm tắt (summary sidebar)
 
 ## Phase 5: Frontend - Invoice Details
-- [ ] Tạo trang chi tiết hóa đơn
-- [ ] Tạo component hiển thị thông tin hóa đơn
+- [x] Tạo trang chi tiết hóa đơn
+- [x] Tạo component hiển thị thông tin hóa đơn
 - [ ] Tạo component QR code thanh toán
 - [ ] Tạo component countdown hết hạn
-- [ ] Tạo component trạng thái thanh toán
-- [ ] Tạo nút xuất PDF
-- [ ] Tạo nút gửi email
-- [ ] Tạo nút chỉnh sửa/hủy
+- [x] Tạo component trạng thái thanh toán
+- [x] Tạo nút xuất PDF
+- [x] Tạo nút gửi email
+- [x] Tạo nút chỉnh sửa/hủy
 
 ## Phase 6: Frontend - Invoice History, Customers, Products
 - [x] Tạo trang lịch sử hóa đơn với bảng, filter, tìm kiếm
@@ -102,8 +102,8 @@
 - [x] Tạo service gửi email (xác nhận hóa đơn, thanh toán thành công)
 - [x] Tạo service xuất PDF hóa đơn
 - [ ] Tạo service xuất báo cáo Excel
-- [ ] Tạo notification system (toast)
-- [ ] Tạo dark mode toggle
+- [x] Tạo notification system (toast)
+- [x] Tạo dark mode toggle
 - [ ] Tạo auto-backup dữ liệu
 - [ ] Tạo auto-restore dữ liệu
 
@@ -146,8 +146,8 @@
 
 ### CreateInvoice
 - [x] Sửa form tính toán tự động (subtotal, tax, total)
-- [ ] Thêm customer search/autocomplete
-- [ ] Thêm product search/autocomplete
+- [x] Thêm customer search/autocomplete
+- [x] Thêm product search/autocomplete
 - [x] Kết nối với tRPC để lưu invoice thực sự
 
 ### InvoiceHistory
@@ -163,11 +163,11 @@
 ### DashboardLayout
 - [x] Sửa sidebar navigation - active state đúng
 - [x] Cải tiến user profile dropdown
-- [ ] Thêm breadcrumbs
+- [x] Thêm breadcrumbs (dạng current page title)
 
 ### General UX
 - [x] Thêm toast notifications cho tất cả actions thành công/thất bại
 - [x] Thêm confirmation dialogs cho delete actions
 - [x] Thêm empty states cho tất cả list pages
 - [x] Cải tiến loading states với skeleton
-- [ ] Sửa dark mode consistency
+- [x] Sửa dark mode consistency - thêm dark mode toggle vào header, sửa semantic colors
