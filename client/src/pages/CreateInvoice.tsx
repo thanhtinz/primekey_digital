@@ -279,78 +279,145 @@ export default function CreateInvoice() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* Header row */}
+                {/* Header row - desktop only */}
                 <div className="hidden sm:grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 px-1">
-                  <div className="col-span-4">Mô tả</div>
+                  <div className="col-span-4">Mô tả / Sản phẩm</div>
                   <div className="col-span-2 text-center">Số lượng</div>
-                  <div className="col-span-3 text-center">Đơn giá</div>
-                  <div className="col-span-2 text-center">Thuế %</div>
+                  <div className="col-span-2 text-center">Đơn giá</div>
+                  <div className="col-span-2 text-center">Thuế VAT (%)</div>
+                  <div className="col-span-1 text-center">Thành tiền</div>
                   <div className="col-span-1"></div>
                 </div>
 
                 {items.map((item, index) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-lg p-2">
-                    <div className="col-span-12 sm:col-span-4">
-                      {products.length > 0 ? (
-                        <Select onValueChange={(val) => handleSelectProduct(item.id, val)}>
-                          <SelectTrigger className="bg-white text-sm h-9">
-                            <SelectValue placeholder={item.description || `Sản phẩm ${index + 1}`} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map(p => (
-                              <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
+                  <div key={item.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    {/* Row 1: Description / Product selector */}
+                    <div className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-11 sm:col-span-4">
+                        {products.length > 0 ? (
+                          <div className="space-y-1">
+                            <Select onValueChange={(val) => handleSelectProduct(item.id, val)}>
+                              <SelectTrigger className="bg-white text-sm h-9">
+                                <SelectValue placeholder={item.description || `Chọn sản phẩm ${index + 1}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products.map(p => (
+                                  <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              placeholder="Hoặc nhập tên sản phẩm tự do..."
+                              value={item.description}
+                              onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                              className="bg-white text-xs h-8"
+                            />
+                          </div>
+                        ) : (
+                          <Input
+                            placeholder={`Tên sản phẩm / dịch vụ ${index + 1}`}
+                            value={item.description}
+                            onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                            className="bg-white text-sm h-9"
+                          />
+                        )}
+                      </div>
+                      {/* Delete button - visible on all sizes */}
+                      <div className="col-span-1 sm:hidden flex justify-end">
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          disabled={items.length === 1}
+                          className="text-red-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {/* Desktop: remaining columns */}
+                      <div className="hidden sm:contents">
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateItem(item.id, "quantity", parseFloat(e.target.value) || 1)}
+                            className="bg-white text-sm h-9 text-center"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.unitPrice}
+                            onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
+                            className="bg-white text-sm h-9"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={item.taxRate}
+                            onChange={(e) => updateItem(item.id, "taxRate", parseFloat(e.target.value) || 0)}
+                            className="bg-white text-sm h-9 text-center"
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="col-span-1 text-right text-xs font-medium text-gray-700 flex items-center justify-end">
+                          {formatCurrency(item.quantity * item.unitPrice)}
+                        </div>
+                        <div className="col-span-1 flex justify-center">
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            disabled={items.length === 1}
+                            className="text-red-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Mobile fields (SL, Giá, Thuế) */}
+                    <div className="grid grid-cols-3 gap-2 sm:hidden">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Số lượng</label>
                         <Input
-                          placeholder={`Sản phẩm ${index + 1}`}
-                          value={item.description}
-                          onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(item.id, "quantity", parseFloat(e.target.value) || 1)}
+                          className="bg-white text-sm h-9 text-center"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Đơn giá</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.unitPrice}
+                          onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
                           className="bg-white text-sm h-9"
                         />
-                      )}
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Thuế VAT (%)</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={item.taxRate}
+                          onChange={(e) => updateItem(item.id, "taxRate", parseFloat(e.target.value) || 0)}
+                          className="bg-white text-sm h-9 text-center"
+                          placeholder="0"
+                        />
+                      </div>
                     </div>
-                    <div className="col-span-4 sm:col-span-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(item.id, "quantity", parseFloat(e.target.value) || 1)}
-                        className="bg-white text-sm h-9 text-center"
-                      />
-                    </div>
-                    <div className="col-span-4 sm:col-span-3">
-                      <Input
-                        type="number"
-                        min="0"
-                        value={item.unitPrice}
-                        onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
-                        className="bg-white text-sm h-9"
-                      />
-                    </div>
-                    <div className="col-span-3 sm:col-span-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={item.taxRate}
-                        onChange={(e) => updateItem(item.id, "taxRate", parseFloat(e.target.value) || 0)}
-                        className="bg-white text-sm h-9 text-center"
-                      />
-                    </div>
-                    <div className="col-span-1 flex justify-center">
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        disabled={items.length === 1}
-                        className="text-red-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {/* Line total */}
-                    <div className="col-span-12 text-right text-xs text-gray-500 pr-1">
-                      Thành tiền: <span className="font-medium text-gray-800">{formatCurrency(item.quantity * item.unitPrice)}</span>
+
+                    {/* Line total - mobile */}
+                    <div className="sm:hidden flex justify-between items-center text-xs text-gray-500">
+                      <span>Thuế: {formatCurrency((item.quantity * item.unitPrice * item.taxRate) / 100)}</span>
+                      <span>Thành tiền: <span className="font-semibold text-gray-800">{formatCurrency(item.quantity * item.unitPrice)}</span></span>
                     </div>
                   </div>
                 ))}

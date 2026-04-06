@@ -13,7 +13,7 @@ export default function LandingPage() {
 
   const navLinks = [
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
-    { label: "Đánh Giá", href: "/feedbacks", icon: Star },
+    { label: "Đánh Giá", href: "/feedbacks-public", icon: Star },
     { label: "Đăng Nhập", href: "/login", icon: Users },
   ];
 
@@ -151,7 +151,7 @@ export default function LandingPage() {
                 Tra Cứu Đơn Hàng
               </Button>
               <Button
-                onClick={() => setLocation("/feedbacks")}
+                onClick={() => setLocation("/feedbacks-public")}
                 size="lg"
                 variant="outline"
                 className="border-white/20 text-white hover:bg-white/10 h-12 px-8 text-base gap-2"
@@ -243,7 +243,7 @@ export default function LandingPage() {
 
             <Card
               className="bg-gradient-to-br from-yellow-600/20 to-yellow-800/20 border-yellow-500/30 cursor-pointer hover:border-yellow-400/50 transition-all group"
-              onClick={() => setLocation("/feedbacks")}
+              onClick={() => setLocation("/feedbacks-public")}
             >
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
@@ -303,7 +303,7 @@ export default function LandingPage() {
             <button onClick={() => setLocation("/track-order")} className="hover:text-slate-300 transition-colors">
               Tra Cứu Đơn
             </button>
-            <button onClick={() => setLocation("/feedbacks")} className="hover:text-slate-300 transition-colors">
+            <button onClick={() => setLocation("/feedbacks-public")} className="hover:text-slate-300 transition-colors">
               Đánh Giá
             </button>
             <button onClick={() => setLocation("/login")} className="hover:text-slate-300 transition-colors">
