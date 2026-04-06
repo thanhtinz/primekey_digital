@@ -295,6 +295,7 @@ export const appRouter = router({
                   buyerAddress: customer?.address || "",
                   returnUrl: `${origin}/track-order`,
                   cancelUrl: `${origin}/track-order`,
+                  webhookUrl: `${origin}/api/webhooks/payos`,
                 }
               );
               paymentUrl = payosResult.checkoutUrl;
@@ -423,6 +424,9 @@ export const appRouter = router({
         const items = await db.getInvoiceItemsByInvoiceId(invoice.id);
         // Get company info from owner's settings
         const settings = await db.getUserSettings(invoice.userId);
+        // Get logo from default template
+        const templates = await db.getInvoiceTemplatesByUserId(invoice.userId);
+        const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
         return {
           id: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
@@ -438,9 +442,11 @@ export const appRouter = router({
           createdAt: invoice.createdAt,
           notes: invoice.notes,
           customerName: customer?.name || "Khách Hàng",
-          companyName: settings?.companyName || "Công Ty",
+          companyName: settings?.companyName || defaultTemplate?.companyName || "Công Ty",
           companyPhone: settings?.companyPhone || "",
           companyEmail: settings?.companyEmail || "",
+          companyLogo: defaultTemplate?.logo || null,
+          accentColor: defaultTemplate?.accentColor || "#2563eb",
           items: items.map(item => ({
             name: item.name,
             quantity: typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity,

@@ -82,6 +82,14 @@ export async function getInvoiceById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getInvoiceByOrderCode(orderCode: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(invoices).where(eq(invoices.paymentTransactionId, orderCode)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 // Invoice Items queries
 export async function getInvoiceItemsByInvoiceId(invoiceId: number) {
   const db = await getDb();
@@ -576,4 +584,10 @@ export async function getCustomerStats(userId: number, customerId: number) {
   }).from(invoices)
     .where(and(eq(invoices.userId, userId), eq(invoices.customerId, customerId)));
   return stats[0] || null;
+}
+
+export async function getAllPaymentGatewaysConfigs() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(paymentGatewaysConfig);
 }

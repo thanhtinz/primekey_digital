@@ -318,3 +318,11 @@
 - [x] Trang tự động polling và redirect về /thank-you khi thanh toán thành công
 - [x] Cập nhật email template dùng link /pay/:invoiceId thay vì checkoutUrl PayOS trực tiếp
 - [x] Cập nhật InvoiceDetail để nút "Gửi Email" dùng /pay/:invoiceId trong email
+
+## Tính Năng Mới (06/04/2026 - Batch 2)
+
+- [x] Nút "Sao Chép Link Thanh Toán" trong InvoiceDetail - copy link /pay/:invoiceId vào clipboard
+- [x] Logo công ty trên trang thanh toán /pay/:invoiceId - lấy từ defaultTemplate.logo
+- [x] PayOS webhook handler đầy đủ: xác minh chữ ký, cập nhật DB, gửi email xác nhận
+- [x] Truyền webhookUrl khi tạo PayOS payment link (origin + /api/webhooks/payos)
+- [x] Giảm polling interval từ 5s xuống 3s để phản hồi nhanh hơn sau webhook

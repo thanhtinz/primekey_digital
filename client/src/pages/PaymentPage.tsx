@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +39,6 @@ export default function PaymentPage() {
 
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaid, setIsPaid] = useState(false);
-  const [pollCount, setPollCount] = useState(0);
 
   const { data: invoice, isLoading, error } = trpc.invoices.getPaymentInfo.useQuery(
     { invoiceId: invoiceId! },
@@ -47,11 +46,11 @@ export default function PaymentPage() {
   );
 
   // Polling for payment status every 5 seconds
-  const { data: statusData, refetch: refetchStatus } = trpc.invoices.checkPaymentStatus.useQuery(
+  const { data: statusData } = trpc.invoices.checkPaymentStatus.useQuery(
     { invoiceId: invoiceId! },
     {
       enabled: !!invoiceId && !isPaid,
-      refetchInterval: isPaid ? false : 5000,
+      refetchInterval: isPaid ? false : 3000,
       refetchOnWindowFocus: false,
     }
   );
@@ -60,7 +59,6 @@ export default function PaymentPage() {
   useEffect(() => {
     if (statusData?.paid) {
       setIsPaid(true);
-      // Redirect to thank-you after 2 seconds
       setTimeout(() => {
         navigate(`/thank-you?invoiceId=${invoiceId}`);
       }, 2000);
@@ -71,7 +69,6 @@ export default function PaymentPage() {
   useEffect(() => {
     if (!invoice?.expiresAt) return;
     const expiresAt = new Date(invoice.expiresAt).getTime();
-
     const tick = () => {
       const remaining = Math.floor((expiresAt - Date.now()) / 1000);
       setCountdown(remaining);
@@ -126,18 +123,36 @@ export default function PaymentPage() {
   const taxAmount = typeof invoice.taxAmount === "string" ? parseFloat(invoice.taxAmount || "0") : (invoice.taxAmount || 0);
   const discountAmount = typeof invoice.discountAmount === "string" ? parseFloat(invoice.discountAmount || "0") : (invoice.discountAmount || 0);
   const totalAmount = typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount;
+  const companyLogo = (invoice as any).companyLogo as string | null;
+  const accentColor = (invoice as any).accentColor as string || "#2563eb";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-4">
 
-        {/* Header */}
+        {/* Header - Company branding */}
         <div className="text-center mb-2">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <Building2 className="w-5 h-5 text-blue-600" />
-            <span className="font-bold text-slate-800 text-lg">{invoice.companyName}</span>
-          </div>
-          <div className="flex items-center justify-center gap-4 text-sm text-slate-500">
+          {companyLogo ? (
+            <div className="flex justify-center mb-3">
+              <img
+                src={companyLogo}
+                alt={invoice.companyName}
+                className="h-16 max-w-[220px] object-contain drop-shadow-sm"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+          ) : (
+            <div className="flex justify-center mb-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+                style={{ backgroundColor: accentColor + "20" }}
+              >
+                <Building2 className="w-6 h-6" style={{ color: accentColor }} />
+              </div>
+            </div>
+          )}
+          <h1 className="font-bold text-slate-800 text-xl">{invoice.companyName}</h1>
+          <div className="flex items-center justify-center gap-4 text-sm text-slate-500 mt-1">
             {invoice.companyPhone && (
               <span className="flex items-center gap-1">
                 <Phone className="w-3.5 h-3.5" /> {invoice.companyPhone}
@@ -175,7 +190,9 @@ export default function PaymentPage() {
 
         {/* Main payment card */}
         {!alreadyPaid && !isExpired && (
-          <Card className="shadow-lg border-0">
+          <Card className="shadow-lg border-0 overflow-hidden">
+            {/* Accent top bar */}
+            <div className="h-1.5 w-full" style={{ backgroundColor: accentColor }} />
             <CardContent className="p-6">
               {/* Invoice info */}
               <div className="flex items-start justify-between mb-4">
@@ -184,7 +201,11 @@ export default function PaymentPage() {
                   <p className="font-bold text-slate-800 text-lg">{invoice.invoiceNumber}</p>
                   <p className="text-sm text-slate-500 mt-0.5">Khách hàng: {invoice.customerName}</p>
                 </div>
-                <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+                <Badge
+                  variant="outline"
+                  className="border-opacity-30"
+                  style={{ color: accentColor, borderColor: accentColor + "50", backgroundColor: accentColor + "10" }}
+                >
                   Chờ thanh toán
                 </Badge>
               </div>
@@ -243,7 +264,7 @@ export default function PaymentPage() {
                 <Separator />
                 <div className="flex justify-between font-bold text-base text-slate-800 pt-0.5">
                   <span>Tổng cộng</span>
-                  <span className="text-blue-600">{formatCurrency(totalAmount, invoice.currency || "VND")}</span>
+                  <span style={{ color: accentColor }}>{formatCurrency(totalAmount, invoice.currency || "VND")}</span>
                 </div>
               </div>
 
@@ -254,7 +275,10 @@ export default function PaymentPage() {
                     <QrCode className="w-3.5 h-3.5" />
                     Quét mã QR để thanh toán
                   </div>
-                  <div className="inline-block p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-sm mb-3">
+                  <div
+                    className="inline-block p-3 bg-white rounded-2xl shadow-sm mb-3"
+                    style={{ border: `2px solid ${accentColor}30` }}
+                  >
                     <img
                       src={`data:image/png;base64,${invoice.qrCode}`}
                       alt="QR Code thanh toán"
@@ -264,7 +288,7 @@ export default function PaymentPage() {
                   <p className="text-xs text-slate-500 mb-1">Hỗ trợ tất cả ứng dụng ngân hàng</p>
                   <p className="text-xs text-slate-400">MBBank · VietcomBank · Techcombank · VPBank và nhiều hơn nữa</p>
 
-                  {/* Manual refresh */}
+                  {/* Auto-refresh indicator */}
                   <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400">
                     <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
                     <span>Tự động kiểm tra trạng thái mỗi 5 giây</span>

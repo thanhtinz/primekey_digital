@@ -16,6 +16,7 @@ interface PaymentData {
   buyerAddress: string;
   returnUrl: string;
   cancelUrl: string;
+  webhookUrl?: string;
 }
 
 export async function createPayOSPaymentLink(
@@ -42,6 +43,7 @@ export async function createPayOSPaymentLink(
         buyerAddress: data.buyerAddress,
         returnUrl: data.returnUrl,
         cancelUrl: data.cancelUrl,
+        ...(data.webhookUrl ? { webhookUrl: data.webhookUrl } : {}),
         signature,
       }),
     });

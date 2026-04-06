@@ -203,6 +203,12 @@ export default function InvoiceDetail() {
     }
   };
 
+  const handleCopyPaymentLink = () => {
+    const url = `${window.location.origin}/pay/${invoiceId}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Đã sao chép link thanh toán! Có thể chia sẻ qua Zalo, Messenger...");
+  };
+
   const handleDuplicate = async () => {
     if (!invoice) return;
     setIsDuplicating(true);
@@ -353,7 +359,15 @@ export default function InvoiceDetail() {
             {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CopyPlus className="h-4 w-4" />}
             Nhân Bản
           </Button>
-
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyPaymentLink}
+            className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
+          >
+            <Link2 className="h-4 w-4" />
+            Sao Chép Link Thanh Toán
+          </Button>
           {/* Manual Status Transition Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -384,6 +398,22 @@ export default function InvoiceDetail() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Copy Payment Link */}
+          {invoice.paymentUrl && invoice.status === "CREATED" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const payLink = `${window.location.origin}/pay/${invoice.id}`;
+                navigator.clipboard.writeText(payLink);
+                toast.success("Đã sao chép link thanh toán");
+              }}
+              className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
+            >
+              <Link2 className="h-4 w-4" />
+              Sao Chép Link TT
+            </Button>
+          )}
           {/* Review Link */}
           {invoice.reviewToken && (
             <Button variant="outline" size="sm" onClick={handleCopyReviewLink} className="gap-2">
