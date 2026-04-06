@@ -371,3 +371,7 @@
 - [x] Sửa settings.get trả về null thay vì undefined
 - [x] Sửa paymentGateways.get trả về null thay vì undefined
 - [x] TypeScript: 0 errors
+
+## Fix: Nút Tạo Hóa Đơn Mobile
+
+- [x] Giảm kích thước nút "Tạo Hóa Đơn" trên mobile: h-8 px-2.5 text-xs, text rút gọn "Tạo Đơn" trên mobile, ẩn text "Làm mới" trên mobile (chỉ hiện icon)

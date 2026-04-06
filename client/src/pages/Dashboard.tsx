@@ -138,23 +138,24 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-sm text-gray-500 mt-0.5">Tổng quan hoạt động kinh doanh</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetchStats()}
-              className="gap-2"
+              className="gap-1.5 h-8 px-2.5 text-xs"
             >
-              <RefreshCw className="h-4 w-4" />
-              Làm mới
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Làm mới</span>
             </Button>
             <Button
               size="sm"
               onClick={() => setLocation("/create-invoice")}
-              className="gap-2 bg-blue-600 hover:bg-blue-700"
+              className="gap-1.5 h-8 px-2.5 text-xs bg-blue-600 hover:bg-blue-700"
             >
-              <Plus className="h-4 w-4" />
-              Tạo Hóa Đơn
+              <Plus className="h-3.5 w-3.5" />
+              <span className="sm:hidden">Tạo Đơn</span>
+              <span className="hidden sm:inline">Tạo Hóa Đơn</span>
             </Button>
           </div>
         </div>
