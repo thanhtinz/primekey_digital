@@ -251,3 +251,10 @@
 - [x] Fix lỗi NOT NULL khi tạo mẫu hóa đơn (thêm default value cho companyName)
 - [x] Sau khi tạo mẫu, tự động redirect vào editor
 - [x] Editor hoạt động với live preview thực tế
+
+## Phase 20: Xem Mẫu Hóa Đơn
+
+- [x] Thêm nút "Xem Mẫu" trong danh sách mẫu hóa đơn
+- [x] Modal/dialog preview toàn màn hình hiển thị mẫu hóa đơn với dữ liệu mẫu
+- [x] Thumbnail preview thu nhỏ hiển thị ngay trong card danh sách
+- [x] Nút Chỉnh Sửa có trong modal preview để vào editor ngay
