@@ -1,10 +1,11 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation, Redirect } from "wouter";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Loader2, ShieldAlert } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 // Lazy load all pages for code splitting
 const Login = lazy(() => import("./pages/Login"));
@@ -55,37 +56,21 @@ function isAlwaysPublic(path: string) {
 }
 
 function Router() {
-  const [authState, setAuthState] = useState<{
-    checked: boolean;
-    authenticated: boolean;
-    role: string | null;
-  }>({ checked: false, authenticated: false, role: null });
+  const [location] = useLocation();
 
-  const [location, setLocation] = useLocation();
+  // Use tRPC auth.me query - this uses credentials: "include" automatically
+  const { data: user, isLoading } = trpc.auth.me.useQuery(undefined, {
+    retry: false,
+    staleTime: 30_000,
+  });
 
-  const checkAuth = async () => {
-    try {
-      const response = await fetch("/api/auth/me");
-      if (response.ok) {
-        const user = await response.json();
-        setAuthState({ checked: true, authenticated: true, role: user?.role || "user" });
-        return { authenticated: true, role: user?.role || "user" };
-      } else {
-        setAuthState({ checked: true, authenticated: false, role: null });
-        return { authenticated: false, role: null };
-      }
-    } catch {
-      setAuthState({ checked: true, authenticated: false, role: null });
-      return { authenticated: false, role: null };
-    }
-  };
+  const isAuthenticated = !!user;
+  const isAdmin = user?.role === "admin";
 
-  useEffect(() => { checkAuth(); }, []);
-
-  const handleLoginSuccess = async () => {
-    await checkAuth();
-    // Use hard redirect to ensure full re-render with new auth state
-    window.location.href = "/dashboard";
+  const handleLoginSuccess = () => {
+    // After login, navigate to dashboard using hard redirect
+    // This triggers a full page reload which re-runs the tRPC auth.me query
+    window.location.replace("/dashboard");
   };
 
   // Always-public routes (track order, review, public feedbacks)
@@ -102,12 +87,12 @@ function Router() {
   }
 
   // Still loading auth state
-  if (!authState.checked) {
+  if (isLoading) {
     return <PageLoader />;
   }
 
   // Not authenticated: show landing page or login
-  if (!authState.authenticated) {
+  if (!isAuthenticated) {
     return (
       <Suspense fallback={<PageLoader />}>
         <Switch>
@@ -119,12 +104,10 @@ function Router() {
     );
   }
 
-  // Authenticated: if on login page, redirect to dashboard
-  if (location === "/login") {
+  // Authenticated: if on login or root page, redirect to dashboard
+  if (location === "/login" || location === "/") {
     return <Redirect to="/dashboard" />;
   }
-
-  const isAdmin = authState.role === "admin";
 
   return (
     <Suspense fallback={<PageLoader />}>
