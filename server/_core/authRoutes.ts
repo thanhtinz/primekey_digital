@@ -24,14 +24,20 @@ export function registerAuthRoutes(app: Express) {
   // Login route
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      const { email, password } = req.body;
-
-      if (!email || !password) {
-        res.status(400).json({ error: "Email and password are required" });
+      const { email, username, password } = req.body;
+      // Support both 'username' and 'email' fields
+      // If username provided (no @), convert to email format
+      let loginEmail = email || username || "";
+      if (!loginEmail || !password) {
+        res.status(400).json({ error: "Tên đăng nhập và mật khẩu là bắt buộc" });
         return;
       }
+      // If input doesn't contain @, treat as username and append domain
+      if (!loginEmail.includes("@")) {
+        loginEmail = `${loginEmail}@invoiceprime.com`;
+      }
 
-      const user = await authService.loginUser(email, password);
+      const user = await authService.loginUser(loginEmail, password);
 
       const sessionToken = await createSessionToken(user.id, ONE_YEAR_MS);
       const cookieOptions = getSessionCookieOptions(req);

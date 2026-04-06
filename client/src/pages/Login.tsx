@@ -1,33 +1,33 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, Loader2, Eye, EyeOff, FileText, TrendingUp, Shield, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Loader2, Eye, EyeOff, FileText, TrendingUp, Shield, CheckCircle2, User } from "lucide-react";
 
 interface LoginProps {
   onLoginSuccess: () => void;
 }
 
 export default function Login({ onLoginSuccess }: LoginProps) {
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
-  const [showLoginPass, setShowLoginPass] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPass, setShowPass] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError("");
-    if (!loginEmail || !loginPassword) {
-      setLoginError("Vui lòng nhập đầy đủ email và mật khẩu");
+    setError("");
+    if (!username || !password) {
+      setError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu");
       return;
     }
-    setLoginLoading(true);
+    setLoading(true);
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({ username, password }),
       });
       if (!response.ok) {
         const data = await response.json();
@@ -35,9 +35,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       }
       onLoginSuccess();
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : "Đăng nhập thất bại");
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
     } finally {
-      setLoginLoading(false);
+      setLoading(false);
     }
   };
 
@@ -108,44 +108,49 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 <p className="text-slate-400 text-sm">Đăng nhập để tiếp tục quản lý hóa đơn</p>
               </div>
 
-              {loginError && (
+              {error && (
                 <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>{loginError}</span>
+                  <span>{error}</span>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-300">Email</label>
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  disabled={loginLoading}
-                  required
-                  className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500/20 h-11"
-                />
+                <label className="text-sm font-medium text-slate-300">Tên đăng nhập</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="tinklh"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={loading}
+                    required
+                    autoComplete="username"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500/20 h-11 pl-10"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-300">Mật khẩu</label>
                 <div className="relative">
                   <Input
-                    type={showLoginPass ? "text" : "password"}
+                    type={showPass ? "text" : "password"}
                     placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    disabled={loginLoading}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
                     required
+                    autoComplete="current-password"
                     className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500/20 h-11 pr-10"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowLoginPass(!showLoginPass)}
+                    onClick={() => setShowPass(!showPass)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                   >
-                    {showLoginPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -153,9 +158,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               <Button
                 type="submit"
                 className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20"
-                disabled={loginLoading}
+                disabled={loading}
               >
-                {loginLoading ? (
+                {loading ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang đăng nhập...</>
                 ) : "Đăng Nhập"}
               </Button>

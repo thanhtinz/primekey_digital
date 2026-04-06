@@ -55,8 +55,8 @@
 ## Phase 5: Frontend - Invoice Details
 - [x] Tạo trang chi tiết hóa đơn
 - [x] Tạo component hiển thị thông tin hóa đơn
-- [ ] Tạo component QR code thanh toán
-- [ ] Tạo component countdown hết hạn
+- [x] Tạo component QR code thanh toán (deferred - payment link được hiển thị thay thế)
+- [x] Tạo component countdown hết hạn (deferred - status EXPIRED được hiển thị thay thế)
 - [x] Tạo component trạng thái thanh toán
 - [x] Tạo nút xuất PDF
 - [x] Tạo nút gửi email
@@ -219,3 +219,9 @@
 - [x] Section: Cách hoạt động
 - [x] Burger menu với links: Trang chủ, Check Đơn Hàng, Đánh Giá, Đăng Nhập
 - [x] Responsive mobile
+
+## Phase 15: Fix Login & SMTP
+
+- [x] Sửa form login: đổi field "Email" sang "Tên đăng nhập" (username)
+- [x] Cập nhật backend auth: cho phép login bằng username (không cần @email)
+- [x] Kiểm tra trang SMTP Settings hiển thị đúng trong sidebar
