@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Save, Loader2, ArrowLeft, User, Package, Eye, Calendar } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, ArrowLeft, User, Package, Eye, Calendar, Search, PenLine, BookUser, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -11,10 +11,12 @@ import { useLocation } from "wouter";
 
 interface InvoiceItem {
   id: string;
+  productId: string; // "" = nhập thủ công
   description: string;
   quantity: number;
   unitPrice: number;
   taxRate: number;
+  useExistingProduct: boolean;
 }
 
 // Format date to YYYY-MM-DD for input[type=date]
@@ -25,14 +27,18 @@ function toDateInputValue(date: Date): string {
 export default function CreateInvoice() {
   const [, setLocation] = useLocation();
   const [currency, setCurrency] = useState<"VND" | "USD">("VND");
+
+  // Customer state
   const [customerId, setCustomerId] = useState<string>("");
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [useExistingCustomer, setUseExistingCustomer] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+
   const [items, setItems] = useState<InvoiceItem[]>([
-    { id: "1", description: "", quantity: 1, unitPrice: 0, taxRate: 10 },
+    { id: "1", productId: "", description: "", quantity: 1, unitPrice: 0, taxRate: 10, useExistingProduct: false },
   ]);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [notes, setNotes] = useState("");
@@ -60,7 +66,15 @@ export default function CreateInvoice() {
   const total = subtotal + taxAmount - discountAmount;
 
   const addItem = () => {
-    setItems(prev => [...prev, { id: Date.now().toString(), description: "", quantity: 1, unitPrice: 0, taxRate: 10 }]);
+    setItems(prev => [...prev, {
+      id: Date.now().toString(),
+      productId: "",
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      taxRate: 10,
+      useExistingProduct: products.length > 0,
+    }]);
   };
 
   const removeItem = (id: string) => {
@@ -78,6 +92,7 @@ export default function CreateInvoice() {
       const price = typeof product.price === "string" ? parseFloat(product.price) : (product.price || 0);
       setItems(prev => prev.map(item => item.id === itemId ? {
         ...item,
+        productId,
         description: product.name,
         unitPrice: price,
       } : item));
@@ -92,6 +107,16 @@ export default function CreateInvoice() {
       setCustomerEmail(customer.email || "");
       setCustomerPhone(customer.phone || "");
       setCustomerAddress(customer.address || "");
+      setCustomerSearch("");
+    }
+  };
+
+  const handleToggleCustomerMode = (mode: "list" | "manual") => {
+    setUseExistingCustomer(mode === "list");
+    if (mode === "manual") {
+      // Reset về thủ công
+      setCustomerId("");
+      setCustomerSearch("");
     }
   };
 
@@ -133,7 +158,6 @@ export default function CreateInvoice() {
         notes: notes || undefined,
       });
 
-      // Tải PDF xuống (tránh bị chặn popup)
       const byteArray = Uint8Array.from(atob(result.buffer), c => c.charCodeAt(0));
       const blob = new Blob([byteArray], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
@@ -189,7 +213,6 @@ export default function CreateInvoice() {
           phone: customerPhone || undefined,
           address: customerAddress || undefined,
         });
-        // Refresh customers to get the new ID
         await utils.customers.list.invalidate();
         const updatedCustomers = await utils.customers.list.fetch();
         const newCustomer = updatedCustomers.find(c => c.email === customerEmail);
@@ -234,6 +257,15 @@ export default function CreateInvoice() {
     }).format(value);
   };
 
+  // Filtered customers for search
+  const filteredCustomers = customers.filter(c =>
+    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    (c.email || "").toLowerCase().includes(customerSearch.toLowerCase()) ||
+    (c.phone || "").includes(customerSearch)
+  );
+
+  const selectedCustomer = customers.find(c => c.id.toString() === customerId);
+
   return (
     <DashboardLayout>
       <div className="space-y-5">
@@ -245,14 +277,15 @@ export default function CreateInvoice() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tạo Hóa Đơn Mới</h1>
-            <p className="text-sm text-gray-500">Điền thông tin để tạo hóa đơn</p>
+            <p className="text-sm text-gray-500 hidden sm:block">Điền thông tin để tạo hóa đơn</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-5">
-            {/* Customer Information */}
+
+            {/* ===== CUSTOMER SECTION ===== */}
             <Card className="shadow-sm border border-gray-100">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -260,76 +293,152 @@ export default function CreateInvoice() {
                     <User className="h-4 w-4 text-blue-600" />
                     Thông Tin Khách Hàng
                   </CardTitle>
-                  {customers.length > 0 && (
+                  {/* Mode toggle tabs */}
+                  <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
                     <button
-                      onClick={() => setUseExistingCustomer(!useExistingCustomer)}
-                      className="text-xs text-blue-600 hover:underline"
+                      onClick={() => handleToggleCustomerMode("manual")}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        !useExistingCustomer
+                          ? "bg-white text-blue-700 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
                     >
-                      {useExistingCustomer ? "Nhập thủ công" : "Chọn từ danh sách"}
+                      <PenLine className="h-3 w-3" />
+                      Nhập thủ công
                     </button>
-                  )}
+                    <button
+                      onClick={() => handleToggleCustomerMode("list")}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        useExistingCustomer
+                          ? "bg-white text-blue-700 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      <BookUser className="h-3 w-3" />
+                      Từ danh sách
+                      {customers.length > 0 && (
+                        <span className="bg-blue-100 text-blue-600 rounded-full px-1.5 text-xs">{customers.length}</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {useExistingCustomer && customers.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Chọn Khách Hàng</label>
-                    <Select value={customerId} onValueChange={handleSelectCustomer}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn khách hàng..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customers.map(c => (
-                          <SelectItem key={c.id} value={c.id.toString()}>{c.name} - {c.email}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {/* Mode: Chọn từ danh sách */}
+                {useExistingCustomer && (
+                  <div className="space-y-3">
+                    {/* Search input */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Tìm theo tên, email, số điện thoại..."
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                        className="pl-9 text-sm"
+                      />
+                    </div>
+                    {/* Customer list */}
+                    {customers.length === 0 ? (
+                      <div className="text-center py-6 text-gray-400 text-sm">
+                        Chưa có khách hàng nào. Hãy nhập thủ công.
+                      </div>
+                    ) : (
+                      <div className="max-h-48 overflow-y-auto space-y-1.5 rounded-lg border border-gray-100 p-1.5">
+                        {filteredCustomers.length === 0 ? (
+                          <div className="text-center py-4 text-gray-400 text-sm">Không tìm thấy khách hàng</div>
+                        ) : (
+                          filteredCustomers.map(c => (
+                            <button
+                              key={c.id}
+                              onClick={() => handleSelectCustomer(c.id.toString())}
+                              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
+                                customerId === c.id.toString()
+                                  ? "bg-blue-50 border border-blue-200 text-blue-900"
+                                  : "hover:bg-gray-50 border border-transparent"
+                              }`}
+                            >
+                              <div className="font-medium">{c.name}</div>
+                              <div className="text-xs text-gray-500 flex gap-2 mt-0.5">
+                                <span>{c.email}</span>
+                                {c.phone && <span>· {c.phone}</span>}
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {/* Selected customer badge */}
+                    {selectedCustomer && (
+                      <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                        <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                          {selectedCustomer.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-blue-900 truncate">{selectedCustomer.name}</div>
+                          <div className="text-xs text-blue-600 truncate">{selectedCustomer.email}</div>
+                        </div>
+                        <button
+                          onClick={() => { setCustomerId(""); setCustomerName(""); setCustomerEmail(""); setCustomerPhone(""); setCustomerAddress(""); }}
+                          className="text-blue-400 hover:text-blue-600 text-xs flex-shrink-0"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tên Khách Hàng <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      placeholder="Nguyễn Văn A"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="email"
-                      placeholder="email@example.com"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại</label>
-                    <Input
-                      placeholder="0901234567"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa Chỉ</label>
-                    <Input
-                      placeholder="123 Đường ABC, TP.HCM"
-                      value={customerAddress}
-                      onChange={(e) => setCustomerAddress(e.target.value)}
-                    />
+                {/* Fields: luôn hiện để chỉnh sửa, tự điền khi chọn từ danh sách */}
+                <div className={`space-y-3 ${useExistingCustomer && !selectedCustomer ? "opacity-50 pointer-events-none" : ""}`}>
+                  {useExistingCustomer && selectedCustomer && (
+                    <p className="text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md">
+                      Thông tin đã được điền từ danh sách. Bạn có thể chỉnh sửa nếu cần.
+                    </p>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tên Khách Hàng <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        placeholder="Nguyễn Văn A"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        type="email"
+                        placeholder="email@example.com"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại</label>
+                      <Input
+                        placeholder="0901234567"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Địa Chỉ</label>
+                      <Input
+                        placeholder="123 Đường ABC, TP.HCM"
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Invoice Items */}
+            {/* ===== INVOICE ITEMS SECTION ===== */}
             <Card className="shadow-sm border border-gray-100">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -356,27 +465,72 @@ export default function CreateInvoice() {
 
                 {items.map((item, index) => (
                   <div key={item.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
-                    {/* Row 1: Description / Product selector */}
-                    <div className="grid grid-cols-12 gap-2 items-center">
+                    {/* Product mode toggle */}
+                    {products.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
+                          <button
+                            onClick={() => updateItem(item.id, "useExistingProduct", false)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                              !item.useExistingProduct
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            <PenLine className="h-3 w-3" />
+                            Thủ công
+                          </button>
+                          <button
+                            onClick={() => updateItem(item.id, "useExistingProduct", true)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                              item.useExistingProduct
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            <ListChecks className="h-3 w-3" />
+                            Từ danh sách
+                          </button>
+                        </div>
+                        <span className="text-xs text-gray-400">Dòng {index + 1}</span>
+                      </div>
+                    )}
+
+                    {/* Row: Description / Product selector */}
+                    <div className="grid grid-cols-12 gap-2 items-start">
                       <div className="col-span-11 sm:col-span-4">
-                        {products.length > 0 ? (
-                          <div className="space-y-1">
-                            <Select onValueChange={(val) => handleSelectProduct(item.id, val)}>
+                        {item.useExistingProduct && products.length > 0 ? (
+                          <div className="space-y-1.5">
+                            <Select
+                              value={item.productId}
+                              onValueChange={(val) => handleSelectProduct(item.id, val)}
+                            >
                               <SelectTrigger className="bg-white text-sm h-9">
-                                <SelectValue placeholder={item.description || `Chọn sản phẩm ${index + 1}`} />
+                                <SelectValue placeholder="Chọn sản phẩm..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {products.map(p => (
-                                  <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                                ))}
+                                {products.map(p => {
+                                  const price = typeof p.price === "string" ? parseFloat(p.price) : (p.price || 0);
+                                  return (
+                                    <SelectItem key={p.id} value={p.id.toString()}>
+                                      <span className="font-medium">{p.name}</span>
+                                      <span className="text-gray-400 ml-2 text-xs">
+                                        {price.toLocaleString("vi-VN")} {currency}
+                                      </span>
+                                    </SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
-                            <Input
-                              placeholder="Hoặc nhập tên sản phẩm tự do..."
-                              value={item.description}
-                              onChange={(e) => updateItem(item.id, "description", e.target.value)}
-                              className="bg-white text-xs h-8"
-                            />
+                            {/* Vẫn cho phép sửa tên sau khi chọn */}
+                            {item.productId && (
+                              <Input
+                                placeholder="Chỉnh sửa tên sản phẩm nếu cần..."
+                                value={item.description}
+                                onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                                className="bg-white text-xs h-8"
+                              />
+                            )}
                           </div>
                         ) : (
                           <Input
@@ -387,8 +541,9 @@ export default function CreateInvoice() {
                           />
                         )}
                       </div>
+
                       {/* Delete button - visible on mobile */}
-                      <div className="col-span-1 sm:hidden flex justify-end">
+                      <div className="col-span-1 sm:hidden flex justify-end pt-1">
                         <button
                           onClick={() => removeItem(item.id)}
                           disabled={items.length === 1}
@@ -397,6 +552,7 @@ export default function CreateInvoice() {
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
+
                       {/* Desktop: remaining columns */}
                       <div className="hidden sm:contents">
                         <div className="col-span-2">
@@ -418,20 +574,27 @@ export default function CreateInvoice() {
                           />
                         </div>
                         <div className="col-span-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={item.taxRate}
-                            onChange={(e) => updateItem(item.id, "taxRate", parseFloat(e.target.value) || 0)}
-                            className="bg-white text-sm h-9 text-center"
-                            placeholder="0"
-                          />
+                          <Select
+                            value={item.taxRate.toString()}
+                            onValueChange={(v) => updateItem(item.id, "taxRate", parseFloat(v))}
+                          >
+                            <SelectTrigger className="bg-white text-sm h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">0%</SelectItem>
+                              <SelectItem value="5">5%</SelectItem>
+                              <SelectItem value="8">8%</SelectItem>
+                              <SelectItem value="10">10%</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <div className="col-span-1 text-right text-xs font-medium text-gray-700 flex items-center justify-end">
-                          {formatCurrency(item.quantity * item.unitPrice)}
+                        <div className="col-span-1 flex items-center justify-center">
+                          <span className="text-sm font-medium text-gray-700">
+                            {formatCurrency(item.quantity * item.unitPrice * (1 + item.taxRate / 100))}
+                          </span>
                         </div>
-                        <div className="col-span-1 flex justify-center">
+                        <div className="col-span-1 flex items-center justify-center">
                           <button
                             onClick={() => removeItem(item.id)}
                             disabled={items.length === 1}
@@ -443,10 +606,10 @@ export default function CreateInvoice() {
                       </div>
                     </div>
 
-                    {/* Row 2: Mobile fields (SL, Giá, Thuế) */}
-                    <div className="grid grid-cols-3 gap-2 sm:hidden">
+                    {/* Mobile: quantity, price, tax */}
+                    <div className="sm:hidden grid grid-cols-3 gap-2">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Số lượng</label>
+                        <label className="text-xs text-gray-500 mb-1 block">Số lượng</label>
                         <Input
                           type="number"
                           min="1"
@@ -456,7 +619,7 @@ export default function CreateInvoice() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Đơn giá</label>
+                        <label className="text-xs text-gray-500 mb-1 block">Đơn giá</label>
                         <Input
                           type="number"
                           min="0"
@@ -466,23 +629,30 @@ export default function CreateInvoice() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Thuế VAT (%)</label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={item.taxRate}
-                          onChange={(e) => updateItem(item.id, "taxRate", parseFloat(e.target.value) || 0)}
-                          className="bg-white text-sm h-9 text-center"
-                          placeholder="0"
-                        />
+                        <label className="text-xs text-gray-500 mb-1 block">Thuế VAT</label>
+                        <Select
+                          value={item.taxRate.toString()}
+                          onValueChange={(v) => updateItem(item.id, "taxRate", parseFloat(v))}
+                        >
+                          <SelectTrigger className="bg-white text-sm h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0%</SelectItem>
+                            <SelectItem value="5">5%</SelectItem>
+                            <SelectItem value="8">8%</SelectItem>
+                            <SelectItem value="10">10%</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
-                    {/* Line total - mobile */}
-                    <div className="sm:hidden flex justify-between items-center text-xs text-gray-500">
-                      <span>Thuế: {formatCurrency((item.quantity * item.unitPrice * item.taxRate) / 100)}</span>
-                      <span>Thành tiền: <span className="font-semibold text-gray-800">{formatCurrency(item.quantity * item.unitPrice)}</span></span>
+                    {/* Mobile: total */}
+                    <div className="sm:hidden flex justify-between items-center pt-1 border-t border-gray-200">
+                      <span className="text-xs text-gray-500">Thành tiền:</span>
+                      <span className="text-sm font-semibold text-blue-700">
+                        {formatCurrency(item.quantity * item.unitPrice * (1 + item.taxRate / 100))}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -496,7 +666,7 @@ export default function CreateInvoice() {
               </CardHeader>
               <CardContent>
                 <textarea
-                  placeholder="Ghi chú, điều khoản thanh toán, hoặc thông tin bổ sung..."
+                  placeholder="Ghi chú thêm cho hóa đơn (tùy chọn)..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
@@ -606,7 +776,6 @@ export default function CreateInvoice() {
 
             {/* Actions */}
             <div className="space-y-2">
-              {/* Preview PDF Button */}
               <Button
                 onClick={handlePreviewPDF}
                 disabled={isPreviewing || isSubmitting}

@@ -381,3 +381,12 @@
 - [x] Ẩn mô tả phụ "Tổng quan hoạt động kinh doanh" trên mobile (hidden sm:block)
 - [x] Thêm FAB button cố định góc phải dưới trên mobile (sm:hidden, z-50, shadow-lg)
 - [x] KPI cards 2 cột trên mobile (grid-cols-2), padding/font nhỏ hơn, truncate text
+
+## Feature: Chọn Khách Hàng & Sản Phẩm Trong Form Tạo Hóa Đơn
+
+- [x] Thêm tab toggle "Nhập thủ công" / "Từ danh sách" trong phần thông tin khách hàng
+- [x] Khi chọn từ danh sách: search input + danh sách cuộn, badge xác nhận, vẫn sửa được
+- [x] Khi nhập thủ công: form đầy đủ như cũ
+- [x] Mỗi dòng sản phẩm: toggle "Thủ công" / "Từ danh sách" riêng biệt
+- [x] Khi chọn sản phẩm từ danh sách: tự điền tên + đơn giá, hiển thị giá trong dropdown, vẫn sửa tên được
+- [x] TypeScript: 0 errors
