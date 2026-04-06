@@ -146,7 +146,7 @@ export default function CreateInvoice() {
         taxAmount,
         discountAmount,
         totalAmount: total,
-        status: "PENDING",
+        status: "CREATED",
         notes: notes || undefined,
       });
 

@@ -1,11 +1,12 @@
-// Email helper functions
-// This is a placeholder for email integration
-// In production, you would use a service like SendGrid, Mailgun, or AWS SES
+// Email helper functions using Nodemailer
+import * as nodemailer from "nodemailer";
+import { getSmtpConfig } from "./db";
 
 interface EmailOptions {
   to: string;
   subject: string;
   html: string;
+  userId?: number; // to look up SMTP config
   attachments?: Array<{
     filename: string;
     content: Buffer;
@@ -15,18 +16,41 @@ interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    // TODO: Implement actual email sending
-    // For now, we'll just log it
-    console.log("[Email] Sending email to:", options.to);
-    console.log("[Email] Subject:", options.subject);
-    
-    // In production, you would use:
-    // - SendGrid: sgMail.send(msg)
-    // - Mailgun: mg.messages.create()
-    // - AWS SES: ses.sendEmail()
-    // - Nodemailer: transporter.sendMail()
-    
-    return true;
+    let smtpCfg = null;
+    if (options.userId) {
+      smtpCfg = await getSmtpConfig(options.userId);
+    }
+
+    if (smtpCfg && smtpCfg.enabled && smtpCfg.host && smtpCfg.user && smtpCfg.password) {
+      // Use configured SMTP
+      const transporter = nodemailer.createTransport({
+        host: smtpCfg.host,
+        port: smtpCfg.port || 587,
+        secure: smtpCfg.secure || false,
+        auth: {
+          user: smtpCfg.user,
+          pass: smtpCfg.password,
+        },
+      });
+
+      await transporter.sendMail({
+        from: `"${smtpCfg.fromName || 'Invoice Prime'}" <${smtpCfg.fromEmail || smtpCfg.user}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        attachments: options.attachments?.map(a => ({
+          filename: a.filename,
+          content: a.content,
+          contentType: a.contentType,
+        })),
+      });
+      console.log("[Email] Sent via SMTP to:", options.to);
+      return true;
+    } else {
+      // Log only (SMTP not configured)
+      console.log("[Email] SMTP not configured. Would send to:", options.to, "Subject:", options.subject);
+      return true; // Return true so app doesn't break
+    }
   } catch (error) {
     console.error("[Email] Failed to send email:", error);
     return false;
@@ -40,6 +64,7 @@ export function generateInvoiceEmailHTML(data: {
   currency: string;
   paymentUrl?: string;
   companyName: string;
+  trackUrl?: string;
 }): string {
   return `
     <!DOCTYPE html>
@@ -128,6 +153,7 @@ export function generateInvoiceEmailHTML(data: {
               <a href="${data.paymentUrl}" class="button">Thanh Toán Ngay</a>
             ` : ""}
             
+            <p>Bạn có thể theo dõi trạng thái đơn hàng tại: <a href="${data.trackUrl || '#'}" style="color:#007bff">Theo Dõi Đơn Hàng</a></p>
             <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>
             <p>Cảm ơn bạn!</p>
           </div>
@@ -135,6 +161,52 @@ export function generateInvoiceEmailHTML(data: {
           <div class="footer">
             <p>© ${new Date().getFullYear()} ${data.companyName}. Tất cả quyền được bảo lưu.</p>
           </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export function generateStatusUpdateEmailHTML(data: {
+  invoiceNumber: string;
+  customerName: string;
+  status: string;
+  statusLabel: string;
+  companyName: string;
+  reviewUrl?: string;
+  trackUrl?: string;
+}): string {
+  const statusColors: Record<string, string> = {
+    CREATED: "#3B82F6",
+    PAID: "#10B981",
+    SHIPPING: "#F59E0B",
+    WARRANTY: "#8B5CF6",
+    FAILED: "#EF4444",
+    EXPIRED: "#6B7280",
+  };
+  const color = statusColors[data.status] || "#3B82F6";
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset="UTF-8"><style>
+        body { font-family: Arial, sans-serif; color: #333; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; }
+        .header { text-align: center; border-bottom: 2px solid ${color}; padding-bottom: 20px; margin-bottom: 20px; }
+        .status-badge { display: inline-block; background: ${color}; color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold; }
+        .footer { text-align: center; border-top: 1px solid #ddd; padding-top: 20px; margin-top: 20px; color: #666; font-size: 12px; }
+      </style></head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="color:${color}">Cập Nhật Đơn Hàng</h1>
+            <div class="status-badge">${data.statusLabel}</div>
+          </div>
+          <p>Xin chào <strong>${data.customerName}</strong>,</p>
+          <p>Đơn hàng <strong>${data.invoiceNumber}</strong> của bạn đã được cập nhật trạng thái: <strong>${data.statusLabel}</strong></p>
+          ${data.trackUrl ? `<p>Theo dõi trạng thái đơn hàng: <a href="${data.trackUrl}" style="color:${color}">Xem Đơn Hàng</a></p>` : ""}
+          ${data.reviewUrl ? `<p style="margin-top:20px">Bạn có thể đánh giá đơn hàng tại: <a href="${data.reviewUrl}" style="color:${color}">Đánh Giá Ngay</a></p>` : ""}
+          <p>Cảm ơn bạn đã tin tưởng ${data.companyName}!</p>
+          <div class="footer"><p>© ${new Date().getFullYear()} ${data.companyName}</p></div>
         </div>
       </body>
     </html>

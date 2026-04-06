@@ -12,8 +12,10 @@ import { trpc } from "@/lib/trpc";
 import { useMemo } from "react";
 
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  PENDING: { label: "Chờ TT", variant: "secondary" },
+  CREATED: { label: "Tạo Đơn", variant: "secondary" },
   PAID: { label: "Đã TT", variant: "default" },
+  SHIPPING: { label: "Đang Giao", variant: "secondary" },
+  WARRANTY: { label: "Bảo Hành", variant: "outline" },
   FAILED: { label: "Thất Bại", variant: "destructive" },
   EXPIRED: { label: "Hết Hạn", variant: "outline" },
 };
@@ -54,7 +56,7 @@ export default function CustomerDetail() {
     return {
       totalInvoices: customerInvoices.length,
       paidInvoices: paid.length,
-      pendingInvoices: customerInvoices.filter(inv => inv.status === "PENDING").length,
+      pendingInvoices: customerInvoices.filter(inv => inv.status === "CREATED").length,
       totalRevenue,
     };
   }, [customerInvoices]);

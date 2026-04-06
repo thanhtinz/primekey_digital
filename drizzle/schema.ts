@@ -118,7 +118,9 @@ export const invoices = mysqlTable("invoices", {
   discountCodeId: int("discountCodeId"),
   taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0"),
   totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
-  status: mysqlEnum("status", ["PENDING", "PAID", "FAILED", "EXPIRED"]).default("PENDING"),
+  status: mysqlEnum("status", ["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]).default("CREATED"),
+  reviewToken: varchar("reviewToken", { length: 64 }),
+  reviewSubmitted: boolean("reviewSubmitted").default(false),
   paymentMethod: mysqlEnum("paymentMethod", ["PAYOS", "PAYPAL", "BANK_TRANSFER", "CASH"]),
   paymentUrl: text("paymentUrl"),
   qrCode: text("qrCode"),
@@ -205,3 +207,41 @@ export const auditLogs = mysqlTable("auditLogs", {
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// Reviews table
+export const reviews = mysqlTable("reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  invoiceId: int("invoiceId").notNull(),
+  customerId: int("customerId").notNull(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  rating: int("rating").notNull(), // 1-5
+  comment: text("comment"),
+  customerName: varchar("customerName", { length: 255 }),
+  productName: varchar("productName", { length: 255 }),
+  isPublic: boolean("isPublic").default(true),
+  isApproved: boolean("isApproved").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = typeof reviews.$inferInsert;
+
+// SMTP Config table
+export const smtpConfig = mysqlTable("smtpConfig", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  host: varchar("host", { length: 255 }),
+  port: int("port").default(587),
+  user: varchar("user", { length: 320 }),
+  password: text("password"),
+  fromName: varchar("fromName", { length: 255 }),
+  fromEmail: varchar("fromEmail", { length: 320 }),
+  secure: boolean("secure").default(false),
+  enabled: boolean("enabled").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SmtpConfig = typeof smtpConfig.$inferSelect;
+export type InsertSmtpConfig = typeof smtpConfig.$inferInsert;

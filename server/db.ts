@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings } from "../drizzle/schema";
+import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings, reviews, smtpConfig } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -282,5 +282,86 @@ export async function upsertUserSettings(userId: number, data: Partial<typeof us
     return db.update(userSettings).set({ ...data, updatedAt: new Date() }).where(eq(userSettings.userId, userId));
   } else {
     return db.insert(userSettings).values({ userId, ...data });
+  }
+}
+
+// Get invoices by customer email (public - for order tracking)
+export async function getInvoicesByCustomerEmail(email: string) {
+  const db = await getDb();
+  if (!db) return [];
+  // Find customer by email first
+  const customerList = await db.select().from(customers).where(eq(customers.email, email));
+  if (customerList.length === 0) return [];
+  const customerIds = customerList.map(c => c.id);
+  // Get all invoices for these customers
+  const allInvoices = [];
+  for (const customerId of customerIds) {
+    const invs = await db.select().from(invoices).where(eq(invoices.customerId, customerId));
+    allInvoices.push(...invs);
+  }
+  return allInvoices;
+}
+
+// Reviews CRUD
+export async function getReviewByToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(reviews).where(eq(reviews.token, token)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getReviewByInvoiceId(invoiceId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(reviews).where(eq(reviews.invoiceId, invoiceId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getPublicReviews() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(reviews).where(and(eq(reviews.isPublic, true), eq(reviews.isApproved, true)));
+}
+
+export async function getAllReviews() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(reviews);
+}
+
+export async function createReview(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(reviews).values(data);
+}
+
+export async function updateReview(id: number, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(reviews).set(data).where(eq(reviews.id, id));
+}
+
+export async function deleteReview(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(reviews).where(eq(reviews.id, id));
+}
+
+// SMTP Config
+export async function getSmtpConfig(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(smtpConfig).where(eq(smtpConfig.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertSmtpConfig(userId: number, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await getSmtpConfig(userId);
+  if (existing) {
+    return db.update(smtpConfig).set({ ...data, updatedAt: new Date() }).where(eq(smtpConfig.userId, userId));
+  } else {
+    return db.insert(smtpConfig).values({ userId, ...data });
   }
 }

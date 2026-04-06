@@ -32,15 +32,19 @@ function ChartSkeleton({ height = 300 }: { height?: number }) {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Chờ TT",
+  CREATED: "Tạo Đơn",
   PAID: "Đã TT",
+  SHIPPING: "Đang Giao",
+  WARRANTY: "Bảo Hành",
   FAILED: "Thất Bại",
   EXPIRED: "Hết Hạn",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
+  CREATED: "bg-blue-100 text-blue-800",
   PAID: "bg-green-100 text-green-800",
+  SHIPPING: "bg-yellow-100 text-yellow-800",
+  WARRANTY: "bg-purple-100 text-purple-800",
   FAILED: "bg-red-100 text-red-800",
   EXPIRED: "bg-gray-100 text-gray-800",
 };
@@ -59,7 +63,9 @@ export default function Dashboard() {
 
   const statusData = invoiceStats ? [
     { name: "Đã Thanh Toán", value: invoiceStats.PAID || 0, color: "#10B981" },
-    { name: "Chờ Thanh Toán", value: invoiceStats.PENDING || 0, color: "#F59E0B" },
+    { name: "Tạo Đơn", value: invoiceStats.CREATED || 0, color: "#3B82F6" },
+    { name: "Đang Giao", value: invoiceStats.SHIPPING || 0, color: "#F59E0B" },
+    { name: "Bảo Hành", value: invoiceStats.WARRANTY || 0, color: "#8B5CF6" },
     { name: "Thất Bại", value: invoiceStats.FAILED || 0, color: "#EF4444" },
     { name: "Hết Hạn", value: invoiceStats.EXPIRED || 0, color: "#8B5CF6" },
   ].filter(d => d.value > 0) : [];
@@ -311,7 +317,7 @@ export default function Dashboard() {
                   <tbody>
                     {latestInvoices.map((inv) => {
                       const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
-                      const status = inv.status || "PENDING";
+                      const status = inv.status || "CREATED";
                       return (
                         <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-3 font-medium text-blue-600">{inv.invoiceNumber}</td>

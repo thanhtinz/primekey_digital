@@ -11,15 +11,19 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Chờ Thanh Toán",
+  CREATED: "Tạo Đơn",
   PAID: "Đã Thanh Toán",
+  SHIPPING: "Đang Giao",
+  WARRANTY: "Bảo Hành",
   FAILED: "Thất Bại",
   EXPIRED: "Hết Hạn",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  CREATED: "bg-blue-100 text-blue-800 border-blue-200",
   PAID: "bg-green-100 text-green-800 border-green-200",
+  SHIPPING: "bg-orange-100 text-orange-800 border-orange-200",
+  WARRANTY: "bg-purple-100 text-purple-800 border-purple-200",
   FAILED: "bg-red-100 text-red-800 border-red-200",
   EXPIRED: "bg-gray-100 text-gray-700 border-gray-200",
 };
@@ -102,7 +106,7 @@ export default function InvoiceHistory() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: "Tổng HĐ", value: invoices.length, color: "text-gray-900" },
-            { label: "Chờ TT", value: invoices.filter(i => i.status === "PENDING").length, color: "text-yellow-600" },
+            { label: "Tạo Đơn", value: invoices.filter(i => i.status === "CREATED").length, color: "text-blue-600" },
             { label: "Đã TT", value: invoices.filter(i => i.status === "PAID").length, color: "text-green-600" },
             { label: "Hết Hạn", value: invoices.filter(i => i.status === "EXPIRED").length, color: "text-gray-500" },
           ].map((stat, i) => (
@@ -134,7 +138,9 @@ export default function InvoiceHistory() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất Cả Trạng Thái</SelectItem>
-                  <SelectItem value="PENDING">Chờ Thanh Toán</SelectItem>
+                  <SelectItem value="CREATED">Tạo Đơn</SelectItem>
+                  <SelectItem value="SHIPPING">Đang Giao</SelectItem>
+                  <SelectItem value="WARRANTY">Bảo Hành</SelectItem>
                   <SelectItem value="PAID">Đã Thanh Toán</SelectItem>
                   <SelectItem value="FAILED">Thất Bại</SelectItem>
                   <SelectItem value="EXPIRED">Hết Hạn</SelectItem>
@@ -195,7 +201,7 @@ export default function InvoiceHistory() {
                   <tbody className="divide-y divide-gray-50">
                     {filteredInvoices.map((inv) => {
                       const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
-                      const status = inv.status || "PENDING";
+                      const status = inv.status || "CREATED";
                       return (
                         <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
                           <td className="py-3.5 px-4">
@@ -274,8 +280,8 @@ export default function InvoiceHistory() {
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs mb-0.5">Trạng Thái</p>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[viewInvoice.status || "PENDING"]}`}>
-                    {STATUS_LABELS[viewInvoice.status || "PENDING"]}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[viewInvoice.status || "CREATED"]}`}>
+                    {STATUS_LABELS[viewInvoice.status || "CREATED"]}
                   </span>
                 </div>
                 <div>
@@ -312,7 +318,7 @@ export default function InvoiceHistory() {
             </div>
           )}
           <DialogFooter className="gap-2 flex-wrap">
-            {viewInvoice?.status === "PENDING" && (
+                    {viewInvoice?.status === "CREATED" && (
               <Button
                 onClick={() => handleMarkPaid(viewInvoice.id)}
                 className="gap-1.5 bg-green-600 hover:bg-green-700"

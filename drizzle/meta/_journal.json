@@ -15,6 +15,13 @@
       "when": 1775473585472,
       "tag": "0001_furry_fabian_cortez",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775476850696,
+      "tag": "0002_skinny_dazzler",
+      "breakpoints": true
     }
   ]
 }

@@ -171,3 +171,51 @@
 - [x] Thêm empty states cho tất cả list pages
 - [x] Cải tiến loading states với skeleton
 - [x] Sửa dark mode consistency - thêm dark mode toggle vào header, sửa semantic colors
+
+## Phase 14: Nâng Cấp Lớn - Tài Khoản, Phân Quyền, Feedback, Landing Page
+
+### Tài Khoản & Phân Quyền
+- [x] Seed tài khoản admin: tinklh / tinklh (role: admin)
+- [x] Seed tài khoản nhân viên: nhanvien / 1 (role: user)
+- [x] Xóa trang đăng ký khỏi Login page (chỉ còn đăng nhập)
+- [x] Phân quyền sidebar: admin thấy tất cả, nhân viên chỉ thấy Tạo Đơn + Lịch Sử
+- [x] Bảo vệ các routes admin (customers, products, templates, reports, settings)
+
+### Trạng Thái Đơn Hàng Mới
+- [x] Cập nhật enum status: CREATED, PAID, SHIPPING, WARRANTY (thay vì PENDING/PAID/FAILED/EXPIRED)
+- [x] Cập nhật DB schema và migration
+- [x] Cập nhật backend routers cho status mới
+- [x] Cập nhật frontend hiển thị status mới với màu sắc phù hợp
+- [x] Thêm tính năng cập nhật trạng thái đơn hàng trong InvoiceDetail
+
+### SMTP Gmail & Email Templates
+- [x] Thêm SMTP Gmail config (host, port, user, password) vào Settings
+- [x] Cập nhật server/email.ts để dùng SMTP thật thay vì mock
+- [x] Tạo mẫu email: Xác nhận đơn hàng (CREATED)
+- [x] Tạo mẫu email: Thanh toán thành công (PAID)
+- [x] Tạo mẫu email: Đang giao hàng (SHIPPING)
+- [x] Tạo mẫu email: Bảo hành (WARRANTY)
+- [x] Tạo mẫu email: Link đánh giá sản phẩm
+- [x] Trang quản lý mẫu email trong Settings (SMTP Settings page)
+
+### Trang Check Đơn Hàng Cho Khách
+- [x] Tạo trang /track (public) - nhập email để xem đơn hàng
+- [x] Hiển thị danh sách đơn hàng theo email với trạng thái realtime
+- [x] Hiển thị timeline trạng thái cho từng đơn hàng
+- [x] Thêm link đến trang này từ Landing Page và email
+
+### Hệ Thống Đánh Giá & Feedback
+- [x] Tạo bảng reviews trong DB schema
+- [x] Tạo trang /review/:token (public) - form đánh giá sản phẩm
+- [x] Tạo unique review token cho mỗi đơn hàng
+- [x] Tạo trang /feedback (public) - hiển thị tất cả reviews công khai
+- [x] Tạo trang /admin/feedback - quản lý reviews (approve/reject/delete)
+- [x] Gửi email link đánh giá sau khi đơn hàng hoàn thành
+
+### Landing Page
+- [x] Tạo trang / (landing page) với burger menu
+- [x] Section: Hero với CTA
+- [x] Section: Tính năng nổi bật
+- [x] Section: Cách hoạt động
+- [x] Burger menu với links: Trang chủ, Check Đơn Hàng, Đánh Giá, Đăng Nhập
+- [x] Responsive mobile

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
-  Bell, User, Moon, Sun
+  Bell, User, Moon, Sun, Mail, MessageSquare
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -13,7 +13,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const navGroups = [
+const adminNavGroups = [
   {
     label: null,
     items: [
@@ -39,6 +39,7 @@ const navGroups = [
     label: "Phân Tích",
     items: [
       { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
+      { label: "Feedback KH", href: "/feedbacks", icon: MessageSquare },
     ],
   },
   {
@@ -52,6 +53,23 @@ const navGroups = [
     label: "Hệ Thống",
     items: [
       { label: "Cài Đặt", href: "/settings", icon: Settings },
+      { label: "Cấu Hình SMTP", href: "/settings/smtp", icon: Mail },
+    ],
+  },
+];
+
+const staffNavGroups = [
+  {
+    label: null,
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: Home },
+    ],
+  },
+  {
+    label: "Hóa Đơn",
+    items: [
+      { label: "Tạo Hóa Đơn", href: "/create-invoice", icon: FileText },
+      { label: "Lịch Sử", href: "/invoices", icon: History },
     ],
   },
 ];
@@ -63,6 +81,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const logoutMutation = trpc.auth.logout.useMutation();
   const { data: user } = trpc.auth.me.useQuery();
   const { theme, toggleTheme } = useTheme();
+
+  // Role-based navigation: admin sees all, staff sees limited
+  const navGroups = (user as any)?.role === "admin" ? adminNavGroups : staffNavGroups;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -93,7 +114,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return location.startsWith(href);
   };
 
-  const currentPageTitle = navGroups
+  const currentPageTitle = [...adminNavGroups, ...staffNavGroups]
     .flatMap(g => g.items)
     .find(item => isActive(item.href))?.label || "Invoice Prime";
 

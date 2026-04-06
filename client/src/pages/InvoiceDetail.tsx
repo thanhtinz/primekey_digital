@@ -1,20 +1,50 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Download, Mail, Edit, Trash2, CheckCircle, Clock, XCircle, AlertCircle, Copy, ExternalLink, Loader2 } from "lucide-react";
+import {
+  ArrowLeft, Download, Mail, Trash2, CheckCircle, Clock, XCircle,
+  AlertCircle, Copy, ExternalLink, Loader2, Package, Truck, Shield,
+  ChevronDown, Star, Link2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
 
-const STATUS_CONFIG = {
-  PENDING: { label: "Chờ Thanh Toán", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Clock },
-  PAID: { label: "Đã Thanh Toán", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle },
-  FAILED: { label: "Thất Bại", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle },
-  EXPIRED: { label: "Hết Hạn", color: "bg-gray-100 text-gray-800 border-gray-200", icon: AlertCircle },
+const STATUS_CONFIG: Record<string, {
+  label: string;
+  color: string;
+  icon: React.ComponentType<{ className?: string }>;
+  step: number;
+}> = {
+  CREATED: { label: "Tạo Đơn", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Package, step: 1 },
+  PAID: { label: "Đã Thanh Toán", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle, step: 2 },
+  SHIPPING: { label: "Đang Giao Hàng", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Truck, step: 3 },
+  WARRANTY: { label: "Bảo Hành", color: "bg-purple-100 text-purple-800 border-purple-200", icon: Shield, step: 4 },
+  FAILED: { label: "Thất Bại", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle, step: 0 },
+  EXPIRED: { label: "Hết Hạn", color: "bg-gray-100 text-gray-800 border-gray-200", icon: Clock, step: 0 },
 };
+
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  CREATED: ["PAID", "FAILED", "EXPIRED"],
+  PAID: ["SHIPPING", "FAILED"],
+  SHIPPING: ["WARRANTY", "FAILED"],
+  WARRANTY: ["FAILED"],
+  FAILED: [],
+  EXPIRED: [],
+};
+
+const ORDER_STEPS = [
+  { key: "CREATED", label: "Tạo Đơn", icon: Package },
+  { key: "PAID", label: "Thanh Toán", icon: CheckCircle },
+  { key: "SHIPPING", label: "Giao Hàng", icon: Truck },
+  { key: "WARRANTY", label: "Bảo Hành", icon: Shield },
+];
 
 function formatCurrency(amount: number | string | null | undefined, currency = "VND") {
   const num = typeof amount === "string" ? parseFloat(amount) : (amount || 0);
@@ -26,7 +56,7 @@ function formatCurrency(amount: number | string | null | undefined, currency = "
 
 function formatDate(date: Date | string | null | undefined) {
   if (!date) return "—";
-  return new Date(date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 export default function InvoiceDetail() {
@@ -41,6 +71,7 @@ export default function InvoiceDetail() {
   const deleteInvoice = trpc.invoices.delete.useMutation();
   const sendEmailMutation = trpc.email.sendInvoice.useMutation();
   const exportPDFMutation = trpc.pdf.exportInvoice.useMutation();
+  const updateStatusMutation = trpc.invoices.updateStatus.useMutation();
   const utils = trpc.useUtils();
 
   const handleDelete = async () => {
@@ -80,7 +111,6 @@ export default function InvoiceDetail() {
     setIsExportingPDF(true);
     try {
       const data = await exportPDFMutation.mutateAsync({ invoiceId });
-      // data.buffer is a base64 encoded PDF
       const byteCharacters = atob(data.buffer);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -102,10 +132,22 @@ export default function InvoiceDetail() {
     }
   };
 
-  const handleCopyInvoiceNumber = () => {
-    if (invoice?.invoiceNumber) {
-      navigator.clipboard.writeText(invoice.invoiceNumber);
-      toast.success("Đã sao chép số hóa đơn");
+  const handleUpdateStatus = async (newStatus: string) => {
+    try {
+      await updateStatusMutation.mutateAsync({ id: invoiceId, status: newStatus as any });
+      await utils.invoices.get.invalidate({ id: invoiceId });
+      await utils.invoices.list.invalidate();
+      toast.success(`Đã cập nhật trạng thái: ${STATUS_CONFIG[newStatus]?.label}`);
+    } catch (err: any) {
+      toast.error(err.message || "Cập nhật trạng thái thất bại");
+    }
+  };
+
+  const handleCopyReviewLink = () => {
+    if (invoice?.reviewToken) {
+      const url = `${window.location.origin}/review/${invoice.reviewToken}`;
+      navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép link đánh giá");
     }
   };
 
@@ -134,15 +176,17 @@ export default function InvoiceDetail() {
     );
   }
 
-  const status = invoice.status as keyof typeof STATUS_CONFIG;
-  const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
+  const currentStatus = invoice.status || "CREATED";
+  const statusConfig = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.CREATED;
   const StatusIcon = statusConfig.icon;
+  const currentStep = statusConfig.step;
+  const availableTransitions = STATUS_TRANSITIONS[currentStatus] || [];
 
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="gap-1 text-gray-500 hover:text-gray-700">
               <ArrowLeft className="h-4 w-4" />
@@ -150,12 +194,15 @@ export default function InvoiceDetail() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-gray-900">#{invoice.invoiceNumber}</h1>
-                <button onClick={handleCopyInvoiceNumber} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <h1 className="text-2xl font-bold text-foreground">#{invoice.invoiceNumber}</h1>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(invoice.invoiceNumber); toast.success("Đã sao chép"); }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   <Copy className="h-4 w-4" />
                 </button>
               </div>
-              <p className="text-sm text-gray-500">Tạo ngày {formatDate(invoice.createdAt)}</p>
+              <p className="text-sm text-muted-foreground">Tạo ngày {formatDate(invoice.createdAt)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -166,37 +213,82 @@ export default function InvoiceDetail() {
           </div>
         </div>
 
+        {/* Order Progress Steps */}
+        {currentStep > 0 && (
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between relative">
+                <div className="absolute top-4 left-0 right-0 h-0.5 bg-muted z-0" />
+                <div
+                  className="absolute top-4 left-0 h-0.5 bg-blue-500 z-0 transition-all duration-500"
+                  style={{ width: `${((currentStep - 1) / (ORDER_STEPS.length - 1)) * 100}%` }}
+                />
+                {ORDER_STEPS.map((step, i) => {
+                  const StepIcon = step.icon;
+                  const isCompleted = i + 1 < currentStep;
+                  const isCurrent = i + 1 === currentStep;
+                  return (
+                    <div key={step.key} className="flex flex-col items-center z-10 flex-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                        isCompleted ? "bg-blue-600 border-blue-600" : isCurrent ? "bg-blue-50 border-blue-500" : "bg-background border-border"
+                      }`}>
+                        <StepIcon className={`h-4 w-4 ${isCompleted || isCurrent ? "text-blue-500" : "text-muted-foreground"}`} />
+                      </div>
+                      <p className={`text-xs mt-2 font-medium ${isCompleted || isCurrent ? "text-foreground" : "text-muted-foreground"}`}>
+                        {step.label}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportPDF}
-            disabled={isExportingPDF}
-            className="gap-2"
-          >
+          <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExportingPDF} className="gap-2">
             {isExportingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Xuất PDF
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSendEmail}
-            disabled={isSendingEmail}
-            className="gap-2"
-          >
+          <Button variant="outline" size="sm" onClick={handleSendEmail} disabled={isSendingEmail} className="gap-2">
             {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
             Gửi Email
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLocation(`/invoices/${invoiceId}/edit`)}
-            className="gap-2"
-          >
-            <Edit className="h-4 w-4" />
-            Chỉnh Sửa
-          </Button>
+
+          {/* Update Status Dropdown */}
+          {availableTransitions.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2" disabled={updateStatusMutation.isPending}>
+                  {updateStatusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Cập Nhật Trạng Thái
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {availableTransitions.map((status) => {
+                  const cfg = STATUS_CONFIG[status];
+                  const Icon = cfg?.icon;
+                  return (
+                    <DropdownMenuItem key={status} onClick={() => handleUpdateStatus(status)} className="gap-2">
+                      {Icon && <Icon className="h-4 w-4" />}
+                      {cfg?.label || status}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Review Link */}
+          {invoice.reviewToken && (
+            <Button variant="outline" size="sm" onClick={handleCopyReviewLink} className="gap-2">
+              <Star className="h-4 w-4 text-yellow-500" />
+              Copy Link Đánh Giá
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
@@ -220,30 +312,36 @@ export default function InvoiceDetail() {
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500 mb-1">Số Hóa Đơn</p>
+                    <p className="text-muted-foreground mb-1">Số Hóa Đơn</p>
                     <p className="font-medium">{invoice.invoiceNumber}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 mb-1">Loại Tiền</p>
+                    <p className="text-muted-foreground mb-1">Loại Tiền</p>
                     <p className="font-medium">{invoice.currency || "VND"}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 mb-1">Ngày Tạo</p>
+                    <p className="text-muted-foreground mb-1">Ngày Tạo</p>
                     <p className="font-medium">{formatDate(invoice.createdAt)}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 mb-1">Ngày Cập Nhật</p>
+                    <p className="text-muted-foreground mb-1">Cập Nhật Lần Cuối</p>
                     <p className="font-medium">{formatDate(invoice.updatedAt)}</p>
                   </div>
                   {invoice.paidAt && (
                     <div>
-                      <p className="text-gray-500 mb-1">Ngày Thanh Toán</p>
+                      <p className="text-muted-foreground mb-1">Ngày Thanh Toán</p>
                       <p className="font-medium text-green-600">{formatDate(invoice.paidAt)}</p>
+                    </div>
+                  )}
+                  {invoice.customerEmail && (
+                    <div>
+                      <p className="text-muted-foreground mb-1">Email Khách Hàng</p>
+                      <p className="font-medium">{invoice.customerEmail}</p>
                     </div>
                   )}
                   {invoice.notes && (
                     <div className="col-span-2">
-                      <p className="text-gray-500 mb-1">Ghi Chú</p>
+                      <p className="text-muted-foreground mb-1">Ghi Chú</p>
                       <p className="font-medium">{invoice.notes}</p>
                     </div>
                   )}
@@ -269,11 +367,8 @@ export default function InvoiceDetail() {
                       {invoice.paymentUrl}
                     </a>
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(invoice.paymentUrl!);
-                        toast.success("Đã sao chép link thanh toán");
-                      }}
-                      className="text-gray-400 hover:text-gray-600 shrink-0"
+                      onClick={() => { navigator.clipboard.writeText(invoice.paymentUrl!); toast.success("Đã sao chép link thanh toán"); }}
+                      className="text-muted-foreground hover:text-foreground shrink-0"
                     >
                       <Copy className="h-4 w-4" />
                     </button>
@@ -281,9 +376,37 @@ export default function InvoiceDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Review Link Card */}
+            {invoice.reviewToken && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    Link Đánh Giá Sản Phẩm
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <Link2 className="h-4 w-4 text-yellow-600 shrink-0" />
+                    <span className="text-yellow-700 text-sm truncate">
+                      {window.location.origin}/review/{invoice.reviewToken}
+                    </span>
+                    <button
+                      onClick={handleCopyReviewLink}
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {invoice.reviewSubmitted ? "✅ Khách hàng đã đánh giá" : "⏳ Chưa có đánh giá"}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {/* Summary Sidebar */}
           <div className="space-y-4">
             {/* Amount Summary */}
             <Card>
@@ -292,18 +415,18 @@ export default function InvoiceDetail() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Tạm Tính</span>
+                  <span className="text-muted-foreground">Tạm Tính</span>
                   <span>{formatCurrency(invoice.subtotal, invoice.currency || "VND")}</span>
                 </div>
                 {invoice.taxAmount && parseFloat(String(invoice.taxAmount)) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Thuế</span>
+                    <span className="text-muted-foreground">Thuế</span>
                     <span>{formatCurrency(invoice.taxAmount, invoice.currency || "VND")}</span>
                   </div>
                 )}
                 {invoice.discountAmount && parseFloat(String(invoice.discountAmount)) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Giảm Giá</span>
+                    <span className="text-muted-foreground">Giảm Giá</span>
                     <span className="text-green-600">-{formatCurrency(invoice.discountAmount, invoice.currency || "VND")}</span>
                   </div>
                 )}
@@ -315,43 +438,62 @@ export default function InvoiceDetail() {
               </CardContent>
             </Card>
 
-            {/* Status History */}
+            {/* Status Timeline */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-semibold">Trạng Thái</CardTitle>
+                <CardTitle className="text-base font-semibold">Lịch Sử Trạng Thái</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
                     <div>
-                      <p className="text-sm font-medium">Đã tạo hóa đơn</p>
-                      <p className="text-xs text-gray-500">{formatDate(invoice.createdAt)}</p>
+                      <p className="text-sm font-medium">Đã tạo đơn hàng</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(invoice.createdAt)}</p>
                     </div>
                   </div>
-                  {invoice.status === "PAID" && invoice.paidAt && (
+                  {(invoice.status === "PAID" || invoice.status === "SHIPPING" || invoice.status === "WARRANTY") && invoice.paidAt && (
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
                       <div>
                         <p className="text-sm font-medium">Đã thanh toán</p>
-                        <p className="text-xs text-gray-500">{formatDate(invoice.paidAt)}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(invoice.paidAt)}</p>
+                      </div>
+                    </div>
+                  )}
+                  {invoice.status === "SHIPPING" && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></div>
+                      <div>
+                        <p className="text-sm font-medium">Đang giao hàng</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(invoice.updatedAt)}</p>
+                      </div>
+                    </div>
+                  )}
+                  {invoice.status === "WARRANTY" && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></div>
+                      <div>
+                        <p className="text-sm font-medium">Bảo hành</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(invoice.updatedAt)}</p>
                       </div>
                     </div>
                   )}
                   {invoice.status === "EXPIRED" && (
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0"></div>
                       <div>
                         <p className="text-sm font-medium">Đã hết hạn</p>
-                        <p className="text-xs text-gray-500">{formatDate(invoice.updatedAt)}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(invoice.updatedAt)}</p>
                       </div>
                     </div>
                   )}
                   {invoice.status === "FAILED" && (
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
                       <div>
-                        <p className="text-sm font-medium">Thanh toán thất bại</p>
+                        <p className="text-sm font-medium">Thất bại</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(invoice.updatedAt)}</p>
                       </div>
                     </div>
                   )}

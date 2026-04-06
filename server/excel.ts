@@ -38,7 +38,7 @@ function formatDate(date: Date | string | null | undefined): string {
 
 function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    PENDING: "Chờ Thanh Toán",
+    CREATED: "Tạo Đơn",
     PAID: "Đã Thanh Toán",
     FAILED: "Thất Bại",
     EXPIRED: "Hết Hạn",

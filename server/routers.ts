@@ -6,7 +6,8 @@ import { z } from "zod";
 import * as db from "./db";
 import { generateInvoicePDF } from "./pdf";
 import { generateInvoiceExcel } from "./excel";
-import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHTML } from "./email";
+import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHTML, generateStatusUpdateEmailHTML } from "./email";
+import crypto from "crypto";
 
 export const appRouter = router({
   system: systemRouter,
@@ -59,7 +60,7 @@ export const appRouter = router({
           taxAmount: z.number(),
           discountAmount: z.number(),
           totalAmount: z.number(),
-          status: z.enum(["PENDING", "PAID", "FAILED", "EXPIRED"]),
+          status: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]),
           notes: z.string().optional(),
         })
       )
@@ -78,7 +79,7 @@ export const appRouter = router({
       .input(
         z.object({
           id: z.number(),
-          status: z.enum(["PENDING", "PAID", "FAILED", "EXPIRED"]).optional(),
+          status: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]).optional(),
           notes: z.string().optional(),
         })
       )
@@ -107,7 +108,85 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Update invoice status and optionally send email notification
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]),
+        sendEmail: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoice = await db.getInvoiceById(input.id);
+        if (!invoice || invoice.userId !== ctx.user.id) {
+          throw new Error("Invoice not found");
+        }
+        
+        // Generate review token if status is WARRANTY (order complete)
+        let reviewToken = invoice.reviewToken;
+        if (input.status === "WARRANTY" && !reviewToken) {
+          reviewToken = crypto.randomBytes(32).toString("hex");
+        }
+        
+        await db.updateInvoice(input.id, {
+          status: input.status,
+          reviewToken,
+          paidAt: input.status === "PAID" ? new Date() : invoice.paidAt,
+          updatedAt: new Date(),
+        });
+        
+        // Send email notification if requested OR when reaching WARRANTY (auto-send review link)
+        const shouldSendEmail = input.sendEmail || input.status === "WARRANTY";
+        if (shouldSendEmail) {
+          const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+          if (customer?.email) {
+            const userSettings = await db.getUserSettings(ctx.user.id);
+            const statusLabels: Record<string, string> = {
+              CREATED: "Tạo Đơn", PAID: "Đã Thanh Toán", SHIPPING: "Đang Giao Hàng",
+              WARRANTY: "Bảo Hành", FAILED: "Thất Bại", EXPIRED: "Hết Hạn",
+            };
+            // Build base URL from VITE_APP_URL or fallback
+            const baseUrl = process.env.VITE_APP_URL || "";
+            const reviewUrl = reviewToken ? `${baseUrl}/review/${reviewToken}` : undefined;
+            const trackUrl = `${baseUrl}/track-order`;
+            const html = generateStatusUpdateEmailHTML({
+              invoiceNumber: invoice.invoiceNumber,
+              customerName: customer.name,
+              status: input.status,
+              statusLabel: statusLabels[input.status] || input.status,
+              companyName: userSettings?.companyName || "Invoice Prime",
+              reviewUrl,
+              trackUrl,
+            });
+            await sendEmail({
+              to: customer.email,
+              subject: `Cập Nhật Đơn Hàng ${invoice.invoiceNumber} - ${statusLabels[input.status]}`,
+              html,
+              userId: ctx.user.id,
+            });
+          }
+        }
+        
+        return { success: true, reviewToken };
+      }),
 
+    // Public: get invoices by customer email (for order tracking page)
+    getByEmail: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .query(async ({ input }) => {
+        const invoiceList = await db.getInvoicesByCustomerEmail(input.email);
+        // Return safe data only (no internal fields)
+        return invoiceList.map(inv => ({
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          status: inv.status,
+          totalAmount: inv.totalAmount,
+          currency: inv.currency,
+          createdAt: inv.createdAt,
+          updatedAt: inv.updatedAt,
+          notes: inv.notes,
+        }));
+      }),
   }),
   // Customers
   customers: router({
@@ -533,8 +612,10 @@ export const appRouter = router({
       const invoices = await db.getInvoicesByUserId(ctx.user.id);
       
       const stats = {
-        PENDING: invoices.filter(inv => inv.status === "PENDING").length,
+        CREATED: invoices.filter(inv => inv.status === "CREATED").length,
         PAID: invoices.filter(inv => inv.status === "PAID").length,
+        SHIPPING: invoices.filter(inv => inv.status === "SHIPPING").length,
+        WARRANTY: invoices.filter(inv => inv.status === "WARRANTY").length,
         FAILED: invoices.filter(inv => inv.status === "FAILED").length,
         EXPIRED: invoices.filter(inv => inv.status === "EXPIRED").length,
       };
@@ -761,7 +842,7 @@ export const appRouter = router({
               const customer = await db.getCustomerById(inv.customerId);
               customerName = customer?.name || "Khách Hàng";
             }
-            return { ...inv, customerName, status: inv.status || "PENDING", currency: inv.currency || "VND" };
+            return { ...inv, customerName, status: inv.status || "CREATED", currency: inv.currency || "VND" };
           })
         );
         
@@ -777,7 +858,7 @@ export const appRouter = router({
           totalRevenue,
           totalInvoices: invoices.length,
           paidInvoices: paidInvoices.length,
-          pendingInvoices: invoices.filter(inv => inv.status === "PENDING").length,
+          pendingInvoices: invoices.filter(inv => inv.status === "CREATED").length,
         });
         
         return {
@@ -785,6 +866,159 @@ export const appRouter = router({
           buffer: excelBuffer.toString("base64"),
           filename: `bao-cao-hoa-don-${Date.now()}.xlsx`,
         };
+      }),
+  }),
+  // Reviews
+  reviews: router({
+    // Public: submit a review via token
+    submit: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        rating: z.number().min(1).max(5),
+        comment: z.string().optional(),
+        customerName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const invoice = await (async () => {
+          const { getDb } = await import("./db");
+          const drizzleDb = await getDb();
+          if (!drizzleDb) return null;
+          const { invoices } = await import("../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          const result = await drizzleDb.select().from(invoices).where(eq(invoices.reviewToken, input.token)).limit(1);
+          return result.length > 0 ? result[0] : null;
+        })();
+        if (!invoice) throw new Error("Link đánh giá không hợp lệ hoặc đã hết hạn");
+        if (invoice.reviewSubmitted) throw new Error("Đơn hàng này đã được đánh giá");
+        
+        const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+        
+        await db.createReview({
+          invoiceId: invoice.id,
+          customerId: invoice.customerId || 0,
+          token: input.token,
+          rating: input.rating,
+          comment: input.comment || null,
+          customerName: input.customerName || customer?.name || "Khách Hàng",
+          productName: null,
+          isPublic: true,
+          isApproved: false, // Requires admin approval
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        
+        // Mark invoice as reviewed
+        await db.updateInvoice(invoice.id, { reviewSubmitted: true, updatedAt: new Date() });
+        
+        return { success: true };
+      }),
+
+    // Public: get approved reviews
+    getPublic: publicProcedure.query(async () => {
+      return db.getPublicReviews();
+    }),
+
+    // Protected: admin get all reviews
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      return db.getAllReviews();
+    }),
+
+    // Protected: approve/reject review
+    updateApproval: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        isApproved: z.boolean(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.updateReview(input.id, {
+          isApproved: input.isApproved,
+          isPublic: input.isPublic ?? true,
+          updatedAt: new Date(),
+        });
+        return { success: true };
+      }),
+
+    // Protected: delete review
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.deleteReview(input.id);
+        return { success: true };
+      }),
+
+    // Public: get review info by token (to show form)
+    getByToken: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const review = await db.getReviewByToken(input.token);
+        // Find invoice by token
+        const drizzleDb = await db.getDb();
+        if (!drizzleDb) return null;
+        const { invoices } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const result = await drizzleDb.select().from(invoices).where(eq(invoices.reviewToken, input.token)).limit(1);
+        const invoice = result.length > 0 ? result[0] : null;
+        if (!invoice) return null;
+        return {
+          invoiceNumber: invoice.invoiceNumber,
+          reviewSubmitted: invoice.reviewSubmitted,
+          existingReview: review || null,
+        };
+      }),
+  }),
+
+  // SMTP Configuration
+  smtp: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const config = await db.getSmtpConfig(ctx.user.id);
+      if (!config) return null;
+      // Don't return password
+      return {
+        id: config.id,
+        host: config.host,
+        port: config.port,
+        user: config.user,
+        fromName: config.fromName,
+        fromEmail: config.fromEmail,
+        secure: config.secure,
+        enabled: config.enabled,
+      };
+    }),
+
+    update: protectedProcedure
+      .input(z.object({
+        host: z.string().optional(),
+        port: z.number().optional(),
+        user: z.string().optional(),
+        password: z.string().optional(),
+        fromName: z.string().optional(),
+        fromEmail: z.string().optional(),
+        secure: z.boolean().optional(),
+        enabled: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertSmtpConfig(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    test: protectedProcedure
+      .input(z.object({ testEmail: z.string().email() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { sendEmail } = await import("./email");
+        const success = await sendEmail({
+          to: input.testEmail,
+          subject: "Test Email - Invoice Prime",
+          html: "<p>Email SMTP đang hoạt động bình thường!</p>",
+          userId: ctx.user.id,
+        });
+        return { success };
       }),
   }),
 });

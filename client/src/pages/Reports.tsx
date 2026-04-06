@@ -74,8 +74,10 @@ export default function Reports() {
   const pieData = useMemo(() => {
     if (!invoiceStats) return [];
     return [
-      { name: "Chờ TT", value: invoiceStats.PENDING, color: "#f59e0b" },
+      { name: "Tạo Đơn", value: invoiceStats.CREATED, color: "#3b82f6" },
       { name: "Đã TT", value: invoiceStats.PAID, color: "#10b981" },
+      { name: "Đang Giao", value: invoiceStats.SHIPPING, color: "#f59e0b" },
+      { name: "Bảo Hành", value: invoiceStats.WARRANTY, color: "#8b5cf6" },
       { name: "Thất Bại", value: invoiceStats.FAILED, color: "#ef4444" },
       { name: "Hết Hạn", value: invoiceStats.EXPIRED, color: "#6b7280" },
     ].filter(d => d.value > 0);
