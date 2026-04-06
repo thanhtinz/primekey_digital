@@ -225,3 +225,8 @@
 - [x] Sửa form login: đổi field "Email" sang "Tên đăng nhập" (username)
 - [x] Cập nhật backend auth: cho phép login bằng username (không cần @email)
 - [x] Kiểm tra trang SMTP Settings hiển thị đúng trong sidebar
+
+## Phase 16: Fix Login Bugs
+
+- [x] Thêm toast notification vào Login page
+- [x] Fix chuyển hướng sau khi đăng nhập thành công (redirect to /dashboard)

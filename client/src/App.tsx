@@ -66,37 +66,49 @@ function isAdminRoute(path: string) {
 function Router() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch("/api/auth/me");
-        if (response.ok) {
-          const user = await response.json();
-          setIsAuthenticated(true);
-          setUserRole(user?.role || "user");
-        } else {
-          setIsAuthenticated(false);
-          setUserRole(null);
-        }
-      } catch {
+  const fetchUser = async () => {
+    try {
+      const response = await fetch("/api/auth/me");
+      if (response.ok) {
+        const user = await response.json();
+        setIsAuthenticated(true);
+        setUserRole(user?.role || "user");
+        return user;
+      } else {
         setIsAuthenticated(false);
         setUserRole(null);
+        return null;
       }
-    };
-    checkAuth();
-  }, []);
+    } catch {
+      setIsAuthenticated(false);
+      setUserRole(null);
+      return null;
+    }
+  };
+
+  useEffect(() => { fetchUser(); }, []);
+
+  const handleLoginSuccess = async () => {
+    const user = await fetchUser();
+    // Navigate to dashboard after successful login
+    setLocation("/dashboard");
+  };
 
   // Always render public routes without auth check
+  // But if user is already authenticated and tries to access /login, redirect to dashboard
   if (isPublicRoute(location)) {
+    if (location === "/login" && isAuthenticated === true) {
+      return <Redirect to="/dashboard" />;
+    }
     return (
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/track-order" component={() => <TrackOrder />} />
           <Route path="/feedbacks" component={() => <PublicFeedbacks />} />
           <Route path="/review/:token" component={() => <ReviewPage />} />
-          <Route path="/login" component={() => <Login onLoginSuccess={() => { setIsAuthenticated(true); }} />} />
+          <Route path="/login" component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
         </Switch>
       </Suspense>
     );
@@ -111,7 +123,7 @@ function Router() {
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={() => <LandingPage />} />
-          <Route component={() => <Login onLoginSuccess={() => { setIsAuthenticated(true); }} />} />
+          <Route component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
         </Switch>
       </Suspense>
     );

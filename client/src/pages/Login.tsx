@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, Loader2, Eye, EyeOff, FileText, TrendingUp, Shield, CheckCircle2, User } from "lucide-react";
+import { toast } from "sonner";
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -33,9 +34,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         const data = await response.json();
         throw new Error(data.error || "Đăng nhập thất bại");
       }
+      toast.success("Đăng nhập thành công! Đang chuyển hướng...");
       onLoginSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
+      const msg = err instanceof Error ? err.message : "Đăng nhập thất bại";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
