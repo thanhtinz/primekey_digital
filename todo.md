@@ -437,3 +437,12 @@
 - [x] Tạo script seed mẫu hóa đơn mặc định vào database
 - [x] Mẫu có thiết kế chuyên nghiệp: màu sắc, font, logo placeholder, footer ngân hàng
 - [x] Đặt isDefault = true cho mẫu vừa tạo
+
+## Thêm Logo Website & Favicon vào Cài Đặt
+
+- [x] Kiểm tra Settings.tsx và schema userSettings hiện tại
+- [x] Thêm cột logoUrl và faviconUrl vào bảng userSettings (DB migration)
+- [x] Thêm section "Thương Hiệu" trong Settings: upload logo website và favicon
+- [x] Upload file lên S3, lưu URL vào DB
+- [x] Áp dụng favicon động qua useEffect thay đổi <link rel="icon">
+- [x] Cập nhật getPublicInfo trả về logoUrl và faviconUrl

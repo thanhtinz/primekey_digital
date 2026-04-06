@@ -1198,6 +1198,47 @@ export const appRouter = router({
         await drizzleDb.update(users).set({ password: hashed }).where(eq(users.id, ctx.user.id));
         return { success: true };
       }),
+
+    // Upload logo or favicon - accepts base64 data URL
+    uploadBrandAsset: protectedProcedure
+      .input(z.object({
+        type: z.enum(["logo", "favicon"]),
+        dataUrl: z.string(), // base64 data URL e.g. "data:image/png;base64,..."
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { storagePut } = await import("./storage");
+        // Parse base64 data URL
+        const matches = input.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) throw new Error("Invalid data URL format");
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, "base64");
+        // Determine extension
+        const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const fileName = input.fileName || `${input.type}-${ctx.user.id}-${Date.now()}.${ext}`;
+        const fileKey = `brand-assets/${ctx.user.id}/${input.type}/${fileName}`;
+        const { url } = await storagePut(fileKey, buffer, mimeType);
+        // Save URL to userSettings
+        const field = input.type === "logo" ? { logoUrl: url } : { faviconUrl: url };
+        await db.upsertUserSettings(ctx.user.id, field);
+        return { url };
+      }),
+
+    updateBrand: protectedProcedure
+      .input(z.object({
+        logoUrl: z.string().nullable().optional(),
+        faviconUrl: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const data: Record<string, string | null> = {};
+        if (input.logoUrl !== undefined) data.logoUrl = input.logoUrl;
+        if (input.faviconUrl !== undefined) data.faviconUrl = input.faviconUrl;
+        await db.upsertUserSettings(ctx.user.id, data);
+        return { success: true };
+      }),
   }),
 
   // PDF Export

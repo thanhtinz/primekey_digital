@@ -193,6 +193,8 @@ export const userSettings = mysqlTable("userSettings", {
   companyAddress: text("companyAddress"),
   taxId: varchar("taxId", { length: 50 }),
   website: varchar("website", { length: 500 }),
+  logoUrl: text("logoUrl"),
+  faviconUrl: text("faviconUrl"),
   emailNotifications: boolean("emailNotifications").default(true),
   invoiceReminder: boolean("invoiceReminder").default(true),
   paymentConfirmation: boolean("paymentConfirmation").default(true),

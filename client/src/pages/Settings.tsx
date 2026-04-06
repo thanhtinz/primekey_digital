@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Building2, Bell, Shield, CreditCard, Loader2, Eye, EyeOff } from "lucide-react";
+import { Save, Building2, Bell, Shield, CreditCard, Loader2, Eye, EyeOff, ImageIcon, Upload, X, Globe } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -17,7 +17,6 @@ export default function Settings() {
   const [showNewPw, setShowNewPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
-
   const [companyData, setCompanyData] = useState({
     companyName: "",
     companyEmail: "",
@@ -33,11 +32,21 @@ export default function Settings() {
     weeklyReport: false,
   });
 
+  // Brand state
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [faviconUploading, setFaviconUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
+
   // Load settings from server
   const { data: settingsData, isLoading } = trpc.settings.get.useQuery();
   const updateCompany = trpc.settings.updateCompany.useMutation();
   const updateNotifications = trpc.settings.updateNotifications.useMutation();
   const changePassword = trpc.settings.changePassword.useMutation();
+  const uploadBrandAsset = trpc.settings.uploadBrandAsset.useMutation();
+  const updateBrand = trpc.settings.updateBrand.useMutation();
   const utils = trpc.useUtils();
 
   useEffect(() => {
@@ -56,8 +65,26 @@ export default function Settings() {
         paymentConfirmation: settingsData.paymentConfirmation ?? true,
         weeklyReport: settingsData.weeklyReport ?? false,
       });
+      // Load brand assets
+      if ((settingsData as any).logoUrl) setLogoPreview((settingsData as any).logoUrl);
+      if ((settingsData as any).faviconUrl) setFaviconPreview((settingsData as any).faviconUrl);
     }
   }, [settingsData]);
+
+  // Apply favicon dynamically
+  useEffect(() => {
+    if (faviconPreview) {
+      const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+      if (link) {
+        link.href = faviconPreview;
+      } else {
+        const newLink = document.createElement("link");
+        newLink.rel = "icon";
+        newLink.href = faviconPreview;
+        document.head.appendChild(newLink);
+      }
+    }
+  }, [faviconPreview]);
 
   const handleSaveCompany = async () => {
     try {
@@ -80,24 +107,105 @@ export default function Settings() {
   };
 
   const handleChangePassword = async () => {
-    if (!pwForm.current || !pwForm.newPw || !pwForm.confirm) {
-      toast.error("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-    if (pwForm.newPw.length < 6) {
-      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
-      return;
-    }
     if (pwForm.newPw !== pwForm.confirm) {
-      toast.error("Mật khẩu xác nhận không khớp");
+      toast.error("Mật khẩu mới không khớp!");
       return;
     }
     try {
       await changePassword.mutateAsync({ currentPassword: pwForm.current, newPassword: pwForm.newPw });
-      toast.success("Đã đổi mật khẩu thành công!");
       setPwForm({ current: "", newPw: "", confirm: "" });
+      toast.success("Đổi mật khẩu thành công!");
     } catch (e: any) {
       toast.error(e.message || "Đổi mật khẩu thất bại");
+    }
+  };
+
+  const fileToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File logo không được vượt quá 2MB");
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setLogoPreview(dataUrl);
+      const result = await uploadBrandAsset.mutateAsync({
+        type: "logo",
+        dataUrl,
+        fileName: file.name,
+      });
+      setLogoPreview(result.url);
+      await utils.settings.get.invalidate();
+      toast.success("Đã tải lên logo website!");
+    } catch (e: any) {
+      toast.error(e.message || "Upload thất bại");
+      setLogoPreview(null);
+    } finally {
+      setLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 512 * 1024) {
+      toast.error("File favicon không được vượt quá 512KB");
+      return;
+    }
+    setFaviconUploading(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setFaviconPreview(dataUrl);
+      const result = await uploadBrandAsset.mutateAsync({
+        type: "favicon",
+        dataUrl,
+        fileName: file.name,
+      });
+      setFaviconPreview(result.url);
+      await utils.settings.get.invalidate();
+      toast.success("Đã tải lên favicon!");
+    } catch (e: any) {
+      toast.error(e.message || "Upload thất bại");
+      setFaviconPreview(null);
+    } finally {
+      setFaviconUploading(false);
+      if (faviconInputRef.current) faviconInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    try {
+      await updateBrand.mutateAsync({ logoUrl: null });
+      setLogoPreview(null);
+      await utils.settings.get.invalidate();
+      toast.success("Đã xóa logo");
+    } catch (e: any) {
+      toast.error(e.message || "Xóa thất bại");
+    }
+  };
+
+  const handleRemoveFavicon = async () => {
+    try {
+      await updateBrand.mutateAsync({ faviconUrl: null });
+      setFaviconPreview(null);
+      // Reset favicon to default
+      const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+      if (link) link.href = "/favicon.ico";
+      await utils.settings.get.invalidate();
+      toast.success("Đã xóa favicon");
+    } catch (e: any) {
+      toast.error(e.message || "Xóa thất bại");
     }
   };
 
@@ -111,28 +219,35 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="company" className="space-y-5">
-          <TabsList className="bg-gray-100 p-1 rounded-lg flex-wrap h-auto gap-1">
-            <TabsTrigger value="company" className="gap-1.5 text-sm">
-              <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Công Ty</span>
-              <span className="sm:hidden">CT</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-1.5 text-sm">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Thông Báo</span>
-              <span className="sm:hidden">TB</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="gap-1.5 text-sm">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Thanh Toán</span>
-              <span className="sm:hidden">TT</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="gap-1.5 text-sm">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Bảo Mật</span>
-              <span className="sm:hidden">BM</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-1 px-1">
+            <TabsList className="bg-gray-100 p-1 rounded-lg flex-wrap h-auto gap-1 w-max min-w-full">
+              <TabsTrigger value="company" className="gap-1.5 text-sm">
+                <Building2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Công Ty</span>
+                <span className="sm:hidden">CT</span>
+              </TabsTrigger>
+              <TabsTrigger value="brand" className="gap-1.5 text-sm">
+                <Globe className="h-4 w-4" />
+                <span className="hidden sm:inline">Thương Hiệu</span>
+                <span className="sm:hidden">TH</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-1.5 text-sm">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Thông Báo</span>
+                <span className="sm:hidden">TB</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="gap-1.5 text-sm">
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">Thanh Toán</span>
+                <span className="sm:hidden">TT</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" className="gap-1.5 text-sm">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Bảo Mật</span>
+                <span className="sm:hidden">BM</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Company Tab */}
           <TabsContent value="company">
@@ -224,6 +339,188 @@ export default function Settings() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Brand Tab */}
+          <TabsContent value="brand">
+            <div className="space-y-4">
+              {/* Logo Card */}
+              <Card className="shadow-sm border border-gray-100">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-blue-600" />
+                    Logo Website
+                  </CardTitle>
+                  <CardDescription>
+                    Logo hiển thị trên navbar, trang thanh toán và landing page. Khuyến nghị PNG/SVG nền trong suốt, tối đa 2MB.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row items-start gap-6">
+                    {/* Preview */}
+                    <div className="flex-shrink-0">
+                      <div className="w-40 h-24 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                        {logoPreview ? (
+                          <img
+                            src={logoPreview}
+                            alt="Logo preview"
+                            className="max-w-full max-h-full object-contain p-2"
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <ImageIcon className="h-8 w-8 text-gray-300 mx-auto" />
+                            <p className="text-xs text-gray-400 mt-1">Chưa có logo</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex-1 space-y-3">
+                      <p className="text-sm text-gray-600">
+                        Tải lên file ảnh PNG, JPG, SVG hoặc WebP. Kích thước khuyến nghị: <strong>200×60px</strong> hoặc tỷ lệ tương đương.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                          className="hidden"
+                          onChange={handleLogoUpload}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => logoInputRef.current?.click()}
+                          disabled={logoUploading}
+                        >
+                          {logoUploading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4" />
+                          )}
+                          {logoUploading ? "Đang tải lên..." : "Chọn File Logo"}
+                        </Button>
+                        {logoPreview && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-red-500 hover:text-red-600 hover:border-red-300"
+                            onClick={handleRemoveLogo}
+                            disabled={updateBrand.isPending}
+                          >
+                            <X className="h-4 w-4" />
+                            Xóa Logo
+                          </Button>
+                        )}
+                      </div>
+                      {logoPreview && (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                          Logo đã được lưu và áp dụng
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Favicon Card */}
+              <Card className="shadow-sm border border-gray-100">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-purple-600" />
+                    Favicon (Icon Tab Trình Duyệt)
+                  </CardTitle>
+                  <CardDescription>
+                    Icon nhỏ hiển thị trên tab trình duyệt. Khuyến nghị ICO hoặc PNG vuông 32×32px hoặc 64×64px, tối đa 512KB.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row items-start gap-6">
+                    {/* Preview */}
+                    <div className="flex-shrink-0">
+                      <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                        {faviconPreview ? (
+                          <img
+                            src={faviconPreview}
+                            alt="Favicon preview"
+                            className="w-12 h-12 object-contain"
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <Globe className="h-8 w-8 text-gray-300 mx-auto" />
+                            <p className="text-xs text-gray-400 mt-1">Chưa có</p>
+                          </div>
+                        )}
+                      </div>
+                      {faviconPreview && (
+                        <p className="text-xs text-gray-500 mt-2 text-center">Xem trước 48px</p>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex-1 space-y-3">
+                      <p className="text-sm text-gray-600">
+                        Tải lên file ICO, PNG hoặc SVG. Kích thước tốt nhất: <strong>32×32px</strong> hoặc <strong>64×64px</strong> (hình vuông).
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          ref={faviconInputRef}
+                          type="file"
+                          accept="image/x-icon,image/png,image/svg+xml,image/vnd.microsoft.icon"
+                          className="hidden"
+                          onChange={handleFaviconUpload}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => faviconInputRef.current?.click()}
+                          disabled={faviconUploading}
+                        >
+                          {faviconUploading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4" />
+                          )}
+                          {faviconUploading ? "Đang tải lên..." : "Chọn File Favicon"}
+                        </Button>
+                        {faviconPreview && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 text-red-500 hover:text-red-600 hover:border-red-300"
+                            onClick={handleRemoveFavicon}
+                            disabled={updateBrand.isPending}
+                          >
+                            <X className="h-4 w-4" />
+                            Xóa Favicon
+                          </Button>
+                        )}
+                      </div>
+                      {faviconPreview && (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                          Favicon đã được lưu và áp dụng cho tab trình duyệt
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Usage hint */}
+              <div className="rounded-lg bg-blue-50 border border-blue-100 p-4">
+                <p className="text-sm text-blue-700 font-medium mb-1">Lưu ý về Logo & Favicon</p>
+                <ul className="text-xs text-blue-600 space-y-1 list-disc list-inside">
+                  <li>Logo sẽ hiển thị trên navbar dashboard, trang thanh toán (/pay), và landing page</li>
+                  <li>Favicon sẽ hiển thị ngay lập tức trên tab trình duyệt sau khi tải lên</li>
+                  <li>Để logo hiển thị đẹp trên nền tối, hãy dùng PNG có nền trong suốt</li>
+                </ul>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Notifications Tab */}
