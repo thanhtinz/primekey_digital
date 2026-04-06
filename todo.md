@@ -16,16 +16,16 @@
 - [x] Tạo auth routes (login, logout, register)
 
 ## Phase 2: Backend API (tRPC Routers)
-- [ ] Tạo router invoices (create, read, update, delete, list)
-- [ ] Tạo router customers (create, read, update, delete, list)
-- [ ] Tạo router products (create, read, update, delete, list)
-- [ ] Tạo router invoice_templates (create, read, update, delete, list)
-- [ ] Tạo router taxes (create, read, update, delete, list)
-- [ ] Tạo router discount_codes (create, read, update, delete, list)
-- [ ] Tạo router payment_gateways (get, update, test connection)
-- [ ] Tạo router reports (get revenue, get invoice stats, get customer stats, get product stats)
-- [ ] Tạo router auth (me, logout)
-- [ ] Viết unit tests cho tất cả routers
+- [x] Tạo router invoices (create, read, update, delete, list)
+- [x] Tạo router customers (create, read, update, delete, list)
+- [x] Tạo router products (create, read, update, delete, list)
+- [x] Tạo router invoice_templates (create, read, update, delete, list)
+- [x] Tạo router taxes (create, read, update, delete, list)
+- [x] Tạo router discount_codes (create, read, update, delete, list)
+- [x] Tạo router payment_gateways (get, update, test connection)
+- [x] Tạo router reports (get revenue, get invoice stats, get customer stats, get product stats)
+- [x] Tạo router auth (me, logout)
+- [x] Viết unit tests cho tất cả routers
 
 ## Phase 3: Frontend - Dashboard & Navigation
 - [x] Tạo DashboardLayout component với sidebar
@@ -75,19 +75,19 @@
 - [x] Tạo trang quản lý mẫu hóa đơn
 - [x] Tạo editor cho mẫu hóa đơn - chỉnh sửa layout, màu sắc, font
 - [ ] Tạo trang tạo mẫu hóa đơn mới
-- [ ] Tạo trang báo cáo & thống kê
-- [ ] Tạo các biểu đồ báo cáo (doanh thu, top khách hàng, top sản phẩm)
-- [ ] Tạo nút xuất báo cáo (Excel, PDF)
-- [ ] Tạo trang cài đặt chung (dark mode, ngôn ngữ, thông báo, email)
+- [x] Tạo trang báo cáo & thống kê
+- [x] Tạo các biểu đồ báo cáo (doanh thu, top khách hàng, top sản phẩm)
+- [x] Tạo nút xuất báo cáo (Excel, PDF)
+- [x] Tạo trang cài đặt chung (dark mode, ngôn ngữ, thông báo, email)
 
 ## Phase 8: Frontend - Payment Gateway Configuration
-- [ ] Tạo trang cấu hình PayOS
-- [ ] Tạo form nhập API Key, Client ID, Checksum Key
-- [ ] Tạo nút kiểm tra kết nối PayOS
-- [ ] Tạo trang cấu hình PayPal
-- [ ] Tạo form nhập Client ID, Secret Key
-- [ ] Tạo nút kiểm tra kết nối PayPal
-- [ ] Tạo component hiển thị trạng thái kết nối
+- [x] Tạo trang cấu hình PayOS
+- [x] Tạo form nhập API Key, Client ID, Checksum Key
+- [x] Tạo nút kiểm tra kết nối PayOS
+- [x] Tạo trang cấu hình PayPal
+- [x] Tạo form nhập Client ID, Secret Key
+- [x] Tạo nút kiểm tra kết nối PayPal
+- [x] Tạo component hiển thị trạng thái kết nối
 
 ## Phase 9: Backend - Payment Integration
 - [ ] Tích hợp PayOS API (tạo payment link, QR code)
@@ -99,8 +99,8 @@
 - [ ] Tạo logic auto-expire hóa đơn
 
 ## Phase 10: Backend - Email, PDF, Dark Mode, Notifications
-- [ ] Tạo service gửi email (xác nhận hóa đơn, thanh toán thành công)
-- [ ] Tạo service xuất PDF hóa đơn
+- [x] Tạo service gửi email (xác nhận hóa đơn, thanh toán thành công)
+- [x] Tạo service xuất PDF hóa đơn
 - [ ] Tạo service xuất báo cáo Excel
 - [ ] Tạo notification system (toast)
 - [ ] Tạo dark mode toggle
@@ -123,3 +123,51 @@
 - [ ] Kiểm tra tất cả tính năng hoạt động đúng
 - [ ] Viết hướng dẫn sử dụng
 - [ ] Bàn giao cho người dùng
+
+## Phase 13: Cải Tiến & Sửa Lỗi Toàn Diện
+
+### Backend Fixes
+- [x] Sửa /api/auth/me endpoint - trả về user info từ session
+- [x] Sửa routers.ts - kiểm tra và fix tất cả queries
+- [x] Thêm error handling tốt hơn cho tất cả routers
+- [x] Sửa lỗi server/db.ts - đảm bảo tất cả functions hoạt động đúng
+
+### Login/Register Page
+- [x] Cải tiến Login page UI - đẹp hơn, professional hơn
+- [x] Thêm Register page với form đăng ký đầy đủ
+- [x] Thêm form validation (email format, password strength)
+- [x] Thêm loading states và error messages rõ ràng hơn
+
+### Dashboard
+- [x] Kết nối real data từ tRPC vào KPI cards
+- [x] Sửa charts để hiển thị real data
+- [x] Thêm empty states khi chưa có dữ liệu
+- [x] Thêm loading skeletons
+
+### CreateInvoice
+- [x] Sửa form tính toán tự động (subtotal, tax, total)
+- [ ] Thêm customer search/autocomplete
+- [ ] Thêm product search/autocomplete
+- [x] Kết nối với tRPC để lưu invoice thực sự
+
+### InvoiceHistory
+- [x] Sửa filter và search hoạt động đúng
+- [x] Thêm action buttons (view, edit, delete, send email, export PDF)
+- [x] Thêm status badges với màu sắc
+
+### Settings & Config
+- [x] Sửa Settings page - lưu company info vào database
+- [x] Sửa PayOS config - lưu API keys vào database
+- [x] Sửa PayPal config - lưu API keys vào database
+
+### DashboardLayout
+- [x] Sửa sidebar navigation - active state đúng
+- [x] Cải tiến user profile dropdown
+- [ ] Thêm breadcrumbs
+
+### General UX
+- [x] Thêm toast notifications cho tất cả actions thành công/thất bại
+- [x] Thêm confirmation dialogs cho delete actions
+- [x] Thêm empty states cho tất cả list pages
+- [x] Cải tiến loading states với skeleton
+- [ ] Sửa dark mode consistency

@@ -1,144 +1,334 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Download, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
+} from "recharts";
+import { Download, TrendingUp, TrendingDown, DollarSign, FileText, Users, Package, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
+import { trpc } from "@/lib/trpc";
 
-const revenueData = [
-  { month: "Jan", revenue: 40000000, target: 50000000 },
-  { month: "Feb", revenue: 45000000, target: 50000000 },
-  { month: "Mar", revenue: 52000000, target: 50000000 },
-  { month: "Apr", revenue: 48000000, target: 50000000 },
-];
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
-const topCustomers = [
-  { name: "Công Ty A", value: 25000000 },
-  { name: "Công Ty B", value: 18000000 },
-  { name: "Công Ty C", value: 15000000 },
-  { name: "Công Ty D", value: 12000000 },
-  { name: "Công Ty E", value: 10000000 },
-];
+const MONTH_LABELS: Record<string, string> = {
+  "01": "T1", "02": "T2", "03": "T3", "04": "T4",
+  "05": "T5", "06": "T6", "07": "T7", "08": "T8",
+  "09": "T9", "10": "T10", "11": "T11", "12": "T12",
+};
 
-const topProducts = [
-  { name: "Dịch vụ tư vấn", value: 35 },
-  { name: "Phát triển phần mềm", value: 28 },
-  { name: "Thiết kế UI/UX", value: 22 },
-  { name: "Quản lý dự án", value: 15 },
-];
-
-const COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b"];
+function formatCurrency(value: number) {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+  return value.toLocaleString("vi-VN");
+}
 
 export default function Reports() {
+  const [period, setPeriod] = useState("12");
+
+  const { data: stats, isLoading: statsLoading } = trpc.reports.getDashboardStats.useQuery();
+  const { data: revenueData, isLoading: revenueLoading } = trpc.reports.getRevenueByMonth.useQuery();
+  const { data: invoiceStats, isLoading: invoiceStatsLoading } = trpc.reports.getInvoiceStats.useQuery();
+  const { data: customers = [], isLoading: customersLoading } = trpc.customers.list.useQuery();
+  const { data: invoices = [] } = trpc.invoices.list.useQuery();
+
+  // Process revenue data - last N months
+  const processedRevenue = useMemo(() => {
+    if (!revenueData) return [];
+    const sorted = [...revenueData].sort((a, b) => a.month.localeCompare(b.month));
+    const last = parseInt(period);
+    const sliced = sorted.slice(-last);
+    return sliced.map(item => {
+      const parts = item.month.split("/");
+      const monthKey = parts[0]?.padStart(2, "0") || item.month;
+      return {
+        month: MONTH_LABELS[monthKey] || item.month,
+        revenue: item.revenue,
+      };
+    });
+  }, [revenueData, period]);
+
+  // Top customers by total invoices
+  const topCustomers = useMemo(() => {
+    const customerMap: Record<number, { name: string; total: number; count: number }> = {};
+    invoices.forEach(inv => {
+      if (!inv.customerId) return;
+      const customer = customers.find(c => c.id === inv.customerId);
+      if (!customer) return;
+      const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
+      if (!customerMap[inv.customerId]) {
+        customerMap[inv.customerId] = { name: customer.name, total: 0, count: 0 };
+      }
+      customerMap[inv.customerId].total += amount;
+      customerMap[inv.customerId].count += 1;
+    });
+    return Object.values(customerMap)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [invoices, customers]);
+
+  // Invoice status pie data
+  const pieData = useMemo(() => {
+    if (!invoiceStats) return [];
+    return [
+      { name: "Chờ TT", value: invoiceStats.PENDING, color: "#f59e0b" },
+      { name: "Đã TT", value: invoiceStats.PAID, color: "#10b981" },
+      { name: "Thất Bại", value: invoiceStats.FAILED, color: "#ef4444" },
+      { name: "Hết Hạn", value: invoiceStats.EXPIRED, color: "#6b7280" },
+    ].filter(d => d.value > 0);
+  }, [invoiceStats]);
+
+  const isLoading = statsLoading || revenueLoading || invoiceStatsLoading || customersLoading;
+
   const handleExport = (format: string) => {
-    toast.loading(`Đang xuất báo cáo ${format}...`);
-    setTimeout(() => {
-      toast.success(`Báo cáo ${format} đã được tải xuống!`);
-    }, 1500);
+    toast.info(`Tính năng xuất ${format} đang được phát triển`);
   };
+
+  const totalRevenue = stats?.totalRevenue || 0;
+  const totalInvoices = stats?.totalInvoices || 0;
+  const paidInvoices = stats?.paidInvoices || 0;
+  const paymentRate = stats?.paymentRate || 0;
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Báo Cáo & Thống Kê</h1>
-            <p className="text-gray-600">Phân tích doanh thu, khách hàng, sản phẩm</p>
+            <h1 className="text-2xl font-bold text-gray-900">Báo Cáo & Thống Kê</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Phân tích doanh thu và hiệu suất kinh doanh</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Bộ Lọc
-            </Button>
-            <Button onClick={() => handleExport("Excel")} className="gap-2">
+          <div className="flex items-center gap-2">
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3 tháng gần đây</SelectItem>
+                <SelectItem value="6">6 tháng gần đây</SelectItem>
+                <SelectItem value="12">12 tháng gần đây</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={() => handleExport("Excel")} className="gap-1.5">
               <Download className="h-4 w-4" />
               Excel
             </Button>
-            <Button onClick={() => handleExport("PDF")} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExport("PDF")} className="gap-1.5">
               <Download className="h-4 w-4" />
               PDF
             </Button>
           </div>
         </div>
 
+        {/* KPI Cards */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="shadow-sm border border-gray-100">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Tổng Doanh Thu</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">
+                      {formatCurrency(totalRevenue)}đ
+                    </p>
+                  </div>
+                  <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <DollarSign className="h-4.5 w-4.5 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border border-gray-100">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Tổng Hóa Đơn</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{totalInvoices}</p>
+                  </div>
+                  <div className="h-9 w-9 rounded-lg bg-purple-50 flex items-center justify-center">
+                    <FileText className="h-4.5 w-4.5 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border border-gray-100">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Đã Thanh Toán</p>
+                    <p className="text-xl font-bold text-green-600 mt-1">{paidInvoices}</p>
+                  </div>
+                  <div className="h-9 w-9 rounded-lg bg-green-50 flex items-center justify-center">
+                    <TrendingUp className="h-4.5 w-4.5 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border border-gray-100">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Tỷ Lệ TT</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{paymentRate.toFixed(0)}%</p>
+                  </div>
+                  <div className="h-9 w-9 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <TrendingDown className="h-4.5 w-4.5 text-orange-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Revenue Chart */}
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-bold mb-4">Doanh Thu Theo Tháng</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-                  <Tooltip formatter={(value: any) => `${(value / 1000000).toFixed(1)}M VND`} />
-              <Legend />
-              <Line type="monotone" dataKey="revenue" stroke="#3b82f6" name="Doanh Thu Thực" />
-              <Line type="monotone" dataKey="target" stroke="#10b981" name="Mục Tiêu" strokeDasharray="5 5" />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <Card className="lg:col-span-2 shadow-sm border border-gray-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Doanh Thu Theo Tháng</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {revenueLoading ? (
+                <div className="h-64 bg-gray-50 rounded animate-pulse" />
+              ) : processedRevenue.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+                  <TrendingUp className="h-12 w-12 mb-2 opacity-20" />
+                  <p className="text-sm">Chưa có dữ liệu doanh thu</p>
+                  <p className="text-xs mt-1">Tạo hóa đơn để xem biểu đồ</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={processedRevenue} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} width={60} />
+                    <Tooltip formatter={(v: any) => [`${v.toLocaleString("vi-VN")}đ`, "Doanh Thu"]} />
+                    <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Invoice Status Pie */}
+          <Card className="shadow-sm border border-gray-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Trạng Thái Hóa Đơn</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {invoiceStatsLoading ? (
+                <div className="h-64 bg-gray-50 rounded animate-pulse" />
+              ) : pieData.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+                  <FileText className="h-12 w-12 mb-2 opacity-20" />
+                  <p className="text-sm">Chưa có hóa đơn</p>
+                </div>
+              ) : (
+                <div>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value">
+                        {pieData.map((entry, index) => (
+                          <Cell key={index} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v: any) => [v, "Hóa đơn"]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-wrap justify-center gap-3 mt-2">
+                    {pieData.map((item, i) => (
+                      <div key={i} className="flex items-center gap-1.5 text-xs">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-gray-600">{item.name}: {item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Customers */}
-          <div className="bg-white rounded-lg border p-6">
-            <h2 className="text-xl font-bold mb-4">Top 5 Khách Hàng</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topCustomers}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
-                <Tooltip formatter={(value: any) => `${(value / 1000000).toFixed(1)}M VND`} />
-                <Bar dataKey="value" fill="#8b5cf6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Top Products */}
-          <div className="bg-white rounded-lg border p-6">
-            <h2 className="text-xl font-bold mb-4">Top 4 Sản Phẩm/Dịch Vụ</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={topProducts}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {topProducts.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        {/* Top Customers */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Card className="shadow-sm border border-gray-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 text-blue-600" />
+                Top Khách Hàng
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {customersLoading ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+                </div>
+              ) : topCustomers.length === 0 ? (
+                <div className="h-40 flex flex-col items-center justify-center text-gray-400">
+                  <Users className="h-10 w-10 mb-2 opacity-20" />
+                  <p className="text-sm">Chưa có dữ liệu</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {topCustomers.map((c, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-gray-400 w-4">#{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
+                        <div className="h-1.5 bg-gray-100 rounded-full mt-1">
+                          <div
+                            className="h-1.5 bg-blue-500 rounded-full"
+                            style={{ width: `${Math.min((c.total / (topCustomers[0]?.total || 1)) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium text-gray-600 flex-shrink-0">
+                        {formatCurrency(c.total)}đ
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <p className="text-gray-600 text-sm">Tổng Doanh Thu</p>
-            <p className="text-2xl font-bold text-blue-600">185M VND</p>
-            <p className="text-xs text-green-600 mt-1">↑ 12% so với tháng trước</p>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-            <p className="text-gray-600 text-sm">Số Hóa Đơn</p>
-            <p className="text-2xl font-bold text-purple-600">48</p>
-            <p className="text-xs text-green-600 mt-1">↑ 5 hóa đơn mới</p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-            <p className="text-gray-600 text-sm">Tỷ Lệ Thanh Toán</p>
-            <p className="text-2xl font-bold text-green-600">72%</p>
-            <p className="text-xs text-green-600 mt-1">↑ 2.5% so với tháng trước</p>
-          </div>
-          <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-            <p className="text-gray-600 text-sm">Chờ Thanh Toán</p>
-            <p className="text-2xl font-bold text-orange-600">10</p>
-            <p className="text-xs text-red-600 mt-1">↓ 3 hóa đơn</p>
-          </div>
+          {/* Customers Bar Chart */}
+          <Card className="shadow-sm border border-gray-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Package className="h-4 w-4 text-purple-600" />
+                Doanh Thu Theo Khách Hàng
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topCustomers.length === 0 ? (
+                <div className="h-40 flex flex-col items-center justify-center text-gray-400">
+                  <Package className="h-10 w-10 mb-2 opacity-20" />
+                  <p className="text-sm">Chưa có dữ liệu</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={topCustomers} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                    <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 10 }} width={55} />
+                    <Tooltip formatter={(v: any) => [`${v.toLocaleString("vi-VN")}đ`, "Doanh Thu"]} />
+                    <Bar dataKey="total" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>

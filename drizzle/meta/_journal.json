@@ -8,6 +8,13 @@
       "when": 1774900153807,
       "tag": "0000_goofy_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1775473585472,
+      "tag": "0001_furry_fabian_cortez",
+      "breakpoints": true
     }
   ]
 }

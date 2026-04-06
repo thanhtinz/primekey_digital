@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch, useLocation, Redirect } from "wouter";
 import { useEffect, useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -31,7 +31,6 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 
 function Router() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [, setLocation] = useLocation();
 
   useEffect(() => {
     // Check if user is logged in by trying to fetch auth info
@@ -77,10 +76,7 @@ function Router() {
       <Route path="/settings" component={() => <Settings />} />
       <Route path="/settings/payos" component={() => <PayOSSettings />} />
       <Route path="/settings/paypal" component={() => <PayPalSettings />} />
-      <Route path="/" component={() => {
-        setLocation("/dashboard");
-        return null;
-      }} />
+      <Route path="/"><Redirect to="/dashboard" /></Route>
       <Route component={() => <PlaceholderPage title="404 - Không Tìm Thấy" />} />
     </Switch>
   );

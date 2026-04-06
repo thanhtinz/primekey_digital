@@ -171,6 +171,27 @@ export const paymentGatewaysConfig = mysqlTable("paymentGatewaysConfig", {
 export type PaymentGatewaysConfig = typeof paymentGatewaysConfig.$inferSelect;
 export type InsertPaymentGatewaysConfig = typeof paymentGatewaysConfig.$inferInsert;
 
+// User Settings table (company info, preferences)
+export const userSettings = mysqlTable("userSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  companyName: varchar("companyName", { length: 255 }),
+  companyEmail: varchar("companyEmail", { length: 320 }),
+  companyPhone: varchar("companyPhone", { length: 20 }),
+  companyAddress: text("companyAddress"),
+  taxId: varchar("taxId", { length: 50 }),
+  website: varchar("website", { length: 500 }),
+  emailNotifications: boolean("emailNotifications").default(true),
+  invoiceReminder: boolean("invoiceReminder").default(true),
+  paymentConfirmation: boolean("paymentConfirmation").default(true),
+  weeklyReport: boolean("weeklyReport").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSettings = typeof userSettings.$inferSelect;
+export type InsertUserSettings = typeof userSettings.$inferInsert;
+
 // Audit Logs table
 export const auditLogs = mysqlTable("auditLogs", {
   id: int("id").autoincrement().primaryKey(),

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs } from "../drizzle/schema";
+import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -264,4 +264,23 @@ export async function deleteInvoiceTemplate(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(invoiceTemplates).where(eq(invoiceTemplates.id, id));
+}
+
+// User Settings queries
+export async function getUserSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertUserSettings(userId: number, data: Partial<typeof userSettings.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await getUserSettings(userId);
+  if (existing) {
+    return db.update(userSettings).set({ ...data, updatedAt: new Date() }).where(eq(userSettings.userId, userId));
+  } else {
+    return db.insert(userSettings).values({ userId, ...data });
+  }
 }

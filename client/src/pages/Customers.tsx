@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Edit, Trash2, Search, Users, Loader2, Mail, Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -12,67 +13,57 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
 
-  // Fetch customers
-  const { data: customers = [], isLoading, refetch } = trpc.customers.list.useQuery();
+  const { data: customers = [], isLoading } = trpc.customers.list.useQuery();
+  const utils = trpc.useUtils();
 
-  // Mutations
   const createCustomer = trpc.customers.create.useMutation({
     onSuccess: () => {
       toast.success("Thêm khách hàng thành công!");
-      refetch();
-      setFormData({ name: "", email: "", phone: "", address: "" });
-      setIsOpen(false);
+      utils.customers.list.invalidate();
+      resetForm();
     },
-    onError: (error) => {
-      toast.error(error.message || "Lỗi khi thêm khách hàng");
-    },
+    onError: (err) => toast.error(err.message || "Lỗi khi thêm khách hàng"),
   });
 
   const updateCustomer = trpc.customers.update.useMutation({
     onSuccess: () => {
-      toast.success("Cập nhật khách hàng thành công!");
-      refetch();
-      setFormData({ name: "", email: "", phone: "", address: "" });
-      setEditingId(null);
-      setIsOpen(false);
+      toast.success("Cập nhật thành công!");
+      utils.customers.list.invalidate();
+      resetForm();
     },
-    onError: (error) => {
-      toast.error(error.message || "Lỗi khi cập nhật khách hàng");
-    },
+    onError: (err) => toast.error(err.message || "Lỗi khi cập nhật"),
   });
 
   const deleteCustomer = trpc.customers.delete.useMutation({
     onSuccess: () => {
-      toast.success("Xóa khách hàng thành công!");
-      refetch();
+      toast.success("Đã xóa khách hàng");
+      utils.customers.list.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message || "Lỗi khi xóa khách hàng");
-    },
+    onError: (err) => toast.error(err.message || "Lỗi khi xóa"),
   });
 
-  const filteredCustomers = customers.filter(c => 
+  const resetForm = () => {
+    setFormData({ name: "", email: "", phone: "", address: "" });
+    setEditingId(null);
+    setIsOpen(false);
+  };
+
+  const filteredCustomers = customers.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (c.phone && c.phone.includes(searchTerm))
   );
 
-  const handleAdd = async () => {
-    if (!formData.name) {
-      toast.error("Vui lòng nhập tên khách hàng");
-      return;
-    }
-    if (!formData.email) {
-      toast.error("Vui lòng nhập email");
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) { toast.error("Vui lòng nhập tên khách hàng"); return; }
+    if (!formData.email.trim()) { toast.error("Vui lòng nhập email"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) { toast.error("Email không hợp lệ"); return; }
 
     if (editingId) {
-      await updateCustomer.mutateAsync({
-        id: editingId,
-        ...formData,
-      });
+      await updateCustomer.mutateAsync({ id: editingId, ...formData });
     } else {
       await createCustomer.mutateAsync({
         name: formData.name,
@@ -94,124 +85,224 @@ export default function Customers() {
     setIsOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Bạn chắc chắn muốn xóa khách hàng này?")) {
-      deleteCustomer.mutate({ id });
+  const handleDelete = async (id: number) => {
+    if (!confirm("Bạn có chắc muốn xóa khách hàng này?")) return;
+    setDeletingId(id);
+    try {
+      await deleteCustomer.mutateAsync({ id });
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <p className="text-gray-500">Đang tải...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const isPending = createCustomer.isPending || updateCustomer.isPending;
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Quản Lý Khách Hàng</h1>
-            <p className="text-gray-600">Danh sách tất cả khách hàng</p>
+            <h1 className="text-2xl font-bold text-gray-900">Khách Hàng</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{customers.length} khách hàng trong hệ thống</p>
           </div>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => { setFormData({ name: "", email: "", phone: "", address: "" }); setEditingId(null); }} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Thêm Khách Hàng
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingId ? "Sửa Khách Hàng" : "Thêm Khách Hàng"}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Tên Khách Hàng</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nhập tên" />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="Nhập email" type="email" />
-                </div>
-                <div>
-                  <Label>Số Điện Thoại</Label>
-                  <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="Nhập số điện thoại" />
-                </div>
-                <div>
-                  <Label>Địa Chỉ</Label>
-                  <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Nhập địa chỉ" />
-                </div>
-                <Button onClick={handleAdd} className="w-full" disabled={createCustomer.isPending || updateCustomer.isPending}>
-                  {createCustomer.isPending || updateCustomer.isPending ? "Đang lưu..." : "Lưu"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button
+            onClick={() => { resetForm(); setIsOpen(true); }}
+            className="gap-1.5 bg-blue-600 hover:bg-blue-700"
+            size="sm"
+          >
+            <Plus className="h-4 w-4" />
+            Thêm Khách Hàng
+          </Button>
         </div>
 
         {/* Search */}
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm khách hàng..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
+        <Card className="shadow-sm border border-gray-100">
+          <CardContent className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Tìm theo tên, email, số điện thoại..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-3 px-4 font-semibold">Tên Khách Hàng</th>
-                <th className="text-left py-3 px-4 font-semibold">Email</th>
-                <th className="text-left py-3 px-4 font-semibold">Số Điện Thoại</th>
-                <th className="text-left py-3 px-4 font-semibold">Địa Chỉ</th>
-                <th className="text-left py-3 px-4 font-semibold">Hành Động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCustomers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500">
-                    Không có khách hàng nào
-                  </td>
-                </tr>
-              ) : (
-                filteredCustomers.map(customer => (
-                  <tr key={customer.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">{customer.name}</td>
-                    <td className="py-3 px-4">{customer.email}</td>
-                    <td className="py-3 px-4">{customer.phone}</td>
-                    <td className="py-3 px-4">{customer.address}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <Button onClick={() => handleEdit(customer)} variant="outline" size="sm" className="gap-2">
-                          <Edit className="h-4 w-4" />
-                          Sửa
-                        </Button>
-                        <Button onClick={() => handleDelete(customer.id)} variant="outline" size="sm" className="gap-2 text-red-600" disabled={deleteCustomer.isPending}>
-                          <Trash2 className="h-4 w-4" />
-                          Xóa
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Content */}
+        <Card className="shadow-sm border border-gray-100">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">
+              {filteredCustomers.length} khách hàng
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            ) : filteredCustomers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <Users className="h-14 w-14 mb-3 opacity-20" />
+                <p className="font-medium">
+                  {searchTerm ? "Không tìm thấy khách hàng" : "Chưa có khách hàng nào"}
+                </p>
+                <p className="text-sm mt-1 mb-4">
+                  {searchTerm ? "Thử từ khóa khác" : "Thêm khách hàng đầu tiên của bạn"}
+                </p>
+                {!searchTerm && (
+                  <Button
+                    size="sm"
+                    onClick={() => { resetForm(); setIsOpen(true); }}
+                    className="gap-1.5 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Thêm Khách Hàng
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-y border-gray-100">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500">Khách Hàng</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">Liên Hệ</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 hidden lg:table-cell">Địa Chỉ</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-500">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filteredCustomers.map(customer => (
+                      <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div>
+                            <p className="font-medium text-gray-900">{customer.name}</p>
+                            <p className="text-xs text-gray-400 sm:hidden mt-0.5">{customer.email}</p>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 hidden sm:table-cell">
+                          <div className="space-y-0.5">
+                            {customer.email && (
+                              <div className="flex items-center gap-1.5 text-gray-600">
+                                <Mail className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs">{customer.email}</span>
+                              </div>
+                            )}
+                            {customer.phone && (
+                              <div className="flex items-center gap-1.5 text-gray-600">
+                                <Phone className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs">{customer.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 hidden lg:table-cell">
+                          {customer.address ? (
+                            <div className="flex items-center gap-1.5 text-gray-600">
+                              <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                              <span className="text-xs truncate max-w-48">{customer.address}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(customer)}
+                              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                              title="Sửa"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(customer.id)}
+                              disabled={deletingId === customer.id}
+                              className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+                              title="Xóa"
+                            >
+                              {deletingId === customer.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); else setIsOpen(true); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Chỉnh Sửa Khách Hàng" : "Thêm Khách Hàng Mới"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">
+                Tên Khách Hàng <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Nguyễn Văn A"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">
+                Email <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@example.com"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Số Điện Thoại</Label>
+              <Input
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="0901234567"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Địa Chỉ</Label>
+              <Input
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="123 Đường ABC, TP.HCM"
+                className="mt-1.5"
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button onClick={handleSubmit} disabled={isPending} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                {isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Đang lưu...</> : (editingId ? "Cập Nhật" : "Thêm Khách Hàng")}
+              </Button>
+              <Button variant="outline" onClick={resetForm} disabled={isPending}>Hủy</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

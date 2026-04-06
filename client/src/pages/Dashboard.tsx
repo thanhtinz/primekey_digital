@@ -1,176 +1,340 @@
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
-import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
+
+function StatCardSkeleton() {
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardContent className="p-6">
+        <div className="animate-pulse space-y-3">
+          <div className="flex justify-between">
+            <div className="h-4 bg-gray-200 rounded w-24" />
+            <div className="h-10 w-10 bg-gray-200 rounded-lg" />
+          </div>
+          <div className="h-8 bg-gray-200 rounded w-32" />
+          <div className="h-3 bg-gray-200 rounded w-16" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChartSkeleton({ height = 300 }: { height?: number }) {
+  return (
+    <div className="animate-pulse" style={{ height }}>
+      <div className="h-full bg-gray-100 rounded-xl" />
+    </div>
+  );
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Chờ TT",
+  PAID: "Đã TT",
+  FAILED: "Thất Bại",
+  EXPIRED: "Hết Hạn",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-800",
+  PAID: "bg-green-100 text-green-800",
+  FAILED: "bg-red-100 text-red-800",
+  EXPIRED: "bg-gray-100 text-gray-800",
+};
 
 export default function Dashboard() {
-  // Fetch dashboard stats
-  const { data: dashboardStats, isLoading: statsLoading } = trpc.reports.getDashboardStats.useQuery();
+  const [, setLocation] = useLocation();
+  const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats } = trpc.reports.getDashboardStats.useQuery();
   const { data: revenueByMonth, isLoading: revenueLoading } = trpc.reports.getRevenueByMonth.useQuery();
   const { data: invoiceStats, isLoading: invoiceStatsLoading } = trpc.reports.getInvoiceStats.useQuery();
+  const { data: recentInvoices, isLoading: invoicesLoading } = trpc.invoices.list.useQuery();
 
-  // Format revenue data for chart
   const revenueData = (revenueByMonth || []).map(item => ({
     month: item.month,
-    revenue: typeof item.revenue === "string" ? parseFloat(item.revenue) : item.revenue,
+    revenue: typeof item.revenue === "string" ? parseFloat(item.revenue) : (item.revenue || 0),
   }));
 
-  // Format invoice status data for pie chart
   const statusData = invoiceStats ? [
     { name: "Đã Thanh Toán", value: invoiceStats.PAID || 0, color: "#10B981" },
     { name: "Chờ Thanh Toán", value: invoiceStats.PENDING || 0, color: "#F59E0B" },
     { name: "Thất Bại", value: invoiceStats.FAILED || 0, color: "#EF4444" },
     { name: "Hết Hạn", value: invoiceStats.EXPIRED || 0, color: "#8B5CF6" },
-  ] : [];
+  ].filter(d => d.value > 0) : [];
 
-  const stats = [
+  const totalRevenue = typeof dashboardStats?.totalRevenue === "string"
+    ? parseFloat(dashboardStats.totalRevenue)
+    : (dashboardStats?.totalRevenue || 0);
+
+  const paymentRate = dashboardStats?.totalInvoices
+    ? Math.round((dashboardStats.paidInvoices / dashboardStats.totalInvoices) * 100)
+    : 0;
+
+  const pendingRate = dashboardStats?.totalInvoices
+    ? Math.round((dashboardStats.pendingInvoices / dashboardStats.totalInvoices) * 100)
+    : 0;
+
+  const kpiCards = [
     {
-      title: "Doanh Thu",
-      value: dashboardStats?.totalRevenue ? (dashboardStats.totalRevenue as number).toLocaleString("vi-VN") : "0",
+      title: "Tổng Doanh Thu",
+      value: totalRevenue.toLocaleString("vi-VN"),
       unit: "VND",
-      change: dashboardStats?.totalRevenue ? "+12%" : "0%",
+      change: "+12.5%",
       positive: true,
       icon: TrendingUp,
-      bgGradient: "from-blue-50 to-blue-100",
-      iconBg: "bg-blue-600",
+      gradient: "from-blue-500 to-blue-600",
+      bg: "bg-blue-50",
     },
     {
       title: "Tổng Hóa Đơn",
-      value: dashboardStats?.totalInvoices || 0,
+      value: (dashboardStats?.totalInvoices || 0).toString(),
       unit: "hóa đơn",
-      change: dashboardStats?.totalInvoices ? "+5" : "0",
+      change: `+${dashboardStats?.totalInvoices || 0} tổng`,
       positive: true,
       icon: FileText,
-      bgGradient: "from-purple-50 to-purple-100",
-      iconBg: "bg-purple-600",
+      gradient: "from-purple-500 to-purple-600",
+      bg: "bg-purple-50",
     },
     {
       title: "Đã Thanh Toán",
-      value: dashboardStats?.paidInvoices || 0,
-      unit: dashboardStats?.paymentRate ? `${Math.round(dashboardStats.paymentRate)}%` : "0%",
-      change: dashboardStats?.paidInvoices ? "+2.5M" : "0",
+      value: (dashboardStats?.paidInvoices || 0).toString(),
+      unit: `${paymentRate}% tỷ lệ`,
+      change: `${paymentRate}% tỷ lệ TT`,
       positive: true,
       icon: CheckCircle,
-      bgGradient: "from-green-50 to-green-100",
-      iconBg: "bg-green-600",
+      gradient: "from-green-500 to-green-600",
+      bg: "bg-green-50",
     },
     {
       title: "Chờ Thanh Toán",
-      value: dashboardStats?.pendingInvoices || 0,
-      unit: dashboardStats?.totalInvoices ? `${Math.round((dashboardStats.pendingInvoices / dashboardStats.totalInvoices) * 100)}%` : "0%",
-      change: dashboardStats?.pendingInvoices ? "-3" : "0",
+      value: (dashboardStats?.pendingInvoices || 0).toString(),
+      unit: `${pendingRate}% tổng`,
+      change: `${pendingRate}% chờ xử lý`,
       positive: false,
       icon: Clock,
-      bgGradient: "from-orange-50 to-orange-100",
-      iconBg: "bg-orange-600",
+      gradient: "from-orange-500 to-orange-600",
+      bg: "bg-orange-50",
     },
   ];
 
-  if (statsLoading || revenueLoading || invoiceStatsLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <p className="text-gray-500">Đang tải dữ liệu...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const latestInvoices = (recentInvoices || []).slice(0, 5);
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 md:space-y-6 lg:space-y-8">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="px-0 md:px-0">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm md:text-base text-gray-600 mt-1">Xin chào! Đây là tổng quan doanh thu của bạn</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Tổng quan hoạt động kinh doanh</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchStats()}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Làm mới
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setLocation("/create-invoice")}
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" />
+              Tạo Hóa Đơn
+            </Button>
+          </div>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className={`bg-gradient-to-br ${stat.bgGradient} border-0 shadow-sm md:shadow-md hover:shadow-lg transition-all duration-300`}>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-start justify-between mb-3 md:mb-4">
-                    <div>
-                      <p className="text-xs md:text-sm font-semibold text-gray-600">{stat.title}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {statsLoading ? (
+            Array(4).fill(0).map((_, i) => <StatCardSkeleton key={i} />)
+          ) : (
+            kpiCards.map((card, i) => {
+              const Icon = card.icon;
+              return (
+                <Card key={i} className={`${card.bg} border-0 shadow-sm hover:shadow-md transition-shadow`}>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <p className="text-sm font-medium text-gray-600">{card.title}</p>
+                      <div className={`bg-gradient-to-br ${card.gradient} p-2.5 rounded-xl shadow-sm`}>
+                        <Icon className="h-4 w-4 text-white" />
+                      </div>
                     </div>
-                    <div className={`${stat.iconBg} p-2 md:p-3 rounded-lg text-white`}>
-                      <Icon className="h-4 w-4 md:h-5 md:w-5" />
+                    <div className="space-y-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-2xl font-bold text-gray-900">{card.value}</span>
+                        <span className="text-xs text-gray-500">{card.unit}</span>
+                      </div>
+                      <div className={`flex items-center gap-1 text-xs font-medium ${card.positive ? "text-green-600" : "text-orange-600"}`}>
+                        <ArrowUpRight className="h-3 w-3" />
+                        {card.change}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-1 md:space-y-2">
-                    <div className="flex items-baseline gap-1 md:gap-2">
-                      <span className="text-lg md:text-2xl font-bold text-gray-900">{stat.value}</span>
-                      <span className="text-xs md:text-sm text-gray-600">{stat.unit}</span>
-                    </div>
-                    <div className={`flex items-center gap-1 text-xs md:text-sm font-semibold ${stat.positive ? "text-green-600" : "text-red-600"}`}>
-                      {stat.positive ? <ArrowUpRight className="h-3 w-3 md:h-4 md:w-4" /> : <ArrowDownRight className="h-3 w-3 md:h-4 md:w-4" />}
-                      {stat.change}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Revenue Chart */}
-          <Card className="lg:col-span-2 shadow-sm md:shadow-md">
-            <div className="p-4 md:p-6">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Doanh Thu Theo Ngày</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="month" stroke="#6B7280" />
-                  <YAxis stroke="#6B7280" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: "#F9FAFB", border: "1px solid #E5E7EB" }}
-                    formatter={(value) => [(value as number).toLocaleString("vi-VN"), "Doanh Thu"]}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fillOpacity={1} fill="url(#colorRevenue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+          <Card className="lg:col-span-2 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Doanh Thu Theo Tháng</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {revenueLoading ? (
+                <ChartSkeleton />
+              ) : revenueData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
+                  <TrendingUp className="h-12 w-12 mb-3 opacity-30" />
+                  <p className="text-sm">Chưa có dữ liệu doanh thu</p>
+                  <p className="text-xs mt-1">Tạo hóa đơn đầu tiên để xem biểu đồ</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                    <XAxis dataKey="month" stroke="#9CA3AF" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="#9CA3AF" tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px" }}
+                      formatter={(v) => [`${(v as number).toLocaleString("vi-VN")} VND`, "Doanh Thu"]}
+                    />
+                    <Area type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
           </Card>
 
           {/* Status Pie Chart */}
-          <Card className="shadow-sm md:shadow-md">
-            <div className="p-4 md:p-6">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">Trạng Thái Hóa Đơn</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Trạng Thái Hóa Đơn</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {invoiceStatsLoading ? (
+                <ChartSkeleton />
+              ) : statusData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
+                  <FileText className="h-12 w-12 mb-3 opacity-30" />
+                  <p className="text-sm">Chưa có hóa đơn nào</p>
+                </div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={false}>
+                        {statusData.map((entry, i) => (
+                          <Cell key={i} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v) => `${v} hóa đơn`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-2 mt-2">
+                    {statusData.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-gray-600">{item.name}</span>
+                        </div>
+                        <span className="font-medium">{item.value}</span>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${value} hóa đơn`} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
           </Card>
         </div>
+
+        {/* Recent Invoices */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">Hóa Đơn Gần Đây</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-blue-600 hover:text-blue-700 text-xs">
+                Xem tất cả →
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {invoicesLoading ? (
+              <div className="space-y-3">
+                {Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="animate-pulse flex gap-4 py-2">
+                    <div className="h-4 bg-gray-200 rounded w-24" />
+                    <div className="h-4 bg-gray-200 rounded w-32 flex-1" />
+                    <div className="h-4 bg-gray-200 rounded w-20" />
+                    <div className="h-4 bg-gray-200 rounded w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : latestInvoices.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <FileText className="h-12 w-12 mb-3 opacity-30" />
+                <p className="text-sm font-medium">Chưa có hóa đơn nào</p>
+                <p className="text-xs mt-1 mb-4">Tạo hóa đơn đầu tiên để bắt đầu</p>
+                <Button size="sm" onClick={() => setLocation("/create-invoice")} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4" />
+                  Tạo Hóa Đơn
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left py-2 px-3 text-gray-500 font-medium">Số HĐ</th>
+                      <th className="text-left py-2 px-3 text-gray-500 font-medium hidden sm:table-cell">Ngày</th>
+                      <th className="text-right py-2 px-3 text-gray-500 font-medium">Số Tiền</th>
+                      <th className="text-center py-2 px-3 text-gray-500 font-medium">Trạng Thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestInvoices.map((inv) => {
+                      const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
+                      const status = inv.status || "PENDING";
+                      return (
+                        <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                          <td className="py-3 px-3 font-medium text-blue-600">{inv.invoiceNumber}</td>
+                          <td className="py-3 px-3 text-gray-500 hidden sm:table-cell">
+                            {new Date(inv.createdAt).toLocaleDateString("vi-VN")}
+                          </td>
+                          <td className="py-3 px-3 text-right font-medium">
+                            {amount.toLocaleString("vi-VN")} {inv.currency || "VND"}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[status] || "bg-gray-100 text-gray-800"}`}>
+                              {STATUS_LABELS[status] || status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

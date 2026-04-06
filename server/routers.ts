@@ -97,8 +97,9 @@ export const appRouter = router({
         await db.deleteInvoice(input.id);
         return { success: true };
       }),
-  }),
 
+
+  }),
   // Customers
   customers: router({
     list: protectedProcedure.query(async ({ ctx }) => {
@@ -426,6 +427,54 @@ export const appRouter = router({
         }
         return { success: true };
       }),
+    testConnection: protectedProcedure
+      .input(z.object({ gateway: z.enum(["payos", "paypal"]) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const config = await db.getPaymentGatewaysConfigByUserId(ctx.user.id);
+        if (!config) return { success: false, message: "Chưa có cấu hình" };
+        
+        if (input.gateway === "payos") {
+          if (!config.payosApiKey || !config.payosClientId || !config.payosChecksumKey) {
+            return { success: false, message: "Thiếu thông tin cấu hình PayOS" };
+          }
+          try {
+            const res = await fetch("https://api-merchant.payos.vn/v2/payment-requests", {
+              method: "GET",
+              headers: {
+                "x-client-id": config.payosClientId,
+                "x-api-key": config.payosApiKey,
+              },
+              signal: AbortSignal.timeout(5000),
+            });
+            const ok = res.status !== 401 && res.status !== 403;
+            return { success: ok, message: ok ? "Kết nối PayOS thành công" : "API Key không hợp lệ" };
+          } catch {
+            return { success: false, message: "Không thể kết nối đến PayOS" };
+          }
+        } else {
+          if (!config.paypalClientId || !config.paypalSecretKey) {
+            return { success: false, message: "Thiếu thông tin cấu hình PayPal" };
+          }
+          try {
+            const base = config.paypalMode === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+            const creds = Buffer.from(`${config.paypalClientId}:${config.paypalSecretKey}`).toString("base64");
+            const res = await fetch(`${base}/v1/oauth2/token`, {
+              method: "POST",
+              headers: {
+                "Authorization": `Basic ${creds}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: "grant_type=client_credentials",
+              signal: AbortSignal.timeout(5000),
+            });
+            const ok = res.ok;
+            return { success: ok, message: ok ? "Kết nối PayPal thành công" : "Client ID hoặc Secret Key không hợp lệ" };
+          } catch {
+            return { success: false, message: "Không thể kết nối đến PayPal" };
+          }
+        }
+      }),
   }),
 
   // Reports
@@ -483,6 +532,97 @@ export const appRouter = router({
       
       return stats;
     }),
+    getTopCustomers: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const invoices = await db.getInvoicesByUserId(ctx.user.id);
+      const customers = await db.getCustomersByUserId(ctx.user.id);
+      
+      // Aggregate revenue by customer
+      const revenueByCustomer: Record<number, number> = {};
+      invoices.forEach(inv => {
+        if (inv.customerId && inv.status === "PAID") {
+          const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
+          revenueByCustomer[inv.customerId] = (revenueByCustomer[inv.customerId] || 0) + amount;
+        }
+      });
+      
+      return customers
+        .map(c => ({
+          id: c.id,
+          name: c.name,
+          revenue: revenueByCustomer[c.id] || 0,
+          invoiceCount: invoices.filter(inv => inv.customerId === c.id).length,
+        }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10);
+    }),
+    getTopProducts: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const products = await db.getProductsByUserId(ctx.user.id);
+      // Return products with basic info (invoice items not tracked per product in current schema)
+      return products.slice(0, 10).map(p => ({
+        id: p.id,
+        name: p.name,
+        price: typeof p.price === "string" ? parseFloat(p.price) : (p.price || 0),
+        category: p.category || "",
+      }));
+    }),
+  }),
+  // User Settingss
+  settings: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      return db.getUserSettings(ctx.user.id);
+    }),
+
+    updateCompany: protectedProcedure
+      .input(z.object({
+        companyName: z.string().optional(),
+        companyEmail: z.string().email().optional().or(z.literal("")),
+        companyPhone: z.string().optional(),
+        companyAddress: z.string().optional(),
+        taxId: z.string().optional(),
+        website: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    updateNotifications: protectedProcedure
+      .input(z.object({
+        emailNotifications: z.boolean().optional(),
+        invoiceReminder: z.boolean().optional(),
+        paymentConfirmation: z.boolean().optional(),
+        weeklyReport: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    changePassword: protectedProcedure
+      .input(z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(6),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const user = await db.getUserById(ctx.user.id);
+        if (!user) throw new Error("User not found");
+        const bcrypt = await import("bcryptjs");
+        const valid = await bcrypt.compare(input.currentPassword, user.password);
+        if (!valid) throw new Error("Mật khẩu hiện tại không đúng");
+        const hashed = await bcrypt.hash(input.newPassword, 10);
+        const drizzleDb = await db.getDb();
+        if (!drizzleDb) throw new Error("Database not available");
+        const { eq } = await import("drizzle-orm");
+        const { users } = await import("../drizzle/schema");
+        await drizzleDb.update(users).set({ password: hashed }).where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
   }),
 
   // PDF Export
@@ -496,16 +636,32 @@ export const appRouter = router({
           throw new Error("Invoice not found");
         }
         
-        // TODO: Fetch invoice items and customer details
-        // For now, return a placeholder
+        // Fetch real invoice items, customer, and company settings
+        const [invoiceItemsData, customer, userSettings] = await Promise.all([
+          db.getInvoiceItemsByInvoiceId(input.invoiceId),
+          invoice.customerId ? db.getCustomerById(invoice.customerId) : Promise.resolve(undefined),
+          db.getUserSettings(ctx.user.id),
+        ]);
+        
         const pdfBuffer = await generateInvoicePDF({
           invoiceNumber: invoice.invoiceNumber,
           issueDate: invoice.createdAt,
           dueDate: invoice.expiresAt || undefined,
-          customerName: "Customer Name",
-          customerEmail: "customer@example.com",
-          companyName: "Your Company",
-          items: [],
+          customerName: customer?.name || "Khách Hàng",
+          customerEmail: customer?.email || "",
+          customerAddress: customer?.address || "",
+          companyName: userSettings?.companyName || "Công Ty",
+          companyAddress: userSettings?.companyAddress || "",
+          companyPhone: userSettings?.companyPhone || "",
+          companyEmail: userSettings?.companyEmail || "",
+          companyTaxId: userSettings?.taxId || "",
+          items: invoiceItemsData.map(item => ({
+            name: item.name,
+            quantity: typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity,
+            unitPrice: typeof item.unitPrice === "string" ? parseFloat(item.unitPrice) : item.unitPrice,
+            taxAmount: typeof item.taxAmount === "string" ? parseFloat(item.taxAmount || "0") : (item.taxAmount || 0),
+            totalAmount: typeof item.totalAmount === "string" ? parseFloat(item.totalAmount) : item.totalAmount,
+          })),
           subtotal: typeof invoice.subtotal === "string" ? parseFloat(invoice.subtotal) : invoice.subtotal,
           taxAmount: typeof invoice.taxAmount === "string" ? parseFloat(invoice.taxAmount) : (invoice.taxAmount || 0),
           discountAmount: typeof invoice.discountAmount === "string" ? parseFloat(invoice.discountAmount) : (invoice.discountAmount || 0),

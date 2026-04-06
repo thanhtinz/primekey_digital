@@ -2,8 +2,10 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as authService from "../auth";
 import { getSessionCookieOptions } from "./cookies";
-import { SignJWT } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 import { ENV } from "./env";
+import { getUserById } from "../db";
+import { parse as parseCookieHeader } from "cookie";
 
 const secret = new TextEncoder().encode(ENV.jwtSecret);
 
@@ -68,6 +70,33 @@ export function registerAuthRoutes(app: Express) {
     } catch (error) {
       console.error("[Auth] Register failed", error);
       res.status(400).json({ error: error instanceof Error ? error.message : "Registration failed" });
+    }
+  });
+
+  // Me route - check current session
+  app.get("/api/auth/me", async (req: Request, res: Response) => {
+    try {
+      const cookies = parseCookieHeader(req.headers.cookie || "");
+      const sessionCookie = cookies[COOKIE_NAME];
+      if (!sessionCookie) {
+        res.status(401).json({ error: "Not authenticated" });
+        return;
+      }
+      const secret = new TextEncoder().encode(ENV.jwtSecret);
+      const verified = await jwtVerify(sessionCookie, secret);
+      const userId = (verified.payload as any).userId;
+      if (!userId) {
+        res.status(401).json({ error: "Invalid session" });
+        return;
+      }
+      const user = await getUserById(userId);
+      if (!user) {
+        res.status(401).json({ error: "User not found" });
+        return;
+      }
+      res.json({ id: user.id, email: user.email, name: user.name, role: user.role });
+    } catch (error) {
+      res.status(401).json({ error: "Invalid or expired session" });
     }
   });
 
