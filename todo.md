@@ -390,3 +390,8 @@
 - [x] Mỗi dòng sản phẩm: toggle "Thủ công" / "Từ danh sách" riêng biệt
 - [x] Khi chọn sản phẩm từ danh sách: tự điền tên + đơn giá, hiển thị giá trong dropdown, vẫn sửa tên được
 - [x] TypeScript: 0 errors
+
+## Bug Fix: Toggle Sản Phẩm Không Hiển Thị
+
+- [x] Sửa toggle "Thủ công / Từ danh sách" luôn hiển thị bất kể products.length
+- [x] Khi chưa có sản phẩm: hiển thị banner cảnh báo vàng hướng dẫn thêm sản phẩm trước

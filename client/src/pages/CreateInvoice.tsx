@@ -465,71 +465,81 @@ export default function CreateInvoice() {
 
                 {items.map((item, index) => (
                   <div key={item.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
-                    {/* Product mode toggle */}
-                    {products.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
-                          <button
-                            onClick={() => updateItem(item.id, "useExistingProduct", false)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                              !item.useExistingProduct
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-gray-500 hover:text-gray-700"
-                            }`}
-                          >
-                            <PenLine className="h-3 w-3" />
-                            Thủ công
-                          </button>
-                          <button
-                            onClick={() => updateItem(item.id, "useExistingProduct", true)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                              item.useExistingProduct
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-gray-500 hover:text-gray-700"
-                            }`}
-                          >
-                            <ListChecks className="h-3 w-3" />
-                            Từ danh sách
-                          </button>
-                        </div>
-                        <span className="text-xs text-gray-400">Dòng {index + 1}</span>
+                    {/* Product mode toggle - luôn hiển thị */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
+                        <button
+                          onClick={() => updateItem(item.id, "useExistingProduct", false)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                            !item.useExistingProduct
+                              ? "bg-blue-600 text-white shadow-sm"
+                              : "text-gray-500 hover:text-gray-700"
+                          }`}
+                        >
+                          <PenLine className="h-3 w-3" />
+                          Thủ công
+                        </button>
+                        <button
+                          onClick={() => updateItem(item.id, "useExistingProduct", true)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                            item.useExistingProduct
+                              ? "bg-blue-600 text-white shadow-sm"
+                              : "text-gray-500 hover:text-gray-700"
+                          }`}
+                        >
+                          <ListChecks className="h-3 w-3" />
+                          Từ danh sách
+                          {products.length > 0 && (
+                            <span className="bg-white/20 rounded px-1">{products.length}</span>
+                          )}
+                        </button>
                       </div>
-                    )}
+                      <span className="text-xs text-gray-400">Dòng {index + 1}</span>
+                    </div>
 
                     {/* Row: Description / Product selector */}
                     <div className="grid grid-cols-12 gap-2 items-start">
                       <div className="col-span-11 sm:col-span-4">
-                        {item.useExistingProduct && products.length > 0 ? (
+                        {item.useExistingProduct ? (
                           <div className="space-y-1.5">
-                            <Select
-                              value={item.productId}
-                              onValueChange={(val) => handleSelectProduct(item.id, val)}
-                            >
-                              <SelectTrigger className="bg-white text-sm h-9">
-                                <SelectValue placeholder="Chọn sản phẩm..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {products.map(p => {
-                                  const price = typeof p.price === "string" ? parseFloat(p.price) : (p.price || 0);
-                                  return (
-                                    <SelectItem key={p.id} value={p.id.toString()}>
-                                      <span className="font-medium">{p.name}</span>
-                                      <span className="text-gray-400 ml-2 text-xs">
-                                        {price.toLocaleString("vi-VN")} {currency}
-                                      </span>
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
-                            {/* Vẫn cho phép sửa tên sau khi chọn */}
-                            {item.productId && (
-                              <Input
-                                placeholder="Chỉnh sửa tên sản phẩm nếu cần..."
-                                value={item.description}
-                                onChange={(e) => updateItem(item.id, "description", e.target.value)}
-                                className="bg-white text-xs h-8"
-                              />
+                            {products.length === 0 ? (
+                              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700">
+                                <Package className="h-3.5 w-3.5 flex-shrink-0" />
+                                Chưa có sản phẩm nào. Hãy thêm sản phẩm trong mục Sản Phẩm trước.
+                              </div>
+                            ) : (
+                              <>
+                                <Select
+                                  value={item.productId}
+                                  onValueChange={(val) => handleSelectProduct(item.id, val)}
+                                >
+                                  <SelectTrigger className="bg-white text-sm h-9">
+                                    <SelectValue placeholder="Chọn sản phẩm..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {products.map(p => {
+                                      const price = typeof p.price === "string" ? parseFloat(p.price) : (p.price || 0);
+                                      return (
+                                        <SelectItem key={p.id} value={p.id.toString()}>
+                                          <span className="font-medium">{p.name}</span>
+                                          <span className="text-gray-400 ml-2 text-xs">
+                                            {price.toLocaleString("vi-VN")} {currency}
+                                          </span>
+                                        </SelectItem>
+                                      );
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                                {/* Vẫn cho phép sửa tên sau khi chọn */}
+                                {item.productId && (
+                                  <Input
+                                    placeholder="Chỉnh sửa tên sản phẩm nếu cần..."
+                                    value={item.description}
+                                    onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                                    className="bg-white text-xs h-8"
+                                  />
+                                )}
+                              </>
                             )}
                           </div>
                         ) : (
