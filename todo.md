@@ -302,3 +302,10 @@
 ## Bug Fix: Font Tiếng Việt trong PDF
 
 - [x] Sửa lỗi chữ tiếng Việt bị mất dấu trong PDF - chuyển sang puppeteer+HTML, thiết kế đẹp hơn
+
+## Tính Năng: QR Thanh Toán trong PDF
+
+- [x] Cài thư viện qrcode để tạo QR từ paymentUrl
+- [x] Nhúng mã QR PayOS vào PDF hóa đơn (hiển thị khi có paymentUrl)
+- [x] Cập nhật InvoiceData interface để nhận paymentUrl
+- [x] Cập nhật các procedure gọi generateInvoicePDF để truyền paymentUrl

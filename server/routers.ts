@@ -998,6 +998,7 @@ export const appRouter = router({
           totalAmount: typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount,
           currency: invoice.currency || "VND",
           notes: invoice.notes || undefined,
+          paymentUrl: invoice.paymentUrl || undefined,
         });
         
         return {

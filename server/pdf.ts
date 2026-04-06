@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer-core";
-
+import QRCode from "qrcode";
 interface InvoiceData {
   invoiceNumber: string;
   issueDate: Date;
@@ -28,6 +28,8 @@ interface InvoiceData {
   notes?: string;
   footerText?: string;
   accentColor?: string;
+  paymentUrl?: string;
+  qrCodeDataUrl?: string;
 }
 
 function formatCurrency(amount: number, currency: string): string {
@@ -37,7 +39,23 @@ function formatCurrency(amount: number, currency: string): string {
   return amount.toLocaleString("vi-VN") + " " + currency;
 }
 
-function buildInvoiceHTML(data: InvoiceData): string {
+async function buildInvoiceHTMLAsync(data: InvoiceData): Promise<string> {
+  // Generate QR code if paymentUrl is provided
+  let qrCodeDataUrl: string | undefined = data.qrCodeDataUrl;
+  if (!qrCodeDataUrl && data.paymentUrl) {
+    try {
+      qrCodeDataUrl = await QRCode.toDataURL(data.paymentUrl, {
+        width: 160,
+        margin: 1,
+        color: { dark: "#1e293b", light: "#ffffff" },
+      });
+    } catch (e) {
+      // ignore QR generation error
+    }
+  }
+  return buildInvoiceHTML({ ...data, qrCodeDataUrl });
+}
+function buildInvoiceHTML(data: InvoiceData & { qrCodeDataUrl?: string }): string {
   const accent = data.accentColor || "#2563eb";
   const issueDate = new Date(data.issueDate).toLocaleDateString("vi-VN");
   const dueDate = data.dueDate ? new Date(data.dueDate).toLocaleDateString("vi-VN") : null;
@@ -286,13 +304,23 @@ function buildInvoiceHTML(data: InvoiceData): string {
     </div>
   </div>
 
-  ${data.notes ? `
+   ${data.notes ? `
   <div class="notes-section">
     <div class="notes-title">Ghi chú</div>
     <div class="notes-text">${data.notes}</div>
   </div>
   ` : ""}
-
+  ${data.qrCodeDataUrl ? `
+  <div style="margin-bottom:24px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;gap:20px;">
+    <img src="${data.qrCodeDataUrl}" width="120" height="120" style="border-radius:8px;border:1px solid #e2e8f0;" />
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:6px;">Thanh toán qua QR</div>
+      <div style="font-size:13px;color:#1e293b;font-weight:600;margin-bottom:4px;">Quét mã QR để thanh toán ngay</div>
+      <div style="font-size:11px;color:#64748b;">Hỗ trợ tất cả ứng dụng ngân hàng</div>
+      ${data.paymentUrl ? `<div style="font-size:10px;color:#94a3b8;margin-top:6px;word-break:break-all;">${data.paymentUrl}</div>` : ""}
+    </div>
+  </div>
+  ` : ""}
   ${data.footerText ? `
   <div class="footer">${data.footerText}</div>
   ` : `
@@ -323,7 +351,7 @@ async function getBrowser() {
 }
 
 export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
-  const html = buildInvoiceHTML(data);
+  const html = await buildInvoiceHTMLAsync(data);
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
