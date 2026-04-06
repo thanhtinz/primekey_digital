@@ -47,96 +47,85 @@ const ForbiddenPage = () => (
   </div>
 );
 
-// Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/track-order", "/feedbacks", "/review", "/login"];
-// Admin-only routes
-const ADMIN_ROUTES = [
-  "/customers", "/products", "/templates", "/reports",
-  "/settings", "/feedbacks-admin"
-];
+// Routes that never require auth (always accessible)
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review"];
 
-function isPublicRoute(path: string) {
-  return PUBLIC_ROUTES.some(r => path === r || path.startsWith(r + "/"));
-}
-
-function isAdminRoute(path: string) {
-  return ADMIN_ROUTES.some(r => path === r || path.startsWith(r + "/"));
+function isAlwaysPublic(path: string) {
+  return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
 }
 
 function Router() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [authState, setAuthState] = useState<{
+    checked: boolean;
+    authenticated: boolean;
+    role: string | null;
+  }>({ checked: false, authenticated: false, role: null });
+
   const [location, setLocation] = useLocation();
 
-  const fetchUser = async () => {
+  const checkAuth = async () => {
     try {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const user = await response.json();
-        setIsAuthenticated(true);
-        setUserRole(user?.role || "user");
-        return user;
+        setAuthState({ checked: true, authenticated: true, role: user?.role || "user" });
+        return { authenticated: true, role: user?.role || "user" };
       } else {
-        setIsAuthenticated(false);
-        setUserRole(null);
-        return null;
+        setAuthState({ checked: true, authenticated: false, role: null });
+        return { authenticated: false, role: null };
       }
     } catch {
-      setIsAuthenticated(false);
-      setUserRole(null);
-      return null;
+      setAuthState({ checked: true, authenticated: false, role: null });
+      return { authenticated: false, role: null };
     }
   };
 
-  useEffect(() => { fetchUser(); }, []);
+  useEffect(() => { checkAuth(); }, []);
 
   const handleLoginSuccess = async () => {
-    const user = await fetchUser();
-    // Navigate to dashboard after successful login
-    setLocation("/dashboard");
+    const result = await checkAuth();
+    if (result.authenticated) {
+      setLocation("/dashboard");
+    }
   };
 
-  // Always render public routes without auth check
-  // But if user is already authenticated and tries to access /login, redirect to dashboard
-  if (isPublicRoute(location)) {
-    if (location === "/login" && isAuthenticated === true) {
-      return <Redirect to="/dashboard" />;
-    }
+  // Always-public routes (track order, review, public feedbacks)
+  if (isAlwaysPublic(location)) {
     return (
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/track-order" component={() => <TrackOrder />} />
-          <Route path="/feedbacks" component={() => <PublicFeedbacks />} />
+          <Route path="/feedbacks-public" component={() => <PublicFeedbacks />} />
           <Route path="/review/:token" component={() => <ReviewPage />} />
-          <Route path="/login" component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
         </Switch>
       </Suspense>
     );
   }
 
-  if (isAuthenticated === null) {
+  // Still loading auth state
+  if (!authState.checked) {
     return <PageLoader />;
   }
 
-  if (!isAuthenticated) {
+  // Not authenticated: show landing page or login
+  if (!authState.authenticated) {
     return (
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={() => <LandingPage />} />
+          <Route path="/login" component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
           <Route component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
         </Switch>
       </Suspense>
     );
   }
 
-  // Admin route guard: non-admin users get Forbidden page
-  if (isAdminRoute(location) && userRole !== "admin") {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <ForbiddenPage />
-      </Suspense>
-    );
+  // Authenticated: if on login page, redirect to dashboard
+  if (location === "/login") {
+    return <Redirect to="/dashboard" />;
   }
+
+  const isAdmin = authState.role === "admin";
 
   return (
     <Suspense fallback={<PageLoader />}>
@@ -146,19 +135,23 @@ function Router() {
         <Route path="/invoices/:id" component={() => <InvoiceDetail />} />
         <Route path="/invoices" component={() => <InvoiceHistory />} />
         {/* Admin-only routes */}
-        <Route path="/customers/:id" component={() => userRole === "admin" ? <CustomerDetail /> : <ForbiddenPage />} />
-        <Route path="/customers" component={() => userRole === "admin" ? <Customers /> : <ForbiddenPage />} />
-        <Route path="/products" component={() => userRole === "admin" ? <Products /> : <ForbiddenPage />} />
-        <Route path="/templates/:id/edit" component={() => userRole === "admin" ? <EditInvoiceTemplate /> : <ForbiddenPage />} />
-        <Route path="/templates" component={() => userRole === "admin" ? <InvoiceTemplates /> : <ForbiddenPage />} />
-        <Route path="/reports" component={() => userRole === "admin" ? <Reports /> : <ForbiddenPage />} />
-        <Route path="/feedbacks" component={() => userRole === "admin" ? <FeedbacksAdmin /> : <ForbiddenPage />} />
-        <Route path="/settings/payos" component={() => userRole === "admin" ? <PayOSSettings /> : <ForbiddenPage />} />
-        <Route path="/settings/paypal" component={() => userRole === "admin" ? <PayPalSettings /> : <ForbiddenPage />} />
-        <Route path="/settings/smtp" component={() => userRole === "admin" ? <SmtpSettings /> : <ForbiddenPage />} />
-        <Route path="/settings" component={() => userRole === "admin" ? <Settings /> : <ForbiddenPage />} />
+        <Route path="/customers/:id" component={() => isAdmin ? <CustomerDetail /> : <ForbiddenPage />} />
+        <Route path="/customers" component={() => isAdmin ? <Customers /> : <ForbiddenPage />} />
+        <Route path="/products" component={() => isAdmin ? <Products /> : <ForbiddenPage />} />
+        <Route path="/templates/:id/edit" component={() => isAdmin ? <EditInvoiceTemplate /> : <ForbiddenPage />} />
+        <Route path="/templates" component={() => isAdmin ? <InvoiceTemplates /> : <ForbiddenPage />} />
+        <Route path="/reports" component={() => isAdmin ? <Reports /> : <ForbiddenPage />} />
+        <Route path="/feedbacks" component={() => isAdmin ? <FeedbacksAdmin /> : <ForbiddenPage />} />
+        <Route path="/settings/payos" component={() => isAdmin ? <PayOSSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/paypal" component={() => isAdmin ? <PayPalSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/smtp" component={() => isAdmin ? <SmtpSettings /> : <ForbiddenPage />} />
+        <Route path="/settings" component={() => isAdmin ? <Settings /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
-        <Route component={() => <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground"><h1 className="text-3xl font-bold mb-4">404 - Không Tìm Thấy</h1></div>} />
+        <Route component={() => (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
+            <h1 className="text-3xl font-bold mb-4">404 - Không Tìm Thấy</h1>
+          </div>
+        )} />
       </Switch>
     </Suspense>
   );
