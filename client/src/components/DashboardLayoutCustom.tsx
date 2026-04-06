@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
@@ -75,39 +75,50 @@ const staffNavGroups = [
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
   const [location, setLocation] = useLocation();
   const logoutMutation = trpc.auth.logout.useMutation();
-  const { data: user } = trpc.auth.me.useQuery();
+  const { data: user } = trpc.auth.me.useQuery(undefined, {
+    staleTime: 60_000, // Cache 60s - tránh refetch khi toggle sidebar
+  });
   const { theme, toggleTheme } = useTheme();
 
-  // Role-based navigation: admin sees all, staff sees limited
   const navGroups = (user as any)?.role === "admin" ? adminNavGroups : staffNavGroups;
 
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
-      if (mobile) setSidebarOpen(false);
-      else setSidebarOpen(true);
+      // Only set sidebar state on initial load or resize crossing breakpoint
+      setSidebarOpen(prev => {
+        if (!mobile) return true;
+        return prev; // Keep current state on mobile resize
+      });
     };
-    checkMobile();
+    // Initial check
+    const mobile = window.innerWidth < 1024;
+    setIsMobile(mobile);
+    setSidebarOpen(!mobile); // Open on desktop, closed on mobile initially
+
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logoutMutation.mutateAsync();
     } catch {}
-    setLocation("/");
-  };
+    window.location.replace("/login");
+  }, [logoutMutation]);
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = useCallback((href: string) => {
     setLocation(href);
-    if (isMobile) setSidebarOpen(false);
-  };
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+  }, [setLocation]);
+
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
 
   const isActive = (href: string) => {
     if (href === "/settings") return location === "/settings";
@@ -120,14 +131,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar - always in DOM, animated with transform */}
       <aside
+        style={{
+          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 250ms cubic-bezier(0.4, 0, 0.2, 1)",
+          willChange: "transform",
+        }}
         className={`
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           ${isMobile ? "fixed" : "relative"}
           w-64 h-full bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800
-          text-white flex flex-col z-40 shadow-2xl
-          transition-transform duration-300 ease-in-out flex-shrink-0
+          text-white flex flex-col z-40 shadow-2xl flex-shrink-0
         `}
       >
         {/* Logo */}
@@ -188,7 +202,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-slate-200 truncate">{user.name || user.email}</p>
-                <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                <p className="text-[10px] text-slate-500 truncate capitalize">{(user as any)?.role === "admin" ? "Admin" : "Nhân viên"}</p>
               </div>
             </div>
           )}
@@ -203,22 +217,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Mobile Overlay */}
-      {sidebarOpen && isMobile && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {/* Mobile Overlay - always in DOM, animated with opacity */}
+      <div
+        onClick={closeSidebar}
+        style={{
+          opacity: sidebarOpen && isMobile ? 1 : 0,
+          pointerEvents: sidebarOpen && isMobile ? "auto" : "none",
+          transition: "opacity 250ms cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30"
+      />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div
+        style={{
+          // On desktop: push content when sidebar opens
+          marginLeft: !isMobile && sidebarOpen ? "0" : !isMobile ? "-256px" : "0",
+          transition: "margin-left 250ms cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+        className="flex-1 flex flex-col overflow-hidden min-w-0"
+      >
         {/* Header */}
         <header className="bg-background border-b border-border shadow-sm sticky top-0 z-20 flex-shrink-0">
           <div className="flex items-center justify-between px-4 sm:px-6 h-14">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={toggleSidebar}
                 className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
                 aria-label="Toggle sidebar"
               >
@@ -241,7 +265,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 onClick={() => {}}
                 title="Thông báo"
               >
-                <Bell className="h-4.5 w-4.5" />
+                <Bell className="h-4 w-4" />
               </button>
               {toggleTheme && (
                 <button
@@ -269,7 +293,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">          {children}
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
+          {children}
         </main>
       </div>
     </div>

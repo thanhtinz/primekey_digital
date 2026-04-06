@@ -230,3 +230,8 @@
 
 - [x] Thêm toast notification vào Login page
 - [x] Fix chuyển hướng sau khi đăng nhập thành công (redirect to /dashboard)
+
+## Phase 17: Fix Sidebar Animation
+
+- [x] Fix sidebar bị giật/flash khi mở/đóng trên mobile - dùng CSS transform thay vì conditional render
+- [x] Loại bỏ re-render gây flash trắng khi toggle sidebar
