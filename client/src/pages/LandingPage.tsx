@@ -41,7 +41,6 @@ export default function LandingPage() {
   const navLinks = [
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
     { label: "Đánh Giá", href: "/feedbacks-public", icon: Star },
-    { label: "Đăng Nhập", href: "/login", icon: Users },
   ];
 
   const stats = [
@@ -577,13 +576,13 @@ export default function LandingPage() {
                 Tra Cứu Đơn Hàng
               </Button>
               <Button
-                onClick={() => setLocation("/login")}
+                onClick={() => setLocation("/feedbacks-public")}
                 size="lg"
                 variant="outline"
                 className="border-white/20 text-white hover:bg-white/10 bg-white/5 h-12 px-8 text-base gap-2 hover:-translate-y-0.5 transition-all"
               >
-                <Users className="h-5 w-5" />
-                Đăng Nhập Hệ Thống
+                <Star className="h-5 w-5" />
+                Xem Đánh Giá
               </Button>
             </div>
           </div>
@@ -625,9 +624,7 @@ export default function LandingPage() {
                 <button onClick={() => setLocation("/feedbacks-public")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
                   <Star className="h-3.5 w-3.5" /> Xem Đánh Giá
                 </button>
-                <button onClick={() => setLocation("/login")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
-                  <Users className="h-3.5 w-3.5" /> Đăng Nhập
-                </button>
+
               </div>
             </div>
 

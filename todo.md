@@ -424,3 +424,9 @@
 - [x] getPublicInfo cập nhật trả về companyLogo từ invoiceTemplates
 - [x] Testimonials lấy từ reviews.getPublic (tối đa 6), fallback về mẫu nếu chưa có
 - [x] TypeScript: 0 errors
+
+## Fix: Landing Page & Reports Mobile
+
+- [ ] Xóa nút "Đăng Nhập" và các link liên quan dashboard khỏi navbar landing page
+- [ ] Chỉ giữ các link dành cho khách: Tra Cứu Đơn, Đánh Giá (không có link admin/dashboard)
+- [ ] Fix responsive trang Reports trên mobile: charts vừa màn hình, tabs cuộn ngang
