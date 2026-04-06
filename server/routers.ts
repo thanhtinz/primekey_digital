@@ -8,6 +8,7 @@ import { generateInvoicePDF } from "./pdf";
 import { generateInvoiceExcel } from "./excel";
 import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHTML, generateStatusUpdateEmailHTML } from "./email";
 import crypto from "crypto";
+import { createPayOSPaymentLink } from "./payos";
 
 export const appRouter = router({
   system: systemRouter,
@@ -241,6 +242,174 @@ export const appRouter = router({
         }
         return { success: true, newId: 0, invoiceNumber: newNumber };
       }),
+    // Manual status transition with auto email + PayOS QR regeneration
+    manualTransition: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        newStatus: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]),
+        note: z.string().optional(),
+        regeneratePaymentLink: z.boolean().optional(), // true = tạo lại QR PayOS
+        origin: z.string().optional(), // window.location.origin từ frontend
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoice = await db.getInvoiceById(input.id);
+        if (!invoice || invoice.userId !== ctx.user.id) throw new Error("Invoice not found");
+
+        const statusLabels: Record<string, string> = {
+          CREATED: "Tạo Đơn", PAID: "Đã Thanh Toán", SHIPPING: "Đang Giao Hàng",
+          WARRANTY: "Bảo Hành", FAILED: "Thất Bại", EXPIRED: "Hết Hạn",
+        };
+
+        // Generate review token if transitioning to WARRANTY
+        let reviewToken = invoice.reviewToken;
+        if (input.newStatus === "WARRANTY" && !reviewToken) {
+          reviewToken = crypto.randomBytes(32).toString("hex");
+        }
+
+        // Handle PayOS payment link regeneration (when transitioning to CREATED or explicitly requested)
+        let paymentUrl = invoice.paymentUrl;
+        let qrCode = invoice.qrCode;
+        let paymentLinkId = invoice.paymentTransactionId;
+
+        if (input.regeneratePaymentLink || input.newStatus === "CREATED") {
+          try {
+            const gatewayConfig = await db.getPaymentGatewaysConfigByUserId(ctx.user.id);
+            if (gatewayConfig?.payosApiKey && gatewayConfig?.payosClientId && gatewayConfig?.payosChecksumKey) {
+              const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+              const origin = input.origin || "";
+              const orderCode = Date.now() % 9007199254740991; // unique numeric order code
+              const payosResult = await createPayOSPaymentLink(
+                {
+                  clientId: gatewayConfig.payosClientId,
+                  apiKey: gatewayConfig.payosApiKey,
+                  checksumKey: gatewayConfig.payosChecksumKey,
+                },
+                {
+                  orderCode,
+                  amount: Math.round(Number(invoice.totalAmount)),
+                  description: `TT ${invoice.invoiceNumber}`.slice(0, 25),
+                  buyerName: customer?.name || "Khach hang",
+                  buyerEmail: customer?.email || "",
+                  buyerPhone: customer?.phone || "",
+                  buyerAddress: customer?.address || "",
+                  returnUrl: `${origin}/track-order`,
+                  cancelUrl: `${origin}/track-order`,
+                }
+              );
+              paymentUrl = payosResult.checkoutUrl;
+              qrCode = payosResult.qrCode;
+              paymentLinkId = String(payosResult.paymentLinkId);
+            }
+          } catch (payosErr) {
+            console.error("[manualTransition] PayOS error:", payosErr);
+            // Continue without failing - just won't have new QR
+          }
+        }
+
+        // Update invoice status
+        await db.updateInvoice(input.id, {
+          status: input.newStatus,
+          reviewToken,
+          paidAt: input.newStatus === "PAID" ? new Date() : invoice.paidAt,
+          paymentUrl: paymentUrl || invoice.paymentUrl,
+          qrCode: qrCode || invoice.qrCode,
+          paymentTransactionId: paymentLinkId || invoice.paymentTransactionId,
+          updatedAt: new Date(),
+        });
+
+        // Auto-send email for all transitions (except FAILED/EXPIRED unless explicitly noted)
+        let emailSentOk = false;
+        let paymentLinkRegenOk = !!(paymentUrl && (input.regeneratePaymentLink || input.newStatus === "CREATED"));
+        const autoEmailStatuses = ["PAID", "SHIPPING", "WARRANTY", "CREATED"];
+        if (autoEmailStatuses.includes(input.newStatus)) {
+          try {
+            const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+            if (customer?.email) {
+              const userSettings = await db.getUserSettings(ctx.user.id);
+              const companyName = userSettings?.companyName || "Invoice Prime";
+              const origin = input.origin || "";
+              const reviewUrl = reviewToken ? `${origin}/review/${reviewToken}` : undefined;
+              const trackUrl = `${origin}/track-order`;
+              const emailType = input.newStatus as "CREATED" | "PAID" | "SHIPPING" | "WARRANTY";
+              const customTemplate = await db.getEmailTemplateByType(ctx.user.id, emailType).catch(() => null);
+              const replaceVars = (str: string) => str
+                .replace(/{{customerName}}/g, customer.name)
+                .replace(/{{invoiceNumber}}/g, invoice.invoiceNumber)
+                .replace(/{{totalAmount}}/g, invoice.totalAmount ? `${Number(invoice.totalAmount).toLocaleString("vi-VN")} đ` : "")
+                .replace(/{{status}}/g, statusLabels[input.newStatus] || input.newStatus)
+                .replace(/{{trackUrl}}/g, trackUrl)
+                .replace(/{{reviewUrl}}/g, reviewUrl || "")
+                .replace(/{{companyName}}/g, companyName)
+                .replace(/{{paymentUrl}}/g, paymentUrl || "");
+              let html: string;
+              let subject: string;
+              if (customTemplate) {
+                html = replaceVars(customTemplate.htmlBody);
+                subject = replaceVars(customTemplate.subject);
+              } else if (input.newStatus === "PAID") {
+                // Use dedicated payment confirmation email for PAID
+                html = generatePaymentConfirmationEmailHTML({
+                  invoiceNumber: invoice.invoiceNumber,
+                  customerName: customer.name,
+                  totalAmount: Number(invoice.totalAmount),
+                  currency: invoice.currency || "VND",
+                  companyName,
+                  paidAt: new Date(),
+                });
+                subject = `Xác Nhận Thanh Toán Đơn Hàng ${invoice.invoiceNumber}`;
+              } else if (input.newStatus === "CREATED" && paymentUrl) {
+                // Use invoice email template with payment link when regenerating QR
+                html = generateInvoiceEmailHTML({
+                  invoiceNumber: invoice.invoiceNumber,
+                  customerName: customer.name,
+                  totalAmount: Number(invoice.totalAmount),
+                  currency: invoice.currency || "VND",
+                  companyName,
+                  paymentUrl,
+                });
+                subject = `Hóa Đơn ${invoice.invoiceNumber} - Link Thanh Toán Mới`;
+              } else {
+                html = generateStatusUpdateEmailHTML({
+                  invoiceNumber: invoice.invoiceNumber,
+                  customerName: customer.name,
+                  status: input.newStatus,
+                  statusLabel: statusLabels[input.newStatus] || input.newStatus,
+                  companyName,
+                  reviewUrl,
+                  trackUrl,
+                });
+                subject = `Cập Nhật Đơn Hàng ${invoice.invoiceNumber} - ${statusLabels[input.newStatus]}`;
+              }
+              await sendEmail({ to: customer.email, subject, html, userId: ctx.user.id });
+              emailSentOk = true;
+            }
+          } catch (emailErr) {
+            console.error("[manualTransition] Email error:", emailErr);
+            // Continue without failing
+          }
+        }
+
+        // Log activity
+        const logNote = input.note ? ` - ${input.note}` : "";
+        await db.createActivityLog(
+          ctx.user.id,
+          `MANUAL_STATUS_CHANGE:${invoice.status}->${input.newStatus}${logNote}`,
+          "invoice",
+          input.id
+        );
+
+        return {
+          success: true,
+          newStatus: input.newStatus,
+          paymentUrl: paymentUrl || invoice.paymentUrl,
+          qrCode: qrCode || invoice.qrCode,
+          reviewToken,
+          emailSent: emailSentOk,
+          paymentLinkRegenerated: paymentLinkRegenOk,
+        };
+      }),
+
     // Public: get invoices by customer email (for order tracking page)
     getByEmail: publicProcedure
       .input(z.object({ email: z.string().email() }))

@@ -289,3 +289,12 @@
 ## Bug Fix: Lỗi PDF Preview
 
 - [x] Sửa lỗi "doc.autoTable is not a function" khi nhấn Xem Trước PDF
+
+## Tính Năng: Chuyển Trạng Thái Thủ Công
+
+- [x] Thêm nút "Chuyển Trạng Thái" dropdown trong InvoiceDetail
+- [x] Khi chuyển sang PAID thủ công: gửi email xác nhận thanh toán
+- [x] Khi chuyển sang SHIPPING thủ công: gửi email thông báo giao hàng
+- [x] Khi chuyển sang WARRANTY thủ công: gửi email thông báo bảo hành + tạo link đánh giá
+- [x] Khi chuyển sang CREATED: tùy chọn tạo lại PayOS QR mới và gửi email link thanh toán
+- [x] Ghi log hoạt động khi chuyển trạng thái thủ công

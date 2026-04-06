@@ -11,8 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -70,6 +75,11 @@ export default function InvoiceDetail() {
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [showTransitionModal, setShowTransitionModal] = useState(false);
+  const [pendingTransition, setPendingTransition] = useState<string | null>(null);
+  const [transitionNote, setTransitionNote] = useState("");
+  const [regenerateQR, setRegenerateQR] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const { data: invoice, isLoading, error } = trpc.invoices.get.useQuery({ id: invoiceId }, { enabled: !!invoiceId });
   const { data: notes, refetch: refetchNotes } = trpc.notes.list.useQuery({ invoiceId }, { enabled: !!invoiceId });
   const { data: currentUser } = trpc.auth.me.useQuery();
@@ -80,6 +90,7 @@ export default function InvoiceDetail() {
   const duplicateMutation = trpc.invoices.duplicate.useMutation();
   const createNoteMutation = trpc.notes.create.useMutation();
   const deleteNoteMutation = trpc.notes.delete.useMutation();
+  const manualTransitionMutation = trpc.invoices.manualTransition.useMutation();
   const utils = trpc.useUtils();
 
   const handleDelete = async () => {
@@ -148,6 +159,39 @@ export default function InvoiceDetail() {
       toast.success(`Đã cập nhật trạng thái: ${STATUS_CONFIG[newStatus]?.label}`);
     } catch (err: any) {
       toast.error(err.message || "Cập nhật trạng thái thất bại");
+    }
+  };
+
+  const openTransitionModal = (status: string) => {
+    setPendingTransition(status);
+    setTransitionNote("");
+    setRegenerateQR(status === "CREATED");
+    setShowTransitionModal(true);
+  };
+
+  const handleManualTransition = async () => {
+    if (!pendingTransition) return;
+    setIsTransitioning(true);
+    try {
+      const result = await manualTransitionMutation.mutateAsync({
+        id: invoiceId,
+        newStatus: pendingTransition as any,
+        note: transitionNote || undefined,
+        regeneratePaymentLink: regenerateQR,
+        origin: window.location.origin,
+      });
+      await utils.invoices.get.invalidate({ id: invoiceId });
+      await utils.invoices.list.invalidate();
+      const statusLabel = STATUS_CONFIG[pendingTransition]?.label || pendingTransition;
+      let msg = `Đã chuyển trạng thái: ${statusLabel}`;
+      if (result.emailSent) msg += " · Email đã gửi";
+      if (result.paymentLinkRegenerated) msg += " · QR mới đã tạo";
+      toast.success(msg);
+      setShowTransitionModal(false);
+    } catch (err: any) {
+      toast.error(err.message || "Chuyển trạng thái thất bại");
+    } finally {
+      setIsTransitioning(false);
     }
   };
 
@@ -310,30 +354,35 @@ export default function InvoiceDetail() {
             Nhân Bản
           </Button>
 
-          {/* Update Status Dropdown */}
-          {availableTransitions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2" disabled={updateStatusMutation.isPending}>
-                  {updateStatusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Cập Nhật Trạng Thái
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {availableTransitions.map((status) => {
-                  const cfg = STATUS_CONFIG[status];
-                  const Icon = cfg?.icon;
-                  return (
-                    <DropdownMenuItem key={status} onClick={() => handleUpdateStatus(status)} className="gap-2">
-                      {Icon && <Icon className="h-4 w-4" />}
-                      {cfg?.label || status}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {/* Manual Status Transition Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50" disabled={isTransitioning}>
+                {isTransitioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                Chuyển Trạng Thái
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Chuyển thủ công (có gửi email)</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
+                const Icon = cfg.icon;
+                const isCurrent = status === currentStatus;
+                return (
+                  <DropdownMenuItem
+                    key={status}
+                    onClick={() => !isCurrent && openTransitionModal(status)}
+                    disabled={isCurrent}
+                    className={`gap-2 ${isCurrent ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {cfg.label}
+                    {isCurrent && <span className="ml-auto text-xs text-muted-foreground">(hiện tại)</span>}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Review Link */}
           {invoice.reviewToken && (
@@ -611,6 +660,80 @@ export default function InvoiceDetail() {
           </div>
         </div>
       </div>
+      {/* Manual Transition Confirmation Modal */}
+      <Dialog open={showTransitionModal} onOpenChange={setShowTransitionModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {pendingTransition && (() => { const cfg = STATUS_CONFIG[pendingTransition]; const Icon = cfg?.icon; return Icon ? <Icon className="h-5 w-5" /> : null; })()}
+              Chuyển Sang: {pendingTransition ? STATUS_CONFIG[pendingTransition]?.label : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Thao tác này sẽ cập nhật trạng thái đơn hàng và tự động gửi email thông báo cho khách hàng.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Hóa đơn</span>
+                <span className="font-medium">#{invoice.invoiceNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Trạng thái hiện tại</span>
+                <span className="font-medium">{STATUS_CONFIG[currentStatus]?.label}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Chuyển sang</span>
+                <span className="font-semibold text-blue-600">{pendingTransition ? STATUS_CONFIG[pendingTransition]?.label : ""}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="transition-note" className="text-sm">Ghi chú (tùy chọn)</Label>
+              <Textarea
+                id="transition-note"
+                placeholder="Lý do chuyển trạng thái..."
+                value={transitionNote}
+                onChange={(e) => setTransitionNote(e.target.value)}
+                rows={2}
+                className="text-sm resize-none"
+              />
+            </div>
+
+            {/* Option to regenerate PayOS QR */}
+            {pendingTransition === "CREATED" && (
+              <div className="flex items-center gap-2 rounded-lg border p-3 bg-blue-50/50">
+                <input
+                  type="checkbox"
+                  id="regen-qr"
+                  checked={regenerateQR}
+                  onChange={(e) => setRegenerateQR(e.target.checked)}
+                  className="h-4 w-4 accent-blue-600"
+                />
+                <label htmlFor="regen-qr" className="text-sm cursor-pointer">
+                  Tạo lại QR PayOS mới và gửi link thanh toán cho khách
+                </label>
+              </div>
+            )}
+
+            <div className="rounded-lg border p-3 bg-amber-50/50 text-xs text-amber-700 space-y-0.5">
+              <p className="font-medium">ℹ️ Tự động sau khi chuyển:</p>
+              <p>• Gửi email thông báo cho khách hàng</p>
+              {pendingTransition === "WARRANTY" && <p>• Tạo link đánh giá nếu chưa có</p>}
+              <p>• Ghi log hoạt động</p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowTransitionModal(false)} disabled={isTransitioning}>
+              Hủy
+            </Button>
+            <Button onClick={handleManualTransition} disabled={isTransitioning} className="gap-2">
+              {isTransitioning ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Xác Nhận Chuyển
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
