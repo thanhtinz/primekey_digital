@@ -285,3 +285,7 @@
 
 - [x] Due date tùy chỉnh trong form tạo hóa đơn (thay vì mặc định 7 ngày)
 - [x] Nút "Xem Trước PDF" trong form tạo hóa đơn trước khi lưu
+
+## Bug Fix: Lỗi PDF Preview
+
+- [x] Sửa lỗi "doc.autoTable is not a function" khi nhấn Xem Trước PDF

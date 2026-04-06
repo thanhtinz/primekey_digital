@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { autoTable } from "jspdf-autotable";
 
 interface InvoiceData {
   invoiceNumber: string;
@@ -107,7 +107,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     item.totalAmount.toLocaleString("vi-VN"),
   ]);
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [["Mô tả", "Số lượng", "Đơn giá", "Thành tiền"]],
     body: tableData,
     startY: yPosition,
