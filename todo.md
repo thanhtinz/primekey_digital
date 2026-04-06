@@ -298,3 +298,7 @@
 - [x] Khi chuyển sang WARRANTY thủ công: gửi email thông báo bảo hành + tạo link đánh giá
 - [x] Khi chuyển sang CREATED: tùy chọn tạo lại PayOS QR mới và gửi email link thanh toán
 - [x] Ghi log hoạt động khi chuyển trạng thái thủ công
+
+## Bug Fix: Font Tiếng Việt trong PDF
+
+- [x] Sửa lỗi chữ tiếng Việt bị mất dấu trong PDF - chuyển sang puppeteer+HTML, thiết kế đẹp hơn
