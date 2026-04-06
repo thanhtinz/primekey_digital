@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
-  Bell, User, Moon, Sun, Mail, MessageSquare
+  Bell, User, Moon, Sun, Mail, MessageSquare, Search
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -52,6 +53,8 @@ const adminNavGroups = [
   {
     label: "Hệ Thống",
     items: [
+      { label: "Nhân Viên", href: "/staff", icon: Users },
+      { label: "Lịch Sử HT", href: "/activity-log", icon: History },
       { label: "Cài Đặt", href: "/settings", icon: Settings },
       { label: "Cấu Hình SMTP", href: "/settings/smtp", icon: Mail },
       { label: "Mẫu Email", href: "/settings/email-templates", icon: MessageSquare },
@@ -79,11 +82,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
   const [location, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const logoutMutation = trpc.auth.logout.useMutation();
   const { data: user } = trpc.auth.me.useQuery(undefined, {
     staleTime: 60_000, // Cache 60s - tránh refetch khi toggle sidebar
   });
   const { theme, toggleTheme } = useTheme();
+  const { data: invoices } = trpc.invoices.list.useQuery(undefined, { staleTime: 30_000 });
+  const { data: customers } = trpc.customers.list.useQuery(undefined, { staleTime: 30_000 });
+
+  // Global search results
+  const searchResults = searchQuery.trim().length >= 2 ? [
+    ...(invoices || []).filter(inv =>
+      inv.invoiceNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inv as any).customerName?.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 4).map(inv => ({ type: "invoice", label: inv.invoiceNumber, sub: (inv as any).customerName || "", href: `/invoices/${inv.id}` })),
+    ...(customers || []).filter(c =>
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.phone?.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 3).map(c => ({ type: "customer", label: c.name, sub: c.email || c.phone || "", href: `/customers/${c.id}` })),
+  ] : [];
+
+  // Close search on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const navGroups = (user as any)?.role === "admin" ? adminNavGroups : staffNavGroups;
 
@@ -257,6 +289,52 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <span className="text-sm text-muted-foreground hidden sm:block">Invoice Prime</span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
                 <span className="text-sm font-semibold text-foreground">{currentPageTitle}</span>
+              </div>
+              {/* Global Search */}
+              <div ref={searchRef} className="relative hidden md:block">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Tìm kiếm..."
+                    value={searchQuery}
+                    onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }}
+                    onFocus={() => setShowSearchResults(true)}
+                    className="pl-8 h-8 w-52 text-sm bg-muted/50 border-muted"
+                  />
+                </div>
+                {showSearchResults && searchQuery.trim().length >= 2 && (
+                  <div className="absolute top-full left-0 mt-1 w-72 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                    {searchResults.length === 0 ? (
+                      <div className="px-3 py-4 text-sm text-muted-foreground text-center">Không tìm thấy kết quả</div>
+                    ) : (
+                      <div className="py-1">
+                        {searchResults.map((r, i) => (
+                          <button
+                            key={i}
+                            onClick={() => { setLocation(r.href); setSearchQuery(""); setShowSearchResults(false); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent text-left transition-colors"
+                          >
+                            <div className={`h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              r.type === "invoice" ? "bg-blue-100" : "bg-green-100"
+                            }`}>
+                              {r.type === "invoice"
+                                ? <FileText className="h-3.5 w-3.5 text-blue-600" />
+                                : <Users className="h-3.5 w-3.5 text-green-600" />
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{r.label}</p>
+                              {r.sub && <p className="text-xs text-muted-foreground truncate">{r.sub}</p>}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                              {r.type === "invoice" ? "Hóa đơn" : "Khách hàng"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

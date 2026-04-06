@@ -3,12 +3,13 @@ import { useLocation, useParams } from "wouter";
 import {
   ArrowLeft, Download, Mail, Trash2, CheckCircle, Clock, XCircle,
   AlertCircle, Copy, ExternalLink, Loader2, Package, Truck, Shield,
-  ChevronDown, Star, Link2
+  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
@@ -63,15 +64,22 @@ export default function InvoiceDetail() {
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const invoiceId = parseInt(params.id || "0");
-  const [isDeleting, setIsDeleting] = useState(false);
+   const [isDeleting, setIsDeleting] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
-
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [isAddingNote, setIsAddingNote] = useState(false);
   const { data: invoice, isLoading, error } = trpc.invoices.get.useQuery({ id: invoiceId }, { enabled: !!invoiceId });
+  const { data: notes, refetch: refetchNotes } = trpc.notes.list.useQuery({ invoiceId }, { enabled: !!invoiceId });
+  const { data: currentUser } = trpc.auth.me.useQuery();
   const deleteInvoice = trpc.invoices.delete.useMutation();
   const sendEmailMutation = trpc.email.sendInvoice.useMutation();
   const exportPDFMutation = trpc.pdf.exportInvoice.useMutation();
   const updateStatusMutation = trpc.invoices.updateStatus.useMutation();
+  const duplicateMutation = trpc.invoices.duplicate.useMutation();
+  const createNoteMutation = trpc.notes.create.useMutation();
+  const deleteNoteMutation = trpc.notes.delete.useMutation();
   const utils = trpc.useUtils();
 
   const handleDelete = async () => {
@@ -151,6 +159,47 @@ export default function InvoiceDetail() {
     }
   };
 
+  const handleDuplicate = async () => {
+    if (!invoice) return;
+    setIsDuplicating(true);
+    try {
+      const result = await duplicateMutation.mutateAsync({ id: invoiceId });
+      await utils.invoices.list.invalidate();
+      toast.success(`Đã nhân bản thành công! Số HĐ mới: ${result.invoiceNumber}`);
+      if (result.newId) setLocation(`/invoices/${result.newId}`);
+    } catch (err: any) {
+      toast.error(err.message || "Nhân bản hóa đơn thất bại");
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    setIsAddingNote(true);
+    try {
+      await createNoteMutation.mutateAsync({ invoiceId, content: newNote.trim() });
+      setNewNote("");
+      await refetchNotes();
+      toast.success("Đã thêm ghi chú");
+    } catch (err: any) {
+      toast.error(err.message || "Thêm ghi chú thất bại");
+    } finally {
+      setIsAddingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: number) => {
+    if (!confirm("Xóa ghi chú này?")) return;
+    try {
+      await deleteNoteMutation.mutateAsync({ id: noteId });
+      await refetchNotes();
+      toast.success("Đã xóa ghi chú");
+    } catch (err: any) {
+      toast.error(err.message || "Xóa ghi chú thất bại");
+    }
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -181,6 +230,7 @@ export default function InvoiceDetail() {
   const StatusIcon = statusConfig.icon;
   const currentStep = statusConfig.step;
   const availableTransitions = STATUS_TRANSITIONS[currentStatus] || [];
+  const isAdmin = (currentUser as any)?.role === "admin";
 
   return (
     <DashboardLayout>
@@ -254,6 +304,10 @@ export default function InvoiceDetail() {
           <Button variant="outline" size="sm" onClick={handleSendEmail} disabled={isSendingEmail} className="gap-2">
             {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
             Gửi Email
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={isDuplicating} className="gap-2">
+            {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CopyPlus className="h-4 w-4" />}
+            Nhân Bản
           </Button>
 
           {/* Update Status Dropdown */}
@@ -405,8 +459,62 @@ export default function InvoiceDetail() {
                 </CardContent>
               </Card>
             )}
+            {/* Internal Notes Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-blue-500" />
+                  Ghi Chú Nội Bộ
+                  {notes && notes.length > 0 && (
+                    <span className="ml-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">{notes.length}</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Thêm ghi chú nội bộ (chỉ nhân viên thấy)..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    rows={2}
+                    className="resize-none text-sm"
+                  />
+                  <Button size="sm" onClick={handleAddNote} disabled={!newNote.trim() || isAddingNote} className="gap-2">
+                    {isAddingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    Thêm
+                  </Button>
+                </div>
+                {notes && notes.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t">
+                    {notes.map((note: any) => (
+                      <div key={note.id} className="flex gap-2 p-2.5 bg-muted/40 rounded-lg">
+                        <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-[10px] font-bold text-blue-600">{(note.authorName || "?").charAt(0).toUpperCase()}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-xs font-medium">{note.authorName || "Nhân viên"}</p>
+                            <div className="flex items-center gap-1">
+                              <p className="text-[10px] text-muted-foreground">{formatDate(note.createdAt)}</p>
+                              {isAdmin && (
+                                <button onClick={() => handleDeleteNote(note.id)} className="p-0.5 hover:text-red-500 text-muted-foreground">
+                                  <Trash className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs text-foreground mt-0.5 whitespace-pre-wrap">{note.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(!notes || notes.length === 0) && (
+                  <p className="text-xs text-muted-foreground text-center py-1">Chưa có ghi chú nào</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
-
           <div className="space-y-4">
             {/* Amount Summary */}
             <Card>

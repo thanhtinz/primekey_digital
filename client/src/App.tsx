@@ -27,6 +27,9 @@ const SmtpSettings = lazy(() => import("./pages/SmtpSettings"));
 const FeedbacksAdmin = lazy(() => import("./pages/FeedbacksAdmin"));
 const EmailTemplateEditor = lazy(() => import("./pages/EmailTemplateEditor"));
 
+// Staff & Activity
+const StaffManagement = lazy(() => import("./pages/StaffManagement"));
+const ActivityLog = lazy(() => import("./pages/ActivityLog"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -130,6 +133,8 @@ function Router() {
         <Route path="/settings/smtp" component={() => isAdmin ? <SmtpSettings /> : <ForbiddenPage />} />
         <Route path="/settings/email-templates" component={() => isAdmin ? <EmailTemplateEditor /> : <ForbiddenPage />} />
         <Route path="/settings" component={() => isAdmin ? <Settings /> : <ForbiddenPage />} />
+        <Route path="/staff" component={() => isAdmin ? <StaffManagement /> : <ForbiddenPage />} />
+        <Route path="/activity-log" component={() => isAdmin ? <ActivityLog /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

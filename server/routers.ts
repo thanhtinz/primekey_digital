@@ -187,6 +187,59 @@ export const appRouter = router({
         return { success: true, reviewToken };
       }),
 
+    // Get invoice items
+    getItems: protectedProcedure
+      .input(z.object({ invoiceId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.getInvoiceItemsByInvoiceId(input.invoiceId);
+      }),
+    // Duplicate invoice
+    duplicate: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoice = await db.getInvoiceById(input.id);
+        if (!invoice || invoice.userId !== ctx.user.id) throw new Error("Invoice not found");
+        const items = await db.getInvoiceItemsByInvoiceId(input.id);
+        // Generate new invoice number
+        const newNumber = `INV-${Date.now().toString().slice(-8)}`;
+        const newInvoice = await db.createInvoice({
+          userId: ctx.user.id,
+          customerId: invoice.customerId,
+          invoiceNumber: newNumber,
+          currency: invoice.currency,
+          subtotal: invoice.subtotal,
+          taxAmount: invoice.taxAmount,
+          discountAmount: invoice.discountAmount,
+          totalAmount: invoice.totalAmount,
+          status: "CREATED",
+          notes: invoice.notes,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        // Get the newly created invoice id
+        const allInvoices = await db.getInvoicesByUserId(ctx.user.id);
+        const created = allInvoices.find(i => i.invoiceNumber === newNumber);
+        if (created) {
+          for (const item of items) {
+            await db.createInvoiceItem({
+              invoiceId: created.id,
+              productId: item.productId,
+              name: item.name,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              discount: item.discount,
+              taxId: item.taxId,
+              taxAmount: item.taxAmount,
+              totalAmount: item.totalAmount,
+            });
+          }
+          await db.createActivityLog(ctx.user.id, "DUPLICATE_INVOICE", "invoice", created.id);
+          return { success: true, newId: created.id, invoiceNumber: newNumber };
+        }
+        return { success: true, newId: 0, invoiceNumber: newNumber };
+      }),
     // Public: get invoices by customer email (for order tracking page)
     getByEmail: publicProcedure
       .input(z.object({ email: z.string().email() }))
@@ -1063,6 +1116,133 @@ export const appRouter = router({
         await db.upsertEmailTemplate(ctx.user.id, type, data);
         return { success: true };
       }),
+  }),
+
+  // ─── Invoice Notes ─────────────────────────────────────────────────────────
+  notes: router({
+    list: protectedProcedure
+      .input(z.object({ invoiceId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.getInvoiceNotes(input.invoiceId);
+      }),
+    create: protectedProcedure
+      .input(z.object({ invoiceId: z.number(), content: z.string().min(1) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.createInvoiceNote(input.invoiceId, ctx.user.id, input.content);
+        await db.createActivityLog(ctx.user.id, "ADD_NOTE", "invoice", input.invoiceId);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.deleteInvoiceNote(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Staff Management ────────────────────────────────────────────────────────
+  staff: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+      return db.getAllStaff();
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        username: z.string().min(1),
+        password: z.string().min(1),
+        name: z.string().min(1),
+        role: z.enum(["user", "admin"]).default("user"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+        const bcrypt = await import("bcryptjs");
+        const hashed = await bcrypt.hash(input.password, 10);
+        const email = `${input.username}@invoiceprime.com`;
+        await db.createStaff(email, hashed, input.name, input.role);
+        await db.createActivityLog(ctx.user.id, "CREATE_STAFF", "user");
+        return { success: true };
+      }),
+    updateRole: protectedProcedure
+      .input(z.object({ id: z.number(), role: z.enum(["user", "admin"]) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+        await db.updateStaffRole(input.id, input.role);
+        return { success: true };
+      }),
+    resetPassword: protectedProcedure
+      .input(z.object({ id: z.number(), newPassword: z.string().min(1) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+        const bcrypt = await import("bcryptjs");
+        const hashed = await bcrypt.hash(input.newPassword, 10);
+        await db.updateStaffPassword(input.id, hashed);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+        if (input.id === ctx.user.id) throw new Error("Cannot delete yourself");
+        await db.deleteStaff(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Activity Logs ───────────────────────────────────────────────────────────
+  activityLogs: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+        return db.getActivityLogs(input.limit ?? 100);
+      }),
+  }),
+
+  // ─── Statistics ──────────────────────────────────────────────────────────────
+  stats: router({
+    revenue: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      return db.getRevenueStats(ctx.user.id);
+    }),
+    topProducts: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      return db.getTopProducts(ctx.user.id);
+    }),
+    customerStats: protectedProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        return db.getCustomerStats(ctx.user.id, input.customerId);
+      }),
+  }),
+
+  // ─── Reminders ───────────────────────────────────────────────────────────────
+  reminders: router({
+    sendPending: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+      const pending = await db.getPendingInvoicesForReminder();
+      const { sendEmail } = await import("./email");
+      let sent = 0;
+      for (const inv of pending) {
+        if (!inv.customerEmail) continue;
+        const hoursOld = (Date.now() - new Date(inv.createdAt).getTime()) / (1000 * 60 * 60);
+        const type: "24h" | "48h" = hoursOld >= 48 ? "48h" : "24h";
+        const alreadySent = await db.hasReminderBeenSent(inv.id, type);
+        if (alreadySent) continue;
+        const success = await sendEmail({
+          to: inv.customerEmail,
+          subject: `Nhắc nhở: Đơn hàng ${inv.invoiceNumber} chưa được thanh toán`,
+          html: `<p>Xin chào ${inv.customerName || "Quý khách"},</p><p>Đơn hàng <strong>${inv.invoiceNumber}</strong> của bạn (tổng tiền: ${Number(inv.totalAmount).toLocaleString("vi-VN")} VND) vẫn chưa được thanh toán.</p><p>Vui lòng hoàn tất thanh toán để chúng tôi xử lý đơn hàng cho bạn.</p>`,
+          userId: ctx.user.id,
+        });
+        await db.createReminderLog(inv.id, type, success);
+        if (success) sent++;
+      }
+      return { sent, total: pending.length };
+    }),
   }),
 
   invoiceTemplates2: router({

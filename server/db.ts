@@ -399,3 +399,174 @@ export async function unsetAllDefaultTemplates(userId: number) {
   if (!db) return;
   return db.update(invoiceTemplates).set({ isDefault: false }).where(eq(invoiceTemplates.userId, userId));
 }
+
+// ─── Invoice Notes (internal) ─────────────────────────────────────────────────
+export async function getInvoiceNotes(invoiceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { invoiceNotes, users } = await import("../drizzle/schema");
+  return db.select({
+    id: invoiceNotes.id,
+    invoiceId: invoiceNotes.invoiceId,
+    userId: invoiceNotes.userId,
+    content: invoiceNotes.content,
+    createdAt: invoiceNotes.createdAt,
+    authorName: users.name,
+  }).from(invoiceNotes)
+    .leftJoin(users, eq(invoiceNotes.userId, users.id))
+    .where(eq(invoiceNotes.invoiceId, invoiceId))
+    .orderBy(invoiceNotes.createdAt);
+}
+export async function createInvoiceNote(invoiceId: number, userId: number, content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const { invoiceNotes } = await import("../drizzle/schema");
+  return db.insert(invoiceNotes).values({ invoiceId, userId, content });
+}
+export async function deleteInvoiceNote(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const { invoiceNotes } = await import("../drizzle/schema");
+  return db.delete(invoiceNotes).where(eq(invoiceNotes.id, id));
+}
+
+// ─── Staff Management ─────────────────────────────────────────────────────────
+export async function getAllStaff() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    role: users.role,
+    createdAt: users.createdAt,
+  }).from(users).orderBy(users.createdAt);
+}
+export async function createStaff(email: string, hashedPassword: string, name: string, role: "user" | "admin") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(users).values({ email, password: hashedPassword, name, role });
+}
+export async function updateStaffRole(id: number, role: "user" | "admin") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(users).set({ role }).where(eq(users.id, id));
+}
+export async function updateStaffPassword(id: number, hashedPassword: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(users).set({ password: hashedPassword }).where(eq(users.id, id));
+}
+export async function deleteStaff(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(users).where(eq(users.id, id));
+}
+
+// ─── Activity Logs ────────────────────────────────────────────────────────────
+export async function createActivityLog(userId: number, action: string, entityType: string, entityId?: number, changes?: any) {
+  const db = await getDb();
+  if (!db) return;
+  return db.insert(auditLogs).values({ userId, action, entityType, entityId, changes });
+}
+export async function getActivityLogs(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: auditLogs.id,
+    userId: auditLogs.userId,
+    action: auditLogs.action,
+    entityType: auditLogs.entityType,
+    entityId: auditLogs.entityId,
+    changes: auditLogs.changes,
+    createdAt: auditLogs.createdAt,
+    authorName: users.name,
+    authorEmail: users.email,
+  }).from(auditLogs)
+    .leftJoin(users, eq(auditLogs.userId, users.id))
+    .orderBy(auditLogs.createdAt)
+    .limit(limit);
+}
+
+// ─── Reminder Logs ────────────────────────────────────────────────────────────
+export async function hasReminderBeenSent(invoiceId: number, type: "24h" | "48h") {
+  const db = await getDb();
+  if (!db) return false;
+  const { reminderLogs } = await import("../drizzle/schema");
+  const result = await db.select().from(reminderLogs)
+    .where(and(eq(reminderLogs.invoiceId, invoiceId), eq(reminderLogs.type, type)))
+    .limit(1);
+  return result.length > 0;
+}
+export async function createReminderLog(invoiceId: number, type: "24h" | "48h", success: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  const { reminderLogs } = await import("../drizzle/schema");
+  return db.insert(reminderLogs).values({ invoiceId, type, success });
+}
+export async function getPendingInvoicesForReminder() {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  const h24ago = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const h48ago = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+  // Get CREATED invoices older than 24h
+  const { lt, gte } = await import("drizzle-orm");
+  return db.select({
+    id: invoices.id,
+    invoiceNumber: invoices.invoiceNumber,
+    customerId: invoices.customerId,
+    totalAmount: invoices.totalAmount,
+    createdAt: invoices.createdAt,
+    customerEmail: customers.email,
+    customerName: customers.name,
+  }).from(invoices)
+    .leftJoin(customers, eq(invoices.customerId, customers.id))
+    .where(and(
+      eq(invoices.status, "CREATED"),
+      lt(invoices.createdAt, h24ago),
+    ));
+}
+
+// ─── Statistics ───────────────────────────────────────────────────────────────
+export async function getRevenueStats(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { sql, gte } = await import("drizzle-orm");
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  return db.select({
+    date: sql<string>`DATE(${invoices.createdAt})`,
+    count: sql<number>`COUNT(*)`,
+    revenue: sql<number>`SUM(CASE WHEN ${invoices.status} IN ('PAID','SHIPPING','WARRANTY') THEN ${invoices.totalAmount} ELSE 0 END)`,
+  }).from(invoices)
+    .where(and(eq(invoices.userId, userId), gte(invoices.createdAt, thirtyDaysAgo)))
+    .groupBy(sql`DATE(${invoices.createdAt})`)
+    .orderBy(sql`DATE(${invoices.createdAt})`);
+}
+export async function getTopProducts(userId: number, limit = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  const { sql, desc } = await import("drizzle-orm");
+  return db.select({
+    name: invoiceItems.name,
+    totalQty: sql<number>`SUM(${invoiceItems.quantity})`,
+    totalRevenue: sql<number>`SUM(${invoiceItems.totalAmount})`,
+  }).from(invoiceItems)
+    .leftJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+    .where(eq(invoices.userId, userId))
+    .groupBy(invoiceItems.name)
+    .orderBy(desc(sql`SUM(${invoiceItems.totalAmount})`))
+    .limit(limit);
+}
+export async function getCustomerStats(userId: number, customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { sql, count, desc } = await import("drizzle-orm");
+  const stats = await db.select({
+    totalOrders: sql<number>`COUNT(*)`,
+    totalSpent: sql<number>`SUM(${invoices.totalAmount})`,
+    paidOrders: sql<number>`SUM(CASE WHEN ${invoices.status} IN ('PAID','SHIPPING','WARRANTY') THEN 1 ELSE 0 END)`,
+  }).from(invoices)
+    .where(and(eq(invoices.userId, userId), eq(invoices.customerId, customerId)));
+  return stats[0] || null;
+}

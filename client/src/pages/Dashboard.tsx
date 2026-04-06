@@ -1,5 +1,5 @@
-import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw } from "lucide-react";
+import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw, Package, Users, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
@@ -55,6 +55,8 @@ export default function Dashboard() {
   const { data: revenueByMonth, isLoading: revenueLoading } = trpc.reports.getRevenueByMonth.useQuery();
   const { data: invoiceStats, isLoading: invoiceStatsLoading } = trpc.reports.getInvoiceStats.useQuery();
   const { data: recentInvoices, isLoading: invoicesLoading } = trpc.invoices.list.useQuery();
+  const { data: topProducts } = trpc.reports.getTopProducts.useQuery();
+  const { data: customers } = trpc.customers.list.useQuery();
 
   const revenueData = (revenueByMonth || []).map(item => ({
     month: item.month,
@@ -266,6 +268,102 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Products + Customer Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Top Products */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4 text-orange-500" />
+                  Sản Phẩm Bán Chạy
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setLocation("/products")} className="text-blue-600 hover:text-blue-700 text-xs">Xem tất cả →</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!topProducts || topProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                  <Package className="h-10 w-10 mb-2 opacity-30" />
+                  <p className="text-sm">Chưa có dữ liệu</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {topProducts.slice(0, 5).map((p: any, i: number) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-orange-600">{i + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{p.name}</p>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                          <div
+                            className="bg-orange-400 h-1.5 rounded-full"
+                            style={{ width: `${Math.min(100, (p.price / (topProducts[0]?.price || 1)) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-semibold">{(p.price || 0).toLocaleString("vi-VN")}</p>
+                        <p className="text-xs text-gray-400">VND</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Customer Stats */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  Khách Hàng
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setLocation("/customers")} className="text-blue-600 hover:text-blue-700 text-xs">Xem tất cả →</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-700">{customers?.length || 0}</p>
+                  <p className="text-xs text-blue-500">Tổng khách hàng</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-700">{dashboardStats?.paidInvoices || 0}</p>
+                  <p className="text-xs text-green-500">Đơn đã thanh toán</p>
+                </div>
+              </div>
+              {customers && customers.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Khách hàng gần đây</p>
+                  {customers.slice(0, 4).map((c: any) => (
+                    <div key={c.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors" onClick={() => setLocation(`/customers/${c.id}`)}>
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-white">{(c.name || "?").charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{c.name}</p>
+                        <p className="text-xs text-gray-400 truncate">{c.email || c.phone || ""}</p>
+                      </div>
+                      {c.totalInvoices > 0 && (
+                        <span className="text-xs text-gray-400">{c.totalInvoices} đơn</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-gray-400">
+                  <Users className="h-10 w-10 mb-2 opacity-30" />
+                  <p className="text-sm">Chưa có khách hàng</p>
+                </div>
               )}
             </CardContent>
           </Card>

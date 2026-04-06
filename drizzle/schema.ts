@@ -270,3 +270,28 @@ export const emailTemplates = mysqlTable("emailTemplates", {
 
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
 export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
+
+// Invoice Notes table (internal notes visible only to staff)
+export const invoiceNotes = mysqlTable("invoiceNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  invoiceId: int("invoiceId").notNull(),
+  userId: int("userId").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InvoiceNote = typeof invoiceNotes.$inferSelect;
+export type InsertInvoiceNote = typeof invoiceNotes.$inferInsert;
+
+// Reminder Logs table (track sent reminders)
+export const reminderLogs = mysqlTable("reminderLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  invoiceId: int("invoiceId").notNull(),
+  type: mysqlEnum("type", ["24h", "48h"]).notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  success: boolean("success").default(true),
+});
+
+export type ReminderLog = typeof reminderLogs.$inferSelect;
+export type InsertReminderLog = typeof reminderLogs.$inferInsert;

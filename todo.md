@@ -258,3 +258,25 @@
 - [x] Modal/dialog preview toàn màn hình hiển thị mẫu hóa đơn với dữ liệu mẫu
 - [x] Thumbnail preview thu nhỏ hiển thị ngay trong card danh sách
 - [x] Nút Chỉnh Sửa có trong modal preview để vào editor ngay
+
+## Phase 21: 12 Tính Năng Mới
+
+### Nhóm 1: Vận Hành
+- [x] Xuất PDF hóa đơn - nút "Xuất PDF" trong InvoiceDetail, áp dụng mẫu đã chọn
+- [x] Tìm kiếm toàn cục - ô search ở header, tìm đơn theo tên/SĐT/mã đơn
+- [x] Quản lý nhân viên - admin tạo/xóa/đổi mật khẩu tài khoản nhân viên trong UI
+- [x] Nhân bản đơn hàng - nút "Nhân Bản" trong InvoiceDetail
+- [x] Ghi chú nội bộ - thêm ghi chú riêng cho từng đơn (chỉ staff thấy)
+
+### Nhóm 2: Báo Cáo
+- [x] Dashboard thống kê nâng cao - thêm Top Products và Customer Stats
+- [ ] Xuất báo cáo Excel - xuất danh sách đơn hàng ra file Excel
+- [ ] Thống kê khách hàng - lịch sử mua, tổng chi tiêu, số đơn theo khách
+
+### Nhóm 3: Khách Hàng
+- [ ] Trang tra cứu đơn nâng cao - timeline đẹp hơn, tải PDF từ trang tra cứu
+- [ ] Trang cảm ơn - trang sau khi khách thanh toán thành công
+
+### Nhóm 4: Tự Động Hóa
+- [ ] Nhắc nhở đơn chưa thanh toán - tự động gửi email nhắc sau 24h/48h
+- [x] Lịch sử hoạt động - trang /activity-log hiển thị log hoạt động
