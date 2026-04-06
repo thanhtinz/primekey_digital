@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
@@ -60,6 +60,7 @@ export default function StaffManagement() {
             <DialogContent className="bg-slate-800 border-slate-700 text-white">
               <DialogHeader>
                 <DialogTitle>Tạo Tài Khoản Mới</DialogTitle>
+                <DialogDescription>Tạo tài khoản nhân viên mới trong hệ thống</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -145,6 +146,7 @@ export default function StaffManagement() {
                         <DialogContent className="bg-slate-800 border-slate-700 text-white">
                           <DialogHeader>
                             <DialogTitle>Đổi Mật Khẩu — {s.name}</DialogTitle>
+                            <DialogDescription>Thiết lập mật khẩu mới cho tài khoản này</DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4">
                             <div>

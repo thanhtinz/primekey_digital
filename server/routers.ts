@@ -885,8 +885,49 @@ export const appRouter = router({
           }
         }
       }),
+    testWebhook: protectedProcedure
+      .input(z.object({ webhookUrl: z.string().url() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        // Send a test ping to the webhook endpoint
+        try {
+          const testPayload = {
+            code: "00",
+            desc: "success",
+            success: true,
+            data: {
+              orderCode: 0,
+              amount: 0,
+              description: "WEBHOOK TEST",
+              accountNumber: "",
+              reference: "TEST",
+              transactionDateTime: new Date().toISOString(),
+              currency: "VND",
+              paymentLinkId: "",
+              code: "00",
+              desc: "Webhook test từ hệ thống",
+              counterAccountBankId: null,
+              counterAccountBankName: null,
+              counterAccountName: null,
+              counterAccountNumber: null,
+              virtualAccountName: null,
+              virtualAccountNumber: null,
+            },
+            signature: "test-signature",
+          };
+          const res = await fetch(input.webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(testPayload),
+            signal: AbortSignal.timeout(8000),
+          });
+          const ok = res.ok;
+          return { success: ok, statusCode: res.status, message: ok ? "Webhook endpoint phản hồi thành công" : `Webhook trả về HTTP ${res.status}` };
+        } catch (err: any) {
+          return { success: false, statusCode: 0, message: err?.message || "Không thể kết nối đến webhook URL" };
+        }
+      }),
   }),
-
   // Reports
   reports: router({
     getDashboardStats: protectedProcedure.query(async ({ ctx }) => {

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Search, Package, Loader2, Tag } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
@@ -251,6 +251,7 @@ export default function Products() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editingId ? "Chỉnh Sửa Sản Phẩm" : "Thêm Sản Phẩm Mới"}</DialogTitle>
+            <DialogDescription>{editingId ? "Cập nhật thông tin sản phẩm hoặc dịch vụ" : "Nhập thông tin sản phẩm mới vào danh mục"}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

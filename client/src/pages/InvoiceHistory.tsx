@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Search, FileText, Trash2, Eye, Download, Plus, Loader2, RefreshCw, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
@@ -270,6 +270,7 @@ export default function InvoiceHistory() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Chi Tiết Hóa Đơn</DialogTitle>
+            <DialogDescription>Xem thông tin chi tiết và các thao tác cho hóa đơn này</DialogDescription>
           </DialogHeader>
           {viewInvoice && (
             <div className="space-y-4">

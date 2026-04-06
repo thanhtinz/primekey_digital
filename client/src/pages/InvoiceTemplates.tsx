@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Eye, Check, Loader2, FileText, X, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
@@ -378,6 +378,7 @@ export default function InvoiceTemplates() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingId ? "Sửa Mẫu Hóa Đơn" : "Thêm Mẫu Hóa Đơn"}</DialogTitle>
+              <DialogDescription>{editingId ? "Chỉnh sửa tên và mô tả mẫu hóa đơn" : "Tạo mẫu hóa đơn mới, sau đó tùy chỉnh chi tiết trong editor"}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>

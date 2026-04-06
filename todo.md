@@ -326,3 +326,13 @@
 - [x] PayOS webhook handler đầy đủ: xác minh chữ ký, cập nhật DB, gửi email xác nhận
 - [x] Truyền webhookUrl khi tạo PayOS payment link (origin + /api/webhooks/payos)
 - [x] Giảm polling interval từ 5s xuống 3s để phản hồi nhanh hơn sau webhook
+
+## Phase 23: Webhook Status Card & Bug Fix
+
+- [x] Thêm card "Webhook PayOS" trong trang cài đặt thanh toán (PayOS Settings) - nâng cấp toàn diện
+- [x] Hiển thị URL webhook endpoint, nút sao chép, badge trạng thái
+- [x] Nút "Gửi Test Webhook" gọi procedure testWebhook và hiển thị kết quả rõ ràng
+- [x] Thêm procedure paymentGateways.testWebhook trong routers.ts
+- [x] Sửa DialogDescription warning trong 7 dialogs (Customers, InvoiceHistory, InvoiceTemplates, Products, StaffManagement x2)
+- [x] Kiểm tra TypeScript: 0 errors
+- [x] Kiểm tra console/network: không có lỗi mới
