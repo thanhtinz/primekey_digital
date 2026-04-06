@@ -83,10 +83,9 @@ function Router() {
   useEffect(() => { checkAuth(); }, []);
 
   const handleLoginSuccess = async () => {
-    const result = await checkAuth();
-    if (result.authenticated) {
-      setLocation("/dashboard");
-    }
+    await checkAuth();
+    // Use hard redirect to ensure full re-render with new auth state
+    window.location.href = "/dashboard";
   };
 
   // Always-public routes (track order, review, public feedbacks)
