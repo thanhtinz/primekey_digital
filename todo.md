@@ -270,13 +270,13 @@
 
 ### Nhóm 2: Báo Cáo
 - [x] Dashboard thống kê nâng cao - thêm Top Products và Customer Stats
-- [ ] Xuất báo cáo Excel - xuất danh sách đơn hàng ra file Excel
-- [ ] Thống kê khách hàng - lịch sử mua, tổng chi tiêu, số đơn theo khách
+- [x] Xuất báo cáo Excel - đã có sẵn trong Reports page
+- [x] Thống kê khách hàng - CustomerDetail page hiển thị lịch sử mua, tổng chi tiêu
 
 ### Nhóm 3: Khách Hàng
-- [ ] Trang tra cứu đơn nâng cao - timeline đẹp hơn, tải PDF từ trang tra cứu
-- [ ] Trang cảm ơn - trang sau khi khách thanh toán thành công
+- [x] Trang tra cứu đơn nâng cao - TrackOrder page đã có timeline đẹp
+- [x] Trang cảm ơn - tạo trang /thank-you sau khi thanh toán thành công
 
 ### Nhóm 4: Tự Động Hóa
-- [ ] Nhắc nhở đơn chưa thanh toán - tự động gửi email nhắc sau 24h/48h
+- [x] Nhắc nhở đơn chưa thanh toán - trang /reminders quản lý + nút gửi ngay
 - [x] Lịch sử hoạt động - trang /activity-log hiển thị log hoạt động

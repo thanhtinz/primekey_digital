@@ -30,6 +30,8 @@ const EmailTemplateEditor = lazy(() => import("./pages/EmailTemplateEditor"));
 // Staff & Activity
 const StaffManagement = lazy(() => import("./pages/StaffManagement"));
 const ActivityLog = lazy(() => import("./pages/ActivityLog"));
+const ThankYou = lazy(() => import("./pages/ThankYou"));
+const Reminders = lazy(() => import("./pages/Reminders"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -53,7 +55,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require auth (always accessible)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -85,6 +87,7 @@ function Router() {
           <Route path="/track-order" component={() => <TrackOrder />} />
           <Route path="/feedbacks-public" component={() => <PublicFeedbacks />} />
           <Route path="/review/:token" component={() => <ReviewPage />} />
+          <Route path="/thank-you" component={() => <ThankYou />} />
         </Switch>
       </Suspense>
     );
@@ -135,6 +138,7 @@ function Router() {
         <Route path="/settings" component={() => isAdmin ? <Settings /> : <ForbiddenPage />} />
         <Route path="/staff" component={() => isAdmin ? <StaffManagement /> : <ForbiddenPage />} />
         <Route path="/activity-log" component={() => isAdmin ? <ActivityLog /> : <ForbiddenPage />} />
+        <Route path="/reminders" component={() => isAdmin ? <Reminders /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

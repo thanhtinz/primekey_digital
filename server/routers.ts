@@ -1243,8 +1243,16 @@ export const appRouter = router({
       }
       return { sent, total: pending.length };
     }),
+    getLogs: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+      return db.getReminderLogs();
+    }),
+    getPending: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
+      const pending = await db.getPendingInvoicesForReminder();
+      return pending;
+    }),
   }),
-
   invoiceTemplates2: router({
     update: protectedProcedure
       .input(z.object({

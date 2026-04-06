@@ -504,6 +504,13 @@ export async function createReminderLog(invoiceId: number, type: "24h" | "48h", 
   const { reminderLogs } = await import("../drizzle/schema");
   return db.insert(reminderLogs).values({ invoiceId, type, success });
 }
+export async function getReminderLogs() {
+  const { reminderLogs } = await import("../drizzle/schema");
+  const drizzleDb = await getDb();
+  if (!drizzleDb) return [];
+  return drizzleDb.select().from(reminderLogs).orderBy(reminderLogs.sentAt).limit(100);
+}
+
 export async function getPendingInvoicesForReminder() {
   const db = await getDb();
   if (!db) return [];

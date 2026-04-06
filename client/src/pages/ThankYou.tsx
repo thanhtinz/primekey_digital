@@ -1,0 +1,170 @@
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle2, Download, Search, Star, ArrowLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+export default function ThankYou() {
+  const [location, setLocation] = useLocation();
+  const [invoiceId, setInvoiceId] = useState<number | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    // Parse invoiceId from URL query params
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("invoiceId");
+    if (id) setInvoiceId(parseInt(id));
+    // Trigger confetti animation
+    setShowConfetti(true);
+    const t = setTimeout(() => setShowConfetti(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const { data: invoice, isLoading } = trpc.invoices.get.useQuery(
+    { id: invoiceId! },
+    { enabled: !!invoiceId }
+  );
+
+  const exportPDFMutation = trpc.pdf.exportInvoice.useMutation({
+    onSuccess: (data) => {
+      const byteChars = atob(data.buffer);
+      const byteNums = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNums[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([new Uint8Array(byteNums)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename || "hoa-don.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Đã tải hóa đơn PDF!");
+    },
+    onError: () => toast.error("Không thể tải PDF. Vui lòng thử lại."),
+  });
+
+  const formatCurrency = (amount: number | string | null | undefined, currency = "VND") => {
+    const num = typeof amount === "string" ? parseFloat(amount) : (amount || 0);
+    return num.toLocaleString("vi-VN") + " " + currency;
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex flex-col items-center justify-center p-4">
+      {/* Confetti particles */}
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-3 h-3 rounded-sm animate-bounce"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                backgroundColor: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"][i % 5],
+                animationDelay: `${Math.random() * 1}s`,
+                animationDuration: `${0.5 + Math.random() * 1}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="w-full max-w-lg">
+        {/* Success Icon */}
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle2 className="h-14 w-14 text-green-500" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center">
+              <Star className="h-4 w-4 text-white fill-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Main Card */}
+        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Thanh Toán Thành Công!</h1>
+            <p className="text-gray-500 mb-6">
+              Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi.
+              Đơn hàng của bạn đã được xác nhận.
+            </p>
+
+            {isLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+              </div>
+            ) : invoice ? (
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Mã đơn hàng</span>
+                  <span className="font-semibold text-blue-600">{invoice.invoiceNumber}</span>
+                </div>
+                {(invoice as any).customerName && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Khách hàng</span>
+                    <span className="font-medium">{(invoice as any).customerName}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Tổng tiền</span>
+                  <span className="font-bold text-green-600">
+                    {formatCurrency(invoice.totalAmount, invoice.currency || "VND")}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Trạng thái</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Đã Thanh Toán
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {invoice && (
+                <Button
+                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+                  disabled={exportPDFMutation.isPending}
+                  onClick={() => exportPDFMutation.mutate({ invoiceId: invoice.id })}
+                >
+                  {exportPDFMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Tải Hóa Đơn PDF
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => setLocation("/track-order")}
+              >
+                <Search className="h-4 w-4" />
+                Tra Cứu Đơn Hàng
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full gap-2 text-gray-500"
+                onClick={() => setLocation("/")}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Về Trang Chủ
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer note */}
+        <p className="text-center text-xs text-gray-400 mt-4">
+          Bạn sẽ nhận được email xác nhận trong vài phút. Nếu không nhận được, vui lòng kiểm tra thư mục spam.
+        </p>
+      </div>
+    </div>
+  );
+}
