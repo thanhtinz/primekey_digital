@@ -427,6 +427,13 @@
 
 ## Fix: Landing Page & Reports Mobile
 
-- [ ] Xóa nút "Đăng Nhập" và các link liên quan dashboard khỏi navbar landing page
-- [ ] Chỉ giữ các link dành cho khách: Tra Cứu Đơn, Đánh Giá (không có link admin/dashboard)
-- [ ] Fix responsive trang Reports trên mobile: charts vừa màn hình, tabs cuộn ngang
+- [x] Xóa nút "Đăng Nhập" và các link liên quan dashboard khỏi navbar landing page
+- [x] Chỉ giữ các link dành cho khách: Tra Cứu Đơn, Đánh Giá (không có link admin/dashboard)
+- [x] Fix responsive trang Reports trên mobile: charts vừa màn hình, tabs cuộn ngang
+
+## Tạo Mẫu Hóa Đơn Mặc Định
+
+- [x] Kiểm tra schema invoiceTemplates và cấu trúc dữ liệu
+- [x] Tạo script seed mẫu hóa đơn mặc định vào database
+- [x] Mẫu có thiết kế chuyên nghiệp: màu sắc, font, logo placeholder, footer ngân hàng
+- [x] Đặt isDefault = true cho mẫu vừa tạo
