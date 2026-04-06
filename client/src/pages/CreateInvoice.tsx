@@ -133,13 +133,20 @@ export default function CreateInvoice() {
         notes: notes || undefined,
       });
 
-      // Mở PDF trong tab mới
+      // Tải PDF xuống (tránh bị chặn popup)
       const byteArray = Uint8Array.from(atob(result.buffer), c => c.charCodeAt(0));
       const blob = new Blob([byteArray], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.download = result.filename || "preview.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 60000);
-      toast.success("Đang mở xem trước PDF...");
+      toast.success("PDF đã được tải xuống để xem trước!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không thể tạo xem trước PDF");
     } finally {
