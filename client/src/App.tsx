@@ -19,6 +19,7 @@ import PayOSSettings from "./pages/PayOSSettings";
 import PayPalSettings from "./pages/PayPalSettings";
 import DashboardLayout from "./components/DashboardLayoutCustom";
 import InvoiceDetail from "./pages/InvoiceDetail";
+import CustomerDetail from "./pages/CustomerDetail";
 
 // Placeholder pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/invoices" component={() => <InvoiceHistory />} />
       <Route path="/invoices/:id" component={() => <InvoiceDetail />} />
       <Route path="/customers" component={() => <Customers />} />
+      <Route path="/customers/:id" component={() => <CustomerDetail />} />
       <Route path="/products" component={() => <Products />} />
       <Route path="/templates" component={() => <InvoiceTemplates />} />
       <Route path="/templates/:id/edit" component={() => <EditInvoiceTemplate />} />

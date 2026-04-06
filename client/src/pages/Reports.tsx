@@ -83,6 +83,34 @@ export default function Reports() {
 
   const isLoading = statsLoading || revenueLoading || invoiceStatsLoading || customersLoading;
 
+  const exportExcel = trpc.excel.exportReport.useMutation();
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+
+  const handleExportExcel = async () => {
+    setIsExportingExcel(true);
+    try {
+      const data = await exportExcel.mutateAsync({ period: `${period} tháng gần đây` });
+      const byteCharacters = atob(data.buffer);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename || 'bao-cao.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Đã xuất báo cáo Excel thành công!');
+    } catch (err: any) {
+      toast.error(err.message || 'Xuất Excel thất bại');
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
   const handleExport = (format: string) => {
     toast.info(`Tính năng xuất ${format} đang được phát triển`);
   };
@@ -112,8 +140,8 @@ export default function Reports() {
                 <SelectItem value="12">12 tháng gần đây</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={() => handleExport("Excel")} className="gap-1.5">
-              <Download className="h-4 w-4" />
+            <Button variant="outline" size="sm" onClick={handleExportExcel} className="gap-1.5" disabled={isExportingExcel}>
+              {isExportingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Excel
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExport("PDF")} className="gap-1.5">

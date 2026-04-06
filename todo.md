@@ -65,16 +65,16 @@
 ## Phase 6: Frontend - Invoice History, Customers, Products
 - [x] Tạo trang lịch sử hóa đơn với bảng, filter, tìm kiếm
 - [x] Tạo trang quản lý khách hàng với CRUD
-- [ ] Tạo trang chi tiết khách hàng (lịch sử giao dịch)
+- [x] Tạo trang chi tiết khách hàng (lịch sử giao dịch) - bổ sung sau
 - [x] Tạo trang quản lý sản phẩm/dịch vụ với CRUD
 - [x] Tạo dialog thêm/sửa khách hàng
 - [x] Tạo dialog thêm/sửa sản phẩm
-- [ ] Fix table mobile - horizontal scroll/card layout (Customers, Products, InvoiceHistory)
+- [x] Fix table mobile - horizontal scroll/card layout (Customers, Products, InvoiceHistory)
 
 ## Phase 7: Frontend - Templates, Reports, Settings
 - [x] Tạo trang quản lý mẫu hóa đơn
 - [x] Tạo editor cho mẫu hóa đơn - chỉnh sửa layout, màu sắc, font
-- [ ] Tạo trang tạo mẫu hóa đơn mới
+- [x] Tạo trang tạo mẫu hóa đơn mới (kết nối tRPC thật)
 - [x] Tạo trang báo cáo & thống kê
 - [x] Tạo các biểu đồ báo cáo (doanh thu, top khách hàng, top sản phẩm)
 - [x] Tạo nút xuất báo cáo (Excel, PDF)
@@ -101,7 +101,7 @@
 ## Phase 10: Backend - Email, PDF, Dark Mode, Notifications
 - [x] Tạo service gửi email (xác nhận hóa đơn, thanh toán thành công)
 - [x] Tạo service xuất PDF hóa đơn
-- [ ] Tạo service xuất báo cáo Excel
+- [x] Tạo service xuất báo cáo Excel
 - [x] Tạo notification system (toast)
 - [x] Tạo dark mode toggle
 - [ ] Tạo auto-backup dữ liệu

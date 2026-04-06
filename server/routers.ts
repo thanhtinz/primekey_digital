@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { generateInvoicePDF } from "./pdf";
+import { generateInvoiceExcel } from "./excel";
 import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHTML } from "./email";
 
 export const appRouter = router({
@@ -741,7 +742,50 @@ export const appRouter = router({
         
         return { success };
       }),
+   }),
+  // Excel Export
+  excel: router({
+    exportReport: protectedProcedure
+      .input(z.object({
+        period: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoices = await db.getInvoicesByUserId(ctx.user.id);
+        
+        // Fetch customer names
+        const invoicesWithCustomers = await Promise.all(
+          invoices.map(async (inv) => {
+            let customerName = "Khách Hàng";
+            if (inv.customerId) {
+              const customer = await db.getCustomerById(inv.customerId);
+              customerName = customer?.name || "Khách Hàng";
+            }
+            return { ...inv, customerName, status: inv.status || "PENDING", currency: inv.currency || "VND" };
+          })
+        );
+        
+        const paidInvoices = invoices.filter(inv => inv.status === "PAID");
+        const totalRevenue = paidInvoices.reduce((sum, inv) => {
+          const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : inv.totalAmount;
+          return sum + amount;
+        }, 0);
+        
+        const excelBuffer = generateInvoiceExcel({
+          invoices: invoicesWithCustomers,
+          period: input.period || new Date().toLocaleDateString("vi-VN", { month: "long", year: "numeric" }),
+          totalRevenue,
+          totalInvoices: invoices.length,
+          paidInvoices: paidInvoices.length,
+          pendingInvoices: invoices.filter(inv => inv.status === "PENDING").length,
+        });
+        
+        return {
+          success: true,
+          buffer: excelBuffer.toString("base64"),
+          filename: `bao-cao-hoa-don-${Date.now()}.xlsx`,
+        };
+      }),
   }),
 });
-
 export type AppRouter = typeof appRouter;
