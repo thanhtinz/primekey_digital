@@ -395,3 +395,14 @@
 
 - [x] Sửa toggle "Thủ công / Từ danh sách" luôn hiển thị bất kể products.length
 - [x] Khi chưa có sản phẩm: hiển thị banner cảnh báo vàng hướng dẫn thêm sản phẩm trước
+
+## Redesign: Landing Page
+
+- [x] Viết lại hero section với headline rõ ràng, trust indicators, 2 CTA buttons
+- [x] Thêm stats bar (99.9% uptime, <3s thanh toán, 24/7, 100% bảo mật)
+- [x] Thêm section "Chỉ 3 Bước Đơn Giản" với connector line
+- [x] Thêm 6 features cards với badge "Phổ biến" / "Mới"
+- [x] Thêm section testimonials (3 đánh giá khách hàng thực tế)
+- [x] Thêm CTA section cuối trang với gradient card
+- [x] Footer 3 cột: brand, quick links, liên hệ (email, phone, address)
+- [x] TypeScript: 0 errors
