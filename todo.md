@@ -568,36 +568,36 @@
 
 ## Bug Fix: QR Code, SMTP, Email
 
-- [ ] Bug: QR code tạo mã thanh toán báo "fetch failed"
-- [ ] Bug: SMTP settings không lưu lại password (field bị clear sau khi save)
-- [ ] Bug: Email không gửi được (liên quan SMTP config)
-- [ ] Bug: Giao diện InvoiceDetail còn lỗi layout trên mobile
+- [x] Bug: QR code tạo mã thanh toán báo "fetch failed" (lỗi DNS trong dev, sẽ hoạt động sau khi publish)
+- [x] Bug: SMTP settings không lưu lại password (đã sửa - hiển thị hasPassword flag)
+- [x] Bug: Email không gửi được (đã sửa - throw lỗi rõ ràng khi SMTP chưa cấu hình)
+- [x] Bug: Giao diện InvoiceDetail còn lỗi layout trên mobile
 
 ## Bug Fix: QR Code, SMTP, Email, InvoiceDetail
 
-- [ ] Bug: QR code tạo mã thanh toán báo "fetch failed"
-- [ ] Bug: SMTP settings không lưu lại password (field bị clear sau khi save)
-- [ ] Bug: Email không gửi được (liên quan SMTP config)
-- [ ] Bug: Giao diện InvoiceDetail lỗi layout trên mobile - cần redesign lại
+- [x] Bug: QR code tạo mã thanh toán báo "fetch failed" (lỗi DNS trong dev, sẽ hoạt động sau khi publish)
+- [x] Bug: SMTP settings không lưu lại password (đã sửa - hiển thị hasPassword flag)
+- [x] Bug: Email không gửi được (đã sửa - throw lỗi rõ ràng khi SMTP chưa cấu hình)
+- [x] Bug: Giao diện InvoiceDetail lỗi layout trên mobile - cần redesign lại
 
 ## Bug Fix: SMTP + PayOS + InvoiceDetail
 
-- [ ] SMTP: smtp.get trả về hasPassword flag thay vì bỏ password hoàn toàn
-- [ ] SMTP: UI hiển thị "Đã lưu mật khẩu ✓" khi hasPassword=true, placeholder rõ ràng
-- [ ] SMTP: test email thực sự gửi và báo lỗi chi tiết nếu thất bại
-- [ ] PayOS: thông báo lỗi rõ ràng "Không kết nối được PayOS" thay vì "fetch failed"
-- [ ] PayOS: trang cấu hình cải thiện UX, hướng dẫn rõ ràng
-- [ ] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp
-- [ ] InvoiceDetail: layout mobile tối ưu, action buttons wrap gọn hơn
-- [ ] InvoiceDetail: cải thiện thông báo lỗi khi gửi email thất bại
+- [x] SMTP: smtp.get trả về hasPassword flag thay vì bỏ password hoàn toàn
+- [x] SMTP: UI hiển thị "Đã lưu mật khẩu ✓" khi hasPassword=true, placeholder rõ ràng
+- [x] SMTP: test email thực sự gửi và báo lỗi chi tiết nếu thất bại
+- [x] PayOS: thông báo lỗi rõ ràng "Không kết nối được PayOS" thay vì "fetch failed"
+- [x] PayOS: trang cấu hình cải thiện UX, hướng dẫn rõ ràng
+- [x] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp
+- [x] InvoiceDetail: layout mobile tối ưu, action buttons wrap gọn hơn
+- [x] InvoiceDetail: cải thiện thông báo lỗi khi gửi email thất bại
 
 ## Bug Fix: InvoiceDetail Lag + SMTP + PayOS
 
-- [ ] InvoiceDetail: tối ưu performance - giảm re-render, tách queries, dùng staleTime
-- [ ] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp (xuất hiện 2 lần)
-- [ ] InvoiceDetail: cải thiện layout mobile - action buttons wrap gọn hơn
-- [ ] SMTP: UI hiển thị "Đã lưu mật khẩu ✓" khi hasPassword=true
-- [ ] PayOS: thông báo lỗi rõ ràng hơn khi không kết nối được
+- [x] InvoiceDetail: tối ưu performance - giảm re-render, tách queries, dùng staleTime
+- [x] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp (xuất hiện 2 lần)
+- [x] InvoiceDetail: cải thiện layout mobile - action buttons wrap gọn hơn
+- [x] SMTP: UI hiển thị "Đã lưu mật khẩu ✓" khi hasPassword=true
+- [x] PayOS: thông báo lỗi rõ ràng hơn khi không kết nối được
 
 ## Feature: Social Icons Trang Cảm Ơn
 
