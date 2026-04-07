@@ -711,3 +711,9 @@
 - [x] LeaderboardPage header
 - [x] FlashSalePage header
 - [x] DashboardLayoutCustom sidebar
+
+## Redesign Trang Coupon + Thống Kê Hiệu Quả
+- [x] Redesign giao diện trang CouponSettings đồng bộ với các trang dashboard khác
+- [x] Thêm thống kê tổng quan: tổng mã, mã đang hoạt động, tổng lượt dùng, tổng doanh thu giảm
+- [x] Thêm thống kê chi tiết từng mã: số lần dùng, doanh thu giảm, tỷ lệ chuyển đổi
+- [x] Backend: router coupon.stats trả về thống kê từ coupon_usages

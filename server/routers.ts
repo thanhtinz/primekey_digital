@@ -3007,6 +3007,59 @@ export const appRouter = router({
       await drizzleDb.delete(coupons).where(eq(coupons.id, input.id));
       return { success: true };
     }),
+    // Stats: thống kê hiệu quả coupon
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      const { coupons, couponUsages } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, sql, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { overview: { totalCoupons: 0, activeCoupons: 0, totalUsages: 0, totalDiscountGiven: 0 }, perCoupon: [] };
+      // Overview stats
+      const allCoupons = await drizzleDb.select().from(coupons).orderBy(desc(coupons.createdAt));
+      const activeCoupons = allCoupons.filter(c => c.isActive && (!c.expiresAt || c.expiresAt > new Date()));
+      const [usageStats] = await drizzleDb.select({
+        totalUsages: sql<number>`count(*)`,
+        totalDiscountGiven: sql<number>`COALESCE(SUM(CAST(${couponUsages.discountAmount} AS DECIMAL(15,2))), 0)`,
+      }).from(couponUsages);
+      // Per-coupon stats
+      const perCouponRaw = await drizzleDb.select({
+        couponId: couponUsages.couponId,
+        usageCount: sql<number>`count(*)`,
+        totalDiscount: sql<number>`COALESCE(SUM(CAST(${couponUsages.discountAmount} AS DECIMAL(15,2))), 0)`,
+        lastUsedAt: sql<string>`MAX(${couponUsages.usedAt})`,
+      }).from(couponUsages).groupBy(couponUsages.couponId);
+      const perCouponMap = new Map(perCouponRaw.map(r => [r.couponId, r]));
+      const perCoupon = allCoupons.map(c => {
+        const stats = perCouponMap.get(c.id);
+        const usageCount = stats?.usageCount || 0;
+        const totalDiscount = Number(stats?.totalDiscount || 0);
+        const conversionRate = c.maxUses && c.maxUses > 0 ? Math.round((usageCount / c.maxUses) * 100) : null;
+        return {
+          id: c.id,
+          code: c.code,
+          description: c.description,
+          discountType: c.discountType,
+          discountValue: Number(c.discountValue),
+          isActive: c.isActive,
+          expiresAt: c.expiresAt,
+          maxUses: c.maxUses,
+          usedCount: c.usedCount || 0,
+          usageCount,
+          totalDiscount,
+          conversionRate,
+          lastUsedAt: stats?.lastUsedAt || null,
+        };
+      });
+      return {
+        overview: {
+          totalCoupons: allCoupons.length,
+          activeCoupons: activeCoupons.length,
+          totalUsages: Number(usageStats?.totalUsages || 0),
+          totalDiscountGiven: Number(usageStats?.totalDiscountGiven || 0),
+        },
+        perCoupon,
+      };
+    }),
     // Public: validate coupon code
     validate: publicProcedure.input(z.object({
       code: z.string().min(1),
