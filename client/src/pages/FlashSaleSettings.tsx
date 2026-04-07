@@ -59,7 +59,7 @@ export default function FlashSaleSettings() {
     const product = products.find(p => p.id.toString() === productId);
     if (product && discountPercent) {
       const disc = parseInt(discountPercent);
-      const price = parseFloat(product.price);
+      const price = parseFloat(product.price || "0");
       setSalePrice(Math.round(price * (1 - disc / 100)).toString());
     }
   };
@@ -69,7 +69,7 @@ export default function FlashSaleSettings() {
     const product = products.find(p => p.id.toString() === selectedProduct);
     if (product && val) {
       const disc = parseInt(val);
-      const price = parseFloat(product.price);
+      const price = parseFloat(product.price || "0");
       setSalePrice(Math.round(price * (1 - disc / 100)).toString());
     }
   };
@@ -83,7 +83,7 @@ export default function FlashSaleSettings() {
     createMutation.mutate({
       productId: product.id,
       productName: product.name,
-      originalPrice: product.price,
+      originalPrice: product.price || "0",
       salePrice,
       discountPercent: parseInt(discountPercent),
       startTime: new Date(startTime).toISOString(),

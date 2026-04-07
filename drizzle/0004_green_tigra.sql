@@ -1,1 +1,0 @@
-ALTER TABLE `invoiceTemplates` MODIFY COLUMN `companyName` varchar(255) NOT NULL DEFAULT '';

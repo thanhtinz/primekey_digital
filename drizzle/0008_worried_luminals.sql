@@ -1,1 +1,0 @@
-ALTER TABLE `userSettings` ADD `reminderHoursBefore` int DEFAULT 24;

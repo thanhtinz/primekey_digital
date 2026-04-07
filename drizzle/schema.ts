@@ -36,18 +36,32 @@ export const customers = mysqlTable("customers", {
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = typeof customers.$inferInsert;
 
+// Product Categories table - danh mục 2 cấp (lớn và nhỏ)
+export const productCategories = mysqlTable("product_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  icon: varchar("icon", { length: 100 }), // Tên icon hoặc emoji
+  parentId: int("parentId"), // null = danh mục lớn, có giá trị = danh mục nhỏ
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProductCategory = typeof productCategories.$inferSelect;
+export type InsertProductCategory = typeof productCategories.$inferInsert;
+
 // Products table
 export const products = mysqlTable("products", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  category: varchar("category", { length: 100 }),
-   price: decimal("price", { precision: 15, scale: 2 }).notNull(),
+  category: varchar("category", { length: 100 }), // legacy text category
+  categoryId: int("categoryId"), // FK to productCategories (danh mục nhỏ)
+  price: decimal("price", { precision: 15, scale: 2 }).default("0"), // legacy, giá nay nằm trong packages
   taxId: int("taxId"),
-  warrantyMonths: int("warrantyMonths").default(0), // Số tháng bảo hành (0 = không bảo hành)
-  imageUrl: text("imageUrl"), // Ảnh sản phẩm
-  notes: text("notes"), // Lưu ý sản phẩm
+  warrantyMonths: int("warrantyMonths").default(0), // legacy, bảo hành nay nằm trong packages
+  imageUrl: text("imageUrl"),
+  notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -62,6 +76,7 @@ export const productPackages = mysqlTable("product_packages", {
   price: decimal("price", { precision: 15, scale: 2 }).notNull(),
   originalPrice: decimal("originalPrice", { precision: 15, scale: 2 }), // Giá gốc (nếu có giảm giá)
   description: text("description"), // Mô tả ngắn về gói
+  warrantyMonths: int("warrantyMonths").default(0), // Thời hạn bảo hành theo gói
   sortOrder: int("sortOrder").default(0),
   isActive: boolean("isActive").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -457,19 +472,6 @@ export type CouponUsage = typeof couponUsages.$inferSelect;
 
 // ─── Batch 6: 10 New Features ────────────────────────────────────────────────
 
-// 1. Product Categories
-export const productCategories = mysqlTable("product_categories", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  name: varchar("name", { length: 100 }).notNull(),
-  slug: varchar("slug", { length: 100 }).notNull(),
-  description: text("description"),
-  imageUrl: text("imageUrl"),
-  sortOrder: int("sortOrder").default(0),
-  isPublished: boolean("isPublished").default(true),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-export type ProductCategory = typeof productCategories.$inferSelect;
 
 // 2. Loyalty Points
 export const loyaltyPoints = mysqlTable("loyalty_points", {

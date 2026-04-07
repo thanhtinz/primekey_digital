@@ -853,3 +853,25 @@
 - [x] Cập nhật QueuePage sang light theme
 - [x] Cập nhật MyAccount sang light theme
 - [x] Cập nhật ClientLogin sang light theme
+
+## Phase 12: Danh mục 2 cấp + Gói sản phẩm có bảo hành
+
+### Backend
+- [x] Thêm warrantyMonths vào package router (create/update)
+- [x] Thêm categories router (CRUD danh mục 2 cấp)
+- [x] Thêm categoryId vào products router (create/update)
+- [x] Cập nhật getProductsByUserId để kèm packages và category info
+- [x] Cập nhật listPublic để kèm category info và filter theo categoryId
+
+### Admin UI
+- [x] Bỏ trường Giá và Bảo Hành khỏi form tạo/sửa sản phẩm
+- [x] Thêm warrantyMonths vào form gói sản phẩm
+- [x] Thêm dropdown chọn danh mục lớn + danh mục nhỏ vào form sản phẩm
+- [x] Tạo trang admin quản lý danh mục (tạo/sửa/xóa danh mục lớn và nhỏ)
+- [x] Hiển thị bảo hành theo gói trong bảng sản phẩm
+- [x] Hiển thị danh mục trong bảng sản phẩm
+
+### Client UI
+- [x] Cập nhật ProductCatalog filter theo danh mục 2 cấp
+- [x] Cập nhật ProductDetail hiển thị bảo hành theo gói đã chọn
+- [x] Cập nhật LandingPage hiển thị danh mục

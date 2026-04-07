@@ -1056,7 +1056,31 @@ export const appRouter = router({
   products: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
-      return db.getProductsByUserId(ctx.user.id);
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const { products: productsTable, productPackages, productCategories } = await import("../drizzle/schema");
+      const { eq, inArray } = await import("drizzle-orm");
+      const productRows = await drizzleDb.select().from(productsTable).where(eq(productsTable.userId, ctx.user.id)).orderBy(productsTable.createdAt);
+      const productIds = productRows.map(p => p.id);
+      let allPackages: any[] = [];
+      if (productIds.length > 0) {
+        allPackages = await drizzleDb.select().from(productPackages)
+          .where(inArray(productPackages.productId, productIds))
+          .orderBy(productPackages.sortOrder);
+      }
+      // Get all categories
+      const allCategories = await drizzleDb.select().from(productCategories).where(eq(productCategories.userId, ctx.user.id));
+      return productRows.map(p => ({
+        ...p,
+        packages: allPackages.filter(pkg => pkg.productId === p.id),
+        categoryName: allCategories.find(c => c.id === p.categoryId)?.name || null,
+        parentCategoryName: (() => {
+          const cat = allCategories.find(c => c.id === p.categoryId);
+          if (!cat?.parentId) return null;
+          return allCategories.find(c => c.id === cat.parentId)?.name || null;
+        })(),
+      }));
     }),
 
     // Public: lấy 1 sản phẩm theo id (không cần auth)
@@ -1073,32 +1097,38 @@ export const appRouter = router({
         return product;
       }),
 
-    // Public: lấy sản phẩm của owner (single-tenant, userId=1) kèm packages
+    // Public: lấy sản phẩm của owner (single-tenant, userId=1) kèm packages + category
     listPublic: publicProcedure
-      .input(z.object({ category: z.string().optional() }).optional())
+      .input(z.object({ categoryId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         const { getDb } = await import("./db");
         const drizzleDb = await getDb();
         if (!drizzleDb) return [];
-        const { products: productsTable, productPackages, users } = await import("../drizzle/schema");
-        const { eq, and } = await import("drizzle-orm");
+        const { products: productsTable, productPackages, productCategories, users } = await import("../drizzle/schema");
+        const { eq, and, inArray } = await import("drizzle-orm");
         const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
         if (!owner) return [];
-        const conditions = [eq(productsTable.userId, owner.id)];
-        if (input?.category) conditions.push(eq(productsTable.category, input.category));
+        const conditions: any[] = [eq(productsTable.userId, owner.id)];
+        if (input?.categoryId) conditions.push(eq(productsTable.categoryId, input.categoryId));
         const productRows = await drizzleDb.select().from(productsTable).where(and(...conditions)).orderBy(productsTable.createdAt);
-        // Lấy packages cho tất cả sản phẩm
         const productIds = productRows.map(p => p.id);
         let allPackages: any[] = [];
         if (productIds.length > 0) {
-          const { inArray } = await import("drizzle-orm");
           allPackages = await drizzleDb.select().from(productPackages)
             .where(and(inArray(productPackages.productId, productIds), eq(productPackages.isActive, true)))
             .orderBy(productPackages.sortOrder);
         }
+        // Get categories
+        const allCategories = await drizzleDb.select().from(productCategories).where(eq(productCategories.userId, owner.id));
         return productRows.map(p => ({
           ...p,
           packages: allPackages.filter(pkg => pkg.productId === p.id),
+          categoryName: allCategories.find(c => c.id === p.categoryId)?.name || null,
+          parentCategoryName: (() => {
+            const cat = allCategories.find(c => c.id === p.categoryId);
+            if (!cat?.parentId) return null;
+            return allCategories.find(c => c.id === cat.parentId)?.name || null;
+          })(),
         }));
       }),
     // Public: lấy 1 sản phẩm kèm packages theo id
@@ -1134,9 +1164,7 @@ export const appRouter = router({
         z.object({
           name: z.string(),
           description: z.string().optional(),
-          price: z.number(),
-          unit: z.string().optional(),
-          warrantyMonths: z.number().min(0).optional(),
+          categoryId: z.number().nullable().optional(),
           imageUrl: z.string().optional(),
           notes: z.string().optional(),
         })
@@ -1144,7 +1172,11 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
         await db.createProduct({
-          ...input,
+          name: input.name,
+          description: input.description,
+          categoryId: input.categoryId || null,
+          imageUrl: input.imageUrl,
+          notes: input.notes,
           userId: ctx.user.id,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -1158,9 +1190,7 @@ export const appRouter = router({
           id: z.number(),
           name: z.string().optional(),
           description: z.string().optional(),
-          price: z.number().optional(),
-          unit: z.string().optional(),
-          warrantyMonths: z.number().min(0).optional(),
+          categoryId: z.number().nullable().optional(),
           imageUrl: z.string().optional(),
           notes: z.string().optional(),
         })
@@ -1231,6 +1261,7 @@ export const appRouter = router({
         price: z.number(),
         originalPrice: z.number().optional(),
         description: z.string().optional(),
+        warrantyMonths: z.number().min(0).optional(),
         sortOrder: z.number().optional(),
         isActive: z.boolean().optional(),
       }))
@@ -1248,6 +1279,7 @@ export const appRouter = router({
           price: String(input.price),
           originalPrice: input.originalPrice ? String(input.originalPrice) : null,
           description: input.description,
+          warrantyMonths: input.warrantyMonths ?? 0,
           sortOrder: input.sortOrder ?? 0,
           isActive: input.isActive ?? true,
         });
@@ -1260,6 +1292,7 @@ export const appRouter = router({
         price: z.number().optional(),
         originalPrice: z.number().nullable().optional(),
         description: z.string().optional(),
+        warrantyMonths: z.number().min(0).optional(),
         sortOrder: z.number().optional(),
         isActive: z.boolean().optional(),
       }))
@@ -3290,27 +3323,23 @@ export const appRouter = router({
     }),
     create: protectedProcedure.input(z.object({
       name: z.string().min(1),
-      slug: z.string().min(1),
-      description: z.string().optional(),
-      imageUrl: z.string().optional(),
+      icon: z.string().optional(),
+      parentId: z.number().nullable().optional(),
       sortOrder: z.number().optional(),
-      isPublished: z.boolean().optional(),
     })).mutation(async ({ input, ctx }) => {
       const { productCategories } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
-      await drizzleDb.insert(productCategories).values({ ...input, userId: ctx.user.id, description: input.description || null, imageUrl: input.imageUrl || null });
+      await drizzleDb.insert(productCategories).values({ name: input.name, userId: ctx.user.id, icon: input.icon || null, parentId: input.parentId || null, sortOrder: input.sortOrder || 0 });
       return { success: true };
     }),
     update: protectedProcedure.input(z.object({
       id: z.number(),
       name: z.string().optional(),
-      slug: z.string().optional(),
-      description: z.string().optional(),
-      imageUrl: z.string().optional(),
+      icon: z.string().optional(),
+      parentId: z.number().nullable().optional(),
       sortOrder: z.number().optional(),
-      isPublished: z.boolean().optional(),
     })).mutation(async ({ input, ctx }) => {
       const { productCategories } = await import("../drizzle/schema");
       const { getDb } = await import("./db");

@@ -24,7 +24,7 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
@@ -174,9 +174,28 @@ export default function LandingPage() {
     },
   ];
 
+  // Build category tree for filter
+  const parentCats = categories.filter((c: any) => !c.parentId);
+  const getChildCats = (pid: number) => categories.filter((c: any) => c.parentId === pid);
+  // Get all child category IDs under a parent
+  const getCategoryIdsUnderParent = (pid: number) => {
+    const children = getChildCats(pid);
+    return children.map((c: any) => c.id);
+  };
+
   const filteredProducts = products.filter((p: any) => {
     const matchSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-    const matchCat = !selectedCategory || (p as any).categoryId === selectedCategory;
+    let matchCat = true;
+    if (selectedCategory) {
+      // Check if selectedCategory is a parent
+      const isParent = parentCats.some((c: any) => c.id === selectedCategory);
+      if (isParent) {
+        const childIds = getCategoryIdsUnderParent(selectedCategory);
+        matchCat = childIds.includes((p as any).categoryId);
+      } else {
+        matchCat = (p as any).categoryId === selectedCategory;
+      }
+    }
     return matchSearch && matchCat;
   });
 
@@ -378,24 +397,50 @@ export default function LandingPage() {
             </Button>
           </div>
 
-          {/* Category pills */}
-          {categories.length > 0 && (
+          {/* Category pills - 2 cấp */}
+          {parentCats.length > 0 && (
             <div className="flex flex-wrap justify-center gap-2">
               <button
                 onClick={() => setSelectedCategory(null)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${!selectedCategory ? "bg-blue-600 text-white" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${!selectedCategory ? "bg-blue-600 text-white shadow-sm" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"}`}
               >
                 Tất cả
               </button>
-              {categories.map((cat: any) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedCategory === cat.id ? "bg-blue-600 text-white" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"}`}
-                >
-                  {cat.name}
-                </button>
-              ))}
+              {parentCats.map((parent: any) => {
+                const children = getChildCats(parent.id);
+                const isParentSelected = selectedCategory === parent.id;
+                const isChildSelected = children.some((c: any) => c.id === selectedCategory);
+                return (
+                  <div key={parent.id} className="relative group">
+                    <button
+                      onClick={() => setSelectedCategory(isParentSelected ? null : parent.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${isParentSelected || isChildSelected ? "bg-blue-600 text-white shadow-sm" : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"}`}
+                    >
+                      {parent.icon ? `${parent.icon} ` : ""}{parent.name}
+                    </button>
+                    {/* Dropdown children */}
+                    {children.length > 0 && (
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 hidden group-hover:block z-20 min-w-[140px]">
+                        <button
+                          onClick={() => setSelectedCategory(parent.id)}
+                          className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isParentSelected ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50"}`}
+                        >
+                          Tất cả {parent.name}
+                        </button>
+                        {children.map((child: any) => (
+                          <button
+                            key={child.id}
+                            onClick={() => setSelectedCategory(child.id === selectedCategory ? parent.id : child.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedCategory === child.id ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50"}`}
+                          >
+                            {child.icon ? `${child.icon} ` : ""}{child.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -409,7 +454,7 @@ export default function LandingPage() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                   <Package className="h-5 w-5 text-blue-500" />
-                  {selectedCategory ? categories.find((c: any) => c.id === selectedCategory)?.name ?? "Sản Phẩm" : "Tất Cả Sản Phẩm"}
+                  {selectedCategory ? (categories.find((c: any) => c.id === selectedCategory)?.name ?? "Sản Phẩm") : "Tất Cả Sản Phẩm"}
                   <span className="text-sm font-normal text-slate-400">({filteredProducts.length})</span>
                 </h2>
                 <button onClick={() => navigate("/catalog")} className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 font-medium">
@@ -444,12 +489,16 @@ export default function LandingPage() {
                             GIẢM {sale.discountPercent}%
                           </div>
                         )}
-                        {(product as any).warrantyMonths > 0 && (
-                          <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-green-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                            <Shield className="h-2.5 w-2.5" />
-                            BH {(product as any).warrantyMonths}T
-                          </div>
-                        )}
+                        {(() => {
+                          const pkgs = product.packages || [];
+                          const maxWarranty = pkgs.length > 0 ? Math.max(...pkgs.map((p: any) => p.warrantyMonths || 0)) : 0;
+                          return maxWarranty > 0 ? (
+                            <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-green-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                              <Shield className="h-2.5 w-2.5" />
+                              BH {maxWarranty}T
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                       {/* Card body */}
                       <div className="p-3">

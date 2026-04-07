@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Search, Package, Loader2, Tag, Shield, Image, Upload, X, AlertTriangle, ChevronDown, ChevronUp, Layers } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, Loader2, Tag, Shield, Image, Upload, X, AlertTriangle, ChevronDown, ChevronUp, Layers, FolderTree } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -16,11 +16,12 @@ interface PackageForm {
   price: string;
   originalPrice: string;
   description: string;
+  warrantyMonths: string;
   sortOrder: string;
   isActive: boolean;
 }
 
-const emptyPkg = (): PackageForm => ({ name: "", price: "", originalPrice: "", description: "", sortOrder: "0", isActive: true });
+const emptyPkg = (): PackageForm => ({ name: "", price: "", originalPrice: "", description: "", warrantyMonths: "0", sortOrder: "0", isActive: true });
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,14 +31,20 @@ export default function Products() {
   const [activeTab, setActiveTab] = useState<"info" | "packages">("info");
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
   const [formData, setFormData] = useState({
-    name: "", description: "", price: "", warrantyMonths: "0",
+    name: "", description: "",
     imageUrl: "", notes: "",
+    categoryId: null as number | null,
   });
   const [packages, setPackages] = useState<PackageForm[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const { data: products = [], isLoading } = trpc.products.list.useQuery();
+  const { data: categories = [] } = trpc.categories.listProtected.useQuery();
   const utils = trpc.useUtils();
+
+  // Build category tree
+  const parentCategories = categories.filter((c: any) => !c.parentId);
+  const getChildren = (parentId: number) => categories.filter((c: any) => c.parentId === parentId);
 
   const createProduct = trpc.products.create.useMutation({
     onSuccess: () => {
@@ -79,28 +86,24 @@ export default function Products() {
   });
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", price: "", warrantyMonths: "0", imageUrl: "", notes: "" });
+    setFormData({ name: "", description: "", imageUrl: "", notes: "", categoryId: null });
     setPackages([]);
     setEditingId(null);
     setIsOpen(false);
     setActiveTab("info");
   };
 
-  const filteredProducts = products.filter(p =>
+  const filteredProducts = products.filter((p: any) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) { toast.error("Vui lòng nhập tên sản phẩm"); return; }
-    const price = parseFloat(formData.price);
-    if (isNaN(price) || price < 0) { toast.error("Vui lòng nhập giá hợp lệ"); return; }
-    const warrantyMonths = parseInt(formData.warrantyMonths) || 0;
     const payload = {
       name: formData.name,
       description: formData.description || undefined,
-      price,
-      warrantyMonths,
+      categoryId: formData.categoryId,
       imageUrl: formData.imageUrl || undefined,
       notes: formData.notes || undefined,
     };
@@ -111,22 +114,21 @@ export default function Products() {
     }
   };
 
-  const handleEdit = (product: typeof products[0]) => {
-    const price = typeof product.price === "string" ? parseFloat(product.price) : (product.price || 0);
+  const handleEdit = (product: any) => {
     setFormData({
       name: product.name,
       description: product.description || "",
-      price: price.toString(),
-      warrantyMonths: String((product as any).warrantyMonths ?? 0),
-      imageUrl: (product as any).imageUrl || "",
-      notes: (product as any).notes || "",
+      imageUrl: product.imageUrl || "",
+      notes: product.notes || "",
+      categoryId: product.categoryId || null,
     });
-    const pkgs = ((product as any).packages || []).map((p: any) => ({
+    const pkgs = (product.packages || []).map((p: any) => ({
       id: p.id,
       name: p.name,
       price: String(parseFloat(p.price)),
       originalPrice: p.originalPrice ? String(parseFloat(p.originalPrice)) : "",
       description: p.description || "",
+      warrantyMonths: String(p.warrantyMonths ?? 0),
       sortOrder: String(p.sortOrder ?? 0),
       isActive: p.isActive !== false,
     }));
@@ -181,6 +183,7 @@ export default function Products() {
       price,
       originalPrice: pkg.originalPrice ? parseFloat(pkg.originalPrice) : undefined,
       description: pkg.description || undefined,
+      warrantyMonths: parseInt(pkg.warrantyMonths) || 0,
       sortOrder: parseInt(pkg.sortOrder) || 0,
       isActive: pkg.isActive,
     };
@@ -196,6 +199,14 @@ export default function Products() {
     return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
   };
 
+  // Get selected category's parent for display
+  const getSelectedParentId = () => {
+    if (!formData.categoryId) return null;
+    const cat = categories.find((c: any) => c.id === formData.categoryId);
+    return (cat as any)?.parentId || null;
+  };
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
+
   const isPending = createProduct.isPending || updateProduct.isPending;
 
   return (
@@ -207,7 +218,7 @@ export default function Products() {
             <h1 className="text-2xl font-bold text-gray-900">Sản Phẩm & Dịch Vụ</h1>
             <p className="text-sm text-gray-500 mt-0.5">{products.length} sản phẩm trong danh mục</p>
           </div>
-          <Button onClick={() => { resetForm(); setIsOpen(true); }} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
+          <Button onClick={() => { resetForm(); setSelectedParentId(null); setIsOpen(true); }} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
             <Plus className="h-4 w-4" /> Thêm Sản Phẩm
           </Button>
         </div>
@@ -249,24 +260,23 @@ export default function Products() {
                   <thead className="bg-gray-50 border-y border-gray-100">
                     <tr>
                       <th className="text-left py-3 px-4 font-medium text-gray-500">Sản Phẩm</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500 hidden md:table-cell">Mô Tả</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 hidden lg:table-cell">Danh Mục</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">Gói</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">Bảo Hành</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-500">Giá</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-500">Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filteredProducts.map(product => {
-                      const pkgs = (product as any).packages || [];
+                    {filteredProducts.map((product: any) => {
+                      const pkgs = product.packages || [];
                       const isExpanded = expandedProduct === product.id;
                       return (
-                        <>
-                          <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                        <tbody key={product.id}>
+                          <tr className="hover:bg-gray-50 transition-colors">
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-2.5">
-                                {(product as any).imageUrl ? (
-                                  <img src={(product as any).imageUrl} alt={product.name} className="h-10 w-10 rounded-lg object-cover flex-shrink-0 border border-gray-200" />
+                                {product.imageUrl ? (
+                                  <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded-lg object-cover flex-shrink-0 border border-gray-200" />
                                 ) : (
                                   <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
                                     <Package className="h-4 w-4 text-blue-500" />
@@ -274,17 +284,26 @@ export default function Products() {
                                 )}
                                 <div>
                                   <p className="font-medium text-gray-900">{product.name}</p>
-                                  {(product as any).notes && (
+                                  {product.notes && (
                                     <p className="text-xs text-amber-500 mt-0.5 flex items-center gap-1">
                                       <AlertTriangle className="h-3 w-3" />
-                                      <span className="truncate max-w-40">{(product as any).notes}</span>
+                                      <span className="truncate max-w-40">{product.notes}</span>
                                     </p>
                                   )}
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 hidden md:table-cell">
-                              <p className="text-gray-500 text-sm truncate max-w-56">{product.description || <span className="text-gray-300">—</span>}</p>
+                            <td className="py-3.5 px-4 hidden lg:table-cell">
+                              {product.categoryName ? (
+                                <div className="text-sm">
+                                  {product.parentCategoryName && (
+                                    <span className="text-gray-400 text-xs">{product.parentCategoryName} &gt; </span>
+                                  )}
+                                  <span className="text-gray-600 font-medium">{product.categoryName}</span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-300 text-xs">Chưa phân loại</span>
+                              )}
                             </td>
                             <td className="py-3.5 px-4 text-center hidden sm:table-cell">
                               {pkgs.length > 0 ? (
@@ -300,16 +319,6 @@ export default function Products() {
                                 <span className="text-gray-300 text-xs">—</span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-right hidden sm:table-cell">
-                              {(product as any).warrantyMonths > 0 ? (
-                                <div className="flex items-center justify-end gap-1">
-                                  <Shield className="h-3.5 w-3.5 text-blue-500" />
-                                  <span className="text-blue-600 text-sm">{(product as any).warrantyMonths} tháng</span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-300 text-sm">—</span>
-                              )}
-                            </td>
                             <td className="py-3.5 px-4 text-right">
                               {pkgs.length > 0 ? (
                                 <div className="text-right">
@@ -322,10 +331,7 @@ export default function Products() {
                                   )}
                                 </div>
                               ) : (
-                                <div className="flex items-center justify-end gap-1">
-                                  <Tag className="h-3.5 w-3.5 text-green-500" />
-                                  <span className="font-semibold text-green-700">{formatPrice(product.price)}</span>
-                                </div>
+                                <span className="text-gray-300 text-sm">Chưa có gói</span>
                               )}
                             </td>
                             <td className="py-3.5 px-4">
@@ -341,8 +347,8 @@ export default function Products() {
                           </tr>
                           {/* Expanded packages row */}
                           {isExpanded && pkgs.length > 0 && (
-                            <tr key={`pkg-${product.id}`} className="bg-blue-50/40">
-                              <td colSpan={6} className="px-4 py-3">
+                            <tr className="bg-blue-50/40">
+                              <td colSpan={5} className="px-4 py-3">
                                 <div className="flex flex-wrap gap-2">
                                   {pkgs.map((pkg: any) => (
                                     <div key={pkg.id} className="flex items-center gap-2 bg-white border border-blue-100 rounded-lg px-3 py-2 text-sm shadow-sm">
@@ -352,6 +358,11 @@ export default function Products() {
                                       {pkg.originalPrice && (
                                         <span className="text-gray-400 line-through text-xs">{formatPrice(pkg.originalPrice)}</span>
                                       )}
+                                      {pkg.warrantyMonths > 0 && (
+                                        <span className="text-xs text-blue-500 flex items-center gap-0.5">
+                                          <Shield className="h-3 w-3" /> {pkg.warrantyMonths}th
+                                        </span>
+                                      )}
                                       {!pkg.isActive && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Ẩn</span>}
                                     </div>
                                   ))}
@@ -359,7 +370,7 @@ export default function Products() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </tbody>
                       );
                     })}
                   </tbody>
@@ -432,33 +443,64 @@ export default function Products() {
                 <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ví dụ: Netflix Premium, Adobe CC..." className="mt-1.5" />
               </div>
 
+              {/* Danh mục 2 cấp */}
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <FolderTree className="h-3.5 w-3.5 text-green-500" /> Danh Mục
+                </Label>
+                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                  <div>
+                    <select
+                      value={selectedParentId ?? getSelectedParentId() ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value ? Number(e.target.value) : null;
+                        setSelectedParentId(val);
+                        setFormData(prev => ({ ...prev, categoryId: null }));
+                      }}
+                      className="w-full h-9 px-3 rounded-md border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-- Danh mục lớn --</option>
+                      {parentCategories.map((cat: any) => (
+                        <option key={cat.id} value={cat.id}>{cat.icon ? `${cat.icon} ` : ""}{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <select
+                      value={formData.categoryId ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value ? Number(e.target.value) : null;
+                        setFormData(prev => ({ ...prev, categoryId: val }));
+                      }}
+                      className="w-full h-9 px-3 rounded-md border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={!selectedParentId && !getSelectedParentId()}
+                    >
+                      <option value="">-- Danh mục nhỏ --</option>
+                      {getChildren(selectedParentId ?? getSelectedParentId() ?? 0).map((cat: any) => (
+                        <option key={cat.id} value={cat.id}>{cat.icon ? `${cat.icon} ` : ""}{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Chọn danh mục lớn trước, sau đó chọn danh mục nhỏ</p>
+              </div>
+
               {/* Mô tả */}
               <div>
                 <Label className="text-sm font-medium">Chi Tiết Sản Phẩm</Label>
                 <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Mô tả chi tiết về sản phẩm/dịch vụ..." className="mt-1.5 min-h-[80px]" rows={3} />
               </div>
 
-              {/* Giá */}
-              <div>
-                <Label className="text-sm font-medium">Giá Gốc (VND) <span className="text-red-500">*</span></Label>
-                <p className="text-xs text-gray-400 mb-1">Giá hiển thị khi không có gói nào. Nếu có gói, giá gói sẽ được dùng thay thế.</p>
-                <Input type="number" min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="500000" className="mt-1.5" />
-                {formData.price && !isNaN(parseFloat(formData.price)) && (
-                  <p className="text-xs text-gray-400 mt-1">= {new Intl.NumberFormat("vi-VN").format(parseFloat(formData.price))} ₫</p>
-                )}
-              </div>
-
-              {/* Bảo hành */}
-              <div>
-                <Label className="text-sm font-medium flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-blue-500" /> Thời Hạn Bảo Hành (tháng)</Label>
-                <Input type="number" min="0" max="120" value={formData.warrantyMonths} onChange={(e) => setFormData({ ...formData, warrantyMonths: e.target.value })} placeholder="0 = không bảo hành" className="mt-1.5" />
-                <p className="text-xs text-gray-400 mt-1">{parseInt(formData.warrantyMonths) > 0 ? `Bảo hành ${formData.warrantyMonths} tháng` : "Nhập 0 nếu không có bảo hành"}</p>
-              </div>
-
               {/* Lưu ý */}
               <div>
                 <Label className="text-sm font-medium flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> Lưu Ý Sản Phẩm</Label>
                 <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Lưu ý quan trọng cho khách hàng (VD: không hoàn tiền, thời gian kích hoạt...)" className="mt-1.5 min-h-[60px]" rows={2} />
+              </div>
+
+              {/* Info box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+                <p className="font-medium">Giá và bảo hành được quản lý theo gói</p>
+                <p className="text-xs mt-1 text-blue-500">Chuyển sang tab "Gói Sản Phẩm" để thêm các gói với giá và thời hạn bảo hành khác nhau.</p>
               </div>
 
               <div className="flex gap-2 pt-1">
@@ -479,7 +521,7 @@ export default function Products() {
               )}
               {editingId && (
                 <>
-                  <p className="text-sm text-gray-500">Thêm các gói với giá khác nhau. Khách hàng sẽ chọn gói khi mua.</p>
+                  <p className="text-sm text-gray-500">Thêm các gói với giá và bảo hành khác nhau. Khách hàng sẽ chọn gói khi mua.</p>
                   {/* Existing packages */}
                   {packages.filter(p => p.id).length > 0 && (
                     <div className="space-y-2">
@@ -500,6 +542,10 @@ export default function Products() {
                               <Input type="number" value={pkg.originalPrice} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, originalPrice: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="200000" />
                             </div>
                             <div>
+                              <Label className="text-xs text-gray-500 flex items-center gap-1"><Shield className="h-3 w-3 text-blue-500" /> Bảo hành (tháng)</Label>
+                              <Input type="number" min="0" value={pkg.warrantyMonths} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, warrantyMonths: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="0" />
+                            </div>
+                            <div className="col-span-2">
                               <Label className="text-xs text-gray-500">Mô tả gói</Label>
                               <Input value={pkg.description} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, description: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="Mô tả ngắn..." />
                             </div>
@@ -545,6 +591,10 @@ export default function Products() {
                                 <Input type="number" value={pkg.originalPrice} onChange={e => setPackages(prev => prev.map((p, i) => i === absIdx ? { ...p, originalPrice: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="200000" />
                               </div>
                               <div>
+                                <Label className="text-xs text-gray-500 flex items-center gap-1"><Shield className="h-3 w-3 text-blue-500" /> Bảo hành (tháng)</Label>
+                                <Input type="number" min="0" value={pkg.warrantyMonths} onChange={e => setPackages(prev => prev.map((p, i) => i === absIdx ? { ...p, warrantyMonths: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="0" />
+                              </div>
+                              <div className="col-span-2">
                                 <Label className="text-xs text-gray-500">Mô tả gói</Label>
                                 <Input value={pkg.description} onChange={e => setPackages(prev => prev.map((p, i) => i === absIdx ? { ...p, description: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="Mô tả ngắn..." />
                               </div>

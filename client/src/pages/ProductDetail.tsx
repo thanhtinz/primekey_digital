@@ -90,10 +90,10 @@ export default function ProductDetail() {
 
   const minPrice = packages.length > 0
     ? Math.min(...packages.map((p: any) => parseFloat(p.price)))
-    : parseFloat(product.price);
+    : parseFloat(product.price || "0");
   const maxPrice = packages.length > 0
     ? Math.max(...packages.map((p: any) => parseFloat(p.price)))
-    : parseFloat(product.price);
+    : parseFloat(product.price || "0");
   const hasMultiPrice = packages.length > 1;
 
   const displayPrice = selectedPackage ? parseFloat(selectedPackage.price) : minPrice;
@@ -184,11 +184,14 @@ export default function ProductDetail() {
             <div className="flex items-center gap-1 text-emerald-600 text-sm font-medium">
               <Zap className="w-4 h-4" /> Giao ngay
             </div>
-            {(product.warrantyMonths ?? 0) > 0 && (
-              <div className="flex items-center gap-1 text-blue-600 text-sm">
-                <Shield className="w-4 h-4" /> BH {product.warrantyMonths} tháng
-              </div>
-            )}
+            {(() => {
+              const maxW = packages.length > 0 ? Math.max(...packages.map((p: any) => p.warrantyMonths || 0)) : 0;
+              return maxW > 0 ? (
+                <div className="flex items-center gap-1 text-blue-600 text-sm">
+                  <Shield className="w-4 h-4" /> BH lên đến {maxW} tháng
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
 
@@ -253,6 +256,11 @@ export default function ProductDetail() {
                             <span className="font-medium text-gray-800 text-sm">{pkg.name}</span>
                             {pkg.description && (
                               <p className="text-xs text-gray-500 mt-0.5">{pkg.description}</p>
+                            )}
+                            {(pkg.warrantyMonths ?? 0) > 0 && (
+                              <p className="text-xs text-blue-500 mt-0.5 flex items-center gap-0.5">
+                                <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths} tháng
+                              </p>
                             )}
                           </div>
                         </div>

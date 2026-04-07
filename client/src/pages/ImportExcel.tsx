@@ -79,13 +79,9 @@ export default function ImportExcel() {
             newResults.push({ row: i + 2, status: "success", message: `Đã thêm: ${name}` });
           } else {
             const name = String(row["Tên Sản Phẩm *"] || row["Tên Sản Phẩm"] || "").trim();
-            const price = Number(row["Giá *"] || row["Giá"] || 0);
             if (!name) throw new Error("Thiếu tên sản phẩm");
-            if (!price) throw new Error("Thiếu giá sản phẩm");
             await createProduct.mutateAsync({
               name,
-              price,
-              unit: String(row["Đơn Vị"] || "").trim() || undefined,
               description: String(row["Mô Tả"] || "").trim() || undefined,
             });
             newResults.push({ row: i + 2, status: "success", message: `Đã thêm: ${name}` });
