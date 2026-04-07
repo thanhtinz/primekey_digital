@@ -153,7 +153,7 @@ export default function InvoiceDetail() {
 
   const handleUpdateStatus = async (newStatus: string) => {
     try {
-      await updateStatusMutation.mutateAsync({ id: invoiceId, status: newStatus as any });
+      await updateStatusMutation.mutateAsync({ id: invoiceId, status: newStatus as any, origin: window.location.origin });
       await utils.invoices.get.invalidate({ id: invoiceId });
       await utils.invoices.list.invalidate();
       toast.success(`Đã cập nhật trạng thái: ${STATUS_CONFIG[newStatus]?.label}`);
@@ -481,6 +481,45 @@ export default function InvoiceDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Invoice Items Card */}
+            {invoice.items && invoice.items.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold">Chi Tiết Sản Phẩm / Dịch Vụ</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/30">
+                          <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Tên</th>
+                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">SL</th>
+                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Giá</th>
+                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Thành Tiền</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoice.items.map((item: any, idx: number) => (
+                          <tr key={idx} className="border-b last:border-0 hover:bg-muted/20">
+                            <td className="px-4 py-2.5 font-medium">{item.name}</td>
+                            <td className="px-4 py-2.5 text-right text-muted-foreground">
+                              {typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity}
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-muted-foreground">
+                              {formatCurrency(item.unitPrice, invoice.currency || "VND")}
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-medium">
+                              {formatCurrency(item.totalAmount, invoice.currency || "VND")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Payment Link Card */}
             {invoice.paymentUrl && (

@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation, Redirect } from "wouter";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Loader2, ShieldAlert } from "lucide-react";
@@ -154,12 +154,32 @@ function Router() {
   );
 }
 
+function GlobalBrandApplier() {
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  useEffect(() => {
+    if (publicInfo?.faviconUrl) {
+      let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = publicInfo.faviconUrl;
+    }
+    if (publicInfo?.companyName) {
+      document.title = publicInfo.companyName + " - Hệ Thống Quản Lý Hóa Đơn";
+    }
+  }, [publicInfo?.faviconUrl, publicInfo?.companyName]);
+  return null;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light" switchable={true}>
         <TooltipProvider>
           <Toaster />
+          <GlobalBrandApplier />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

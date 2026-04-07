@@ -236,6 +236,15 @@ export default function CreateInvoice() {
         totalAmount: total,
         status: "CREATED",
         notes: notes || undefined,
+        items: validItems.map(item => ({
+          productId: item.productId ? parseInt(item.productId) : undefined,
+          name: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          taxRate: item.taxRate,
+          taxAmount: (item.quantity * item.unitPrice * item.taxRate) / 100,
+          totalAmount: item.quantity * item.unitPrice,
+        })),
       });
 
       await utils.invoices.list.invalidate();

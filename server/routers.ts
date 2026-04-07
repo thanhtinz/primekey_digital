@@ -13,7 +13,12 @@ import { createPayOSPaymentLink, getPayOSPaymentStatus } from "./payos";
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts => {
+      if (!opts.ctx.user) return null;
+      // Never expose password hash to client
+      const { password: _pw, ...safeUser } = opts.ctx.user;
+      return safeUser;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -38,15 +43,21 @@ export const appRouter = router({
         if (!invoice || invoice.userId !== ctx.user.id) {
           throw new Error("Invoice not found");
         }
-        // Fetch customer email if customerId exists
+        // Fetch customer info if customerId exists
         let customerEmail: string | null = null;
         let customerName: string | null = null;
+        let customerPhone: string | null = null;
+        let customerAddress: string | null = null;
         if (invoice.customerId) {
           const customer = await db.getCustomerById(invoice.customerId);
           customerEmail = customer?.email || null;
           customerName = customer?.name || null;
+          customerPhone = customer?.phone || null;
+          customerAddress = customer?.address || null;
         }
-        return { ...invoice, customerEmail, customerName };
+        // Fetch invoice items
+        const items = await db.getInvoiceItemsByInvoiceId(invoice.id);
+        return { ...invoice, customerEmail, customerName, customerPhone, customerAddress, items };
       }),
 
     create: protectedProcedure
@@ -63,11 +74,21 @@ export const appRouter = router({
           totalAmount: z.number(),
           status: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]),
           notes: z.string().optional(),
+          items: z.array(z.object({
+            productId: z.number().optional(),
+            name: z.string(),
+            quantity: z.number(),
+            unitPrice: z.number(),
+            taxRate: z.number().optional(),
+            discount: z.number().optional(),
+            taxAmount: z.number().optional(),
+            totalAmount: z.number(),
+          })).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        const { dueDate, issueDate, ...rest } = input;
+        const { dueDate, issueDate, items: inputItems, ...rest } = input;
         await db.createInvoice({
           ...rest,
           userId: ctx.user.id,
@@ -75,6 +96,26 @@ export const appRouter = router({
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+        // Save invoice items if provided
+        if (inputItems && inputItems.length > 0) {
+          const allInvoices = await db.getInvoicesByUserId(ctx.user.id);
+          const created = allInvoices.find(i => i.invoiceNumber === rest.invoiceNumber);
+          if (created) {
+            for (const item of inputItems) {
+              await db.createInvoiceItem({
+                invoiceId: created.id,
+                productId: item.productId,
+                name: item.name,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                discount: item.discount ?? 0,
+                taxId: undefined,
+                taxAmount: item.taxAmount ?? 0,
+                totalAmount: item.totalAmount,
+              });
+            }
+          }
+        }
         return { success: true };
       }),
     update: protectedProcedure
@@ -116,6 +157,7 @@ export const appRouter = router({
         id: z.number(),
         status: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]),
         sendEmail: z.boolean().optional(),
+        origin: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
@@ -147,8 +189,8 @@ export const appRouter = router({
               CREATED: "Tạo Đơn", PAID: "Đã Thanh Toán", SHIPPING: "Đang Giao Hàng",
               WARRANTY: "Bảo Hành", FAILED: "Thất Bại", EXPIRED: "Hết Hạn",
             };
-            // Build base URL from VITE_APP_URL or fallback
-            const baseUrl = process.env.VITE_APP_URL || "";
+            // Build base URL from origin (passed by frontend) or VITE_APP_URL fallback
+            const baseUrl = input.origin || process.env.VITE_APP_URL || "";
             const reviewUrl = reviewToken ? `${baseUrl}/review/${reviewToken}` : undefined;
             const trackUrl = `${baseUrl}/track-order`;
             // Try to load custom email template from DB, fallback to default
@@ -1136,13 +1178,17 @@ export const appRouter = router({
         companyPhone: userSettings.companyPhone,
         companyAddress: userSettings.companyAddress,
         website: userSettings.website,
+        logoUrl: userSettings.logoUrl,
+        faviconUrl: userSettings.faviconUrl,
       }).from(userSettings).limit(1);
-      // Lấy logo từ default template
+      // Lấy logo từ default template (fallback nếu không có brand logo)
       const templateRows = await drizzleDb.select({
         logo: invoiceTemplates.logo,
       }).from(invoiceTemplates).limit(1);
-      const companyLogo = templateRows[0]?.logo ?? null;
-      const base = rows[0] ?? { companyName: null, companyEmail: null, companyPhone: null, companyAddress: null, website: null };
+      const templateLogo = templateRows[0]?.logo ?? null;
+      const base = rows[0] ?? { companyName: null, companyEmail: null, companyPhone: null, companyAddress: null, website: null, logoUrl: null, faviconUrl: null };
+      // Prefer brand logoUrl over template logo
+      const companyLogo = base.logoUrl || templateLogo;
       return { ...base, companyLogo };
     }),
      get: protectedProcedure.query(async ({ ctx }) => {

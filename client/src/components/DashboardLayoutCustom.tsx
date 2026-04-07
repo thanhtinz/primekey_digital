@@ -94,6 +94,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { theme, toggleTheme } = useTheme();
   const { data: invoices } = trpc.invoices.list.useQuery(undefined, { staleTime: 30_000 });
   const { data: customers } = trpc.customers.list.useQuery(undefined, { staleTime: 30_000 });
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const appName = publicInfo?.companyName || "Invoice Prime";
+  const appLogo = publicInfo?.logoUrl || null;
+  const appInitials = appName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "IP";
 
   // Global search results
   const searchResults = searchQuery.trim().length >= 2 ? [
@@ -162,7 +166,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const currentPageTitle = [...adminNavGroups, ...staffNavGroups]
     .flatMap(g => g.items)
-    .find(item => isActive(item.href))?.label || "Invoice Prime";
+    .find(item => isActive(item.href))?.label || appName;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -182,11 +186,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-slate-700/60">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center font-bold text-base shadow-lg shadow-blue-500/30">
-              IP
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-base shadow-lg overflow-hidden flex-shrink-0">
+              {appLogo ? (
+                <img src={appLogo} alt={appName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-blue-500/30">
+                  {appInitials}
+                </div>
+              )}
             </div>
-            <div>
-              <h1 className="font-bold text-base leading-tight">Invoice Prime</h1>
+            <div className="min-w-0">
+              <h1 className="font-bold text-base leading-tight truncate">{appName}</h1>
               <p className="text-xs text-slate-400">Quản lý hóa đơn</p>
             </div>
           </div>
@@ -288,7 +298,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 )}
               </button>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground hidden sm:block">Invoice Prime</span>
+                <span className="text-sm text-muted-foreground hidden sm:block">{appName}</span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
                 <span className="text-sm font-semibold text-foreground">{currentPageTitle}</span>
               </div>

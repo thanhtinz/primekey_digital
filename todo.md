@@ -446,3 +446,16 @@
 - [x] Upload file lên S3, lưu URL vào DB
 - [x] Áp dụng favicon động qua useEffect thay đổi <link rel="icon">
 - [x] Cập nhật getPublicInfo trả về logoUrl và faviconUrl
+
+## Final Bug Check & Fixes
+
+- [x] Bug 1: getPublicInfo không trả về logoUrl từ userSettings - đã sửa
+- [x] Bug 2: DashboardLayoutCustom hardcode "IP" và "Invoice Prime" - đã sửa dùng settings.companyName và logoUrl
+- [x] Bug 3: Favicon chỉ áp dụng trong Settings page - đã thêm global apply trong App.tsx
+- [x] Bug 4: getPublicInfo không trả về logoUrl từ userSettings - đã sửa
+- [x] **[SECURITY BUG]** auth.me trả về password hash - ẩn trường password khỏi response
+- [x] **[CRITICAL BUG]** invoices.create không lưu items - thêm items field vào procedure và CreateInvoice.tsx
+- [x] **[BUG]** invoice.get không trả về items - thêm getInvoiceItemsByInvoiceId
+- [x] **[BUG]** InvoiceDetail không hiển thị danh sách sản phẩm - thêm bảng Chi Tiết Sản Phẩm
+- [x] **[BUG]** updateStatus email có URL rỗng - thêm origin từ frontend
+- [x] TypeScript: 0 errors, 13/13 tests passed
