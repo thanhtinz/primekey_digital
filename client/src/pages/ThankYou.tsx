@@ -135,8 +135,8 @@ export default function ThankYou() {
             
             {/* Banner image inside card */}
             {bannerUrl && (
-              <div className="rounded-lg overflow-hidden mb-6 shadow-sm">
-                <img src={bannerUrl} alt="Banner" className="w-full h-32 object-cover" />
+              <div className="rounded-lg overflow-hidden mb-6 shadow-sm bg-gray-100 flex items-center justify-center">
+                <img src={bannerUrl} alt="Banner" className="w-full h-auto max-h-64 object-contain" />
               </div>
             )}
             
