@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
-  Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone
+  Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
+  RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -51,15 +52,32 @@ const adminNavGroups = [
     ],
   },
   {
+    label: "Hóa Đơn Nâng Cao",
+    items: [
+      { label: "Hóa Đơn Định Kỳ", href: "/recurring-invoices", icon: RefreshCw },
+      { label: "Import Excel", href: "/import-excel", icon: Upload },
+      { label: "Tìm Kiếm Nâng Cao", href: "/advanced-search", icon: SearchCode },
+    ],
+  },
+  {
+    label: "Phân Tích Nâng Cao",
+    items: [
+      { label: "Báo Cáo Nâng Cao", href: "/advanced-reports", icon: TrendingUp },
+    ],
+  },
+  {
     label: "Hệ Thống",
     items: [
       { label: "Nhân Viên", href: "/staff", icon: Users },
       { label: "Nhắc Nhở", href: "/reminders", icon: Bell },
       { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
       { label: "Lịch Sử HT", href: "/activity-log", icon: History },
+      { label: "Sao Lưu Dữ Liệu", href: "/backup", icon: Database },
       { label: "Cài Đặt", href: "/settings", icon: Settings },
       { label: "Cấu Hình SMTP", href: "/settings/smtp", icon: Mail },
       { label: "Mẫu Email", href: "/settings/email-templates", icon: MessageSquare },
+      { label: "Telegram Bot", href: "/settings/telegram", icon: Send },
+      { label: "Trang Cảm Ơn", href: "/settings/thank-you", icon: Heart },
     ],
   },
 ];

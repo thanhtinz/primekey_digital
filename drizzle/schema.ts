@@ -138,10 +138,13 @@ export const invoices = mysqlTable("invoices", {
   paidAt: timestamp("paidAt"),
   expiresAt: timestamp("expiresAt"),
   notes: text("notes"),
+  publicNote: text("publicNote"),
+  isRecurring: boolean("isRecurring").default(false),
+  recurringInterval: mysqlEnum("recurringInterval", ["weekly", "monthly", "quarterly"]),
+  recurringNextDate: timestamp("recurringNextDate"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = typeof invoices.$inferInsert;
 
@@ -199,11 +202,17 @@ export const userSettings = mysqlTable("userSettings", {
   invoiceReminder: boolean("invoiceReminder").default(true),
   reminderHoursBefore: int("reminderHoursBefore").default(24),
   paymentConfirmation: boolean("paymentConfirmation").default(true),
-  weeklyReport: boolean("weeklyReport").default(false),
+   weeklyReport: boolean("weeklyReport").default(false),
+  weeklyReportEmail: varchar("weeklyReportEmail", { length: 320 }),
+  telegramChatId: varchar("telegramChatId", { length: 100 }),
+  telegramBotToken: varchar("telegramBotToken", { length: 200 }),
+  telegramEnabled: boolean("telegramEnabled").default(false),
+  thankYouTitle: varchar("thankYouTitle", { length: 255 }),
+  thankYouMessage: text("thankYouMessage"),
+  thankYouSocialLinks: json("thankYouSocialLinks"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type UserSettings = typeof userSettings.$inferSelect;
 export type InsertUserSettings = typeof userSettings.$inferInsert;
 

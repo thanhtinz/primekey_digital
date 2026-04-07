@@ -10,6 +10,20 @@ import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHT
 import crypto from "crypto";
 import { createPayOSPaymentLink, getPayOSPaymentStatus } from "./payos";
 
+// Telegram notification helper
+async function sendTelegramNotification(userId: number, message: string): Promise<void> {
+  try {
+    const settings = await db.getUserSettings(userId);
+    if (!settings?.telegramEnabled || !settings?.telegramBotToken || !settings?.telegramChatId) return;
+    const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendMessage`;
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: settings.telegramChatId, text: message, parse_mode: "HTML" }),
+    });
+  } catch { /* silent fail */ }
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -116,6 +130,8 @@ export const appRouter = router({
             }
           }
         }
+        // Send Telegram notification for new invoice
+        void sendTelegramNotification(ctx.user.id, `📄 <b>Hóa đơn mới được tạo</b>\nMã: ${rest.invoiceNumber}\nTổng tiền: ${Number(rest.totalAmount).toLocaleString("vi-VN")} ${rest.currency || "VND"}`);
         return { success: true };
       }),
     update: protectedProcedure
@@ -528,6 +544,7 @@ export const appRouter = router({
           expiresAt: invoice.expiresAt,
           createdAt: invoice.createdAt,
           notes: invoice.notes,
+          publicNote: invoice.publicNote || null,
           customerName: customer?.name || "Khách Hàng",
           companyName: settings?.companyName || defaultTemplate?.companyName || "Công Ty",
           companyPhone: settings?.companyPhone || "",
@@ -642,6 +659,41 @@ export const appRouter = router({
         }));
       }),
 
+    // Public lookup by invoice number (for warranty page)
+    lookupByCode: publicProcedure
+      .input(z.object({ code: z.string() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return null;
+        const { invoices: invoicesTable, invoiceItems, customers } = await import("../drizzle/schema");
+        const { eq, ilike } = await import("drizzle-orm");
+        const rows = await drizzleDb
+          .select({
+            id: invoicesTable.id,
+            invoiceNumber: invoicesTable.invoiceNumber,
+            status: invoicesTable.status,
+            totalAmount: invoicesTable.totalAmount,
+            currency: invoicesTable.currency,
+            createdAt: invoicesTable.createdAt,
+            expiresAt: invoicesTable.expiresAt,
+            notes: invoicesTable.notes,
+            publicNote: invoicesTable.publicNote,
+            customerName: customers.name,
+          })
+          .from(invoicesTable)
+          .leftJoin(customers, eq(invoicesTable.customerId, customers.id))
+          .where(ilike(invoicesTable.invoiceNumber, input.code))
+          .limit(1);
+        if (!rows[0]) return null;
+        const inv = rows[0];
+        const items = await drizzleDb
+          .select()
+          .from(invoiceItems)
+          .where(eq(invoiceItems.invoiceId, inv.id));
+        return { ...inv, items };
+      }),
+
     // Get invoices expiring within 24 hours (status CREATED)
     getExpiringSoon: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
@@ -754,6 +806,99 @@ export const appRouter = router({
         // Concatenate all PDFs using a simple approach - return as array of base64
         const combinedBase64 = pdfBuffers.map(b => b.toString("base64"));
         return { pdfs: combinedBase64, count: pdfBuffers.length };
+      }),
+    listWithDateRange: protectedProcedure
+      .input(z.object({
+        fromDate: z.string().optional(),
+        toDate: z.string().optional(),
+        status: z.string().optional(),
+        currency: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const all = await db.getInvoicesByUserIdWithCustomer(ctx.user.id);
+        let filtered = all;
+        if (input.fromDate) {
+          const from = new Date(input.fromDate);
+          filtered = filtered.filter(i => new Date(i.createdAt) >= from);
+        }
+        if (input.toDate) {
+          const to = new Date(input.toDate);
+          to.setHours(23, 59, 59, 999);
+          filtered = filtered.filter(i => new Date(i.createdAt) <= to);
+        }
+        if (input.status && input.status !== "ALL") {
+          filtered = filtered.filter(i => i.status === input.status);
+        }
+        if (input.currency && input.currency !== "ALL") {
+          filtered = filtered.filter(i => i.currency === input.currency);
+        }
+        return filtered;
+      }),
+    createRecurring: protectedProcedure
+      .input(z.object({
+        customerId: z.number(),
+        templateId: z.number().optional(),
+        currency: z.enum(["VND", "USD"]).default("VND"),
+        items: z.array(z.object({
+          name: z.string(),
+          quantity: z.number(),
+          unitPrice: z.number(),
+          discount: z.number().optional(),
+          taxId: z.number().optional(),
+          productId: z.number().optional(),
+        })),
+        notes: z.string().optional(),
+        publicNote: z.string().optional(),
+        recurringInterval: z.enum(["weekly", "monthly", "quarterly"]),
+        recurringStartDate: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { items, recurringInterval, recurringStartDate, ...invoiceData } = input;
+        const subtotal = items.reduce((s, i) => s + i.quantity * i.unitPrice - (i.discount || 0), 0);
+        const nextDate = new Date(recurringStartDate);
+        const invoiceNumber = `INV-${Date.now()}`;
+        await db.createInvoice({
+          ...invoiceData,
+          userId: ctx.user.id,
+          invoiceNumber,
+          subtotal: String(subtotal),
+          totalAmount: String(subtotal),
+          isRecurring: true,
+          recurringInterval,
+          recurringNextDate: nextDate,
+          expiresAt: nextDate,
+        });
+        const allInvoices2 = await db.getInvoicesByUserId(ctx.user.id);
+        const createdRecurring = allInvoices2.find(i => i.invoiceNumber === invoiceNumber);
+        for (const item of items) {
+          const total = item.quantity * item.unitPrice - (item.discount || 0);
+          await db.createInvoiceItem({
+            invoiceId: createdRecurring?.id ?? 0,
+            name: item.name,
+            quantity: String(item.quantity),
+            unitPrice: String(item.unitPrice),
+            discount: String(item.discount || 0),
+            taxId: item.taxId,
+            taxAmount: "0",
+            totalAmount: String(total),
+            productId: item.productId,
+          });
+        }
+        return { success: true };
+      }),
+    listRecurring: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const all = await db.getInvoicesByUserId(ctx.user.id);
+      return all.filter(i => (i as any).isRecurring);
+    }),
+    updatePublicNote: protectedProcedure
+      .input(z.object({ id: z.number(), publicNote: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.updateInvoice(input.id, { publicNote: input.publicNote });
+        return { success: true };
       }),
   }),
   // Customers
@@ -1320,6 +1465,55 @@ export const appRouter = router({
           revenue: data.revenue,
           conversionRate: data.created > 0 ? Math.round(data.paid / data.created * 100) : 0,
         }));
+    }),
+    revenueByCustomer: protectedProcedure
+      .input(z.object({
+        fromDate: z.string().optional(),
+        toDate: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const invoices = await db.getInvoicesByUserIdWithCustomer(ctx.user.id);
+        let filtered = invoices.filter(i => i.status && ["PAID","SHIPPING","WARRANTY"].includes(i.status));
+        if (input.fromDate) {
+          const from = new Date(input.fromDate);
+          filtered = filtered.filter(i => new Date(i.createdAt) >= from);
+        }
+        if (input.toDate) {
+          const to = new Date(input.toDate);
+          to.setHours(23, 59, 59, 999);
+          filtered = filtered.filter(i => new Date(i.createdAt) <= to);
+        }
+        const byCustomer: Record<number, { customerId: number; customerName: string; orderCount: number; totalRevenue: number }> = {};
+        for (const inv of filtered) {
+          const cid = inv.customerId ?? 0;
+          if (!byCustomer[cid]) byCustomer[cid] = { customerId: cid, customerName: inv.customerName || "Khách lẻ", orderCount: 0, totalRevenue: 0 };
+          byCustomer[cid].orderCount++;
+          byCustomer[cid].totalRevenue += Number(inv.totalAmount) || 0;
+        }
+        return Object.values(byCustomer).sort((a, b) => b.totalRevenue - a.totalRevenue);
+      }),
+    conversionByProduct: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const invoices = await db.getInvoicesByUserId(ctx.user.id);
+      const allItems = await Promise.all(invoices.map(i => db.getInvoiceItemsByInvoiceId(i.id)));
+      const byProduct: Record<string, { name: string; totalOrders: number; paidOrders: number; totalRevenue: number }> = {};
+      invoices.forEach((inv, idx) => {
+        const items = allItems[idx];
+        const isPaid = inv.status && ["PAID","SHIPPING","WARRANTY"].includes(inv.status);
+        items.forEach(item => {
+          if (!byProduct[item.name]) byProduct[item.name] = { name: item.name, totalOrders: 0, paidOrders: 0, totalRevenue: 0 };
+          byProduct[item.name].totalOrders++;
+          if (isPaid) {
+            byProduct[item.name].paidOrders++;
+            byProduct[item.name].totalRevenue += Number(item.totalAmount) || 0;
+          }
+        });
+      });
+      return Object.values(byProduct)
+        .map(p => ({ ...p, conversionRate: p.totalOrders > 0 ? Math.round(p.paidOrders / p.totalOrders * 100) : 0 }))
+        .sort((a, b) => b.totalRevenue - a.totalRevenue)
+        .slice(0, 20);
     }),
   }),
   // User Settingss
@@ -2206,6 +2400,110 @@ export const appRouter = router({
         }
 
         return { count: targetCustomers.length, samples: targetCustomers.slice(0, 5).map(c => ({ name: c.name, email: c.email ?? "" })) };
+      }),
+  }),
+  // ─── Settings Extended ──────────────────────────────────────────────────────
+  settingsExt: router({
+    updateTelegram: protectedProcedure
+      .input(z.object({
+        telegramBotToken: z.string().optional(),
+        telegramChatId: z.string().optional(),
+        telegramEnabled: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+    testTelegram: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const settings = await db.getUserSettings(ctx.user.id);
+      if (!settings?.telegramBotToken || !settings?.telegramChatId) {
+        throw new Error("Telegram chưa được cấu hình");
+      }
+      const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendMessage`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: settings.telegramChatId, text: "✅ Invoice Prime: Kết nối Telegram thành công!" }),
+      });
+      const data = await res.json() as { ok: boolean; description?: string };
+      if (!data.ok) throw new Error(data.description || "Gửi thất bại");
+      return { success: true };
+    }),
+    updateThankYou: protectedProcedure
+      .input(z.object({
+        thankYouTitle: z.string().optional(),
+        thankYouMessage: z.string().optional(),
+        thankYouSocialLinks: z.array(z.object({ platform: z.string(), url: z.string() })).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+    getThankYouPublic: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const settings = await db.getUserSettings(input.userId);
+        return {
+          thankYouTitle: settings?.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!",
+          thankYouMessage: settings?.thankYouMessage || "Đơn hàng của bạn đã được xác nhận. Chúng tôi sẽ liên hệ sớm nhất có thể.",
+          thankYouSocialLinks: (settings?.thankYouSocialLinks as Array<{platform: string; url: string}> | null) || [],
+          companyName: settings?.companyName || "Invoice Prime",
+          logoUrl: settings?.logoUrl || null,
+        };
+      }),
+    exportBackup: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const [invoices, customers, products, settings] = await Promise.all([
+        db.getInvoicesByUserId(ctx.user.id),
+        db.getCustomersByUserId(ctx.user.id),
+        db.getProductsByUserId(ctx.user.id),
+        db.getUserSettings(ctx.user.id),
+      ]);
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+      const invoiceRows = invoices.map(i => ({
+        "Mã HĐ": i.invoiceNumber,
+        "Ngày Tạo": new Date(i.createdAt).toLocaleDateString("vi-VN"),
+        "Trạng Thái": i.status,
+        "Tiền Tệ": i.currency,
+        "Tổng Tiền": Number(i.totalAmount),
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(invoiceRows), "Hóa Đơn");
+      const customerRows = customers.map(c => ({
+        "Tên": c.name,
+        "Email": c.email || "",
+        "SĐT": c.phone || "",
+        "Địa Chỉ": c.address || "",
+        "Mã Số Thuế": c.taxCode || "",
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(customerRows), "Khách Hàng");
+      const productRows = products.map(p => ({
+        "Tên Sản Phẩm": p.name,
+        "Mô Tả": p.description || "",
+        "Danh Mục": p.category || "",
+        "Đơn Giá": Number(p.price),
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(productRows), "Sản Phẩm");
+      const buf = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
+      return { base64: buf, filename: `backup-${new Date().toISOString().slice(0,10)}.xlsx` };
+    }),
+    getWeeklyReportSettings: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const s = await db.getUserSettings(ctx.user.id);
+      return {
+        weeklyReport: s?.weeklyReport ?? false,
+        weeklyReportEmail: s?.weeklyReportEmail || "",
+      };
+    }),
+    updateWeeklyReport: protectedProcedure
+      .input(z.object({ weeklyReport: z.boolean(), weeklyReportEmail: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
       }),
   }),
 });

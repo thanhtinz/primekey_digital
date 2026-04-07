@@ -34,6 +34,15 @@ const ActivityLog = lazy(() => import("./pages/ActivityLog"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
 const Reminders = lazy(() => import("./pages/Reminders"));
 const EmailCampaigns = lazy(() => import("./pages/EmailCampaigns"));
+// New feature pages
+const RecurringInvoices = lazy(() => import("./pages/RecurringInvoices"));
+const TelegramSettings = lazy(() => import("./pages/TelegramSettings"));
+const ImportExcel = lazy(() => import("./pages/ImportExcel"));
+const WarrantyLookup = lazy(() => import("./pages/WarrantyLookup"));
+const ThankYouCustom = lazy(() => import("./pages/ThankYouCustom"));
+const DataBackup = lazy(() => import("./pages/DataBackup"));
+const AdvancedSearch = lazy(() => import("./pages/AdvancedSearch"));
+const WeeklyReports = lazy(() => import("./pages/WeeklyReports"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -58,7 +67,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require auth (always accessible)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -92,6 +101,7 @@ function Router() {
           <Route path="/review/:token" component={() => <ReviewPage />} />
           <Route path="/thank-you" component={() => <ThankYou />} />
           <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
+          <Route path="/warranty" component={() => <WarrantyLookup />} />
         </Switch>
       </Suspense>
     );
@@ -145,6 +155,13 @@ function Router() {
         <Route path="/activity-log" component={() => isAdmin ? <ActivityLog /> : <ForbiddenPage />} />
         <Route path="/reminders" component={() => isAdmin ? <Reminders /> : <ForbiddenPage />} />
         <Route path="/campaigns" component={() => isAdmin ? <EmailCampaigns /> : <ForbiddenPage />} />
+        <Route path="/recurring-invoices" component={() => isAdmin ? <RecurringInvoices /> : <ForbiddenPage />} />
+        <Route path="/import-excel" component={() => isAdmin ? <ImportExcel /> : <ForbiddenPage />} />
+        <Route path="/settings/telegram" component={() => isAdmin ? <TelegramSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/thank-you" component={() => isAdmin ? <ThankYouCustom /> : <ForbiddenPage />} />
+        <Route path="/backup" component={() => isAdmin ? <DataBackup /> : <ForbiddenPage />} />
+        <Route path="/advanced-search" component={() => isAdmin ? <AdvancedSearch /> : <ForbiddenPage />} />
+        <Route path="/advanced-reports" component={() => isAdmin ? <WeeklyReports /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
