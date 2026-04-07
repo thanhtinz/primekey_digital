@@ -641,6 +641,120 @@ export const appRouter = router({
           notes: inv.notes,
         }));
       }),
+
+    // Get invoices expiring within 24 hours (status CREATED)
+    getExpiringSoon: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const allInvoices = await db.getInvoicesByUserId(ctx.user.id);
+      const now = new Date();
+      const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      return allInvoices.filter(inv =>
+        inv.status === "CREATED" &&
+        inv.expiresAt &&
+        new Date(inv.expiresAt) > now &&
+        new Date(inv.expiresAt) <= in24h
+      ).sort((a, b) => new Date(a.expiresAt!).getTime() - new Date(b.expiresAt!).getTime());
+    }),
+
+    // Export filtered invoices to Excel (base64 encoded)
+    exportExcel: protectedProcedure
+      .input(z.object({
+        invoiceIds: z.array(z.number()).optional(), // if provided, export only these
+        status: z.string().optional(),
+        currency: z.string().optional(),
+        productName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const XLSX = await import("xlsx");
+        let invoiceList = await db.getInvoicesByUserId(ctx.user.id);
+        // Filter by product name if provided
+        if (input.productName?.trim()) {
+          invoiceList = await db.searchInvoicesByProduct(ctx.user.id, input.productName.trim());
+        }
+        // Filter by specific IDs if provided
+        if (input.invoiceIds && input.invoiceIds.length > 0) {
+          invoiceList = invoiceList.filter(inv => input.invoiceIds!.includes(inv.id));
+        }
+        // Filter by status
+        if (input.status && input.status !== "all") {
+          invoiceList = invoiceList.filter(inv => inv.status === input.status);
+        }
+        // Filter by currency
+        if (input.currency && input.currency !== "all") {
+          invoiceList = invoiceList.filter(inv => inv.currency === input.currency);
+        }
+        const STATUS_LABELS: Record<string, string> = {
+          CREATED: "Tạo Đơn", PAID: "Đã Thanh Toán", SHIPPING: "Đang Giao",
+          WARRANTY: "Bảo Hành", FAILED: "Thất Bại", EXPIRED: "Hết Hạn",
+        };
+        const rows = invoiceList.map(inv => ({
+          "Số Hóa Đơn": inv.invoiceNumber,
+          "Trạng Thái": STATUS_LABELS[inv.status || ""] || inv.status || "",
+          "Tiền Tệ": inv.currency || "VND",
+          "Tạm Tính": Number(inv.subtotal || 0),
+          "Giảm Giá": Number(inv.discountAmount || 0),
+          "Thuế": Number(inv.taxAmount || 0),
+          "Tổng Tiền": Number(inv.totalAmount || 0),
+          "Ngày Tạo": inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("vi-VN") : "",
+          "Hết Hạn": inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString("vi-VN") : "",
+          "Ngày Thanh Toán": inv.paidAt ? new Date(inv.paidAt).toLocaleDateString("vi-VN") : "",
+          "Ghi Chú": inv.notes || "",
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Hóa Đơn");
+        const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+        return { base64: buf.toString("base64"), count: rows.length };
+      }),
+
+    // Bulk export multiple invoices as a single PDF
+    bulkExportPDF: protectedProcedure
+      .input(z.object({ invoiceIds: z.array(z.number()) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        if (input.invoiceIds.length === 0) throw new Error("Không có hóa đơn nào được chọn");
+        const { generateInvoicePDF } = await import("./pdf");
+        const pdfBuffers: Buffer[] = [];
+        for (const invoiceId of input.invoiceIds) {
+          const invoice = await db.getInvoiceById(invoiceId);
+          if (!invoice || invoice.userId !== ctx.user.id) continue;
+          const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+          const items = await db.getInvoiceItemsByInvoiceId(invoiceId);
+          const template = invoice.templateId ? await db.getInvoiceTemplateById(invoice.templateId) : null;
+          const userSettings = await db.getUserSettings(ctx.user.id);
+          const companyName = userSettings?.companyName || "Invoice Prime";
+          try {
+            const pdfBuf = await generateInvoicePDF({
+              invoiceNumber: invoice.invoiceNumber,
+              issueDate: invoice.createdAt,
+              dueDate: invoice.expiresAt || undefined,
+              currency: invoice.currency || "VND",
+              subtotal: Number(invoice.subtotal),
+              discountAmount: Number(invoice.discountAmount || 0),
+              taxAmount: Number(invoice.taxAmount || 0),
+              totalAmount: Number(invoice.totalAmount),
+              notes: invoice.notes || "",
+              paymentUrl: invoice.paymentUrl || "",
+              customerName: customer?.name || "Khách Hàng",
+              customerEmail: customer?.email || "",
+              customerAddress: customer?.address || "",
+              items: items.map(it => ({ name: it.name, quantity: Number(it.quantity), unitPrice: Number(it.unitPrice), totalAmount: Number(it.totalAmount) })),
+              companyName: template?.companyName || companyName,
+              companyAddress: template?.companyAddress || "",
+              companyPhone: template?.companyPhone || "",
+              companyEmail: template?.companyEmail || "",
+              accentColor: template?.headerColor || "#1e40af",
+              footerText: template?.footer || "",
+            });
+            pdfBuffers.push(pdfBuf);
+          } catch { /* skip failed */ }
+        }
+        if (pdfBuffers.length === 0) throw new Error("Không thể tạo PDF");
+        // Concatenate all PDFs using a simple approach - return as array of base64
+        const combinedBase64 = pdfBuffers.map(b => b.toString("base64"));
+        return { pdfs: combinedBase64, count: pdfBuffers.length };
+      }),
   }),
   // Customers
   customers: router({

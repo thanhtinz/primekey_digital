@@ -1,5 +1,5 @@
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw, Package, Users, Star } from "lucide-react";
+import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw, Package, Users, Star, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
@@ -57,6 +57,7 @@ export default function Dashboard() {
   const { data: recentInvoices, isLoading: invoicesLoading } = trpc.invoices.list.useQuery();
   const { data: topProducts } = trpc.reports.getTopProducts.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
+  const { data: expiringSoon } = trpc.invoices.getExpiringSoon.useQuery();
 
   const revenueData = (revenueByMonth || []).map(item => ({
     month: item.month,
@@ -369,6 +370,48 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Expiring Soon Alert */}
+        {expiringSoon && expiringSoon.length > 0 && (
+          <Card className="shadow-sm border-l-4 border-l-orange-400 bg-orange-50">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-orange-700">
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  Hóa Đơn Sắp Hết Hạn ({expiringSoon.length})
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-orange-600 hover:text-orange-700 text-xs">Xem tất cả →</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {expiringSoon.slice(0, 5).map((inv) => {
+                  const expiresAt = inv.expiresAt ? new Date(inv.expiresAt) : null;
+                  const minutesLeft = expiresAt ? Math.round((expiresAt.getTime() - Date.now()) / 60000) : null;
+                  const hoursLeft = minutesLeft !== null ? Math.floor(minutesLeft / 60) : null;
+                  const minsLeft = minutesLeft !== null ? minutesLeft % 60 : null;
+                  const timeLabel = hoursLeft !== null
+                    ? hoursLeft > 0 ? `Còn ${hoursLeft}h ${minsLeft}m` : `Còn ${minsLeft}m`
+                    : "";
+                  return (
+                    <div key={inv.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-orange-100 hover:border-orange-300 cursor-pointer transition-colors" onClick={() => setLocation(`/invoices/${inv.id}`)}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="h-7 w-7 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-3.5 w-3.5 text-orange-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{inv.invoiceNumber}</p>
+                          <p className="text-xs text-gray-500">{Number(inv.totalAmount || 0).toLocaleString("vi-VN")} {inv.currency || "VND"}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">{timeLabel}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Invoices */}
         <Card className="shadow-sm">

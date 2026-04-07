@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Search, FileText, Trash2, Eye, Download, Plus, Loader2, RefreshCw, CheckCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, FileText, Trash2, Eye, Download, Plus, Loader2, RefreshCw, CheckCircle, FileSpreadsheet, Files } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -37,6 +38,9 @@ export default function InvoiceHistory() {
   const [productSearchInput, setProductSearchInput] = useState("");
   const [viewInvoice, setViewInvoice] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const { data: invoices = [], isLoading, refetch } = trpc.invoices.list.useQuery();
   const { data: invoicesByProduct = [], isFetching: isSearchingProduct } = trpc.invoices.listByProduct.useQuery(
@@ -45,6 +49,8 @@ export default function InvoiceHistory() {
   );
   const deleteInvoiceMutation = trpc.invoices.delete.useMutation();
   const updateInvoiceMutation = trpc.invoices.update.useMutation();
+  const exportExcelMutation = trpc.invoices.exportExcel.useMutation();
+  const bulkExportPDFMutation = trpc.invoices.bulkExportPDF.useMutation();
   const utils = trpc.useUtils();
 
   // Use product search results when active, otherwise use full list
@@ -56,6 +62,27 @@ export default function InvoiceHistory() {
     const matchCurrency = filterCurrency === "all" || inv.currency === filterCurrency;
     return matchSearch && matchStatus && matchCurrency;
   });
+
+  const allFilteredIds = filteredInvoices.map(inv => inv.id);
+  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedIds.has(id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allFilteredIds));
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const handleProductSearch = () => {
     setProductSearch(productSearchInput);
@@ -72,6 +99,7 @@ export default function InvoiceHistory() {
     try {
       await deleteInvoiceMutation.mutateAsync({ id });
       await utils.invoices.list.invalidate();
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
       toast.success("Đã xóa hóa đơn");
     } catch {
       toast.error("Xóa thất bại");
@@ -88,6 +116,60 @@ export default function InvoiceHistory() {
       setViewInvoice(null);
     } catch {
       toast.error("Cập nhật thất bại");
+    }
+  };
+
+  const handleExportExcel = async () => {
+    setIsExportingExcel(true);
+    try {
+      const invoiceIds = someSelected ? Array.from(selectedIds) : undefined;
+      const result = await exportExcelMutation.mutateAsync({
+        invoiceIds,
+        status: filterStatus !== "all" ? filterStatus : undefined,
+        currency: filterCurrency !== "all" ? filterCurrency : undefined,
+        productName: productSearch.trim() || undefined,
+      });
+      // Download the Excel file
+      const bytes = Uint8Array.from(atob(result.base64), c => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hoa-don-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Đã xuất ${result.count} hóa đơn ra Excel`);
+    } catch {
+      toast.error("Xuất Excel thất bại");
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
+  const handleBulkExportPDF = async () => {
+    if (selectedIds.size === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 hóa đơn");
+      return;
+    }
+    setIsExportingPDF(true);
+    try {
+      const result = await bulkExportPDFMutation.mutateAsync({ invoiceIds: Array.from(selectedIds) });
+      // Download each PDF
+      result.pdfs.forEach((base64: string, i: number) => {
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `hoa-don-${i + 1}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+      toast.success(`Đã xuất ${result.count} file PDF`);
+    } catch {
+      toast.error("Xuất PDF thất bại");
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
@@ -217,12 +299,63 @@ export default function InvoiceHistory() {
           </CardContent>
         </Card>
 
+        {/* Bulk Actions Bar */}
+        {someSelected && (
+          <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+            <span className="text-sm font-medium text-blue-700">Đã chọn {selectedIds.size} hóa đơn</span>
+            <div className="flex gap-2 ml-auto flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleExportExcel}
+                disabled={isExportingExcel}
+                className="gap-1.5 border-green-300 text-green-700 hover:bg-green-50"
+              >
+                {isExportingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+                Xuất Excel
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkExportPDF}
+                disabled={isExportingPDF}
+                className="gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
+              >
+                {isExportingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Files className="h-4 w-4" />}
+                Xuất PDF
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setSelectedIds(new Set())}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                Bỏ chọn
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <Card className="shadow-sm border border-gray-100">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">
-              {filteredInvoices.length} hóa đơn
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">
+                {filteredInvoices.length} hóa đơn
+              </CardTitle>
+              {!someSelected && filteredInvoices.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExportExcel}
+                  disabled={isExportingExcel}
+                  className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50"
+                >
+                  {isExportingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+                  <span className="hidden sm:inline">Xuất Excel</span>
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
@@ -248,6 +381,13 @@ export default function InvoiceHistory() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-y border-gray-100">
                     <tr>
+                      <th className="py-3 px-4 w-10">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Chọn tất cả"
+                        />
+                      </th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500">Số HĐ</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500 hidden md:table-cell">Ngày Tạo</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-500">Số Tiền</th>
@@ -259,8 +399,16 @@ export default function InvoiceHistory() {
                     {filteredInvoices.map((inv) => {
                       const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
                       const status = inv.status || "CREATED";
+                      const isSelected = selectedIds.has(inv.id);
                       return (
-                        <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
+                        <tr key={inv.id} className={`hover:bg-gray-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
+                          <td className="py-3.5 px-4">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelect(inv.id)}
+                              aria-label={`Chọn ${inv.invoiceNumber}`}
+                            />
+                          </td>
                           <td className="py-3.5 px-4">
                             <span className="font-medium text-blue-600">{inv.invoiceNumber}</span>
                           </td>
@@ -289,7 +437,10 @@ export default function InvoiceHistory() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => toast.info("Tính năng xuất PDF đang phát triển")}
+                                onClick={() => {
+                                  setSelectedIds(new Set([inv.id]));
+                                  setTimeout(() => handleBulkExportPDF(), 100);
+                                }}
                                 className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
                                 title="Tải PDF"
                               >
@@ -376,7 +527,7 @@ export default function InvoiceHistory() {
             </div>
           )}
           <DialogFooter className="gap-2 flex-wrap">
-                    {viewInvoice?.status === "CREATED" && (
+            {viewInvoice?.status === "CREATED" && (
               <Button
                 onClick={() => handleMarkPaid(viewInvoice.id)}
                 className="gap-1.5 bg-green-600 hover:bg-green-700"

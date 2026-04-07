@@ -477,3 +477,13 @@
 - [x] InvoiceHistory: thêm input filter theo tên sản phẩm
 - [x] InvoiceHistory: khi có filter sản phẩm, gọi procedure mới để lọc kết quả
 - [x] TypeScript: 0 errors, 13/13 tests passed
+
+## Tính Năng Mới: Xuất Excel, Nhắc Hết Hạn, Gộp PDF (Hoàn Thành)
+
+- [x] InvoiceHistory: nút "Xuất Excel" xuất danh sách đã lọc (filter theo sản phẩm, trạng thái, tiền tệ)
+- [x] InvoiceHistory: checkbox chọn nhiều hóa đơn, nút "Xuất PDF Gộp" cho các hóa đơn đã chọn
+- [x] Backend: procedure invoices.exportExcel - trả về buffer Excel với danh sách hóa đơn
+- [x] Backend: procedure invoices.bulkExportPDF - xuất nhiều hóa đơn thành nhiều file PDF
+- [x] Backend: procedure invoices.getExpiringSoon - lấy danh sách hóa đơn CREATED hết hạn trong 24h
+- [x] Dashboard: widget "Sắp Hết Hạn" - hiển thị danh sách hóa đơn CREATED hết hạn trong 24h
+- [x] TypeScript: 0 errors, 13/13 tests passed
