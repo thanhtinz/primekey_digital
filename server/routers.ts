@@ -411,6 +411,35 @@ export const appRouter = router({
           }
         }
 
+        // Compute warranty dates when transitioning to WARRANTY
+        let warrantyStartDate = (invoice as any).warrantyStartDate;
+        let warrantyExpiryDate = (invoice as any).warrantyExpiryDate;
+        let warrantyMonths = (invoice as any).warrantyMonths || 0;
+        if (input.newStatus === "WARRANTY" && !warrantyStartDate) {
+          warrantyStartDate = new Date();
+          // Calculate warrantyMonths from invoice items' products
+          const { getDb } = await import("./db");
+          const drizzleDb = await getDb();
+          if (drizzleDb) {
+            const { invoiceItems, products } = await import("../drizzle/schema");
+            const { eq } = await import("drizzle-orm");
+            const items = await drizzleDb.select({ productId: invoiceItems.productId })
+              .from(invoiceItems).where(eq(invoiceItems.invoiceId, input.id));
+            const productIds = items.map(i => i.productId).filter(Boolean) as number[];
+            if (productIds.length > 0) {
+              let maxMonths = 0;
+              for (const pid of productIds) {
+                const [p] = await drizzleDb.select({ warrantyMonths: products.warrantyMonths })
+                  .from(products).where(eq(products.id, pid)).limit(1);
+                if (p && (p.warrantyMonths || 0) > maxMonths) maxMonths = p.warrantyMonths || 0;
+              }
+              warrantyMonths = maxMonths;
+            }
+            if (warrantyMonths > 0) {
+              warrantyExpiryDate = new Date(warrantyStartDate.getTime() + warrantyMonths * 30 * 24 * 60 * 60 * 1000);
+            }
+          }
+        }
         // Update invoice status
         await db.updateInvoice(input.id, {
           status: input.newStatus,
@@ -419,6 +448,9 @@ export const appRouter = router({
           paymentUrl: paymentUrl || invoice.paymentUrl,
           qrCode: qrCode || invoice.qrCode,
           paymentTransactionId: paymentLinkId || invoice.paymentTransactionId,
+          warrantyStartDate: warrantyStartDate || null,
+          warrantyExpiryDate: warrantyExpiryDate || null,
+          warrantyMonths,
           updatedAt: new Date(),
         });
 
@@ -679,6 +711,9 @@ export const appRouter = router({
             expiresAt: invoicesTable.expiresAt,
             notes: invoicesTable.notes,
             publicNote: invoicesTable.publicNote,
+            warrantyStartDate: invoicesTable.warrantyStartDate,
+            warrantyExpiryDate: invoicesTable.warrantyExpiryDate,
+            warrantyMonths: invoicesTable.warrantyMonths,
             customerName: customers.name,
           })
           .from(invoicesTable)
@@ -1003,6 +1038,7 @@ export const appRouter = router({
           description: z.string().optional(),
           price: z.number(),
           unit: z.string().optional(),
+          warrantyMonths: z.number().min(0).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -1024,6 +1060,7 @@ export const appRouter = router({
           description: z.string().optional(),
           price: z.number().optional(),
           unit: z.string().optional(),
+          warrantyMonths: z.number().min(0).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -1638,6 +1675,27 @@ export const appRouter = router({
         if (input.faviconUrl !== undefined) data.faviconUrl = input.faviconUrl;
         await db.upsertUserSettings(ctx.user.id, data);
         return { success: true };
+      }),
+    // Upload banner for thank-you page
+    uploadThankYouBanner: protectedProcedure
+      .input(z.object({
+        dataUrl: z.string(), // base64 data URL
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { storagePut } = await import("./storage");
+        const matches = input.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) throw new Error("Invalid data URL format");
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, "base64");
+        const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const fileName = input.fileName || `thank-you-banner-${ctx.user.id}-${Date.now()}.${ext}`;
+        const fileKey = `thank-you-banners/${ctx.user.id}/${fileName}`;
+        const { url } = await storagePut(fileKey, buffer, mimeType);
+        await db.upsertUserSettings(ctx.user.id, { thankYouBannerUrl: url });
+        return { url };
       }),
   }),
 
@@ -2438,6 +2496,7 @@ export const appRouter = router({
         thankYouSocialLinks: z.array(z.object({ platform: z.string(), url: z.string() })).optional(),
         thankYouBgFrom: z.string().optional(),
         thankYouBgTo: z.string().optional(),
+        thankYouBannerUrl: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
@@ -2463,6 +2522,7 @@ export const appRouter = router({
           logoUrl: settings?.logoUrl || null,
           thankYouBgFrom: settings?.thankYouBgFrom || "#f0fdf4",
           thankYouBgTo: settings?.thankYouBgTo || "#eff6ff",
+          thankYouBannerUrl: settings?.thankYouBannerUrl || null,
         };
       }),
     exportBackup: protectedProcedure.mutation(async ({ ctx }) => {

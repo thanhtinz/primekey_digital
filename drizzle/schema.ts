@@ -43,12 +43,12 @@ export const products = mysqlTable("products", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   category: varchar("category", { length: 100 }),
-  price: decimal("price", { precision: 15, scale: 2 }).notNull(),
+   price: decimal("price", { precision: 15, scale: 2 }).notNull(),
   taxId: int("taxId"),
+  warrantyMonths: int("warrantyMonths").default(0), // Số tháng bảo hành (0 = không bảo hành)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
 
@@ -139,6 +139,9 @@ export const invoices = mysqlTable("invoices", {
   expiresAt: timestamp("expiresAt"),
   notes: text("notes"),
   publicNote: text("publicNote"),
+  warrantyStartDate: timestamp("warrantyStartDate"), // Ngày bắt đầu bảo hành
+  warrantyExpiryDate: timestamp("warrantyExpiryDate"), // Ngày hết hạn bảo hành
+  warrantyMonths: int("warrantyMonths").default(0), // Số tháng bảo hành
   isRecurring: boolean("isRecurring").default(false),
   recurringInterval: mysqlEnum("recurringInterval", ["weekly", "monthly", "quarterly"]),
   recurringNextDate: timestamp("recurringNextDate"),
@@ -212,6 +215,7 @@ export const userSettings = mysqlTable("userSettings", {
   thankYouSocialLinks: json("thankYouSocialLinks"),
   thankYouBgFrom: varchar("thankYouBgFrom", { length: 50 }),
   thankYouBgTo: varchar("thankYouBgTo", { length: 50 }),
+  thankYouBannerUrl: text("thankYouBannerUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

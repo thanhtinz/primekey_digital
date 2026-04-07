@@ -537,3 +537,14 @@
 - [x] /settings/thank-you: thêm color picker chọn màu gradient từ/đến (8 preset + custom color picker)
 - [x] /thank-you công khai: áp dụng màu gradient từ config thay vì hardcode xanh lá
 - [x] /thank-you công khai: thêm nút "Viết Đánh Giá" (amber) khi có reviewToken của đơn hàng
+
+## Fix & Feature: Bảo Hành + Banner + Email Đánh Giá
+
+- [x] Trang /warranty: tra cứu bằng mã đơn, hiển thị thông tin bảo hành chi tiết (ngày bắt đầu, hết hạn, thanh tiến trình, số ngày còn lại)
+- [x] DB schema: thêm warrantyMonths vào products, warrantyStartDate + warrantyExpiryDate vào invoices
+- [x] manualTransition: tự động lưu warrantyStartDate + warrantyExpiryDate khi chuyển sang WARRANTY
+- [x] Products.tsx: thêm trường warrantyMonths vào form tạo/sửa sản phẩm + hiển thị trong bảng
+- [x] Banner upload: thêm ảnh banner cho trang cảm ơn (/settings/thank-you), hiển thị trên /thank-you
+- [x] DB schema: thêm cột thankYouBannerUrl vào userSettings
+- [x] Backend: updateThankYou nhận thankYouBannerUrl, getThankYouPublic trả về thankYouBannerUrl
+- [x] Email WARRANTY: nút "Viết Đánh Giá" nổi bật (nền vàng, amber button) trong email gửi khách

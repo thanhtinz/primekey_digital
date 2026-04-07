@@ -204,7 +204,13 @@ export function generateStatusUpdateEmailHTML(data: {
           <p>Xin chào <strong>${data.customerName}</strong>,</p>
           <p>Đơn hàng <strong>${data.invoiceNumber}</strong> của bạn đã được cập nhật trạng thái: <strong>${data.statusLabel}</strong></p>
           ${data.trackUrl ? `<p>Theo dõi trạng thái đơn hàng: <a href="${data.trackUrl}" style="color:${color}">Xem Đơn Hàng</a></p>` : ""}
-          ${data.reviewUrl ? `<p style="margin-top:20px">Bạn có thể đánh giá đơn hàng tại: <a href="${data.reviewUrl}" style="color:${color}">Đánh Giá Ngay</a></p>` : ""}
+          ${data.reviewUrl ? `
+          <div style="margin-top:24px;text-align:center;background:#fef9c3;border-radius:12px;padding:20px;border:1px solid #fde047">
+            <p style="margin:0 0 12px;font-size:15px;color:#713f12;">Bạn có hài lòng với đơn hàng này không?</p>
+            <a href="${data.reviewUrl}" style="display:inline-block;background:#f59e0b;color:white;padding:10px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">&#9733; Viết Đánh Giá</a>
+            <p style="margin:10px 0 0;font-size:12px;color:#92400e;">Chỉ mất 30 giây — đánh giá của bạn rất có ý nghĩa với chúng tôi!</p>
+          </div>
+          ` : ""}
           <p>Cảm ơn bạn đã tin tưởng ${data.companyName}!</p>
           <div class="footer"><p>© ${new Date().getFullYear()} ${data.companyName}</p></div>
         </div>

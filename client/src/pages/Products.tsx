@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Search, Package, Loader2, Tag } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, Loader2, Tag, Shield } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -14,7 +14,7 @@ export default function Products() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState({ name: "", description: "", price: "" });
+  const [formData, setFormData] = useState({ name: "", description: "", price: "", warrantyMonths: "0" });
 
   const { data: products = [], isLoading } = trpc.products.list.useQuery();
   const utils = trpc.useUtils();
@@ -46,7 +46,7 @@ export default function Products() {
   });
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", price: "" });
+    setFormData({ name: "", description: "", price: "", warrantyMonths: "0" });
     setEditingId(null);
     setIsOpen(false);
   };
@@ -61,18 +61,21 @@ export default function Products() {
     const price = parseFloat(formData.price);
     if (isNaN(price) || price < 0) { toast.error("Vui lòng nhập giá hợp lệ"); return; }
 
+    const warrantyMonths = parseInt(formData.warrantyMonths) || 0;
     if (editingId) {
       await updateProduct.mutateAsync({
         id: editingId,
         name: formData.name,
         description: formData.description || undefined,
         price,
+        warrantyMonths,
       });
     } else {
       await createProduct.mutateAsync({
         name: formData.name,
         description: formData.description || undefined,
         price,
+        warrantyMonths,
       });
     }
   };
@@ -83,6 +86,7 @@ export default function Products() {
       name: product.name,
       description: product.description || "",
       price: price.toString(),
+      warrantyMonths: String((product as any).warrantyMonths ?? 0),
     });
     setEditingId(product.id);
     setIsOpen(true);
@@ -178,6 +182,7 @@ export default function Products() {
                     <tr>
                       <th className="text-left py-3 px-4 font-medium text-gray-500">Sản Phẩm</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500 hidden md:table-cell">Mô Tả</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-500 hidden sm:table-cell">Bảo Hành</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-500">Giá</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-500">Thao Tác</th>
                     </tr>
@@ -202,6 +207,16 @@ export default function Products() {
                           <p className="text-gray-500 text-sm truncate max-w-56">
                             {product.description || <span className="text-gray-300">—</span>}
                           </p>
+                        </td>
+                        <td className="py-3.5 px-4 text-right hidden sm:table-cell">
+                          {(product as any).warrantyMonths > 0 ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <Shield className="h-3.5 w-3.5 text-blue-500" />
+                              <span className="text-blue-600 text-sm">{(product as any).warrantyMonths} tháng</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-300 text-sm">—</span>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -291,6 +306,26 @@ export default function Products() {
                   = {parseFloat(formData.price).toLocaleString("vi-VN")} ₫
                 </p>
               )}
+            </div>
+            <div>
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-blue-500" />
+                Thời Hạn Bảo Hành (tháng)
+              </Label>
+              <Input
+                type="number"
+                min="0"
+                max="120"
+                value={formData.warrantyMonths}
+                onChange={(e) => setFormData({ ...formData, warrantyMonths: e.target.value })}
+                placeholder="0 = không bảo hành"
+                className="mt-1.5"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                {parseInt(formData.warrantyMonths) > 0
+                  ? `Bảo hành ${formData.warrantyMonths} tháng kể từ ngày chuyển sang trạng thái Bảo Hành`
+                  : "Nhập 0 nếu sản phẩm không có bảo hành"}
+              </p>
             </div>
             <div className="flex gap-2 pt-1">
               <Button onClick={handleSubmit} disabled={isPending} className="flex-1 bg-blue-600 hover:bg-blue-700">

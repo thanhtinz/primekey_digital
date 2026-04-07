@@ -78,6 +78,20 @@
       "when": 1775533905782,
       "tag": "0010_hot_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1775534320709,
+      "tag": "0011_large_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1775534569514,
+      "tag": "0012_thankful_quasimodo",
+      "breakpoints": true
     }
   ]
 }

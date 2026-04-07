@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, Plus, Trash2, Eye, ExternalLink, Palette } from "lucide-react";
+import { Heart, Plus, Trash2, Eye, ExternalLink, Palette, ImagePlus, X } from "lucide-react";
 
 const PLATFORM_OPTIONS = [
   { value: "facebook", label: "Facebook" },
@@ -39,6 +39,7 @@ export default function ThankYouCustom() {
     thankYouSocialLinks: [] as Array<{ platform: string; url: string }>,
     thankYouBgFrom: "#f0fdf4",
     thankYouBgTo: "#eff6ff",
+    thankYouBannerUrl: "",
   });
   const [selectedPreset, setSelectedPreset] = useState(0);
 
@@ -53,12 +54,34 @@ export default function ThankYouCustom() {
         thankYouSocialLinks: s.thankYouSocialLinks || [],
         thankYouBgFrom: bgFrom,
         thankYouBgTo: bgTo,
+        thankYouBannerUrl: s.thankYouBannerUrl || "",
       });
       // Tìm preset tương ứng
       const presetIdx = GRADIENT_PRESETS.findIndex(p => p.from === bgFrom && p.to === bgTo);
       setSelectedPreset(presetIdx >= 0 ? presetIdx : GRADIENT_PRESETS.length - 1);
     }
   }, [settings]);
+
+  const uploadBannerMutation = trpc.settings.uploadThankYouBanner.useMutation({
+    onSuccess: (data) => {
+      setForm(f => ({ ...f, thankYouBannerUrl: data.url }));
+      toast.success("Đã tải lên banner!");
+      refetch();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Ảnh quá lớn (tối đa 5MB)"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      uploadBannerMutation.mutate({ dataUrl, fileName: file.name });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const saveMutation = trpc.settingsExt.updateThankYou.useMutation({
     onSuccess: () => { toast.success("Đã lưu trang cảm ơn"); refetch(); },
@@ -256,13 +279,58 @@ export default function ThankYouCustom() {
               />
             </div>
 
+            {/* Banner upload */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="flex items-center gap-1.5">
+                  <ImagePlus className="w-3.5 h-3.5 text-purple-500" />
+                  Ảnh Banner (tùy chọn)
+                </Label>
+                {form.thankYouBannerUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-red-500 hover:text-red-600"
+                    onClick={() => {
+                      setForm(f => ({ ...f, thankYouBannerUrl: "" }));
+                      saveMutation.mutate({ ...form, thankYouBannerUrl: "" });
+                    }}
+                  >
+                    <X className="w-3 h-3 mr-1" />Xóa banner
+                  </Button>
+                )}
+              </div>
+              {form.thankYouBannerUrl ? (
+                <div className="relative rounded-lg overflow-hidden border">
+                  <img src={form.thankYouBannerUrl} alt="Banner" className="w-full h-32 object-cover" />
+                  <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-purple-300 hover:bg-purple-50/50 transition-colors">
+                  <input type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+                  {uploadBannerMutation.isPending ? (
+                    <div className="flex items-center gap-2 text-sm text-purple-500">
+                      <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                      Đang tải lên...
+                    </div>
+                  ) : (
+                    <>
+                      <ImagePlus className="w-6 h-6 text-gray-300 mb-1" />
+                      <p className="text-xs text-gray-400">Click để chọn ảnh (tối đa 5MB)</p>
+                    </>
+                  )}
+                </label>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Ảnh sẽ hiển thị phía trên card chính trên trang cảm ơn</p>
+            </div>
+
             <Button className="w-full" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Đang lưu..." : "Lưu Thay Đổi"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Preview realtime */}
+        {/* Màu nền gradient */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">

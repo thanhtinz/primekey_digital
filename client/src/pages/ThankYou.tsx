@@ -68,6 +68,7 @@ export default function ThankYou() {
   const logoUrl = (thankYouConfig as any)?.logoUrl;
   const bgFrom = (thankYouConfig as any)?.thankYouBgFrom || "#f0fdf4";
   const bgTo = (thankYouConfig as any)?.thankYouBgTo || "#eff6ff";
+  const bannerUrl = (thankYouConfig as any)?.thankYouBannerUrl;
 
   // Detect dark background for text color
   const isDarkBg = bgFrom.startsWith("#0") || bgFrom.startsWith("#1") || bgFrom.startsWith("#2");
@@ -101,6 +102,13 @@ export default function ThankYou() {
       )}
 
       <div className="w-full max-w-lg">
+        {/* Banner image */}
+        {bannerUrl && (
+          <div className="rounded-xl overflow-hidden mb-4 shadow-md">
+            <img src={bannerUrl} alt="Banner" className="w-full h-40 object-cover" />
+          </div>
+        )}
+
         {/* Logo / Brand */}
         <div className="flex justify-center mb-4">
           {logoUrl ? (
