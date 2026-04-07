@@ -524,3 +524,7 @@
 - [x] Ghi chú công khai cho khách - đã có publicNote hiển thị trên /pay và /warranty
 - [x] Tìm kiếm toàn cục nâng cao - trang /advanced-search tìm theo nhiều tiêu chí
 - [x] Chế độ in hóa đơn - CSS @media print trong index.css, nút "In Hóa Đơn" trong InvoiceDetail
+
+## Fix: Đồng Bộ Trang Cảm Ơn
+
+- [x] Trang /thank-you công khai lấy tiêu đề, nội dung, social links từ cấu hình /settings/thank-you. Hiển thị logo/tên công ty, social links nếu có.

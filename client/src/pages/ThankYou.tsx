@@ -3,20 +3,29 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Download, Search, Star, ArrowLeft, Loader2 } from "lucide-react";
+import { CheckCircle2, Download, Search, Star, ArrowLeft, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
+const PLATFORM_ICONS: Record<string, string> = {
+  facebook: "🔵",
+  instagram: "📸",
+  twitter: "🐦",
+  tiktok: "🎵",
+  youtube: "▶️",
+  zalo: "💬",
+  website: "🌐",
+  other: "🔗",
+};
+
 export default function ThankYou() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [invoiceId, setInvoiceId] = useState<number | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
-    // Parse invoiceId from URL query params
     const params = new URLSearchParams(window.location.search);
     const id = params.get("invoiceId");
     if (id) setInvoiceId(parseInt(id));
-    // Trigger confetti animation
     setShowConfetti(true);
     const t = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(t);
@@ -26,6 +35,9 @@ export default function ThankYou() {
     { id: invoiceId! },
     { enabled: !!invoiceId }
   );
+
+  // Lấy nội dung trang cảm ơn từ cấu hình admin
+  const { data: thankYouConfig } = trpc.settingsExt.getThankYouPublic.useQuery();
 
   const exportPDFMutation = trpc.pdf.exportInvoice.useMutation({
     onSuccess: (data) => {
@@ -49,6 +61,12 @@ export default function ThankYou() {
     return num.toLocaleString("vi-VN") + " " + currency;
   };
 
+  const title = thankYouConfig?.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!";
+  const message = thankYouConfig?.thankYouMessage || "Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi. Đơn hàng của bạn đã được xác nhận.";
+  const socialLinks = thankYouConfig?.thankYouSocialLinks || [];
+  const companyName = thankYouConfig?.companyName || "Invoice Prime";
+  const logoUrl = thankYouConfig?.logoUrl;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex flex-col items-center justify-center p-4">
       {/* Confetti particles */}
@@ -71,6 +89,20 @@ export default function ThankYou() {
       )}
 
       <div className="w-full max-w-lg">
+        {/* Logo / Brand */}
+        <div className="flex justify-center mb-4">
+          {logoUrl ? (
+            <img src={logoUrl} alt={companyName} className="h-12 object-contain" />
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                {companyName.charAt(0).toUpperCase()}
+              </div>
+              <span className="font-semibold text-gray-700">{companyName}</span>
+            </div>
+          )}
+        </div>
+
         {/* Success Icon */}
         <div className="flex justify-center mb-6">
           <div className="relative">
@@ -86,11 +118,8 @@ export default function ThankYou() {
         {/* Main Card */}
         <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Thanh Toán Thành Công!</h1>
-            <p className="text-gray-500 mb-6">
-              Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi.
-              Đơn hàng của bạn đã được xác nhận.
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
+            <p className="text-gray-500 mb-6 whitespace-pre-line">{message}</p>
 
             {isLoading ? (
               <div className="flex justify-center py-4">
@@ -157,6 +186,28 @@ export default function ThankYou() {
                 Về Trang Chủ
               </Button>
             </div>
+
+            {/* Social Links từ cấu hình */}
+            {socialLinks.length > 0 && (
+              <div className="mt-6 pt-5 border-t">
+                <p className="text-xs text-gray-400 mb-3">Theo dõi chúng tôi</p>
+                <div className="flex justify-center gap-3 flex-wrap">
+                  {socialLinks.map((link, i) => (
+                    <a
+                      key={i}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-xs text-gray-600 transition-colors"
+                    >
+                      <span>{PLATFORM_ICONS[link.platform] || "🔗"}</span>
+                      <span className="capitalize">{link.platform}</span>
+                      <ExternalLink className="h-3 w-3 opacity-50" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

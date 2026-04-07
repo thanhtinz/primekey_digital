@@ -2443,9 +2443,16 @@ export const appRouter = router({
         return { success: true };
       }),
     getThankYouPublic: publicProcedure
-      .input(z.object({ userId: z.number() }))
-      .query(async ({ input }) => {
-        const settings = await db.getUserSettings(input.userId);
+      .query(async () => {
+        // Lấy settings của owner (user đầu tiên trong hệ thống)
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        const { userSettings } = await import("../drizzle/schema");
+        let settings = null;
+        if (drizzleDb) {
+          const rows = await drizzleDb.select().from(userSettings).limit(1);
+          settings = rows[0] ?? null;
+        }
         return {
           thankYouTitle: settings?.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!",
           thankYouMessage: settings?.thankYouMessage || "Đơn hàng của bạn đã được xác nhận. Chúng tôi sẽ liên hệ sớm nhất có thể.",
