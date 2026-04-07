@@ -40,6 +40,7 @@ export default function LandingPage() {
 
   const navLinks = [
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
+    { label: "Bảo Hành", href: "/warranty", icon: Shield },
     { label: "Đánh Giá", href: "/feedbacks-public", icon: Star },
   ];
 
@@ -410,7 +411,7 @@ export default function LandingPage() {
             <p className="text-slate-400 text-lg">Không cần đăng nhập — tra cứu và xem đánh giá ngay</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <Card
               className="bg-gradient-to-br from-blue-600/15 to-blue-800/15 border-blue-500/25 cursor-pointer hover:border-blue-400/50 hover:from-blue-600/20 hover:to-blue-800/20 transition-all group"
               onClick={() => setLocation("/track-order")}
@@ -427,6 +428,29 @@ export default function LandingPage() {
                     </p>
                     <div className="flex items-center gap-1.5 text-blue-400 text-sm font-medium group-hover:gap-2.5 transition-all">
                       <span>Tra cứu ngay</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="bg-gradient-to-br from-blue-600/15 to-indigo-800/15 border-blue-500/25 cursor-pointer hover:border-blue-400/50 hover:from-blue-600/20 hover:to-indigo-800/20 transition-all group"
+              onClick={() => setLocation("/warranty")}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500/30 transition-colors">
+                    <Shield className="h-7 w-7 text-blue-300" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-white mb-1.5 text-lg">Tra Cứu Bảo Hành</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed mb-3">
+                      Nhập mã hóa đơn để kiểm tra thời hạn bảo hành, ngày bắt đầu và số ngày còn lại.
+                    </p>
+                    <div className="flex items-center gap-1.5 text-blue-300 text-sm font-medium group-hover:gap-2.5 transition-all">
+                      <span>Kiểm tra ngay</span>
                       <ArrowRight className="h-4 w-4" />
                     </div>
                   </div>
@@ -550,6 +574,15 @@ export default function LandingPage() {
                 Tra Cứu Đơn Hàng
               </Button>
               <Button
+                onClick={() => setLocation("/warranty")}
+                size="lg"
+                variant="outline"
+                className="border-blue-400/30 text-blue-300 hover:bg-blue-500/10 bg-blue-500/5 h-12 px-8 text-base gap-2 hover:-translate-y-0.5 transition-all"
+              >
+                <Shield className="h-5 w-5" />
+                Tra Cứu Bảo Hành
+              </Button>
+              <Button
                 onClick={() => setLocation("/feedbacks-public")}
                 size="lg"
                 variant="outline"
@@ -594,6 +627,9 @@ export default function LandingPage() {
               <div className="space-y-2">
                 <button onClick={() => setLocation("/track-order")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
                   <Search className="h-3.5 w-3.5" /> Tra Cứu Đơn Hàng
+                </button>
+                <button onClick={() => setLocation("/warranty")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
+                  <Shield className="h-3.5 w-3.5" /> Tra Cứu Bảo Hành
                 </button>
                 <button onClick={() => setLocation("/feedbacks-public")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
                   <Star className="h-3.5 w-3.5" /> Xem Đánh Giá

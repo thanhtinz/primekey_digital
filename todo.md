@@ -548,3 +548,10 @@
 - [x] DB schema: thêm cột thankYouBannerUrl vào userSettings
 - [x] Backend: updateThankYou nhận thankYouBannerUrl, getThankYouPublic trả về thankYouBannerUrl
 - [x] Email WARRANTY: nút "Viết Đánh Giá" nổi bật (nền vàng, amber button) trong email gửi khách
+
+## Fix: Thêm Link Bảo Hành vào Landing Page
+
+- [x] Thêm link "Bảo Hành" vào navigation bar landing page (desktop + mobile burger menu)
+- [x] Thêm card "Tra Cứu Bảo Hành" vào section Truy Cập Nhanh (grid 3 cột)
+- [x] Thêm nút "Tra Cứu Bảo Hành" vào CTA section
+- [x] Thêm link "Tra Cứu Bảo Hành" vào footer landing page
