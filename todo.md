@@ -612,3 +612,8 @@
 - [x] PayOS: thông báo lỗi rõ ràng "Không thể kết nối đến PayOS" thay vì "fetch failed"
 - [x] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp
 - [x] Social icons: thêm SVG icons cho tất cả mạng xã hội trên trang /thank-you
+
+## Bug Fix: InvoiceDetail Buttons
+
+- [x] Khôi phục nút "Sao Chép Link Thanh Toán" - hiển thị cho CREATED/PAID/SHIPPING
+- [x] Sửa dropdown "Chuyển Trạng Thái" - dùng onSelect+preventDefault+setTimeout để tránh Radix conflict với Dialog

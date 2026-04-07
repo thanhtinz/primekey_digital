@@ -394,29 +394,30 @@ export default function InvoiceDetail() {
                 return (
                   <DropdownMenuItem
                     key={status}
-                    onClick={() => !isCurrent && openTransitionModal(status)}
                     disabled={isCurrent}
                     className={`gap-2 ${isCurrent ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onSelect={(e) => {
+                      if (isCurrent) return;
+                      e.preventDefault(); // prevent Radix from closing dropdown immediately
+                      // Use setTimeout to let dropdown close animation finish before opening Dialog
+                      setTimeout(() => openTransitionModal(status), 50);
+                    }}
                   >
                     <Icon className="h-4 w-4" />
                     {cfg.label}
-                    {isCurrent && <span className="ml-auto text-xs text-muted-foreground">(hiện tại)</span>}
+                    {isCurrent && <span className="ml-auto text-xs text-muted-foreground">(đang)</span>}
                   </DropdownMenuItem>
                 );
               })}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Copy Payment Link */}
-          {invoice.paymentUrl && invoice.status === "CREATED" && (
+          {/* Copy Payment Link - always show for CREATED and PAID status */}
+          {["CREATED", "PAID", "SHIPPING"].includes(invoice.status || "") && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                const payLink = `${window.location.origin}/pay/${invoice.id}`;
-                navigator.clipboard.writeText(payLink);
-                toast.success("Đã sao chép link thanh toán");
-              }}
+              onClick={handleCopyPaymentLink}
               className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
             >
               <Link2 className="h-4 w-4" />
