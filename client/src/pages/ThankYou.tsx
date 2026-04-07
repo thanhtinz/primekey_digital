@@ -102,13 +102,6 @@ export default function ThankYou() {
       )}
 
       <div className="w-full max-w-lg">
-        {/* Banner image */}
-        {bannerUrl && (
-          <div className="rounded-xl overflow-hidden mb-4 shadow-md">
-            <img src={bannerUrl} alt="Banner" className="w-full h-40 object-cover" />
-          </div>
-        )}
-
         {/* Logo / Brand */}
         <div className="flex justify-center mb-4">
           {logoUrl ? (
@@ -138,7 +131,15 @@ export default function ThankYou() {
         {/* Main Card */}
         <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{title}</h1>
+            
+            {/* Banner image inside card */}
+            {bannerUrl && (
+              <div className="rounded-lg overflow-hidden mb-6 shadow-sm">
+                <img src={bannerUrl} alt="Banner" className="w-full h-32 object-cover" />
+              </div>
+            )}
+            
             <p className="text-gray-500 mb-6 whitespace-pre-line">{message}</p>
 
             {isLoading ? (
