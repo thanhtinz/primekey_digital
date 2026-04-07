@@ -7,7 +7,7 @@ import { Scale, ShoppingBag, Shield, X, Plus, CheckCircle2, XCircle, ArrowLeft }
 import { ClientHeader } from "@/components/ClientHeader";
 
 function formatVND(amount: number) {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+  return new Intl.NumberFormat("vi-VN").format(amount) + " ₫";
 }
 
 export default function ProductCompare() {
@@ -70,9 +70,15 @@ export default function ProductCompare() {
                     <button onClick={() => removeProduct(product.id)} className="absolute top-0 right-0 text-slate-500 hover:text-red-400 transition-colors">
                       <X className="w-4 h-4" />
                     </button>
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <ShoppingBag className="w-6 h-6 text-blue-400" />
-                    </div>
+                    {product.imageUrl ? (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden mx-auto mb-2 bg-slate-900">
+                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <ShoppingBag className="w-6 h-6 text-blue-400" />
+                      </div>
+                    )}
                     <h3 className="text-white font-semibold text-sm">{product.name}</h3>
                     <p className="text-blue-400 font-bold mt-1">{formatVND(Number(product.price))}</p>
                   </div>

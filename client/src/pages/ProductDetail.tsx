@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Shield, Package, Tag, Star, Share2, CheckCircle, Flame, Phone, Mail, ArrowLeft } from "lucide-react";
+import { Shield, Package, Tag, Star, Share2, CheckCircle, Flame, Phone, Mail, ArrowLeft, AlertTriangle, Info } from "lucide-react";
 import { ClientHeader } from "@/components/ClientHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 function formatCurrency(amount: number | string) {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(num);
+  return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
 }
 
 export default function ProductDetail() {
@@ -68,6 +68,9 @@ export default function ProductDetail() {
     );
   }
 
+  const imageUrl = (product as any).imageUrl;
+  const notes = (product as any).notes;
+
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white">
       <ClientHeader maxWidth="max-w-5xl" backLabel="Quay lại" />
@@ -77,10 +80,18 @@ export default function ProductDetail() {
           {/* Ảnh sản phẩm */}
           <div className="relative">
             <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4 text-slate-600">
-                <Package className="w-24 h-24" />
-                <span className="text-sm">Chưa có ảnh sản phẩm</span>
-              </div>
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-4 text-slate-600">
+                  <Package className="w-24 h-24" />
+                  <span className="text-sm">Chưa có ảnh sản phẩm</span>
+                </div>
+              )}
             </div>
             {activeSale && (
               <div className="absolute top-4 left-4 bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
@@ -117,9 +128,24 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Mô tả */}
+            {/* Lưu ý sản phẩm */}
+            {notes && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-400 mb-1">Lưu ý</p>
+                  <p className="text-sm text-amber-200/80 leading-relaxed whitespace-pre-wrap">{notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Chi tiết sản phẩm */}
             {product.description && (
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info className="w-4 h-4 text-blue-400" />
+                  <p className="text-sm font-semibold text-slate-300">Chi tiết sản phẩm</p>
+                </div>
                 <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{product.description}</p>
               </div>
             )}

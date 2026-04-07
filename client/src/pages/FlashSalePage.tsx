@@ -7,7 +7,7 @@ import { ClientHeader } from "@/components/ClientHeader";
 
 function formatCurrency(amount: string | number | null | undefined) {
   const num = typeof amount === "string" ? parseFloat(amount) : (amount || 0);
-  return `${num.toLocaleString("vi-VN")} ₫`;
+  return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
 }
 
 function CountdownTimer({ endTime }: { endTime: Date | string }) {

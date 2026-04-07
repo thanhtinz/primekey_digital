@@ -46,6 +46,8 @@ export const products = mysqlTable("products", {
    price: decimal("price", { precision: 15, scale: 2 }).notNull(),
   taxId: int("taxId"),
   warrantyMonths: int("warrantyMonths").default(0), // Số tháng bảo hành (0 = không bảo hành)
+  imageUrl: text("imageUrl"), // Ảnh sản phẩm
+  notes: text("notes"), // Lưu ý sản phẩm
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

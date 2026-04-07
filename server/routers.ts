@@ -1106,6 +1106,8 @@ export const appRouter = router({
           price: z.number(),
           unit: z.string().optional(),
           warrantyMonths: z.number().min(0).optional(),
+          imageUrl: z.string().optional(),
+          notes: z.string().optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -1128,6 +1130,8 @@ export const appRouter = router({
           price: z.number().optional(),
           unit: z.string().optional(),
           warrantyMonths: z.number().min(0).optional(),
+          imageUrl: z.string().optional(),
+          notes: z.string().optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -1154,6 +1158,26 @@ export const appRouter = router({
         }
         await db.deleteProduct(input.id);
         return { success: true };
+      }),
+
+    uploadImage: protectedProcedure
+      .input(z.object({
+        dataUrl: z.string(), // base64 data URL
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { storagePut } = await import("./storage");
+        const matches = input.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) throw new Error("Invalid data URL format");
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, "base64");
+        const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const fileName = input.fileName || `product-${ctx.user.id}-${Date.now()}.${ext}`;
+        const fileKey = `product-images/${ctx.user.id}/${fileName}`;
+        const { url } = await storagePut(fileKey, buffer, mimeType);
+        return { url };
       }),
   }),
 

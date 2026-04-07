@@ -8,7 +8,7 @@ import { Search, ShoppingBag, Scale, Shield, Star, ChevronRight, Flame } from "l
 import { ClientHeader } from "@/components/ClientHeader";
 
 function formatVND(amount: number) {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+  return new Intl.NumberFormat("vi-VN").format(amount) + " ₫";
 }
 
 export default function ProductCatalog() {
@@ -126,9 +126,15 @@ export default function ProductCatalog() {
                   )}
                   {/* Content */}
                   <div className="p-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center mb-3">
-                      <ShoppingBag className="w-6 h-6 text-blue-400" />
-                    </div>
+                    {product.imageUrl ? (
+                      <div className="w-full aspect-square rounded-lg overflow-hidden mb-3 bg-slate-900">
+                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center mb-3">
+                        <ShoppingBag className="w-6 h-6 text-blue-400" />
+                      </div>
+                    )}
                     <h3 className="text-white font-semibold text-sm leading-tight mb-1 line-clamp-2">{product.name}</h3>
                     {product.description && <p className="text-slate-400 text-xs line-clamp-2 mb-3">{product.description}</p>}
                     <div className="mt-auto">

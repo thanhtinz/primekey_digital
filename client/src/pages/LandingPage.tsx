@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
-function formatPrice(amount: number, currency = "VND") {
-  if (currency === "USD") return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-  return amount.toLocaleString("vi-VN") + " ₫";
+function formatPrice(amount: number | string, currency = "VND") {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (currency === "USD") return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
+  return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
 }
 
 export default function LandingPage() {

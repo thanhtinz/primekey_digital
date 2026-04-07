@@ -825,3 +825,12 @@
 - [x] Thêm customer.myWarranties procedure
 - [x] Nâng cấp MyAccount page: tab Bảo Hành, stats card, quick links, logout cải tiến
 - [x] Viết unit tests cho customer procedures và products.getPublic (19 tests passed)
+
+## Phase 10: Sửa giá VN + Thêm trường sản phẩm
+- [x] Sửa format giá sản phẩm dùng định dạng VN đúng (dấu chấm phân cách hàng nghìn)
+- [x] Thêm cột imageUrl vào schema products
+- [x] Thêm cột description (chi tiết sản phẩm) vào schema products (đã có sẵn)
+- [x] Thêm cột notes (lưu ý sản phẩm) vào schema products
+- [x] Cập nhật admin UI để upload ảnh, nhập chi tiết, lưu ý sản phẩm
+- [x] Cập nhật ProductDetail hiển thị ảnh, chi tiết, lưu ý
+- [x] Cập nhật LandingPage, ProductCatalog, ProductCompare hiển thị ảnh sản phẩm
