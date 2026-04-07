@@ -7,7 +7,7 @@ import {
   CheckCircle, ArrowRight, CreditCard, Users, BarChart3, Bell,
   Clock, Smartphone, Lock, TrendingUp, Package, ChevronRight,
   Mail, Phone, MapPin, Building2, Receipt, Send, ListOrdered,
-  Trophy, ShoppingBag, Flame, Tag
+  Trophy, ShoppingBag, Flame, Tag, Gift, HelpCircle
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -46,6 +46,9 @@ export default function LandingPage() {
     { label: "Hàng Chờ", href: "/queue", icon: ListOrdered },
     { label: "BXH", href: "/leaderboard", icon: Trophy },
     { label: "Flash Sale", href: "/flash-sale", icon: ShoppingBag },
+    { label: "Sản Phẩm", href: "/catalog", icon: Package },
+    { label: "Tích Điểm", href: "/loyalty", icon: Gift },
+    { label: "FAQ", href: "/faq", icon: HelpCircle },
     { label: "Đánh Giá", href: "/feedbacks-public", icon: Star },
   ];
 

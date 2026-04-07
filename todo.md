@@ -717,3 +717,66 @@
 - [x] Thêm thống kê tổng quan: tổng mã, mã đang hoạt động, tổng lượt dùng, tổng doanh thu giảm
 - [x] Thêm thống kê chi tiết từng mã: số lần dùng, doanh thu giảm, tỷ lệ chuyển đổi
 - [x] Backend: router coupon.stats trả về thống kê từ coupon_usages
+
+## Batch 6: 10 Tính Năng Mới
+
+### 1. Nhóm Sản Phẩm / Danh Mục
+- [ ] Schema: bảng product_categories (id, name, slug, description, sortOrder)
+- [ ] Thêm categoryId vào bảng products
+- [ ] Backend: CRUD categories + gắn category vào sản phẩm
+- [ ] UI: trang quản lý danh mục trong dashboard
+- [ ] UI: filter sản phẩm theo danh mục trong trang Products
+
+### 2. Trang Giới Thiệu Sản Phẩm (Catalog Công Khai)
+- [ ] Trang /products công khai: hiển thị catalog sản phẩm theo danh mục
+- [ ] Filter theo danh mục, tìm kiếm, sắp xếp giá
+- [ ] Trang chi tiết sản phẩm /products/[id]
+- [ ] Thêm link Catalog vào landing page nav
+
+### 3. Trang So Sánh Sản Phẩm
+- [ ] Trang /compare: chọn tối đa 3 sản phẩm để so sánh
+- [ ] Bảng so sánh: tên, giá, bảo hành, mô tả
+- [ ] Nút "So sánh" trên trang catalog
+
+### 4. Tích Điểm Thành Viên
+- [ ] Schema: bảng loyalty_points (customerId, points, reason, invoiceId, createdAt)
+- [ ] Cấu hình: tỷ lệ tích điểm (VD: 1000đ = 1 điểm), tỷ lệ đổi điểm
+- [ ] Tự động tích điểm khi đơn hàng chuyển sang PAID
+- [ ] Trang /loyalty công khai: khách nhập email xem điểm
+- [ ] Dashboard: trang quản lý điểm thành viên
+
+### 5. Yêu Cầu Bảo Hành Online
+- [ ] Schema: bảng warranty_requests (warrantyId, customerEmail, description, images, status)
+- [ ] Trang /warranty-request công khai: form gửi yêu cầu bảo hành
+- [ ] Dashboard: trang quản lý yêu cầu bảo hành (xem, phản hồi, cập nhật trạng thái)
+- [ ] Thông báo Telegram khi có yêu cầu bảo hành mới
+
+### 6. Thông Báo Flash Sale Qua Email
+- [ ] Schema: bảng flash_sale_subscribers (email, subscribedAt)
+- [ ] Form đăng ký nhận thông báo Flash Sale trên trang /flash-sale
+- [ ] Backend: gửi email thông báo khi tạo Flash Sale mới
+- [ ] Dashboard: quản lý danh sách subscriber
+
+### 7. Trang FAQ / Hỏi Đáp
+- [ ] Schema: bảng faqs (question, answer, category, sortOrder, isPublished)
+- [ ] Trang /faq công khai: hiển thị câu hỏi theo nhóm, có accordion
+- [ ] Dashboard: CRUD FAQ, sắp xếp thứ tự
+- [ ] Thêm link FAQ vào landing page footer
+
+### 8. Hóa Đơn VAT
+- [ ] Thêm trường vatNumber, vatCompanyName, vatAddress vào invoices
+- [ ] UI tạo hóa đơn: checkbox "Xuất hóa đơn VAT", điền thông tin
+- [ ] Trang in/xuất hóa đơn VAT theo chuẩn (có mã số thuế, địa chỉ)
+- [ ] Settings: cấu hình thông tin công ty cho hóa đơn VAT
+
+### 9. Hoàn Tiền (Refund)
+- [ ] Schema: bảng refunds (invoiceId, amount, reason, status, processedAt)
+- [ ] Dashboard: tạo yêu cầu hoàn tiền, theo dõi trạng thái
+- [ ] Khi hoàn tiền: cập nhật trạng thái invoice, ghi log
+- [ ] Thông báo Telegram khi xử lý hoàn tiền
+
+### 10. Báo Cáo Thuế
+- [ ] Trang /reports/tax trong dashboard
+- [ ] Tổng hợp doanh thu theo tháng/quý/năm
+- [ ] Phân tách: doanh thu gốc, VAT, chiết khấu, thực thu
+- [ ] Xuất báo cáo CSV/Excel

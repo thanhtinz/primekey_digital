@@ -1,0 +1,108 @@
+import { useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { HelpCircle, ChevronDown, ChevronUp, Search, ArrowLeft, MessageCircle } from "lucide-react";
+
+export default function FAQPage() {
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
+  const { data: faqs = [] } = trpc.faq.list.useQuery();
+  const [search, setSearch] = useState("");
+  const [openId, setOpenId] = useState<number | null>(null);
+
+  const logo = publicInfo?.logoUrl;
+  const siteName = publicInfo?.companyName || "Invoice Prime";
+
+  const filtered = (faqs as any[]).filter(f =>
+    !search || f.question.toLowerCase().includes(search.toLowerCase()) || f.answer.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Group by category
+  const grouped = filtered.reduce((acc: Record<string, any[]>, faq: any) => {
+    const cat = faq.category || "Chung";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(faq);
+    return acc;
+  }, {});
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      {/* Nav */}
+      <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
+        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            {logo ? <img src={logo} alt={siteName} className="h-8 w-auto object-contain" /> : <span className="text-white font-bold text-lg">{siteName}</span>}
+          </Link>
+          <Link href="/track" className="text-slate-400 hover:text-white text-sm transition-colors">Tra cứu đơn</Link>
+        </div>
+      </nav>
+
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border border-purple-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <HelpCircle className="w-10 h-10 text-purple-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Câu Hỏi Thường Gặp</h1>
+          <p className="text-slate-400">Tìm câu trả lời nhanh cho các thắc mắc phổ biến</p>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-8">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm kiếm câu hỏi..." className="pl-12 py-3 text-base bg-slate-800/60 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500 rounded-xl" />
+        </div>
+
+        {/* FAQ list */}
+        {Object.keys(grouped).length === 0 ? (
+          <div className="text-center py-16">
+            <HelpCircle className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+            <p className="text-slate-400">{search ? "Không tìm thấy câu hỏi phù hợp" : "Chưa có câu hỏi nào"}</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(grouped).map(([category, items]) => (
+              <div key={category}>
+                <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-purple-400 rounded-full" />
+                  {category}
+                </h2>
+                <div className="space-y-2">
+                  {items.map((faq: any) => (
+                    <div key={faq.id} className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden hover:border-slate-600 transition-colors">
+                      <button
+                        onClick={() => setOpenId(openId === faq.id ? null : faq.id)}
+                        className="w-full flex items-center justify-between p-4 text-left"
+                      >
+                        <span className="text-white font-medium pr-4">{faq.question}</span>
+                        {openId === faq.id ? <ChevronUp className="w-5 h-5 text-purple-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
+                      </button>
+                      {openId === faq.id && (
+                        <div className="px-4 pb-4 border-t border-slate-700">
+                          <p className="text-slate-300 text-sm leading-relaxed mt-3 whitespace-pre-wrap">{faq.answer}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Contact CTA */}
+        <div className="mt-10 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-2xl p-6 text-center">
+          <MessageCircle className="w-8 h-8 text-purple-400 mx-auto mb-3" />
+          <h3 className="text-white font-semibold mb-1">Không tìm thấy câu trả lời?</h3>
+          <p className="text-slate-400 text-sm mb-4">Liên hệ với chúng tôi để được hỗ trợ trực tiếp</p>
+          <Link href="/warranty-request">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
+              <MessageCircle className="w-4 h-4" /> Gửi Yêu Cầu Hỗ Trợ
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -54,6 +54,23 @@ const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const FlashSalePage = lazy(() => import("./pages/FlashSalePage"));
 const CouponSettings = lazy(() => import("./pages/CouponSettings"));
 
+// Batch 6: New pages
+const CategorySettings = lazy(() => import("./pages/CategorySettings"));
+const LoyaltySettings = lazy(() => import("./pages/LoyaltySettings"));
+const WarrantyRequestManagement = lazy(() => import("./pages/WarrantyRequestManagement"));
+const FAQSettings = lazy(() => import("./pages/FAQSettings"));
+const FlashSaleSubscriberSettings = lazy(() => import("./pages/FlashSaleSubscriberSettings"));
+const VATInvoicePage = lazy(() => import("./pages/VATInvoicePage"));
+const RefundPage = lazy(() => import("./pages/RefundPage"));
+const TaxReportPage = lazy(() => import("./pages/TaxReportPage"));
+
+// Batch 6: Public pages
+const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
+const ProductCompare = lazy(() => import("./pages/ProductCompare"));
+const LoyaltyPage = lazy(() => import("./pages/LoyaltyPage"));
+const WarrantyRequestPage = lazy(() => import("./pages/WarrantyRequestPage"));
+const FAQPage = lazy(() => import("./pages/FAQPage"));
+
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -78,7 +95,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require auth (always accessible)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -114,6 +131,11 @@ function Router() {
           <Route path="/queue" component={() => <QueuePage />} />
           <Route path="/leaderboard" component={() => <LeaderboardPage />} />
           <Route path="/flash-sale" component={() => <FlashSalePage />} />
+          <Route path="/catalog" component={() => <ProductCatalog />} />
+          <Route path="/compare" component={() => <ProductCompare />} />
+          <Route path="/loyalty" component={() => <LoyaltyPage />} />
+          <Route path="/warranty-request" component={() => <WarrantyRequestPage />} />
+          <Route path="/faq" component={() => <FAQPage />} />
         </Switch>
       </Suspense>
     );
@@ -179,6 +201,15 @@ function Router() {
         <Route path="/advanced-search" component={() => isAdmin ? <AdvancedSearch /> : <ForbiddenPage />} />
         <Route path="/advanced-reports" component={() => isAdmin ? <WeeklyReports /> : <ForbiddenPage />} />
         <Route path="/embed-widget" component={() => isAdmin ? <EmbedWidget /> : <ForbiddenPage />} />
+        {/* Batch 6 routes */}
+        <Route path="/settings/categories" component={() => isAdmin ? <CategorySettings /> : <ForbiddenPage />} />
+        <Route path="/settings/loyalty" component={() => isAdmin ? <LoyaltySettings /> : <ForbiddenPage />} />
+        <Route path="/settings/faq" component={() => isAdmin ? <FAQSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/flash-sale-subscribers" component={() => isAdmin ? <FlashSaleSubscriberSettings /> : <ForbiddenPage />} />
+        <Route path="/warranty-requests" component={() => isAdmin ? <WarrantyRequestManagement /> : <ForbiddenPage />} />
+        <Route path="/vat-invoices" component={() => isAdmin ? <VATInvoicePage /> : <ForbiddenPage />} />
+        <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
+        <Route path="/tax-report" component={() => isAdmin ? <TaxReportPage /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

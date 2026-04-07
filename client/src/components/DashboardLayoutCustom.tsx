@@ -6,7 +6,7 @@ import {
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
   Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
   RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code,
-  Shield, ShoppingBag
+  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -74,6 +74,24 @@ const adminNavGroups = [
       { label: "Cấu Hình Bảo Hành", href: "/settings/warranty", icon: Shield },
       { label: "Flash Sale", href: "/settings/flash-sale", icon: ShoppingBag },
       { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
+      { label: "Yêu Cầu Bảo Hành", href: "/warranty-requests", icon: Wrench },
+    ],
+  },
+  {
+    label: "Danh Mục & Thành Viên",
+    items: [
+      { label: "Danh Mục SP", href: "/settings/categories", icon: Tag },
+      { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
+      { label: "Đăng Ký Flash Sale", href: "/settings/flash-sale-subscribers", icon: MailCheck },
+      { label: "FAQ / Hỏi Đáp", href: "/settings/faq", icon: HelpCircle },
+    ],
+  },
+  {
+    label: "Tài Chính & Thuế",
+    items: [
+      { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
+      { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
+      { label: "Báo Cáo Thuế", href: "/tax-report", icon: FileBarChart2 },
     ],
   },
   {

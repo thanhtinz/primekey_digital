@@ -436,3 +436,114 @@ export const couponUsages = mysqlTable("coupon_usages", {
   usedAt: timestamp("usedAt").defaultNow().notNull(),
 });
 export type CouponUsage = typeof couponUsages.$inferSelect;
+
+
+// ─── Batch 6: 10 New Features ────────────────────────────────────────────────
+
+// 1. Product Categories
+export const productCategories = mysqlTable("product_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull(),
+  description: text("description"),
+  imageUrl: text("imageUrl"),
+  sortOrder: int("sortOrder").default(0),
+  isPublished: boolean("isPublished").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProductCategory = typeof productCategories.$inferSelect;
+
+// 2. Loyalty Points
+export const loyaltyPoints = mysqlTable("loyalty_points", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // owner
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }),
+  points: int("points").notNull(), // positive = earned, negative = redeemed
+  reason: varchar("reason", { length: 255 }).notNull(), // "EARNED_ORDER", "REDEEMED", "MANUAL"
+  invoiceId: int("invoiceId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type LoyaltyPoint = typeof loyaltyPoints.$inferSelect;
+
+export const loyaltySettings = mysqlTable("loyalty_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  pointsPerAmount: int("pointsPerAmount").default(1000), // 1000 VND = 1 point
+  redeemRate: int("redeemRate").default(100), // 100 points = 1000 VND discount
+  isEnabled: boolean("isEnabled").default(true),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LoyaltySetting = typeof loyaltySettings.$inferSelect;
+
+// 3. Warranty Requests
+export const warrantyRequests = mysqlTable("warranty_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // owner
+  warrantyId: int("warrantyId"),
+  invoiceCode: varchar("invoiceCode", { length: 100 }),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }),
+  customerPhone: varchar("customerPhone", { length: 20 }),
+  description: text("description").notNull(),
+  imageUrls: text("imageUrls"), // JSON array of image URLs
+  status: mysqlEnum("status", ["PENDING", "PROCESSING", "RESOLVED", "REJECTED"]).default("PENDING").notNull(),
+  adminNote: text("adminNote"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WarrantyRequest = typeof warrantyRequests.$inferSelect;
+
+// 4. Flash Sale Subscribers
+export const flashSaleSubscribers = mysqlTable("flash_sale_subscribers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // owner
+  email: varchar("email", { length: 320 }).notNull(),
+  subscribedAt: timestamp("subscribedAt").defaultNow().notNull(),
+});
+export type FlashSaleSubscriber = typeof flashSaleSubscribers.$inferSelect;
+
+// 5. FAQ
+export const faqs = mysqlTable("faqs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  category: varchar("category", { length: 100 }).default("Chung"),
+  sortOrder: int("sortOrder").default(0),
+  isPublished: boolean("isPublished").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Faq = typeof faqs.$inferSelect;
+
+// 6. Refunds
+export const refunds = mysqlTable("refunds", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  invoiceId: int("invoiceId").notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  reason: text("reason").notNull(),
+  status: mysqlEnum("status", ["PENDING", "APPROVED", "REJECTED", "PROCESSED"]).default("PENDING").notNull(),
+  adminNote: text("adminNote"),
+  processedAt: timestamp("processedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Refund = typeof refunds.$inferSelect;
+// 7. VAT Invoices
+export const vatInvoices = mysqlTable("vat_invoices", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  invoiceId: int("invoiceId"),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  taxCode: varchar("taxCode", { length: 50 }).notNull(),
+  companyAddress: text("companyAddress"),
+  companyEmail: varchar("companyEmail", { length: 320 }),
+  vatRate: int("vatRate").default(10),
+  status: mysqlEnum("status_vat", ["PENDING", "ISSUED", "CANCELLED"]).default("PENDING").notNull(),
+  createdAt: timestamp("createdAt_vat").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt_vat").defaultNow().onUpdateNow().notNull(),
+});
+export type VatInvoice = typeof vatInvoices.$inferSelect;

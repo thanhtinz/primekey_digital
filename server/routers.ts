@@ -3107,5 +3107,427 @@ export const appRouter = router({
       };
     }),
   }),
+
+  // ─── Product Categories ───────────────────────────────────────────────────
+  categories: router({
+    list: publicProcedure.query(async () => {
+      const { productCategories } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(productCategories).orderBy(asc(productCategories.sortOrder), asc(productCategories.name));
+    }),
+    listProtected: protectedProcedure.query(async ({ ctx }) => {
+      const { productCategories } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(productCategories).where(eq(productCategories.userId, ctx.user.id)).orderBy(asc(productCategories.sortOrder), asc(productCategories.name));
+    }),
+    create: protectedProcedure.input(z.object({
+      name: z.string().min(1),
+      slug: z.string().min(1),
+      description: z.string().optional(),
+      imageUrl: z.string().optional(),
+      sortOrder: z.number().optional(),
+      isPublished: z.boolean().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { productCategories } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(productCategories).values({ ...input, userId: ctx.user.id, description: input.description || null, imageUrl: input.imageUrl || null });
+      return { success: true };
+    }),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      name: z.string().optional(),
+      slug: z.string().optional(),
+      description: z.string().optional(),
+      imageUrl: z.string().optional(),
+      sortOrder: z.number().optional(),
+      isPublished: z.boolean().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { productCategories } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const { id, ...updates } = input;
+      await drizzleDb.update(productCategories).set(updates as any).where(and(eq(productCategories.id, id), eq(productCategories.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      const { productCategories } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(productCategories).where(and(eq(productCategories.id, input.id), eq(productCategories.userId, ctx.user.id)));
+      return { success: true };
+    }),
+  }),
+
+  // ─── Loyalty Points ───────────────────────────────────────────────────────
+  loyalty: router({
+    getSettings: protectedProcedure.query(async ({ ctx }) => {
+      const { loyaltySettings } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const [s] = await drizzleDb.select().from(loyaltySettings).where(eq(loyaltySettings.userId, ctx.user.id)).limit(1);
+      return s || null;
+    }),
+    saveSettings: protectedProcedure.input(z.object({
+      pointsPerAmount: z.number().min(1),
+      redeemRate: z.number().min(1),
+      isEnabled: z.boolean(),
+    })).mutation(async ({ input, ctx }) => {
+      const { loyaltySettings } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const [existing] = await drizzleDb.select().from(loyaltySettings).where(eq(loyaltySettings.userId, ctx.user.id)).limit(1);
+      if (existing) {
+        await drizzleDb.update(loyaltySettings).set(input).where(eq(loyaltySettings.userId, ctx.user.id));
+      } else {
+        await drizzleDb.insert(loyaltySettings).values({ ...input, userId: ctx.user.id });
+      }
+      return { success: true };
+    }),
+    listPoints: protectedProcedure.query(async ({ ctx }) => {
+      const { loyaltyPoints } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc, sql } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      // Aggregate by customer email
+      const rows = await drizzleDb.select({
+        customerEmail: loyaltyPoints.customerEmail,
+        customerName: loyaltyPoints.customerName,
+        totalPoints: sql<number>`SUM(${loyaltyPoints.points})`,
+        lastActivity: sql<string>`MAX(${loyaltyPoints.createdAt})`,
+      }).from(loyaltyPoints).where(eq(loyaltyPoints.userId, ctx.user.id)).groupBy(loyaltyPoints.customerEmail, loyaltyPoints.customerName).orderBy(desc(sql`SUM(${loyaltyPoints.points})`));
+      return rows;
+    }),
+    getByEmail: publicProcedure.input(z.object({ email: z.string().email() })).query(async ({ input }) => {
+      const { loyaltyPoints } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, sql, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { points: 0, history: [] };
+      const [agg] = await drizzleDb.select({ total: sql<number>`SUM(${loyaltyPoints.points})` }).from(loyaltyPoints).where(eq(loyaltyPoints.customerEmail, input.email));
+      const history = await drizzleDb.select().from(loyaltyPoints).where(eq(loyaltyPoints.customerEmail, input.email)).orderBy(desc(loyaltyPoints.createdAt)).limit(20);
+      return { points: Number(agg?.total || 0), history };
+    }),
+    adjust: protectedProcedure.input(z.object({
+      customerEmail: z.string().email(),
+      customerName: z.string().optional(),
+      points: z.number(),
+      reason: z.string(),
+    })).mutation(async ({ input, ctx }) => {
+      const { loyaltyPoints } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(loyaltyPoints).values({ ...input, userId: ctx.user.id, customerName: input.customerName || null, invoiceId: null });
+      return { success: true };
+    }),
+  }),
+
+  // ─── Warranty Requests ────────────────────────────────────────────────────
+  warrantyRequest: router({
+    create: publicProcedure.input(z.object({
+      invoiceCode: z.string().optional(),
+      customerEmail: z.string().email(),
+      customerName: z.string().optional(),
+      customerPhone: z.string().optional(),
+      description: z.string().min(10),
+      imageUrls: z.array(z.string()).optional(),
+    })).mutation(async ({ input }) => {
+      const { warrantyRequests, warranties } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      // Find warranty by invoice code to get userId
+      let userId = 1; // fallback
+      if (input.invoiceCode) {
+        const { invoices } = await import("../drizzle/schema");
+        const [inv] = await drizzleDb.select().from(invoices).where(eq(invoices.invoiceNumber, input.invoiceCode)).limit(1);
+        if (inv) userId = inv.userId;
+      }
+      await drizzleDb.insert(warrantyRequests).values({
+        userId,
+        invoiceCode: input.invoiceCode || null,
+        customerEmail: input.customerEmail,
+        customerName: input.customerName || null,
+        customerPhone: input.customerPhone || null,
+        description: input.description,
+        imageUrls: input.imageUrls ? JSON.stringify(input.imageUrls) : null,
+        status: "PENDING",
+      });
+      return { success: true };
+    }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { warrantyRequests } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(warrantyRequests).where(eq(warrantyRequests.userId, ctx.user.id)).orderBy(desc(warrantyRequests.createdAt));
+    }),
+    updateStatus: protectedProcedure.input(z.object({
+      id: z.number(),
+      status: z.enum(["PENDING", "PROCESSING", "RESOLVED", "REJECTED"]),
+      adminNote: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { warrantyRequests } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.update(warrantyRequests).set({ status: input.status, adminNote: input.adminNote || null }).where(and(eq(warrantyRequests.id, input.id), eq(warrantyRequests.userId, ctx.user.id)));
+      return { success: true };
+    }),
+  }),
+
+  // ─── Flash Sale Subscribers ───────────────────────────────────────────────
+  flashSaleSubscriber: router({
+    subscribe: publicProcedure.input(z.object({ email: z.string().email() })).mutation(async ({ input }) => {
+      const { flashSaleSubscribers } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      // Use userId=1 as default owner (single-tenant)
+      const [existing] = await drizzleDb.select().from(flashSaleSubscribers).where(eq(flashSaleSubscribers.email, input.email)).limit(1);
+      if (existing) return { success: true, alreadySubscribed: true };
+      await drizzleDb.insert(flashSaleSubscribers).values({ email: input.email, userId: 1 });
+      return { success: true, alreadySubscribed: false };
+    }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { flashSaleSubscribers } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(flashSaleSubscribers).where(eq(flashSaleSubscribers.userId, ctx.user.id)).orderBy(desc(flashSaleSubscribers.subscribedAt));
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      const { flashSaleSubscribers } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(flashSaleSubscribers).where(and(eq(flashSaleSubscribers.id, input.id), eq(flashSaleSubscribers.userId, ctx.user.id)));
+      return { success: true };
+    }),
+  }),
+
+  // ─── FAQ ─────────────────────────────────────────────────────────────────
+  faq: router({
+    listPublic: publicProcedure.query(async () => {
+      const { faqs } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(faqs).where(eq(faqs.isPublished, true)).orderBy(asc(faqs.category), asc(faqs.sortOrder));
+    }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { faqs } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(faqs).where(eq(faqs.userId, ctx.user.id)).orderBy(asc(faqs.category), asc(faqs.sortOrder));
+    }),
+    create: protectedProcedure.input(z.object({
+      question: z.string().min(1),
+      answer: z.string().min(1),
+      category: z.string().optional(),
+      sortOrder: z.number().optional(),
+      isPublished: z.boolean().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { faqs } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(faqs).values({ ...input, userId: ctx.user.id, category: input.category || "Chung" });
+      return { success: true };
+    }),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      question: z.string().optional(),
+      answer: z.string().optional(),
+      category: z.string().optional(),
+      sortOrder: z.number().optional(),
+      isPublished: z.boolean().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { faqs } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const { id, ...updates } = input;
+      await drizzleDb.update(faqs).set(updates as any).where(and(eq(faqs.id, id), eq(faqs.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      const { faqs } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(faqs).where(and(eq(faqs.id, input.id), eq(faqs.userId, ctx.user.id)));
+      return { success: true };
+    }),
+  }),
+
+  // ─── Refunds ─────────────────────────────────────────────────────────────
+  refund: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { refunds } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(refunds).where(eq(refunds.userId, ctx.user.id)).orderBy(desc(refunds.createdAt));
+    }),
+    create: protectedProcedure.input(z.object({
+      invoiceId: z.number(),
+      amount: z.number().min(0),
+      reason: z.string().min(1),
+    })).mutation(async ({ input, ctx }) => {
+      const { refunds } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(refunds).values({ ...input, userId: ctx.user.id, amount: String(input.amount), status: "PENDING" });
+      return { success: true };
+    }),
+    updateStatus: protectedProcedure.input(z.object({
+      id: z.number(),
+      status: z.enum(["PENDING", "APPROVED", "REJECTED", "PROCESSED"]),
+      adminNote: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { refunds } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const updates: any = { status: input.status, adminNote: input.adminNote || null };
+      if (input.status === "PROCESSED") updates.processedAt = new Date();
+      await drizzleDb.update(refunds).set(updates).where(and(eq(refunds.id, input.id), eq(refunds.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      const { refunds } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(refunds).where(and(eq(refunds.id, input.id), eq(refunds.userId, ctx.user.id)));
+      return { success: true };
+    }),
+  }),
+
+  // ─── Tax Report ───────────────────────────────────────────────────────────
+  taxReport: router({
+    get: protectedProcedure.input(z.object({
+      year: z.number(),
+      quarter: z.number().min(1).max(4).optional(),
+      month: z.number().min(1).max(12).optional(),
+    })).query(async ({ input, ctx }) => {
+      const { invoices } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and, gte, lte, sql } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { rows: [], summary: { totalRevenue: 0, totalTax: 0, totalDiscount: 0, netRevenue: 0, invoiceCount: 0 } };
+      // Build date range
+      let startDate: Date, endDate: Date;
+      if (input.month) {
+        startDate = new Date(input.year, input.month - 1, 1);
+        endDate = new Date(input.year, input.month, 0, 23, 59, 59);
+      } else if (input.quarter) {
+        const startMonth = (input.quarter - 1) * 3;
+        startDate = new Date(input.year, startMonth, 1);
+        endDate = new Date(input.year, startMonth + 3, 0, 23, 59, 59);
+      } else {
+        startDate = new Date(input.year, 0, 1);
+        endDate = new Date(input.year, 11, 31, 23, 59, 59);
+      }
+      const rows = await drizzleDb.select().from(invoices)
+        .where(and(
+          eq(invoices.userId, ctx.user.id),
+          gte(invoices.createdAt, startDate),
+          lte(invoices.createdAt, endDate)
+        ));
+      const summary = rows.reduce((acc, inv) => {
+        const total = Number(inv.totalAmount || 0);
+        const tax = Number(inv.taxAmount || 0);
+        const discount = Number(inv.discountAmount || 0);
+        acc.totalRevenue += total;
+        acc.totalTax += tax;
+        acc.totalDiscount += discount;
+        acc.netRevenue += (total - tax);
+        acc.invoiceCount++;
+        return acc;
+      }, { totalRevenue: 0, totalTax: 0, totalDiscount: 0, netRevenue: 0, invoiceCount: 0 });
+      // Group by month for chart
+      const byMonth: Record<string, { revenue: number; tax: number; count: number }> = {};
+      rows.forEach(inv => {
+        const key = new Date(inv.createdAt).toISOString().slice(0, 7); // YYYY-MM
+        if (!byMonth[key]) byMonth[key] = { revenue: 0, tax: 0, count: 0 };
+        byMonth[key].revenue += Number(inv.totalAmount || 0);
+        byMonth[key].tax += Number(inv.taxAmount || 0);
+        byMonth[key].count++;
+      });
+      return { rows, summary, byMonth };
+    }),
+  }),
+  // ─── VAT Invoice ───────────────────────────────────────────────────────────
+  vatInvoice: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { vatInvoices } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(vatInvoices).where(eq(vatInvoices.userId, ctx.user.id)).orderBy(desc(vatInvoices.createdAt));
+    }),
+    create: protectedProcedure.input(z.object({
+      invoiceId: z.number().optional(),
+      companyName: z.string().min(1),
+      taxCode: z.string().min(1),
+      companyAddress: z.string().optional(),
+      companyEmail: z.string().optional(),
+      vatRate: z.number().default(10),
+    })).mutation(async ({ input, ctx }) => {
+      const { vatInvoices } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(vatInvoices).values({ ...input, userId: ctx.user.id, status: "PENDING" });
+      return { success: true };
+    }),
+    updateStatus: protectedProcedure.input(z.object({
+      id: z.number(),
+      status: z.enum(["PENDING", "ISSUED", "CANCELLED"]),
+    })).mutation(async ({ input, ctx }) => {
+      const { vatInvoices } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.update(vatInvoices).set({ status: input.status }).where(and(eq(vatInvoices.id, input.id), eq(vatInvoices.userId, ctx.user.id)));
+      return { success: true };
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;
