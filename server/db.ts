@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, like, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, customers, products, invoices, invoiceItems, taxes, discountCodes, invoiceTemplates, paymentGatewaysConfig, auditLogs, userSettings, reviews, smtpConfig, emailTemplates, emailCampaigns, emailCampaignRecipients, InsertEmailCampaign, InsertEmailCampaignRecipient } from "../drizzle/schema";
 
@@ -687,4 +687,25 @@ export async function updateEmailCampaignRecipient(id: number, data: Partial<Ins
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   await db.update(emailCampaignRecipients).set(data).where(eq(emailCampaignRecipients.id, id));
+}
+
+// Delete all items of an invoice (used when editing invoice)
+export async function deleteInvoiceItemsByInvoiceId(invoiceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+}
+
+// Search invoices by product name (for filter in InvoiceHistory)
+export async function searchInvoicesByProduct(userId: number, productName: string) {
+  const db = await getDb();
+  if (!db) return [];
+  // Find invoice IDs that have items matching the product name
+  const matchingItems = await db.select({ invoiceId: invoiceItems.invoiceId })
+    .from(invoiceItems)
+    .where(like(invoiceItems.name, `%${productName}%`));
+  if (matchingItems.length === 0) return [];
+  const invoiceIds = Array.from(new Set(matchingItems.map(i => i.invoiceId)));
+  return db.select().from(invoices)
+    .where(and(eq(invoices.userId, userId), inArray(invoices.id, invoiceIds)));
 }

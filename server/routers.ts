@@ -124,6 +124,24 @@ export const appRouter = router({
           id: z.number(),
           status: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]).optional(),
           notes: z.string().optional(),
+          // Full edit fields
+          customerId: z.number().optional(),
+          dueDate: z.date().optional(),
+          currency: z.enum(["VND", "USD"]).optional(),
+          subtotal: z.number().optional(),
+          taxAmount: z.number().optional(),
+          discountAmount: z.number().optional(),
+          totalAmount: z.number().optional(),
+          items: z.array(z.object({
+            productId: z.number().optional(),
+            name: z.string(),
+            quantity: z.number(),
+            unitPrice: z.number(),
+            taxRate: z.number().optional(),
+            discount: z.number().optional(),
+            taxAmount: z.number().optional(),
+            totalAmount: z.number(),
+          })).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -132,11 +150,38 @@ export const appRouter = router({
         if (!invoice || invoice.userId !== ctx.user.id) {
           throw new Error("Invoice not found");
         }
+        const { items: inputItems, dueDate, ...rest } = input;
         await db.updateInvoice(input.id, {
-          ...input,
+          ...rest,
+          ...(dueDate ? { expiresAt: dueDate } : {}),
           updatedAt: new Date(),
         });
+        // If items provided, replace all items
+        if (inputItems !== undefined) {
+          await db.deleteInvoiceItemsByInvoiceId(input.id);
+          for (const item of inputItems) {
+            await db.createInvoiceItem({
+              invoiceId: input.id,
+              productId: item.productId,
+              name: item.name,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              discount: item.discount ?? 0,
+              taxId: undefined,
+              taxAmount: item.taxAmount ?? 0,
+              totalAmount: item.totalAmount,
+            });
+          }
+        }
         return { success: true };
+      }),
+    // Search invoices by product name
+    listByProduct: protectedProcedure
+      .input(z.object({ productName: z.string() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        if (!input.productName.trim()) return db.getInvoicesByUserId(ctx.user.id);
+        return db.searchInvoicesByProduct(ctx.user.id, input.productName.trim());
       }),
 
     delete: protectedProcedure

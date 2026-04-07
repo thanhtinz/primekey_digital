@@ -466,3 +466,14 @@
 - [x] Kiểm tra và xóa tất cả các feature cards liên quan đến dashboard nội bộ
 - [x] Testimonials: dùng reviews thật từ DB (reviews.getPublic) thay vì mockup data
 - [x] Ẩn section testimonials khi không có reviews thật (đã được duyệt)
+
+## Tính Năng: Chỉnh Sửa Hóa Đơn & Filter Theo Sản Phẩm
+
+- [x] Backend: thêm procedure invoices.update (cập nhật thông tin hóa đơn + items)
+- [x] Backend: thêm procedure invoices.listByProduct (filter hóa đơn theo tên sản phẩm)
+- [x] Tạo trang /edit-invoice/:id (EditInvoice.tsx) - form giống CreateInvoice nhưng load dữ liệu cũ
+- [x] Thêm nút "Sửa Hóa Đơn" trong InvoiceDetail (chỉ cho phép sửa khi status là CREATED)
+- [x] Thêm route /edit-invoice/:id vào App.tsx
+- [x] InvoiceHistory: thêm input filter theo tên sản phẩm
+- [x] InvoiceHistory: khi có filter sản phẩm, gọi procedure mới để lọc kết quả
+- [x] TypeScript: 0 errors, 13/13 tests passed

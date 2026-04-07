@@ -33,20 +33,38 @@ export default function InvoiceHistory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCurrency, setFilterCurrency] = useState("all");
+  const [productSearch, setProductSearch] = useState("");
+  const [productSearchInput, setProductSearchInput] = useState("");
   const [viewInvoice, setViewInvoice] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { data: invoices = [], isLoading, refetch } = trpc.invoices.list.useQuery();
+  const { data: invoicesByProduct = [], isFetching: isSearchingProduct } = trpc.invoices.listByProduct.useQuery(
+    { productName: productSearch },
+    { enabled: productSearch.trim().length > 0 }
+  );
   const deleteInvoiceMutation = trpc.invoices.delete.useMutation();
   const updateInvoiceMutation = trpc.invoices.update.useMutation();
   const utils = trpc.useUtils();
 
-  const filteredInvoices = invoices.filter(inv => {
+  // Use product search results when active, otherwise use full list
+  const baseInvoices = productSearch.trim() ? invoicesByProduct : invoices;
+
+  const filteredInvoices = baseInvoices.filter(inv => {
     const matchSearch = !searchTerm || inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = filterStatus === "all" || inv.status === filterStatus;
     const matchCurrency = filterCurrency === "all" || inv.currency === filterCurrency;
     return matchSearch && matchStatus && matchCurrency;
   });
+
+  const handleProductSearch = () => {
+    setProductSearch(productSearchInput);
+  };
+
+  const clearProductSearch = () => {
+    setProductSearch("");
+    setProductSearchInput("");
+  };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Bạn có chắc muốn xóa hóa đơn này?")) return;
@@ -121,7 +139,8 @@ export default function InvoiceHistory() {
 
         {/* Filters */}
         <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-3">
+            {/* Row 1: Search by invoice number + status + currency */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -157,6 +176,44 @@ export default function InvoiceHistory() {
                 </SelectContent>
               </Select>
             </div>
+            {/* Row 2: Filter by product name */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Tìm theo tên sản phẩm / dịch vụ..."
+                  value={productSearchInput}
+                  onChange={(e) => setProductSearchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleProductSearch()}
+                  className="pl-9"
+                />
+              </div>
+              <Button
+                onClick={handleProductSearch}
+                disabled={isSearchingProduct}
+                size="sm"
+                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white h-10 px-4"
+              >
+                {isSearchingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                <span className="hidden sm:inline">Tìm Sản Phẩm</span>
+              </Button>
+              {productSearch && (
+                <Button
+                  onClick={clearProductSearch}
+                  variant="outline"
+                  size="sm"
+                  className="h-10 px-3 text-gray-500 hover:text-gray-700"
+                >
+                  × Xóa
+                </Button>
+              )}
+            </div>
+            {productSearch && (
+              <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
+                <Search className="h-3.5 w-3.5" />
+                <span>Đang lọc theo sản phẩm: <strong>"{productSearch}"</strong> — {filteredInvoices.length} kết quả</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 

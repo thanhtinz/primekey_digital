@@ -19,6 +19,7 @@ const CustomerDetail = lazy(() => import("./pages/CustomerDetail"));
 const Products = lazy(() => import("./pages/Products"));
 const InvoiceTemplates = lazy(() => import("./pages/InvoiceTemplates"));
 const EditInvoiceTemplate = lazy(() => import("./pages/EditInvoiceTemplate"));
+const EditInvoice = lazy(() => import("./pages/EditInvoice"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Settings = lazy(() => import("./pages/Settings"));
 const PayOSSettings = lazy(() => import("./pages/PayOSSettings"));
@@ -124,6 +125,7 @@ function Router() {
       <Switch>
         <Route path="/dashboard" component={() => <Dashboard />} />
         <Route path="/create-invoice" component={() => <CreateInvoice />} />
+        <Route path="/edit-invoice/:id" component={() => <EditInvoice />} />
         <Route path="/invoices/:id" component={() => <InvoiceDetail />} />
         <Route path="/invoices" component={() => <InvoiceHistory />} />
         {/* Admin-only routes */}

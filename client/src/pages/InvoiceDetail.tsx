@@ -3,7 +3,7 @@ import { useLocation, useParams } from "wouter";
 import {
   ArrowLeft, Download, Mail, Trash2, CheckCircle, Clock, XCircle,
   AlertCircle, Copy, ExternalLink, Loader2, Package, Truck, Shield,
-  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash
+  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash, Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -347,6 +347,17 @@ export default function InvoiceDetail() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
+          {invoice.status === "CREATED" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation(`/edit-invoice/${invoice.id}`)}
+              className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <Pencil className="h-4 w-4" />
+              Sửa Hóa Đơn
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExportingPDF} className="gap-2">
             {isExportingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Xuất PDF
