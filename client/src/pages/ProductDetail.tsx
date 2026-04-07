@@ -41,6 +41,8 @@ export default function ProductDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewHover, setReviewHover] = useState(0);
+  const [customFieldInputs, setCustomFieldInputs] = useState<Record<string, string>>({});
+  const [showCustomFieldError, setShowCustomFieldError] = useState(false);
 
   const { data: product, isLoading } = trpc.products.getPublicById.useQuery(
     { id: productId },
@@ -358,18 +360,32 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Custom Fields */}
+        {/* Custom Fields - User Input Required */}
         {(customFields as any[]).length > 0 && (
           <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
             <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-600" />
-              Thông số kỹ thuật
+              Thông tin cần điền
             </h3>
-            <div className="space-y-2">
+            <p className="text-xs text-gray-400 mb-3">Vui lòng điền đầy đủ thông tin trước khi đặt hàng</p>
+            <div className="space-y-3">
               {(customFields as any[]).map((f: any) => (
-                <div key={f.id} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-50 last:border-0">
-                  <span className="text-gray-500">{f.fieldName}</span>
-                  <span className="font-medium text-gray-800">{f.fieldValue || "—"}</span>
+                <div key={f.id}>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                    {f.fieldName} <span className="text-red-500">*</span>
+                  </label>
+                  {f.fieldValue ? (
+                    <p className="text-xs text-gray-400 mb-1 italic">Gợi ý: {f.fieldValue}</p>
+                  ) : null}
+                  <Input
+                    placeholder={`Nhập ${f.fieldName.toLowerCase()}...`}
+                    value={customFieldInputs[f.fieldName] || ""}
+                    onChange={(e) => setCustomFieldInputs(prev => ({ ...prev, [f.fieldName]: e.target.value }))}
+                    className={`text-sm ${showCustomFieldError && !customFieldInputs[f.fieldName] ? "border-red-400 ring-1 ring-red-200" : ""}`}
+                  />
+                  {showCustomFieldError && !customFieldInputs[f.fieldName] && (
+                    <p className="text-xs text-red-500 mt-0.5">Vui lòng nhập {f.fieldName.toLowerCase()}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -477,9 +493,17 @@ export default function ProductDetail() {
             onClick={() => {
               if (!email) { toast.info("Vui lòng đăng nhập để thêm giỏ hàng"); return; }
               if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+              // Validate custom fields
+              const cf = customFields as any[];
+              if (cf.length > 0) {
+                const missing = cf.some((f: any) => !customFieldInputs[f.fieldName]?.trim());
+                if (missing) { setShowCustomFieldError(true); toast.error("Vui lòng điền đầy đủ thông tin yêu cầu"); return; }
+              }
+              setShowCustomFieldError(false);
               const pkgId = selectedPackage?.id || packages[0]?.id;
               if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
-              addToCart.mutate({ email, productId, packageId: pkgId });
+              const cfValues = cf.length > 0 ? cf.map((f: any) => ({ fieldName: f.fieldName, fieldValue: customFieldInputs[f.fieldName] || "" })) : undefined;
+              addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: cfValues });
             }}
             className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-3 rounded-xl font-semibold text-sm shadow-md hover:bg-blue-700 transition-all active:scale-95 flex-shrink-0"
           >
@@ -490,6 +514,13 @@ export default function ProductDetail() {
             onClick={() => {
               if (!email) { toast.info("Vui lòng đăng nhập để mua hàng"); return; }
               if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+              // Validate custom fields
+              const cf = customFields as any[];
+              if (cf.length > 0) {
+                const missing = cf.some((f: any) => !customFieldInputs[f.fieldName]?.trim());
+                if (missing) { setShowCustomFieldError(true); toast.error("Vui lòng điền đầy đủ thông tin yêu cầu"); return; }
+              }
+              setShowCustomFieldError(false);
               toast.info("Chức năng mua ngay sẽ sớm được hoàn thiện");
             }}
             className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0"

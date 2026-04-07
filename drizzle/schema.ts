@@ -591,6 +591,7 @@ export const cartItems = mysqlTable("cart_items", {
   productId: int("productId").notNull(),
   packageId: int("packageId"), // gói sản phẩm (nếu có)
   quantity: int("quantity").default(1).notNull(),
+  customFieldValues: text("customFieldValues"), // JSON string: [{fieldName, fieldValue}]
   createdAt: timestamp("createdAt_cart").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt_cart").defaultNow().onUpdateNow().notNull(),
 });

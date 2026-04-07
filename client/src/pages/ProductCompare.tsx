@@ -2,8 +2,9 @@ import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Scale, ShoppingBag, Shield, X, Plus, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { Scale, ShoppingBag, Shield, X, Plus, CheckCircle2, XCircle, ArrowLeft, Search } from "lucide-react";
 import { ClientHeader } from "@/components/ClientHeader";
 
 function formatVND(amount: number) {
@@ -16,8 +17,10 @@ export default function ProductCompare() {
   const initialIds = (params.get("ids") || "").split(",").filter(Boolean).map(Number).slice(0, 3);
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
-  const { data: allProducts = [] } = trpc.products.list.useQuery();
+  const { data: allProducts = [], isLoading: productsLoading } = trpc.products.listPublic.useQuery();
   const [selectedIds, setSelectedIds] = useState<number[]>(initialIds);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAddPanel, setShowAddPanel] = useState<number | null>(null); // which slot is adding
 
   const logo = publicInfo?.logoUrl;
   const siteName = publicInfo?.companyName || "Invoice Prime";
@@ -36,7 +39,12 @@ export default function ProductCompare() {
     }
   }
 
-  const availableToAdd = (allProducts as any[]).filter(p => !selectedIds.includes(p.id));
+  const availableToAdd = useMemo(() => {
+    const filtered = (allProducts as any[]).filter(p => !selectedIds.includes(p.id) && p.isPublished !== false);
+    if (!searchQuery.trim()) return filtered;
+    const q = searchQuery.toLowerCase();
+    return filtered.filter(p => p.name?.toLowerCase().includes(q));
+  }, [allProducts, selectedIds, searchQuery]);
 
   const compareFields = [
     { key: "price", label: "Giá bán", render: (p: any) => <span className="text-blue-600 font-bold">{formatVND(Number(p.price))}</span> },
@@ -83,14 +91,60 @@ export default function ProductCompare() {
                     <p className="text-blue-600 font-bold mt-1">{formatVND(Number(product.price))}</p>
                   </div>
                 ) : (
-                  <div className="text-center">
-                    <Plus className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-slate-400 text-sm">Thêm sản phẩm</p>
-                    {availableToAdd.length > 0 && (
-                      <select onChange={e => addProduct(Number(e.target.value))} defaultValue="" className="mt-2 bg-white border border-slate-200 rounded text-slate-600 text-xs px-2 py-1 focus:outline-none focus:border-blue-500">
-                        <option value="" disabled>Chọn sản phẩm...</option>
-                        {availableToAdd.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                  <div className="text-center w-full">
+                    {showAddPanel === idx ? (
+                      <div className="w-full text-left">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                            <Input
+                              placeholder="Tìm sản phẩm..."
+                              value={searchQuery}
+                              onChange={e => setSearchQuery(e.target.value)}
+                              className="pl-8 h-8 text-xs"
+                              autoFocus
+                            />
+                          </div>
+                          <button onClick={() => { setShowAddPanel(null); setSearchQuery(""); }} className="text-slate-400 hover:text-slate-600">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto space-y-1">
+                          {productsLoading ? (
+                            <p className="text-xs text-slate-400 text-center py-4">Đang tải...</p>
+                          ) : availableToAdd.length === 0 ? (
+                            <p className="text-xs text-slate-400 text-center py-4">Không tìm thấy sản phẩm</p>
+                          ) : (
+                            availableToAdd.slice(0, 20).map((p: any) => (
+                              <button
+                                key={p.id}
+                                onClick={() => { addProduct(p.id); setShowAddPanel(null); setSearchQuery(""); }}
+                                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-blue-50 transition-colors text-left"
+                              >
+                                {p.imageUrl ? (
+                                  <img src={p.imageUrl} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                                ) : (
+                                  <div className="w-8 h-8 bg-slate-100 rounded flex items-center justify-center flex-shrink-0">
+                                    <ShoppingBag className="w-4 h-4 text-slate-400" />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-slate-700 truncate">{p.name}</p>
+                                  <p className="text-[10px] text-blue-600">{formatVND(Number(p.price || 0))}</p>
+                                </div>
+                                <Plus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => setShowAddPanel(idx)} className="flex flex-col items-center gap-2 w-full py-4 hover:bg-slate-50 rounded-lg transition-colors">
+                        <div className="w-12 h-12 bg-blue-50 border-2 border-dashed border-blue-200 rounded-xl flex items-center justify-center">
+                          <Plus className="w-6 h-6 text-blue-400" />
+                        </div>
+                        <p className="text-slate-500 text-sm font-medium">Thêm sản phẩm</p>
+                      </button>
                     )}
                   </div>
                 )}

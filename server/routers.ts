@@ -4005,20 +4005,22 @@ export const appRouter = router({
       productId: z.number(),
       packageId: z.number().nullable().optional(),
       quantity: z.number().min(1).optional(),
+      customFieldValues: z.array(z.object({ fieldName: z.string(), fieldValue: z.string() })).optional(),
     })).mutation(async ({ input }) => {
       const { cartItems } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq, and } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
+      const cfJson = input.customFieldValues ? JSON.stringify(input.customFieldValues) : null;
       // Check existing
       const conditions: any[] = [eq(cartItems.sessionEmail, input.email), eq(cartItems.productId, input.productId)];
       if (input.packageId) conditions.push(eq(cartItems.packageId, input.packageId));
       const [existing] = await drizzleDb.select().from(cartItems).where(and(...conditions)).limit(1);
       if (existing) {
-        await drizzleDb.update(cartItems).set({ quantity: existing.quantity + (input.quantity || 1) } as any).where(eq(cartItems.id, existing.id));
+        await drizzleDb.update(cartItems).set({ quantity: existing.quantity + (input.quantity || 1), customFieldValues: cfJson || existing.customFieldValues } as any).where(eq(cartItems.id, existing.id));
       } else {
-        await drizzleDb.insert(cartItems).values({ sessionEmail: input.email, productId: input.productId, packageId: input.packageId || null, quantity: input.quantity || 1 });
+        await drizzleDb.insert(cartItems).values({ sessionEmail: input.email, productId: input.productId, packageId: input.packageId || null, quantity: input.quantity || 1, customFieldValues: cfJson } as any);
       }
       return { success: true };
     }),

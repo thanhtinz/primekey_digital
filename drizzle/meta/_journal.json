@@ -15,6 +15,13 @@
       "when": 1775599669705,
       "tag": "0001_spooky_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775601337911,
+      "tag": "0002_jittery_toro",
+      "breakpoints": true
     }
   ]
 }

@@ -971,3 +971,11 @@
 - [x] Thêm quick link Tích điểm vào trang user
 - [x] Thêm quick link BXH Chi tiêu vào trang user
 - [x] Hoàn thiện UI trang user chuyên nghiệp hơn
+
+## Phase 16: Fix bugs + Custom fields nhập khi mua
+
+- [x] Xóa mockup data danh mục mẫu trong DB
+- [x] Custom fields: hiển thị form yêu cầu user nhập khi thêm giỏ hàng/mua ngay (ProductDetail)
+- [x] Custom fields: lưu giá trị user nhập vào cart item / order
+- [x] Trang tra cứu đơn: bỏ card nhập email (đã login mới xem được)
+- [x] Trang so sánh SP: fix không thêm được SP để so sánh

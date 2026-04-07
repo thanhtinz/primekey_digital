@@ -270,18 +270,17 @@ function OrderCard({ order }: { order: any }) {
 
 export default function TrackOrder() {
   const [, setLocation] = useLocation();
-  const { customer, isLoggedIn } = useCustomerAuth();
-  const [email, setEmail] = useState("");
-  const [searchEmail, setSearchEmail] = useState("");
+  const { customer, isLoggedIn, isLoading: authLoading } = useCustomerAuth();
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
 
-  // Tự điền email từ session khi đã đăng nhập
+  // Redirect nếu chưa login
   useEffect(() => {
-    if (isLoggedIn && customer?.email && !searchEmail) {
-      setEmail(customer.email);
-      setSearchEmail(customer.email);
+    if (!authLoading && !isLoggedIn) {
+      setLocation("/client-login");
     }
-  }, [isLoggedIn, customer?.email]);
+  }, [authLoading, isLoggedIn, setLocation]);
+
+  const searchEmail = customer?.email || "";
 
   const { data: orders, isLoading, error } = trpc.invoices.getByEmail.useQuery(
     { email: searchEmail },
@@ -291,13 +290,6 @@ export default function TrackOrder() {
       refetchIntervalInBackground: false,
     }
   );
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) {
-      setSearchEmail(email.trim());
-    }
-  };
 
   const brandName = publicInfo?.companyName || "Invoice Prime";
 
@@ -319,38 +311,18 @@ export default function TrackOrder() {
           <h1 className="text-3xl sm:text-4xl font-black text-slate-800 mb-2">
             Tra Cứu <span className="text-blue-600">Đơn Hàng</span>
           </h1>
-          <p className="text-slate-600 text-base">Nhập email để xem trạng thái và chi tiết tất cả đơn hàng của bạn</p>
+          <p className="text-slate-600 text-base">Xem trạng thái và chi tiết tất cả đơn hàng của bạn</p>
         </div>
 
-        {/* Search Form */}
-        <Card className="bg-white border-slate-200 mb-8 shadow-sm">
-          <CardContent className="p-5 sm:p-6">
-            <form onSubmit={handleSearch} className="flex gap-3">
-              <div className="flex-1 relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  type="email"
-                  placeholder="Nhập email của bạn..."
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 h-12 text-base"
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 h-12 px-6"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <><Search className="h-4 w-4 mr-2" />Tra Cứu</>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        {/* User info badge */}
+        {customer && (
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <div className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
+              <Mail className="h-4 w-4 text-blue-600" />
+              <span className="text-sm text-slate-600">{customer.email}</span>
+            </div>
+          </div>
+        )}
 
         {/* Results */}
         {error && (
