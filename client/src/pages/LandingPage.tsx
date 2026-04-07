@@ -45,9 +45,9 @@ export default function LandingPage() {
   ];
 
   const stats = [
-    { value: "99.9%", label: "Uptime đảm bảo", icon: Shield },
+    { value: "9+", label: "Tính năng quản lý", icon: Package },
     { value: "< 3s", label: "Xác nhận thanh toán", icon: Zap },
-    { value: "24/7", label: "Hỗ trợ khách hàng", icon: Clock },
+    { value: "24/7", label: "Tra cứu đơn hàng", icon: Clock },
     { value: "100%", label: "Bảo mật dữ liệu", icon: Lock },
   ];
 
@@ -55,7 +55,7 @@ export default function LandingPage() {
     {
       icon: <Receipt className="h-6 w-6 text-blue-400" />,
       title: "Hóa Đơn Chuyên Nghiệp",
-      desc: "Tạo hóa đơn đẹp, có logo thương hiệu riêng trong vài giây. Gửi tự động qua email cho khách hàng.",
+      desc: "Tạo hóa đơn đẹp với logo thương hiệu riêng, nhiều mẫu thiết kế. Gửi tự động qua email, xuất PDF chuyên nghiệp.",
       badge: "Phổ biến",
       badgeColor: "bg-blue-500/20 text-blue-300",
     },
@@ -67,30 +67,51 @@ export default function LandingPage() {
       badgeColor: "bg-green-500/20 text-green-300",
     },
     {
-      icon: <Search className="h-6 w-6 text-cyan-400" />,
-      title: "Tra Cứu Đơn Hàng",
-      desc: "Khách hàng tự tra cứu trạng thái đơn hàng 24/7 theo email — giảm tải cho nhân viên hỗ trợ.",
-      badge: null,
-      badgeColor: "",
+      icon: <Shield className="h-6 w-6 text-cyan-400" />,
+      title: "Quản Lý Bảo Hành",
+      desc: "Theo dõi thời hạn bảo hành từng sản phẩm. Khách hàng tra cứu bảo hành 24/7 bằng mã đơn hàng.",
+      badge: "Mới",
+      badgeColor: "bg-cyan-500/20 text-cyan-300",
     },
     {
       icon: <Bell className="h-6 w-6 text-yellow-400" />,
-      title: "Thông Báo Tự Động",
-      desc: "Email xác nhận đơn hàng, nhắc thanh toán, thông báo bảo hành — tất cả gửi tự động đúng lúc.",
+      title: "Thông Báo Telegram",
+      desc: "Nhận thông báo đơn mới, thanh toán thành công qua Telegram bot tức thì. Không bỏ lỡ đơn nào.",
       badge: null,
       badgeColor: "",
     },
     {
-      icon: <MessageSquare className="h-6 w-6 text-purple-400" />,
-      title: "Thu Thập Đánh Giá",
-      desc: "Tự động gửi link đánh giá sau khi hoàn thành đơn. Xây dựng uy tín thương hiệu một cách tự nhiên.",
+      icon: <Clock className="h-6 w-6 text-purple-400" />,
+      title: "Hóa Đơn Định Kỳ",
+      desc: "Tạo hóa đơn lặp lại tự động theo tuần hoặc tháng — phù hợp cho dịch vụ thuê bảo trì, đăng ký định kỳ.",
       badge: null,
       badgeColor: "",
     },
     {
       icon: <BarChart3 className="h-6 w-6 text-rose-400" />,
-      title: "Lịch Sử Đơn Hàng",
-      desc: "Xem lại toàn bộ lịch sử mua hàng, trạng thái từng đơn và thông tin bảo hành bất cứ lúc nào qua email.",
+      title: "Báo Cáo Nâng Cao",
+      desc: "Phân tích doanh thu theo khách hàng, tỷ lệ chuyển đổi theo sản phẩm, so sánh tháng. Xuất Excel dễ dàng.",
+      badge: null,
+      badgeColor: "",
+    },
+    {
+      icon: <MessageSquare className="h-6 w-6 text-amber-400" />,
+      title: "Thu Thập Đánh Giá",
+      desc: "Tự động gửi link đánh giá sau khi hoàn thành đơn. Nhúng widget reviews lên website ngoài bằng 1 dòng code.",
+      badge: null,
+      badgeColor: "",
+    },
+    {
+      icon: <Users className="h-6 w-6 text-indigo-400" />,
+      title: "Quản Lý Khách Hàng",
+      desc: "Nhập khách hàng và sản phẩm hàng loạt từ Excel. Tìm kiếm nâng cao theo SĐT, địa chỉ, ghi chú.",
+      badge: null,
+      badgeColor: "",
+    },
+    {
+      icon: <TrendingUp className="h-6 w-6 text-teal-400" />,
+      title: "Trang Cảm Ơn Tùy Chỉnh",
+      desc: "Thiết kế trang cảm ơn riêng với logo, màu gradient, lời nhắn và social links. Tạo ấn tượng sau mỗi đơn hàng.",
       badge: null,
       badgeColor: "",
     },
@@ -99,23 +120,23 @@ export default function LandingPage() {
   const howItWorks = [
     {
       step: "01",
-      icon: Building2,
-      title: "Nhận Hóa Đơn",
-      desc: "Khi mua hàng, bạn nhận email hóa đơn chuyên nghiệp với đầy đủ thông tin sản phẩm, giá cả và mã đơn hàng.",
+      icon: Receipt,
+      title: "Nhận Hóa Đơn & Thanh Toán",
+      desc: "Khi mua hàng, bạn nhận email hóa đơn đẹp với mã QR. Quét QR thanh toán ngay qua ngân hàng — xác nhận tức thì.",
       color: "from-blue-500 to-blue-600",
     },
     {
       step: "02",
-      icon: Smartphone,
-      title: "Thanh Toán Dễ Dàng",
-      desc: "Quét mã QR trong hóa đơn để thanh toán ngay qua ứng dụng ngân hàng. Xác nhận tức thì, không cần chờ đợi.",
+      icon: Search,
+      title: "Theo Dõi Đơn Hàng",
+      desc: "Nhập email để xem trạng thái đơn hàng realtime: Đã tạo → Thanh toán → Giao hàng → Bảo hành. Không cần đăng ký.",
       color: "from-green-500 to-emerald-600",
     },
     {
       step: "03",
-      icon: Search,
-      title: "Theo Dõi Đơn Hàng",
-      desc: "Nhập email để tra cứu trạng thái đơn hàng bất cứ lúc nào — từ lúc đặt hàng đến khi nhận hàng và bảo hành.",
+      icon: Shield,
+      title: "Tra Cứu Bảo Hành",
+      desc: "Nhập mã hóa đơn để kiểm tra thời hạn bảo hành, ngày bắt đầu, ngày hết hạn và số ngày còn lại bất cứ lúc nào.",
       color: "from-purple-500 to-violet-600",
     },
   ];
@@ -227,16 +248,16 @@ export default function LandingPage() {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
-              Hóa Đơn Chuyên Nghiệp,
+              Quản Lý Hóa Đơn
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">
-                Thanh Toán Tức Thì
+                Chuyên Nghiệp & Tự Động
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-2xl mx-auto">
-              Nhận hóa đơn qua email, thanh toán bằng QR code, theo dõi đơn hàng và bảo hành
-              — tất cả trong một nền tảng đơn giản, không cần cài đặt ứng dụng.
+              Tạo hóa đơn, thanh toán QR, quản lý bảo hành, hóa đơn định kỳ, báo cáo nâng cao
+              và thông báo Telegram — tất cả trong một nền tảng, không cần cài đặt.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -318,9 +339,9 @@ export default function LandingPage() {
               <TrendingUp className="h-3.5 w-3.5" />
               QUY TRÌNH ĐƠN GIẢN
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Chỉ 3 Bước Đơn Giản</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Trải Nghiệm Khách Hàng</h2>
             <p className="text-slate-400 text-lg max-w-xl mx-auto">
-              Từ khi mua hàng đến khi theo dõi bảo hành — mọi thứ đều minh bạch và tự động.
+              Từ khi đặt hàng đến khi hết bảo hành — mọi thứ đều minh bạch và tự động.
             </p>
           </div>
 
@@ -368,7 +389,7 @@ export default function LandingPage() {
               TÍNH NĂNG NỔI BẬT
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Mọi Thứ Bạn Cần</h2>
-            <p className="text-slate-400 text-lg">Giải pháp toàn diện cho hóa đơn và thanh toán doanh nghiệp</p>
+            <p className="text-slate-400 text-lg">Giải pháp toàn diện: hóa đơn, thanh toán, bảo hành, báo cáo và tự động hóa</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

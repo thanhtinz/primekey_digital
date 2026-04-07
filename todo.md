@@ -559,3 +559,10 @@
 ## Fix: Style Trang /warranty Theo Dark Theme Landing Page
 
 - [x] Redesign WarrantyLookup.tsx: dùng dark background (slate-900), white text, giống TrackOrder và PublicFeedbacks
+
+## Update: Landing Page - Nội Dung Tính Năng Mới
+
+- [x] Cập nhật features grid (6 → 9 tính năng): thêm Bảo Hành, Telegram, Hóa Đơn Định Kỳ, Báo Cáo Nâng Cao, Quản Lý KH, Trang Cảm Ơn
+- [x] Cập nhật hero tagline: "Quản Lý Hóa Đơn Chuyên Nghiệp & Tự Động" + mô tả đầy đủ tính năng mới
+- [x] Cập nhật how-it-works: bước 3 đổi thành "Tra Cứu Bảo Hành"
+- [x] Cập nhật stats bar: "9+ Tính năng quản lý" thay vì "99.9% Uptime"
