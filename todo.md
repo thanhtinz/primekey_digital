@@ -555,3 +555,7 @@
 - [x] Thêm card "Tra Cứu Bảo Hành" vào section Truy Cập Nhanh (grid 3 cột)
 - [x] Thêm nút "Tra Cứu Bảo Hành" vào CTA section
 - [x] Thêm link "Tra Cứu Bảo Hành" vào footer landing page
+
+## Fix: Style Trang /warranty Theo Dark Theme Landing Page
+
+- [x] Redesign WarrantyLookup.tsx: dùng dark background (slate-900), white text, giống TrackOrder và PublicFeedbacks
