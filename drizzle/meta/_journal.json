@@ -120,6 +120,13 @@
       "when": 1775574057629,
       "tag": "0016_white_polaris",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1775575872856,
+      "tag": "0017_blue_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

@@ -1059,6 +1059,20 @@ export const appRouter = router({
       return db.getProductsByUserId(ctx.user.id);
     }),
 
+    // Public: lấy sản phẩm của owner (single-tenant, userId=1)
+    listPublic: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const { products: productsTable } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      // Lấy userId của owner (user đầu tiên trong hệ thống)
+      const { users } = await import("../drizzle/schema");
+      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner) return [];
+      return drizzleDb.select().from(productsTable).where(eq(productsTable.userId, owner.id));
+    }),
+
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input, ctx }) => {
@@ -3528,6 +3542,106 @@ export const appRouter = router({
       await drizzleDb.update(vatInvoices).set({ status: input.status }).where(and(eq(vatInvoices.id, input.id), eq(vatInvoices.userId, ctx.user.id)));
       return { success: true };
     }),
+  }),
+
+  // ─── Customer Auth (đăng nhập bằng email, không cần mật khẩu) ──────────────
+  customer: router({
+    // Đăng nhập: nhập email → tạo session token (30 ngày)
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), name: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        // Tạo token ngẫu nhiên
+        const crypto = await import("crypto");
+        const token = crypto.randomBytes(48).toString("hex");
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 ngày
+        // Lấy tên từ customers nếu có
+        const { customers } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [existingCustomer] = await drizzleDb.select({ name: customers.name }).from(customers).where(eq(customers.email, input.email)).limit(1);
+        const name = input.name || existingCustomer?.name || input.email.split("@")[0];
+        await drizzleDb.insert(customerSessions).values({ email: input.email, name, token, expiresAt });
+        return { token, name, email: input.email, expiresAt };
+      }),
+
+    // Lấy thông tin khách từ token
+    me: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, gt } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return null;
+        const [session] = await drizzleDb.select().from(customerSessions)
+          .where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return null;
+        return { email: session.email, name: session.name };
+      }),
+
+    // Lịch sử đơn hàng của khách (theo email)
+    myOrders: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions, invoices: invoicesTable, customers, invoiceItems, products: productsTable } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return [];
+        // Tìm customer theo email
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) return [];
+        // Lấy hóa đơn của customer
+        const orders = await drizzleDb.select().from(invoicesTable).where(eq(invoicesTable.customerId, customer.id));
+        // Lấy items cho mỗi hóa đơn
+        const result = await Promise.all(orders.map(async (order) => {
+          const items = await drizzleDb.select({
+            id: invoiceItems.id,
+            productName: invoiceItems.name,
+            quantity: invoiceItems.quantity,
+            unitPrice: invoiceItems.unitPrice,
+            total: invoiceItems.totalAmount,
+          }).from(invoiceItems).where(eq(invoiceItems.invoiceId, order.id));
+          return { ...order, items };
+        }));
+        return result;
+      }),
+
+    // Điểm tích lũy của khách
+    myPoints: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions, loyaltyPoints, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, sum } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { points: 0, history: [] };
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return { points: 0, history: [] };
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) return { points: 0, history: [] };
+        const history = await drizzleDb.select().from(loyaltyPoints).where(eq(loyaltyPoints.customerEmail, session.email));
+        const points = history.reduce((acc, h) => acc + h.points, 0);
+        return { points, history };
+      }),
+
+    // Đăng xuất
+    logout: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { success: false };
+        await drizzleDb.delete(customerSessions).where(eq(customerSessions.token, input.token));
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

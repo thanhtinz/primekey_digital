@@ -547,3 +547,14 @@ export const vatInvoices = mysqlTable("vat_invoices", {
   updatedAt: timestamp("updatedAt_vat").defaultNow().onUpdateNow().notNull(),
 });
 export type VatInvoice = typeof vatInvoices.$inferSelect;
+
+// ─── Customer Sessions (đăng nhập khách hàng bằng email) ─────────────────────
+export const customerSessions = mysqlTable("customer_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  name: varchar("name", { length: 255 }),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt_cs").defaultNow().notNull(),
+});
+export type CustomerSession = typeof customerSessions.$inferSelect;

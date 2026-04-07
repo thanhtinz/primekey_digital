@@ -71,6 +71,10 @@ const LoyaltyPage = lazy(() => import("./pages/LoyaltyPage"));
 const WarrantyRequestPage = lazy(() => import("./pages/WarrantyRequestPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
 
+// Client Portal
+const ClientLogin = lazy(() => import("./pages/ClientLogin"));
+const MyAccount = lazy(() => import("./pages/MyAccount"));
+
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -95,7 +99,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require auth (always accessible)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -136,6 +140,8 @@ function Router() {
           <Route path="/loyalty" component={() => <LoyaltyPage />} />
           <Route path="/warranty-request" component={() => <WarrantyRequestPage />} />
           <Route path="/faq" component={() => <FAQPage />} />
+          <Route path="/client-login" component={() => <ClientLogin />} />
+          <Route path="/my-account" component={() => <MyAccount />} />
         </Switch>
       </Suspense>
     );
@@ -146,14 +152,17 @@ function Router() {
     return <PageLoader />;
   }
 
-  // Not authenticated: show landing page or login
+  // Not authenticated: show landing page, client portal, or admin login
   if (!isAuthenticated) {
     return (
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={() => <LandingPage />} />
           <Route path="/login" component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
-          <Route component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
+          {/* Client portal routes accessible without admin auth */}
+          <Route path="/client-login" component={() => <ClientLogin />} />
+          <Route path="/my-account" component={() => <MyAccount />} />
+          <Route component={() => <LandingPage />} />
         </Switch>
       </Suspense>
     );

@@ -9,7 +9,7 @@ import {
   Mail, Phone, MapPin, Building2, Send, ListOrdered,
   Trophy, ShoppingBag, Flame, Gift, HelpCircle,
   MessageSquare, Tag, ArrowRight, Sparkles, TrendingUp,
-  Wrench, FileText, BarChart3, CheckCircle, Heart
+  Wrench, FileText, BarChart3, CheckCircle, Heart, User, LogIn
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -28,7 +28,7 @@ export default function LandingPage() {
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
   const { data: activeSales = [] } = trpc.flashSale.getActive.useQuery(undefined, { staleTime: 60_000 });
-  const { data: productsRaw } = trpc.products.list.useQuery(undefined, { staleTime: 60_000 });
+  const { data: productsRaw } = trpc.products.listPublic.useQuery(undefined, { staleTime: 60_000, retry: false });
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
 
   // Normalize publicInfo fields
@@ -211,12 +211,24 @@ export default function LandingPage() {
                 {activeSales.length} Sale
               </button>
             )}
-            <button
-              onClick={() => navigate("/login")}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors"
-            >
-              Đăng Nhập
-            </button>
+            {/* Nút Tài Khoản cho khách hàng */}
+            {typeof window !== "undefined" && localStorage.getItem("customerToken") ? (
+              <button
+                onClick={() => navigate("/my-account")}
+                className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition-colors"
+              >
+                <User className="h-4 w-4" />
+                Tài Khoản
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/client-login")}
+                className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors border border-white/20"
+              >
+                <User className="h-4 w-4" />
+                Đăng Nhập
+              </button>
+            )}
             {/* Burger */}
             <button
               onClick={() => setMenuOpen(v => !v)}
@@ -245,13 +257,24 @@ export default function LandingPage() {
                 <ChevronRight className="h-4 w-4 ml-auto opacity-50" />
               </button>
             ))}
-            <div className="pt-2 border-t border-white/10">
-              <button
-                onClick={() => navigate("/login")}
-                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
-              >
-                Đăng Nhập Dashboard
-              </button>
+            <div className="pt-2 border-t border-white/10 space-y-2">
+              {typeof window !== "undefined" && localStorage.getItem("customerToken") ? (
+                <button
+                  onClick={() => navigate("/my-account")}
+                  className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Tài Khoản Của Tôi
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate("/client-login")}
+                  className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors border border-white/20 flex items-center justify-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Đăng Nhập Tài Khoản
+                </button>
+              )}
             </div>
           </div>
         </div>

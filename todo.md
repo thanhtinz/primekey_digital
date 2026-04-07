@@ -780,3 +780,15 @@
 - [ ] Tổng hợp doanh thu theo tháng/quý/năm
 - [ ] Phân tách: doanh thu gốc, VAT, chiết khấu, thực thu
 - [ ] Xuất báo cáo CSV/Excel
+
+## Client Portal + Đăng Nhập Khách Hàng
+
+- [x] Sửa products.list và các procedures công khai thành publicProcedure (không cần auth)
+- [x] Thêm bảng customer_sessions: lưu email + session token cho khách đăng nhập
+- [x] Backend: procedure customer.loginByEmail (nhập email → tạo session token)
+- [x] Backend: procedure customer.me (lấy thông tin khách từ session token)
+- [x] Trang /client-login: form nhập email đăng nhập cho khách hàng
+- [x] Sau đăng nhập: khách xem được lịch sử đơn hàng, điểm tích lũy, bảo hành của mình
+- [x] Header Client Portal: hiển thị nút đăng nhập/tài khoản dựa trên localStorage token
+- [x] Đổi tên "Landing Page" → "Client Portal" trong code và navigation
+- [x] Trang /login (admin): giữ nguyên đăng nhập bằng username/password
