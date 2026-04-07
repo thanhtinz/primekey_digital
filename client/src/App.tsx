@@ -63,6 +63,7 @@ const FlashSaleSubscriberSettings = lazy(() => import("./pages/FlashSaleSubscrib
 const VATInvoicePage = lazy(() => import("./pages/VATInvoicePage"));
 const RefundPage = lazy(() => import("./pages/RefundPage"));
 const TaxReportPage = lazy(() => import("./pages/TaxReportPage"));
+const ReferralSettings = lazy(() => import("./pages/ReferralSettings"));
 
 // Batch 6: Public pages
 const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
@@ -75,6 +76,9 @@ const FAQPage = lazy(() => import("./pages/FAQPage"));
 const ClientLogin = lazy(() => import("./pages/ClientLogin"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const WishlistPage = lazy(() => import("./pages/WishlistPage"));
+const ReferralPage = lazy(() => import("./pages/ReferralPage"));
 import { CustomerGuard } from "./components/CustomerGuard";
 
 // Public pages (no auth required)
@@ -101,7 +105,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/wishlist", "/referral"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -147,6 +151,9 @@ function Router() {
           <Route path="/loyalty" component={() => <CustomerGuard><LoyaltyPage /></CustomerGuard>} />
           <Route path="/warranty-request" component={() => <CustomerGuard><WarrantyRequestPage /></CustomerGuard>} />
           <Route path="/my-account" component={() => <CustomerGuard><MyAccount /></CustomerGuard>} />
+          <Route path="/cart" component={() => <CustomerGuard><CartPage /></CustomerGuard>} />
+          <Route path="/wishlist" component={() => <CustomerGuard><WishlistPage /></CustomerGuard>} />
+          <Route path="/referral" component={() => <CustomerGuard><ReferralPage /></CustomerGuard>} />
         </Switch>
       </Suspense>
     );
@@ -224,6 +231,7 @@ function Router() {
         <Route path="/vat-invoices" component={() => isAdmin ? <VATInvoicePage /> : <ForbiddenPage />} />
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
         <Route path="/tax-report" component={() => isAdmin ? <TaxReportPage /> : <ForbiddenPage />} />
+        <Route path="/settings/referral" component={() => isAdmin ? <ReferralSettings /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

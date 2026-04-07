@@ -24,26 +24,52 @@ const adminNavGroups = [
     ],
   },
   {
-    label: "Hóa Đơn",
+    label: "Bán Hàng",
     items: [
       { label: "Tạo Hóa Đơn", href: "/create-invoice", icon: FileText },
-      { label: "Lịch Sử", href: "/invoices", icon: History },
+      { label: "Lịch Sử Đơn", href: "/invoices", icon: History },
+      { label: "Hóa Đơn Định Kỳ", href: "/recurring-invoices", icon: RefreshCw },
+      { label: "Khách Hàng", href: "/customers", icon: Users },
+      { label: "Import Excel", href: "/import-excel", icon: Upload },
+      { label: "Tìm Kiếm Nâng Cao", href: "/advanced-search", icon: SearchCode },
     ],
   },
   {
-    label: "Quản Lý",
+    label: "Sản Phẩm",
     items: [
-      { label: "Khách Hàng", href: "/customers", icon: Users },
       { label: "Sản Phẩm", href: "/products", icon: Package },
+      { label: "Danh Mục", href: "/settings/categories", icon: Tag },
       { label: "Mẫu Hóa Đơn", href: "/templates", icon: FileStack },
     ],
   },
   {
-    label: "Phân Tích",
+    label: "Khuyến Mãi & Marketing",
+    items: [
+      { label: "Flash Sale", href: "/settings/flash-sale", icon: ShoppingBag },
+      { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
+      { label: "Giới Thiệu Bạn Bè", href: "/settings/referral", icon: Users2 },
+      { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
+      { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
+      { label: "ĐK Flash Sale", href: "/settings/flash-sale-subscribers", icon: MailCheck },
+    ],
+  },
+  {
+    label: "Bảo Hành & Hỗ Trợ",
+    items: [
+      { label: "Quản Lý Bảo Hành", href: "/warranties", icon: Shield },
+      { label: "Yêu Cầu BH", href: "/warranty-requests", icon: Wrench },
+      { label: "Cấu Hình BH", href: "/settings/warranty", icon: Shield },
+      { label: "FAQ / Hỏi Đáp", href: "/settings/faq", icon: HelpCircle },
+    ],
+  },
+  {
+    label: "Tài Chính & Báo Cáo",
     items: [
       { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
-      { label: "Feedback KH", href: "/feedbacks", icon: MessageSquare },
-      { label: "Widget Đánh Giá", href: "/embed-widget", icon: Code },
+      { label: "Báo Cáo Nâng Cao", href: "/advanced-reports", icon: TrendingUp },
+      { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
+      { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
+      { label: "Báo Cáo Thuế", href: "/tax-report", icon: FileBarChart2 },
     ],
   },
   {
@@ -54,58 +80,16 @@ const adminNavGroups = [
     ],
   },
   {
-    label: "Hóa Đơn Nâng Cao",
-    items: [
-      { label: "Hóa Đơn Định Kỳ", href: "/recurring-invoices", icon: RefreshCw },
-      { label: "Import Excel", href: "/import-excel", icon: Upload },
-      { label: "Tìm Kiếm Nâng Cao", href: "/advanced-search", icon: SearchCode },
-    ],
-  },
-  {
-    label: "Phân Tích Nâng Cao",
-    items: [
-      { label: "Báo Cáo Nâng Cao", href: "/advanced-reports", icon: TrendingUp },
-    ],
-  },
-  {
-    label: "Bảo Hành & Khuyến Mãi",
-    items: [
-      { label: "Quản Lý Bảo Hành", href: "/warranties", icon: Shield },
-      { label: "Cấu Hình Bảo Hành", href: "/settings/warranty", icon: Shield },
-      { label: "Flash Sale", href: "/settings/flash-sale", icon: ShoppingBag },
-      { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
-      { label: "Yêu Cầu Bảo Hành", href: "/warranty-requests", icon: Wrench },
-    ],
-  },
-  {
-    label: "Danh Mục & Thành Viên",
-    items: [
-      { label: "Danh Mục SP", href: "/settings/categories", icon: Tag },
-      { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
-      { label: "Đăng Ký Flash Sale", href: "/settings/flash-sale-subscribers", icon: MailCheck },
-      { label: "FAQ / Hỏi Đáp", href: "/settings/faq", icon: HelpCircle },
-    ],
-  },
-  {
-    label: "Tài Chính & Thuế",
-    items: [
-      { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
-      { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
-      { label: "Báo Cáo Thuế", href: "/tax-report", icon: FileBarChart2 },
-    ],
-  },
-  {
     label: "Hệ Thống",
     items: [
       { label: "Nhân Viên", href: "/staff", icon: Users },
       { label: "Nhắc Nhở", href: "/reminders", icon: Bell },
-      { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
       { label: "Lịch Sử HT", href: "/activity-log", icon: History },
-      { label: "Sao Lưu Dữ Liệu", href: "/backup", icon: Database },
+      { label: "Sao Lưu", href: "/backup", icon: Database },
       { label: "Cài Đặt", href: "/settings", icon: Settings },
-      { label: "Cấu Hình SMTP", href: "/settings/smtp", icon: Mail },
+      { label: "SMTP", href: "/settings/smtp", icon: Mail },
       { label: "Mẫu Email", href: "/settings/email-templates", icon: MessageSquare },
-      { label: "Telegram Bot", href: "/settings/telegram", icon: Send },
+      { label: "Telegram", href: "/settings/telegram", icon: Send },
       { label: "Trang Cảm Ơn", href: "/settings/thank-you", icon: Heart },
     ],
   },

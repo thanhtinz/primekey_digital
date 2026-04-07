@@ -10,6 +10,8 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(), // hashed password
   name: text("name"),
+  avatarUrl: text("avatarUrl"),
+  referralCode: varchar("referralCode", { length: 50 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -62,6 +64,7 @@ export const products = mysqlTable("products", {
   warrantyMonths: int("warrantyMonths").default(0), // legacy, bảo hành nay nằm trong packages
   imageUrl: text("imageUrl"),
   notes: text("notes"),
+  isFeatured: boolean("isFeatured").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -577,3 +580,89 @@ export const customerSessions = mysqlTable("customer_sessions", {
   createdAt: timestamp("createdAt_cs").defaultNow().notNull(),
 });
 export type CustomerSession = typeof customerSessions.$inferSelect;
+
+
+// ─── Phase 13: Cart, Wishlist, Referral, Custom Fields ──────────────────────
+
+// Cart Items - giỏ hàng
+export const cartItems = mysqlTable("cart_items", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionEmail: varchar("sessionEmail", { length: 320 }).notNull(), // email khách hàng
+  productId: int("productId").notNull(),
+  packageId: int("packageId"), // gói sản phẩm (nếu có)
+  quantity: int("quantity").default(1).notNull(),
+  createdAt: timestamp("createdAt_cart").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt_cart").defaultNow().onUpdateNow().notNull(),
+});
+export type CartItem = typeof cartItems.$inferSelect;
+
+// Wishlists - yêu thích sản phẩm
+export const wishlists = mysqlTable("wishlists", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionEmail: varchar("sessionEmail", { length: 320 }).notNull(),
+  productId: int("productId").notNull(),
+  createdAt: timestamp("createdAt_wl").defaultNow().notNull(),
+});
+export type Wishlist = typeof wishlists.$inferSelect;
+
+// Referral Settings - cấu hình hệ thống giới thiệu (admin)
+export const referralSettings = mysqlTable("referral_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // owner
+  isEnabled: boolean("isEnabled").default(false),
+  rewardType: mysqlEnum("rewardType", ["percentage", "fixed", "points"]).default("fixed"),
+  rewardAmount: decimal("rewardAmount", { precision: 10, scale: 2 }).default("0"), // số tiền/% thưởng
+  minOrderAmount: decimal("minOrderAmount", { precision: 15, scale: 2 }).default("0"), // đơn tối thiểu
+  description: text("description"), // mô tả chương trình
+  createdAt: timestamp("createdAt_rs").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt_rs").defaultNow().onUpdateNow().notNull(),
+});
+export type ReferralSetting = typeof referralSettings.$inferSelect;
+
+// Referrals - lịch sử giới thiệu
+export const referrals = mysqlTable("referrals", {
+  id: int("id").autoincrement().primaryKey(),
+  referrerEmail: varchar("referrerEmail", { length: 320 }).notNull(), // người giới thiệu
+  refereeEmail: varchar("refereeEmail", { length: 320 }).notNull(), // người được giới thiệu
+  referralCode: varchar("referralCode", { length: 50 }).notNull(),
+  invoiceId: int("invoiceId"), // đơn hàng liên quan
+  rewardAmount: decimal("rewardAmount", { precision: 10, scale: 2 }).default("0"),
+  status: mysqlEnum("status_ref", ["pending", "completed", "cancelled"]).default("pending"),
+  createdAt: timestamp("createdAt_ref").defaultNow().notNull(),
+});
+export type Referral = typeof referrals.$inferSelect;
+
+// Product Custom Fields - trường tùy chỉnh cho sản phẩm
+export const productCustomFields = mysqlTable("product_custom_fields", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  fieldName: varchar("fieldName", { length: 255 }).notNull(),
+  fieldValue: text("fieldValue"),
+  sortOrder: int("sortOrder").default(0),
+});
+export type ProductCustomField = typeof productCustomFields.$inferSelect;
+
+// Product Reviews - đánh giá theo sản phẩm
+export const productReviews = mysqlTable("product_reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }),
+  rating: int("rating").notNull(), // 1-5
+  comment: text("comment"),
+  invoiceId: int("invoiceId"), // đơn hàng liên quan (chứng minh đã mua)
+  isApproved: boolean("isApproved").default(false),
+  createdAt: timestamp("createdAt_pr").defaultNow().notNull(),
+});
+export type ProductReview = typeof productReviews.$inferSelect;
+
+// Customer Referral Codes - mã giới thiệu của khách hàng
+export const customerReferralCodes = mysqlTable("customer_referral_codes", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  totalReferrals: int("totalReferrals").default(0),
+  totalRewards: decimal("totalRewards", { precision: 15, scale: 2 }).default("0"),
+  createdAt: timestamp("createdAt_crc").defaultNow().notNull(),
+});
+export type CustomerReferralCode = typeof customerReferralCodes.$inferSelect;

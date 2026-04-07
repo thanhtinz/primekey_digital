@@ -5,8 +5,11 @@ import { toast } from "sonner";
 import {
   User, Package, Star, LogOut, ShoppingBag, Shield,
   Gift, Clock, CheckCircle, XCircle, AlertCircle,
-  Wrench, Phone, Mail, ChevronRight, TrendingUp, Award
+  Wrench, Phone, Mail, ChevronRight, TrendingUp, Award,
+  Heart, ShoppingCart, Users2, Camera, Loader2
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ClientHeader } from "@/components/ClientHeader";
 
@@ -163,6 +166,22 @@ export default function MyAccount() {
               <p className="text-2xl font-bold text-purple-600">{warranties.length}</p>
               <p className="text-xs text-slate-500 mt-0.5">Bảo hành</p>
             </div>
+          </div>
+
+          {/* Quick links */}
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            <button onClick={() => navigate("/cart")} className="flex flex-col items-center gap-1.5 bg-blue-50 hover:bg-blue-100 rounded-xl p-3 transition">
+              <ShoppingCart className="h-5 w-5 text-blue-600" />
+              <span className="text-xs font-medium text-blue-700">Giỏ hàng</span>
+            </button>
+            <button onClick={() => navigate("/wishlist")} className="flex flex-col items-center gap-1.5 bg-red-50 hover:bg-red-100 rounded-xl p-3 transition">
+              <Heart className="h-5 w-5 text-red-500" />
+              <span className="text-xs font-medium text-red-600">Yêu thích</span>
+            </button>
+            <button onClick={() => navigate("/referral")} className="flex flex-col items-center gap-1.5 bg-purple-50 hover:bg-purple-100 rounded-xl p-3 transition">
+              <Users2 className="h-5 w-5 text-purple-600" />
+              <span className="text-xs font-medium text-purple-700">Giới thiệu</span>
+            </button>
           </div>
         </div>
 
@@ -322,26 +341,85 @@ export default function MyAccount() {
 
         {/* ===== Tab: Profile ===== */}
         {activeTab === "profile" && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
-            <h3 className="text-lg font-bold text-slate-800">Thông Tin Cá Nhân</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Họ và tên</span>
-                <span className="font-medium text-slate-700">{customer.name || "Chưa cập nhật"}</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Email</span>
-                <span className="font-medium text-slate-700">{customer.email}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Số điện thoại</span>
-                <span className="font-medium text-slate-700">{"Chưa cập nhật"}</span>
+          <div className="space-y-4">
+            {/* Avatar section */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Ảnh Đại Diện</h3>
+              <div className="flex items-center gap-5">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                    {customerName.charAt(0).toUpperCase()}
+                  </div>
+                  <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-md hover:bg-blue-700 transition" onClick={() => toast.info("Tính năng upload avatar sẽ sớm được hoàn thiện")}>
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-800">{customerName}</p>
+                  <p className="text-sm text-slate-500">{customer.email}</p>
+                  <p className="text-xs text-slate-400 mt-1">Nhấn vào biểu tượng camera để thay đổi ảnh</p>
+                </div>
               </div>
             </div>
-            <div className="border-t border-slate-200 pt-4 flex justify-end">
-                <button className="text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1">
+
+            {/* Personal info */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+              <h3 className="text-lg font-bold text-slate-800">Thông Tin Cá Nhân</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <span className="text-slate-500">Họ và tên</span>
+                  <span className="font-medium text-slate-700">{customer.name || "Chưa cập nhật"}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <span className="text-slate-500">Email</span>
+                  <span className="font-medium text-slate-700">{customer.email}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <span className="text-slate-500">Số điện thoại</span>
+                  <span className="font-medium text-slate-700">Chưa cập nhật</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Địa chỉ</span>
+                  <span className="font-medium text-slate-700">Chưa cập nhật</span>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-4 flex justify-end">
+                <button className="text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1" onClick={() => toast.info("Tính năng chỉnh sửa hồ sơ sẽ sớm được hoàn thiện")}>
                   Chỉnh Sửa <Wrench className="h-3.5 w-3.5" />
                 </button>
+              </div>
+            </div>
+
+            {/* Account actions */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <button onClick={() => navigate("/cart")} className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <ShoppingCart className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm font-medium text-slate-700">Giỏ hàng của tôi</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+              </button>
+              <button onClick={() => navigate("/wishlist")} className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <Heart className="h-5 w-5 text-red-500" />
+                  <span className="text-sm font-medium text-slate-700">Sản phẩm yêu thích</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+              </button>
+              <button onClick={() => navigate("/referral")} className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <Users2 className="h-5 w-5 text-purple-600" />
+                  <span className="text-sm font-medium text-slate-700">Giới thiệu bạn bè</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+              </button>
+              <button onClick={() => navigate("/track-order")} className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition">
+                <div className="flex items-center gap-3">
+                  <Package className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium text-slate-700">Tra cứu đơn hàng</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+              </button>
             </div>
           </div>
         )}

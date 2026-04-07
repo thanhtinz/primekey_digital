@@ -8,6 +8,13 @@
       "when": 1775597157694,
       "tag": "0000_illegal_meggan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1775599669705,
+      "tag": "0001_spooky_iron_monger",
+      "breakpoints": true
     }
   ]
 }

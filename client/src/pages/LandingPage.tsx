@@ -183,11 +183,13 @@ export default function LandingPage() {
     return children.map((c: any) => c.id);
   };
 
+  // Featured products for landing page
+  const featuredProducts = products.filter((p: any) => p.isFeatured);
+  
   const filteredProducts = products.filter((p: any) => {
     const matchSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
     let matchCat = true;
     if (selectedCategory) {
-      // Check if selectedCategory is a parent
       const isParent = parentCats.some((c: any) => c.id === selectedCategory);
       if (isParent) {
         const childIds = getCategoryIdsUnderParent(selectedCategory);
@@ -198,6 +200,9 @@ export default function LandingPage() {
     }
     return matchSearch && matchCat;
   });
+
+  // Show featured products on landing, or filtered if searching/filtering
+  const displayProducts = (searchQuery || selectedCategory) ? filteredProducts : (featuredProducts.length > 0 ? featuredProducts : filteredProducts.slice(0, 8));
 
   const saleMap = new Map(activeSales.map((s: any) => [s.productId, s]));
 
@@ -449,20 +454,25 @@ export default function LandingPage() {
       {/* ===== PRODUCTS GRID ===== */}
       <section className="px-4 pb-12">
         <div className="max-w-7xl mx-auto">
-          {filteredProducts.length > 0 ? (
+          {displayProducts.length > 0 ? (
             <>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-500" />
-                  {selectedCategory ? (categories.find((c: any) => c.id === selectedCategory)?.name ?? "Sản Phẩm") : "Tất Cả Sản Phẩm"}
-                  <span className="text-sm font-normal text-slate-400">({filteredProducts.length})</span>
+                  {(searchQuery || selectedCategory) ? (
+                    <><Package className="h-5 w-5 text-blue-500" />
+                    {selectedCategory ? (categories.find((c: any) => c.id === selectedCategory)?.name ?? "Sản Phẩm") : "Kết Quả Tìm Kiếm"}
+                    <span className="text-sm font-normal text-slate-400">({displayProducts.length})</span></>
+                  ) : (
+                    <><Sparkles className="h-5 w-5 text-amber-500" /> Sản Phẩm Nổi Bật
+                    <span className="text-sm font-normal text-slate-400">({displayProducts.length})</span></>
+                  )}
                 </h2>
                 <button onClick={() => navigate("/catalog")} className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 font-medium">
                   Xem tất cả <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-                {filteredProducts.slice(0, 24).map((product: any) => {
+                {displayProducts.slice(0, 24).map((product: any) => {
                   const sale = saleMap.get(product.id) as any;
                   const salePrice = sale ? Math.round(product.price * (1 - sale.discountPercent / 100)) : null;
                   const pkgPrices = (product.packages || []).map((p: any) => parseFloat(p.price));
@@ -530,13 +540,11 @@ export default function LandingPage() {
                   );
                 })}
               </div>
-              {filteredProducts.length > 24 && (
-                <div className="text-center mt-6">
-                  <Button onClick={() => navigate("/catalog")} variant="outline" className="border-slate-300 text-slate-600 hover:bg-slate-100 px-8">
-                    Xem thêm {filteredProducts.length - 24} sản phẩm
-                  </Button>
-                </div>
-              )}
+              <div className="text-center mt-8">
+                <Button onClick={() => navigate("/catalog")} variant="outline" className="border-slate-300 text-slate-600 hover:bg-slate-100 px-8 gap-2">
+                  <Package className="h-4 w-4" /> Xem tất cả sản phẩm ({products.length})
+                </Button>
+              </div>
             </>
           ) : (
             <div className="text-center py-16">
@@ -554,40 +562,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== QUICK ACCESS CARDS ===== */}
-      <section className="px-4 pb-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 mb-6">
-            <Zap className="h-5 w-5 text-yellow-500" />
-            <h2 className="text-xl font-bold text-slate-800">Tiện Ích Dành Cho Bạn</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quickCards.map(card => (
-              <button
-                key={card.href}
-                onClick={() => navigate(card.href)}
-                className={`group relative flex items-start gap-4 p-5 rounded-2xl border transition-all text-left ${card.bg} ${card.border}`}
-              >
-                <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                  <card.icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-slate-800 text-sm">{card.label}</span>
-                    {card.badge && (
-                      <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 text-xs font-medium border border-orange-200">
-                        {card.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-500 text-xs leading-relaxed">{card.desc}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* ===== FOOTER ===== */}
       <footer className="border-t border-slate-200 bg-white px-4 py-10">

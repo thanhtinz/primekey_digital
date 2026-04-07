@@ -875,3 +875,59 @@
 - [x] Cập nhật ProductCatalog filter theo danh mục 2 cấp
 - [x] Cập nhật ProductDetail hiển thị bảo hành theo gói đã chọn
 - [x] Cập nhật LandingPage hiển thị danh mục
+
+## Phase 13: Đại cải tổ - Giỏ hàng, Giới thiệu, Đánh giá SP, Custom fields, Yêu thích, Dashboard menu
+
+### Schema DB
+- [x] Tạo bảng cart_items (userId, productId, packageId, quantity)
+- [x] Tạo bảng wishlists (userId, productId)
+- [x] Tạo bảng referrals (referrerId, refereeId, code, reward, status)
+- [x] Tạo bảng referral_settings (userId, rewardType, rewardAmount, isEnabled)
+- [x] Tạo bảng product_custom_fields (productId, fieldName, fieldValue, sortOrder)
+- [x] Thêm cột isFeatured vào products
+- [x] Thêm cột avatarUrl vào users
+- [x] Thêm cột referralCode vào users
+- [x] Push schema changes
+
+### Backend Routers
+- [x] Cart router: add, remove, update quantity, list, clear
+- [x] Wishlist router: toggle, list, check
+- [x] Referral router: getMyCode, getStats, applyCode, admin config
+- [x] Custom fields router: CRUD cho admin, public get
+- [x] Products: toggle isFeatured, listFeatured public
+- [x] Reviews: di chuyển đánh giá vào từng sản phẩm (productId based)
+- [x] User profile: update avatar, update info
+
+### Dashboard Menu Redesign
+- [x] Phân nhóm menu sidebar thành các danh mục rõ ràng
+- [x] Nhóm: Quản lý bán hàng (Đơn hàng, Hóa đơn, Khách hàng)
+- [x] Nhóm: Sản phẩm (Sản phẩm, Danh mục, Flash Sale)
+- [x] Nhóm: Marketing (Coupon, Giới thiệu, Tích điểm)
+- [x] Nhóm: Cài đặt (Cài đặt chung, Thanh toán, Email/Telegram, Thuế)
+- [x] Bỏ mục đánh giá chung khỏi sidebar
+
+### Admin UI
+- [x] Trang quản lý custom fields cho sản phẩm
+- [x] Trang cấu hình hệ thống giới thiệu (reward, %)
+- [x] Toggle sản phẩm nổi bật trong danh sách sản phẩm
+
+### Client UI - Giỏ hàng
+- [x] Trang giỏ hàng (/cart) với danh sách SP, số lượng, tổng tiền
+- [x] Nút "Thêm vào giỏ" trong trang chi tiết SP
+- [x] Nút "Mua ngay" trong trang chi tiết SP (tự tạo đơn)
+- [x] Thanh toán nhiều SP cùng lúc từ giỏ hàng
+- [x] Nhập coupon và mã giới thiệu khi thanh toán
+- [x] Icon giỏ hàng trên header với badge số lượng
+
+### Client UI - Đánh giá & Yêu thích
+- [x] Đánh giá SP trực tiếp trong trang chi tiết (sau khi mua)
+- [x] Đánh giá SP từ link riêng
+- [x] Bỏ trang đánh giá chung, chuyển vào từng SP
+- [x] Nút yêu thích (heart) trong trang chi tiết và danh sách SP
+- [x] Trang danh sách yêu thích (/wishlist)
+
+### Client UI - Giới thiệu & User
+- [x] Trang giới thiệu bạn bè (/referral) với mã giới thiệu, thống kê
+- [x] Cập nhật trang user: upload avatar, thêm tính năng
+- [x] Bỏ phần "Tiện ích dành cho bạn" ngoài trang client
+- [x] Trang chính chỉ hiển thị SP nổi bật (isFeatured)

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Search, Package, Loader2, Tag, Shield, Image, Upload, X, AlertTriangle, ChevronDown, ChevronUp, Layers, FolderTree } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, Loader2, Tag, Shield, Image, Upload, X, AlertTriangle, ChevronDown, ChevronUp, Layers, FolderTree, Star, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
@@ -28,7 +28,7 @@ export default function Products() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<"info" | "packages">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "packages" | "customFields">("info");
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: "", description: "",
@@ -70,6 +70,23 @@ export default function Products() {
       utils.products.list.invalidate();
     },
     onError: (err) => toast.error(err.message || "Lỗi khi xóa"),
+  });
+
+  const toggleFeatured = trpc.products.toggleFeatured.useMutation({
+    onSuccess: () => { utils.products.list.invalidate(); toast.success("Cập nhật thành công"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const createCustomField = trpc.products.createCustomField.useMutation({
+    onSuccess: () => { utils.products.list.invalidate(); toast.success("Thêm trường thành công"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const updateCustomField = trpc.products.updateCustomField.useMutation({
+    onSuccess: () => { toast.success("Cập nhật thành công"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const deleteCustomField = trpc.products.deleteCustomField.useMutation({
+    onSuccess: () => { toast.success("Đã xóa"); },
+    onError: (err) => toast.error(err.message),
   });
 
   const createPkg = trpc.products.createPackage.useMutation({
@@ -336,6 +353,9 @@ export default function Products() {
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="flex items-center justify-center gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => toggleFeatured.mutate({ id: product.id, isFeatured: !(product as any).isFeatured })} className={`h-8 w-8 p-0 ${(product as any).isFeatured ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-500'}`} title={(product as any).isFeatured ? 'Bỏ nổi bật' : 'Đánh dấu nổi bật'}>
+                                  <Star className={`h-4 w-4 ${(product as any).isFeatured ? 'fill-yellow-500' : ''}`} />
+                                </Button>
                                 <Button variant="ghost" size="sm" onClick={() => handleEdit(product)} className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600" title="Sửa">
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -407,6 +427,15 @@ export default function Products() {
                 <span className="bg-blue-100 text-blue-600 text-xs px-1.5 py-0.5 rounded-full">{packages.length}</span>
               )}
             </button>
+            {editingId && (
+              <button
+                onClick={() => setActiveTab("customFields")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === "customFields" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                Trường Tùy Chỉnh
+              </button>
+            )}
           </div>
 
           {activeTab === "info" && (
@@ -626,8 +655,81 @@ export default function Products() {
               )}
             </div>
           )}
+          {activeTab === "customFields" && editingId && (
+            <CustomFieldsTab productId={editingId} />
+          )}
         </DialogContent>
       </Dialog>
     </DashboardLayout>
+  );
+}
+
+function CustomFieldsTab({ productId }: { productId: number }) {
+  const [newField, setNewField] = useState({ fieldName: "", fieldValue: "" });
+  const [editingField, setEditingField] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState({ fieldName: "", fieldValue: "" });
+
+  const { data: fields = [], isLoading } = trpc.products.getCustomFields.useQuery({ productId });
+  const utils = trpc.useUtils();
+
+  const createField = trpc.products.createCustomField.useMutation({
+    onSuccess: () => { utils.products.getCustomFields.invalidate({ productId }); setNewField({ fieldName: "", fieldValue: "" }); toast.success("Thêm trường thành công"); },
+    onError: (err: any) => toast.error(err.message),
+  });
+  const updateField = trpc.products.updateCustomField.useMutation({
+    onSuccess: () => { utils.products.getCustomFields.invalidate({ productId }); setEditingField(null); toast.success("Cập nhật thành công"); },
+    onError: (err: any) => toast.error(err.message),
+  });
+  const deleteField = trpc.products.deleteCustomField.useMutation({
+    onSuccess: () => { utils.products.getCustomFields.invalidate({ productId }); toast.success("Đã xóa"); },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500">Thêm các trường tùy chỉnh cho sản phẩm (VD: Hệ điều hành, Dung lượng, Màu sắc...)</p>
+
+      {/* Add new field */}
+      <div className="flex gap-2">
+        <Input placeholder="Tên trường" value={newField.fieldName} onChange={(e) => setNewField(p => ({ ...p, fieldName: e.target.value }))} className="flex-1" />
+        <Input placeholder="Giá trị" value={newField.fieldValue} onChange={(e) => setNewField(p => ({ ...p, fieldValue: e.target.value }))} className="flex-1" />
+        <Button size="sm" disabled={!newField.fieldName.trim() || createField.isPending} onClick={() => createField.mutate({ productId, fieldName: newField.fieldName, fieldValue: newField.fieldValue || undefined })} className="bg-blue-600 hover:bg-blue-700 gap-1">
+          <Plus className="h-4 w-4" /> Thêm
+        </Button>
+      </div>
+
+      {/* Existing fields */}
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>
+      ) : fields.length === 0 ? (
+        <div className="text-center py-8 text-gray-400 text-sm">Chưa có trường tùy chỉnh nào</div>
+      ) : (
+        <div className="space-y-2">
+          {fields.map((field: any) => (
+            <div key={field.id} className="flex items-center gap-2 bg-gray-50 rounded-lg p-3">
+              {editingField === field.id ? (
+                <>
+                  <Input value={editValues.fieldName} onChange={(e) => setEditValues(p => ({ ...p, fieldName: e.target.value }))} className="flex-1" />
+                  <Input value={editValues.fieldValue} onChange={(e) => setEditValues(p => ({ ...p, fieldValue: e.target.value }))} className="flex-1" />
+                  <Button size="sm" onClick={() => updateField.mutate({ id: field.id, fieldName: editValues.fieldName, fieldValue: editValues.fieldValue })} className="bg-green-600 hover:bg-green-700">Lưu</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingField(null)}>Hủy</Button>
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-gray-700 flex-1">{field.fieldName}</span>
+                  <span className="text-gray-500 flex-1">{field.fieldValue || "—"}</span>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-400 hover:text-blue-600" onClick={() => { setEditingField(field.id); setEditValues({ fieldName: field.fieldName, fieldValue: field.fieldValue || "" }); }}>
+                    <Edit className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-400 hover:text-red-600" onClick={() => deleteField.mutate({ id: field.id })}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -1322,6 +1322,148 @@ export const appRouter = router({
         await drizzleDb.delete(productPackages).where(eq(productPackages.id, input.id));
         return { success: true };
       }),
+    // Toggle featured
+    toggleFeatured: protectedProcedure
+      .input(z.object({ id: z.number(), isFeatured: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const product = await db.getProductById(input.id);
+        if (!product || product.userId !== ctx.user.id) throw new Error("Not found");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const { products: productsTable } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await drizzleDb.update(productsTable).set({ isFeatured: input.isFeatured } as any).where(eq(productsTable.id, input.id));
+        return { success: true };
+      }),
+    // List featured products (public)
+    listFeatured: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const { products: productsTable, productPackages, productCategories, users } = await import("../drizzle/schema");
+      const { eq, and, inArray } = await import("drizzle-orm");
+      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner) return [];
+      const productRows = await drizzleDb.select().from(productsTable).where(and(eq(productsTable.userId, owner.id), eq(productsTable.isFeatured as any, true)));
+      const productIds = productRows.map(p => p.id);
+      let allPackages: any[] = [];
+      if (productIds.length > 0) {
+        allPackages = await drizzleDb.select().from(productPackages).where(and(inArray(productPackages.productId, productIds), eq(productPackages.isActive, true))).orderBy(productPackages.sortOrder);
+      }
+      const allCategories = await drizzleDb.select().from(productCategories).where(eq(productCategories.userId, owner.id));
+      return productRows.map(p => ({
+        ...p,
+        packages: allPackages.filter(pkg => pkg.productId === p.id),
+        categoryName: allCategories.find(c => c.id === p.categoryId)?.name || null,
+      }));
+    }),
+    // Custom fields CRUD
+    getCustomFields: publicProcedure.input(z.object({ productId: z.number() })).query(async ({ input }) => {
+      const { productCustomFields } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(productCustomFields).where(eq(productCustomFields.productId, input.productId)).orderBy(asc(productCustomFields.sortOrder));
+    }),
+    createCustomField: protectedProcedure.input(z.object({
+      productId: z.number(),
+      fieldName: z.string().min(1),
+      fieldValue: z.string().optional(),
+      sortOrder: z.number().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const product = await db.getProductById(input.productId);
+      if (!product || product.userId !== ctx.user.id) throw new Error("Not found");
+      const { productCustomFields } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(productCustomFields).values({ productId: input.productId, fieldName: input.fieldName, fieldValue: input.fieldValue || null, sortOrder: input.sortOrder || 0 });
+      return { success: true };
+    }),
+    updateCustomField: protectedProcedure.input(z.object({
+      id: z.number(),
+      fieldName: z.string().optional(),
+      fieldValue: z.string().optional(),
+      sortOrder: z.number().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { productCustomFields } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const { id, ...updates } = input;
+      await drizzleDb.update(productCustomFields).set(updates as any).where(eq(productCustomFields.id, id));
+      return { success: true };
+    }),
+    deleteCustomField: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { productCustomFields } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(productCustomFields).where(eq(productCustomFields.id, input.id));
+      return { success: true };
+    }),
+    // Product reviews
+    getReviews: publicProcedure.input(z.object({ productId: z.number() })).query(async ({ input }) => {
+      const { productReviews } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(productReviews).where(and(eq(productReviews.productId, input.productId), eq(productReviews.isApproved, true))).orderBy(desc(productReviews.createdAt));
+    }),
+    submitReview: publicProcedure.input(z.object({
+      productId: z.number(),
+      customerEmail: z.string().email(),
+      customerName: z.string().optional(),
+      rating: z.number().min(1).max(5),
+      comment: z.string().optional(),
+      invoiceId: z.number().optional(),
+    })).mutation(async ({ input }) => {
+      const { productReviews } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(productReviews).values({ productId: input.productId, customerEmail: input.customerEmail, customerName: input.customerName || null, rating: input.rating, comment: input.comment || null, invoiceId: input.invoiceId || null, isApproved: false });
+      return { success: true };
+    }),
+    getAllReviews: protectedProcedure.input(z.object({ productId: z.number().optional() }).optional()).query(async ({ ctx, input }) => {
+      const { productReviews } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { desc, eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const conditions: any[] = [];
+      if (input?.productId) conditions.push(eq(productReviews.productId, input.productId));
+      return drizzleDb.select().from(productReviews).where(conditions.length > 0 ? and(...conditions) : undefined).orderBy(desc(productReviews.createdAt));
+    }),
+    approveReview: protectedProcedure.input(z.object({ id: z.number(), isApproved: z.boolean() })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { productReviews } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.update(productReviews).set({ isApproved: input.isApproved }).where(eq(productReviews.id, input.id));
+      return { success: true };
+    }),
+    deleteReview: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { productReviews } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(productReviews).where(eq(productReviews.id, input.id));
+      return { success: true };
+    }),
   }),
 
   // Taxes
@@ -3835,6 +3977,213 @@ export const appRouter = router({
         await drizzleDb.delete(customerSessions).where(eq(customerSessions.token, input.token));
         return { success: true };
       }),
+  }),
+
+  // ─── Cart ──────────────────────────────────────────────────────────────────
+  cart: router({
+    list: publicProcedure.input(z.object({ email: z.string().email() })).query(async ({ input }) => {
+      const { cartItems, products: productsTable, productPackages } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, inArray } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const items = await drizzleDb.select().from(cartItems).where(eq(cartItems.sessionEmail, input.email));
+      if (items.length === 0) return [];
+      const productIds = Array.from(new Set(items.map(i => i.productId)));
+      const prods = await drizzleDb.select().from(productsTable).where(inArray(productsTable.id, productIds));
+      const packageIds = items.filter(i => i.packageId).map(i => i.packageId!);
+      let pkgs: any[] = [];
+      if (packageIds.length > 0) pkgs = await drizzleDb.select().from(productPackages).where(inArray(productPackages.id, packageIds));
+      return items.map(item => ({
+        ...item,
+        product: prods.find(p => p.id === item.productId) || null,
+        package: pkgs.find(pk => pk.id === item.packageId) || null,
+      }));
+    }),
+    add: publicProcedure.input(z.object({
+      email: z.string().email(),
+      productId: z.number(),
+      packageId: z.number().nullable().optional(),
+      quantity: z.number().min(1).optional(),
+    })).mutation(async ({ input }) => {
+      const { cartItems } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      // Check existing
+      const conditions: any[] = [eq(cartItems.sessionEmail, input.email), eq(cartItems.productId, input.productId)];
+      if (input.packageId) conditions.push(eq(cartItems.packageId, input.packageId));
+      const [existing] = await drizzleDb.select().from(cartItems).where(and(...conditions)).limit(1);
+      if (existing) {
+        await drizzleDb.update(cartItems).set({ quantity: existing.quantity + (input.quantity || 1) } as any).where(eq(cartItems.id, existing.id));
+      } else {
+        await drizzleDb.insert(cartItems).values({ sessionEmail: input.email, productId: input.productId, packageId: input.packageId || null, quantity: input.quantity || 1 });
+      }
+      return { success: true };
+    }),
+    updateQuantity: publicProcedure.input(z.object({ id: z.number(), quantity: z.number().min(1) })).mutation(async ({ input }) => {
+      const { cartItems } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.update(cartItems).set({ quantity: input.quantity }).where(eq(cartItems.id, input.id));
+      return { success: true };
+    }),
+    remove: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+      const { cartItems } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(cartItems).where(eq(cartItems.id, input.id));
+      return { success: true };
+    }),
+    clear: publicProcedure.input(z.object({ email: z.string().email() })).mutation(async ({ input }) => {
+      const { cartItems } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(cartItems).where(eq(cartItems.sessionEmail, input.email));
+      return { success: true };
+    }),
+    count: publicProcedure.input(z.object({ email: z.string().email() })).query(async ({ input }) => {
+      const { cartItems } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, sql } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return 0;
+      const [result] = await drizzleDb.select({ count: sql<number>`COUNT(*)` }).from(cartItems).where(eq(cartItems.sessionEmail, input.email));
+      return result?.count || 0;
+    }),
+  }),
+
+  // ─── Wishlist ──────────────────────────────────────────────────────────────
+  wishlist: router({
+    list: publicProcedure.input(z.object({ email: z.string().email() })).query(async ({ input }) => {
+      const { wishlists, products: productsTable, productPackages } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, inArray } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const items = await drizzleDb.select().from(wishlists).where(eq(wishlists.sessionEmail, input.email));
+      if (items.length === 0) return [];
+      const productIds = items.map(i => i.productId);
+      const prods = await drizzleDb.select().from(productsTable).where(inArray(productsTable.id, productIds));
+      const pkgs = productIds.length > 0 ? await drizzleDb.select().from(productPackages).where(inArray(productPackages.productId, productIds)) : [];
+      return items.map(item => ({
+        ...item,
+        product: prods.find(p => p.id === item.productId) || null,
+        packages: pkgs.filter(pk => pk.productId === item.productId),
+      }));
+    }),
+    toggle: publicProcedure.input(z.object({ email: z.string().email(), productId: z.number() })).mutation(async ({ input }) => {
+      const { wishlists } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const [existing] = await drizzleDb.select().from(wishlists).where(and(eq(wishlists.sessionEmail, input.email), eq(wishlists.productId, input.productId))).limit(1);
+      if (existing) {
+        await drizzleDb.delete(wishlists).where(eq(wishlists.id, existing.id));
+        return { added: false };
+      } else {
+        await drizzleDb.insert(wishlists).values({ sessionEmail: input.email, productId: input.productId });
+        return { added: true };
+      }
+    }),
+    check: publicProcedure.input(z.object({ email: z.string().email(), productId: z.number() })).query(async ({ input }) => {
+      const { wishlists } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return false;
+      const [existing] = await drizzleDb.select().from(wishlists).where(and(eq(wishlists.sessionEmail, input.email), eq(wishlists.productId, input.productId))).limit(1);
+      return !!existing;
+    }),
+  }),
+
+  // ─── Referral ─────────────────────────────────────────────────────────────
+  referral: router({
+    getSettings: publicProcedure.query(async () => {
+      const { referralSettings, users } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner) return null;
+      const [s] = await drizzleDb.select().from(referralSettings).where(eq(referralSettings.userId, owner.id)).limit(1);
+      return s || null;
+    }),
+    saveSettings: protectedProcedure.input(z.object({
+      isEnabled: z.boolean(),
+      rewardType: z.enum(["percentage", "fixed", "points"]),
+      rewardAmount: z.number().min(0),
+      minOrderAmount: z.number().min(0).optional(),
+      description: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { referralSettings } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const [existing] = await drizzleDb.select().from(referralSettings).where(eq(referralSettings.userId, ctx.user.id)).limit(1);
+      if (existing) {
+        await drizzleDb.update(referralSettings).set({ ...input, rewardAmount: String(input.rewardAmount), minOrderAmount: String(input.minOrderAmount || 0) } as any).where(eq(referralSettings.id, existing.id));
+      } else {
+        await drizzleDb.insert(referralSettings).values({ userId: ctx.user.id, ...input, rewardAmount: String(input.rewardAmount), minOrderAmount: String(input.minOrderAmount || 0) } as any);
+      }
+      return { success: true };
+    }),
+    getMyCode: publicProcedure.input(z.object({ email: z.string().email() })).query(async ({ input }) => {
+      const { customerReferralCodes } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const [code] = await drizzleDb.select().from(customerReferralCodes).where(eq(customerReferralCodes.email, input.email)).limit(1);
+      if (code) return code;
+      // Auto-generate code
+      const newCode = "REF" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      await drizzleDb.insert(customerReferralCodes).values({ email: input.email, code: newCode });
+      const [created] = await drizzleDb.select().from(customerReferralCodes).where(eq(customerReferralCodes.email, input.email)).limit(1);
+      return created;
+    }),
+    getStats: publicProcedure.input(z.object({ email: z.string().email() })).query(async ({ input }) => {
+      const { referrals, customerReferralCodes } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { code: null, totalReferrals: 0, totalRewards: "0", history: [] };
+      const [codeRow] = await drizzleDb.select().from(customerReferralCodes).where(eq(customerReferralCodes.email, input.email)).limit(1);
+      if (!codeRow) return { code: null, totalReferrals: 0, totalRewards: "0", history: [] };
+      const history = await drizzleDb.select().from(referrals).where(eq(referrals.referrerEmail, input.email)).orderBy(desc(referrals.createdAt));
+      return { code: codeRow.code, totalReferrals: codeRow.totalReferrals || 0, totalRewards: codeRow.totalRewards || "0", history };
+    }),
+    applyCode: publicProcedure.input(z.object({ code: z.string(), refereeEmail: z.string().email() })).mutation(async ({ input }) => {
+      const { customerReferralCodes, referrals } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const [codeRow] = await drizzleDb.select().from(customerReferralCodes).where(eq(customerReferralCodes.code, input.code.toUpperCase())).limit(1);
+      if (!codeRow) throw new Error("Mã giới thiệu không hợp lệ");
+      if (codeRow.email === input.refereeEmail) throw new Error("Không thể tự giới thiệu");
+      await drizzleDb.insert(referrals).values({ referrerEmail: codeRow.email, refereeEmail: input.refereeEmail, referralCode: input.code.toUpperCase() });
+      await drizzleDb.update(customerReferralCodes).set({ totalReferrals: (codeRow.totalReferrals || 0) + 1 } as any).where(eq(customerReferralCodes.id, codeRow.id));
+      return { success: true, referrerEmail: codeRow.email };
+    }),
+    adminList: protectedProcedure.query(async ({ ctx }) => {
+      const { referrals } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(referrals).orderBy(desc(referrals.createdAt)).limit(200);
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;

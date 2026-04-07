@@ -2,10 +2,14 @@ import { useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Star, Shield, Zap, Package, ChevronRight, AlertTriangle,
   ShoppingCart, Heart, MessageSquare, Check, ChevronDown, ChevronUp,
-  Share2, CheckCircle, Phone, Mail
+  Share2, CheckCircle, Phone, Mail, Loader2, Info
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,10 +32,15 @@ export default function ProductDetail() {
   const [, setLocation] = useLocation();
   const productId = useMemo(() => parseInt(params.id || "0"), [params.id]);
 
+  const { customer, isLoggedIn } = useCustomerAuth();
+  const email = customer?.email || "";
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
   const [showFullDesc, setShowFullDesc] = useState(false);
-  const [liked, setLiked] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewHover, setReviewHover] = useState(0);
 
   const { data: product, isLoading } = trpc.products.getPublicById.useQuery(
     { id: productId },
@@ -39,10 +48,36 @@ export default function ProductDetail() {
   );
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
-  const { data: reviews = [] } = trpc.reviews.getPublic.useQuery();
-  const productReviews = (reviews as any[]).filter(r => r.productId === productId);
-  const avgRating = productReviews.length > 0
-    ? productReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / productReviews.length
+  const { data: productReviews = [] } = trpc.products.getReviews.useQuery({ productId }, { enabled: !!productId });
+  const { data: customFields = [] } = trpc.products.getCustomFields.useQuery({ productId }, { enabled: !!productId });
+  const { data: wishlistItems = [] } = trpc.wishlist.list.useQuery({ email }, { enabled: !!email });
+  const isInWishlist = wishlistItems.some((w: any) => w.productId === productId);
+  const utils = trpc.useUtils();
+
+  const toggleWishlist = trpc.wishlist.toggle.useMutation({
+    onSuccess: (data: any) => {
+      utils.wishlist.list.invalidate({ email });
+      toast.success(data?.added ? "\u0110\u00e3 th\u00eam v\u00e0o y\u00eau th\u00edch" : "\u0110\u00e3 b\u1ecf kh\u1ecfi y\u00eau th\u00edch");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const addToCart = trpc.cart.add.useMutation({
+    onSuccess: () => { utils.cart.count.invalidate({ email }); toast.success("\u0110\u00e3 th\u00eam v\u00e0o gi\u1ecf h\u00e0ng!"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const submitReview = trpc.products.submitReview.useMutation({
+    onSuccess: () => {
+      utils.products.getReviews.invalidate({ productId });
+      setShowReviewForm(false);
+      setReviewComment("");
+      setReviewRating(5);
+      toast.success("\u0110\u00e1nh gi\u00e1 \u0111\u00e3 \u0111\u01b0\u1ee3c g\u1eedi! Ch\u1edd duy\u1ec7t.");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const avgRating = (productReviews as any[]).length > 0
+    ? (productReviews as any[]).reduce((sum: number, r: any) => sum + r.rating, 0) / (productReviews as any[]).length
     : 0;
 
   const handleShare = async () => {
@@ -142,8 +177,8 @@ export default function ProductDetail() {
                 <button onClick={handleShare} className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm">
                   {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4 text-gray-500" />}
                 </button>
-                <button onClick={() => setLiked(!liked)} className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm">
-                  <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : "text-gray-500"}`} />
+                <button onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui l\u00f2ng \u0111\u0103ng nh\u1eadp"); }} className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm">
+                  <Heart className={`w-4 h-4 ${isInWishlist ? "fill-red-500 text-red-500" : "text-gray-500"}`} />
                 </button>
               </div>
             </div>
@@ -161,8 +196,8 @@ export default function ProductDetail() {
                 <button onClick={handleShare} className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
                   {copied ? <CheckCircle className="w-4 h-4 text-green-300" /> : <Share2 className="w-4 h-4 text-white" />}
                 </button>
-                <button onClick={() => setLiked(!liked)} className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
-                  <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
+                <button onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui l\u00f2ng \u0111\u0103ng nh\u1eadp"); }} className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
+                  <Heart className={`w-4 h-4 ${isInWishlist ? "fill-red-500 text-red-500" : "text-white"}`} />
                 </button>
               </div>
             </div>
@@ -178,7 +213,7 @@ export default function ProductDetail() {
                 <Star key={i} className={`w-4 h-4 ${i <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
               ))}
               <span className="text-sm text-gray-600 ml-1">
-                {avgRating > 0 ? avgRating.toFixed(1) : "0.0"} ({productReviews.length} đánh giá)
+                {avgRating > 0 ? avgRating.toFixed(1) : "0.0"} ({(productReviews as any[]).length} \u0111\u00e1nh gi\u00e1)
               </span>
             </div>
             <div className="flex items-center gap-1 text-emerald-600 text-sm font-medium">
@@ -323,6 +358,24 @@ export default function ProductDetail() {
           </div>
         )}
 
+        {/* Custom Fields */}
+        {(customFields as any[]).length > 0 && (
+          <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <Info className="w-4 h-4 text-blue-600" />
+              Thông số kỹ thuật
+            </h3>
+            <div className="space-y-2">
+              {(customFields as any[]).map((f: any) => (
+                <div key={f.id} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-50 last:border-0">
+                  <span className="text-gray-500">{f.fieldName}</span>
+                  <span className="font-medium text-gray-800">{f.fieldValue || "—"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Contact info */}
         {((publicInfo as any)?.companyPhone || (publicInfo as any)?.companyEmail) && (
           <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
@@ -343,14 +396,46 @@ export default function ProductDetail() {
         )}
 
         {/* Reviews */}
-        {productReviews.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+        <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-              Đánh giá ({productReviews.length})
+              Đánh giá ({(productReviews as any[]).length})
             </h3>
+            {isLoggedIn && (
+              <Button size="sm" variant="outline" onClick={() => setShowReviewForm(!showReviewForm)} className="text-xs gap-1">
+                <MessageSquare className="w-3 h-3" /> Viết đánh giá
+              </Button>
+            )}
+          </div>
+
+          {showReviewForm && (
+            <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-gray-600 mr-2">Điểm:</span>
+                {[1,2,3,4,5].map(i => (
+                  <button key={i} onMouseEnter={() => setReviewHover(i)} onMouseLeave={() => setReviewHover(0)} onClick={() => setReviewRating(i)}>
+                    <Star className={`w-6 h-6 transition ${i <= (reviewHover || reviewRating) ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
+                  </button>
+                ))}
+              </div>
+              <Textarea placeholder="Nhận xét của bạn..." value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={3} />
+              <div className="flex gap-2">
+                <Button size="sm" disabled={submitReview.isPending} onClick={() => submitReview.mutate({ productId, customerEmail: email, customerName: customer?.name || undefined, rating: reviewRating, comment: reviewComment || undefined })} className="bg-blue-600 hover:bg-blue-700 gap-1">
+                  {submitReview.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Gửi đánh giá
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowReviewForm(false)}>Hủy</Button>
+              </div>
+            </div>
+          )}
+
+          {!isLoggedIn && (productReviews as any[]).length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-4">Đăng nhập để viết đánh giá đầu tiên</p>
+          )}
+
+          {(productReviews as any[]).length > 0 && (
             <div className="space-y-3">
-              {productReviews.slice(0, 3).map((review: any) => (
+              {(productReviews as any[]).slice(0, 5).map((review: any) => (
                 <div key={review.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -364,11 +449,12 @@ export default function ProductDetail() {
                     </div>
                   </div>
                   {review.comment && <p className="text-xs text-gray-600 ml-9">{review.comment}</p>}
+                  <p className="text-[10px] text-gray-400 ml-9 mt-0.5">{new Date(review.createdAt).toLocaleDateString("vi-VN")}</p>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Sticky CTA bottom */}
@@ -387,23 +473,30 @@ export default function ProductDetail() {
               }
             </p>
           </div>
-          {(publicInfo as any)?.companyPhone ? (
-            <a
-              href={`tel:${(publicInfo as any).companyPhone}`}
-              className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-blue-600 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0"
-            >
-              <Phone className="w-4 h-4" />
-              Gọi đặt hàng
-            </a>
-          ) : (
-            <button
-              onClick={() => toast.info("Vui lòng liên hệ qua email hoặc mạng xã hội")}
-              className="flex items-center gap-2 bg-gradient-to-r from-teal-500 to-blue-600 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              Đặt hàng
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (!email) { toast.info("Vui lòng đăng nhập để thêm giỏ hàng"); return; }
+              if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+              const pkgId = selectedPackage?.id || packages[0]?.id;
+              if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
+              addToCart.mutate({ email, productId, packageId: pkgId });
+            }}
+            className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-3 rounded-xl font-semibold text-sm shadow-md hover:bg-blue-700 transition-all active:scale-95 flex-shrink-0"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Giỏ hàng
+          </button>
+          <button
+            onClick={() => {
+              if (!email) { toast.info("Vui lòng đăng nhập để mua hàng"); return; }
+              if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+              toast.info("Chức năng mua ngay sẽ sớm được hoàn thiện");
+            }}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0"
+          >
+            <Zap className="w-4 h-4" />
+            Mua ngay
+          </button>
         </div>
       </div>
     </div>
