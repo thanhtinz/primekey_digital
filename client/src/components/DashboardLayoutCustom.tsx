@@ -5,7 +5,7 @@ import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
   Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
-  RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp
+  RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -42,6 +42,7 @@ const adminNavGroups = [
     items: [
       { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
       { label: "Feedback KH", href: "/feedbacks", icon: MessageSquare },
+      { label: "Widget Đánh Giá", href: "/embed-widget", icon: Code },
     ],
   },
   {

@@ -506,7 +506,7 @@
 - [x] Import sản phẩm từ Excel (.xlsx) - cùng trang /import-excel, tab sản phẩm
 - [x] Bộ lọc ngày tạo (date range) trong AdvancedSearch - từ ngày / đến ngày
 - [x] Hóa đơn định kỳ (recurring) - trang /recurring-invoices với tạo/quản lý đơn lặp lại
-- [ ] Gộp nhiều đơn thành 1 PDF - chọn nhiều đơn cùng khách, xuất 1 PDF tổng hợp
+- [x] Gộp nhiều đơn thành 1 PDF - đã có sẵn trong InvoiceHistory (checkbox + nút Xuất PDF Gộp)
 
 ### Nhóm 3: Báo Cáo & Phân Tích
 - [x] Báo cáo doanh thu theo khách hàng - trang /advanced-reports tab Khách Hàng
@@ -516,11 +516,11 @@
 ### Nhóm 4: Trải Nghiệm Khách Hàng
 - [x] Trang tra cứu bảo hành /warranty - nhập mã đơn xem thông tin bảo hành
 - [x] Trang cảm ơn tùy chỉnh - trang /settings/thank-you chỉnh nội dung (logo, lời nhắn, social links)
-- [ ] Widget đánh giá nhúng - tạo code snippet nhúng reviews lên website ngoài
+- [x] Widget đánh giá nhúng - trang /embed-widget tạo iframe + JS snippet nhúng reviews
 
 ### Nhóm 5: Vận Hành & Tự Động Hóa
 - [x] Backup dữ liệu thủ công - trang /backup nút "Xuất toàn bộ dữ liệu" ra Excel
 - [x] Thông báo Telegram - trang /settings/telegram cấu hình bot + gửi thông báo đơn mới
 - [x] Ghi chú công khai cho khách - đã có publicNote hiển thị trên /pay và /warranty
 - [x] Tìm kiếm toàn cục nâng cao - trang /advanced-search tìm theo nhiều tiêu chí
-- [ ] Chế độ in hóa đơn - CSS print media tối ưu, in từ trình duyệt
+- [x] Chế độ in hóa đơn - CSS @media print trong index.css, nút "In Hóa Đơn" trong InvoiceDetail

@@ -43,6 +43,7 @@ const ThankYouCustom = lazy(() => import("./pages/ThankYouCustom"));
 const DataBackup = lazy(() => import("./pages/DataBackup"));
 const AdvancedSearch = lazy(() => import("./pages/AdvancedSearch"));
 const WeeklyReports = lazy(() => import("./pages/WeeklyReports"));
+const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -162,6 +163,7 @@ function Router() {
         <Route path="/backup" component={() => isAdmin ? <DataBackup /> : <ForbiddenPage />} />
         <Route path="/advanced-search" component={() => isAdmin ? <AdvancedSearch /> : <ForbiddenPage />} />
         <Route path="/advanced-reports" component={() => isAdmin ? <WeeklyReports /> : <ForbiddenPage />} />
+        <Route path="/embed-widget" component={() => isAdmin ? <EmbedWidget /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

@@ -3,7 +3,7 @@ import { useLocation, useParams } from "wouter";
 import {
   ArrowLeft, Download, Mail, Trash2, CheckCircle, Clock, XCircle,
   AlertCircle, Copy, ExternalLink, Loader2, Package, Truck, Shield,
-  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash, Pencil
+  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash, Pencil, Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -361,6 +361,10 @@ export default function InvoiceDetail() {
           <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExportingPDF} className="gap-2">
             {isExportingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Xuất PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2 print-hide">
+            <Printer className="h-4 w-4" />
+            In Hóa Đơn
           </Button>
           <Button variant="outline" size="sm" onClick={handleSendEmail} disabled={isSendingEmail} className="gap-2">
             {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
