@@ -49,7 +49,7 @@ export default function ReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen pt-14 bg-slate-50 flex items-center justify-center">
         <div className="h-8 w-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
@@ -57,7 +57,7 @@ export default function ReviewPage() {
 
   if (error || !reviewInfo) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="min-h-screen pt-14 bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-800 mb-2">Link Không Hợp Lệ</h2>
@@ -73,7 +73,7 @@ export default function ReviewPage() {
 
   if (submitted || reviewInfo.reviewSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="min-h-screen pt-14 bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="h-10 w-10 text-green-600" />
@@ -97,8 +97,8 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <ClientHeader maxWidth="max-w-2xl" />
+    <div className="min-h-screen pt-14 bg-slate-50">
+      <ClientHeader />
 
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Title */}

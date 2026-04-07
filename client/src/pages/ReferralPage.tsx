@@ -46,8 +46,8 @@ export default function ReferralPage() {
 
   if (!settings?.isEnabled) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <ClientHeader backHref="/my-account" backLabel="Tài khoản" title="Giới Thiệu Bạn Bè" />
+      <div className="min-h-screen pt-14 bg-gray-50">
+        <ClientHeader />
         <div className="container max-w-2xl mx-auto px-4 py-20 text-center text-gray-400">
           <Users2 className="h-16 w-16 mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">Chương trình giới thiệu chưa được kích hoạt</p>
@@ -58,8 +58,8 @@ export default function ReferralPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ClientHeader backHref="/my-account" backLabel="Tài khoản" title="Giới Thiệu Bạn Bè" />
+    <div className="min-h-screen pt-14 bg-gray-50">
+      <ClientHeader />
       <div className="container max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Hero */}
         <Card className="bg-gradient-to-br from-purple-600 to-blue-600 text-white border-0 shadow-lg">

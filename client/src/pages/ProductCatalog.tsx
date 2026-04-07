@@ -148,8 +148,8 @@ export default function ProductCatalog() {
   const childCats = selectedParentCat ? getChildCats(selectedParentCat) : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ClientHeader backHref="/" />
+    <div className="min-h-screen pt-14 bg-gray-50">
+      <ClientHeader />
 
       {/* ===== BREADCRUMB ===== */}
       <div className="max-w-6xl mx-auto px-4 pt-4 pb-2">
@@ -177,9 +177,9 @@ export default function ProductCatalog() {
 
       <div className="max-w-6xl mx-auto px-4 pb-8">
         {/* ===== FILTER PANEL (compact) ===== */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-4 mb-5">
           {/* Row 1: Danh mục + Thể loại */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2">
             <div>
               <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Danh mục</label>
               <select
@@ -189,11 +189,11 @@ export default function ProductCatalog() {
                   setSelectedParentCat(val);
                   setSelectedChildCat(null);
                 }}
-                className="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
               >
                 <option value="">Tất cả</option>
                 {parentCats.map((cat: any) => (
-                  <option key={cat.id} value={cat.id}>{cat.icon ? `${cat.icon} ` : ""}{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
@@ -203,64 +203,66 @@ export default function ProductCatalog() {
                 value={selectedChildCat ?? ""}
                 onChange={e => setSelectedChildCat(e.target.value ? Number(e.target.value) : null)}
                 disabled={!selectedParentCat || childCats.length === 0}
-                className="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Tất cả</option>
                 {childCats.map((cat: any) => (
-                  <option key={cat.id} value={cat.id}>{cat.icon ? `${cat.icon} ` : ""}{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Row 2: Mức giá */}
-          <div className="mb-3">
-            <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Mức giá</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                placeholder="Từ"
-                value={priceFrom}
-                onChange={e => setPriceFrom(e.target.value)}
-                className="flex-1 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <span className="text-gray-300 text-xs">~</span>
-              <input
-                type="number"
-                placeholder="Đến"
-                value={priceTo}
-                onChange={e => setPriceTo(e.target.value)}
-                className="flex-1 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+          {/* Row 2: Mức giá + Sắp xếp */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2">
+            <div>
+              <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Mức giá</label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  placeholder="Từ"
+                  value={priceFrom}
+                  onChange={e => setPriceFrom(e.target.value)}
+                  className="w-0 flex-1 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-gray-300 text-xs flex-shrink-0">~</span>
+                <input
+                  type="number"
+                  placeholder="Đến"
+                  value={priceTo}
+                  onChange={e => setPriceTo(e.target.value)}
+                  className="w-0 flex-1 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
-          </div>
-
-          {/* Row 3: Sắp xếp + Actions */}
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
+            <div>
               <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Sắp xếp</label>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as SortOption)}
-                className="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
               >
                 {(Object.entries(sortLabels) as [SortOption, string][]).map(([key, label]) => (
                   <option key={key} value={key}>{label}</option>
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Row 3: Actions */}
+          <div className="flex items-center gap-2">
             <button
               onClick={handleApplyFilter}
-              className="flex items-center justify-center gap-1.5 px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors"
             >
               <Filter className="h-3.5 w-3.5" /> Lọc
             </button>
             <button
               onClick={handleResetFilter}
-              className="flex items-center justify-center p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-lg transition-colors"
+              className="flex items-center justify-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-lg text-xs sm:text-sm transition-colors"
               title="Đặt lại"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
+              <RotateCcw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Reset</span>
             </button>
           </div>
         </div>

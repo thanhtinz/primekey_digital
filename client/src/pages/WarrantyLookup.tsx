@@ -115,7 +115,7 @@ export default function WarrantyLookup() {
   // Nếu đang loading auth
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen pt-14 bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
@@ -124,8 +124,8 @@ export default function WarrantyLookup() {
   // Nếu chưa login → redirect tới login
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <ClientHeader maxWidth="max-w-4xl" />
+      <div className="min-h-screen pt-14 bg-slate-50">
+        <ClientHeader />
         <div className="max-w-3xl mx-auto px-4 py-12">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-50 rounded-3xl mb-4 border border-blue-200">
@@ -178,8 +178,8 @@ export default function WarrantyLookup() {
   if (showRequestForm) {
     if (submitted) {
       return (
-        <div className="min-h-screen bg-slate-50">
-          <ClientHeader maxWidth="max-w-4xl" />
+        <div className="min-h-screen pt-14 bg-slate-50">
+          <ClientHeader />
           <div className="max-w-lg mx-auto px-4 py-16 text-center">
             <div className="w-20 h-20 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-10 h-10 text-emerald-500" />
@@ -202,8 +202,8 @@ export default function WarrantyLookup() {
     }
 
     return (
-      <div className="min-h-screen bg-slate-50">
-        <ClientHeader maxWidth="max-w-4xl" />
+      <div className="min-h-screen pt-14 bg-slate-50">
+        <ClientHeader />
         <div className="max-w-2xl mx-auto px-4 py-8">
           {/* Back button */}
           <button onClick={() => { setShowRequestForm(null); setDescription(""); }} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 text-sm mb-6 transition-colors">
@@ -292,8 +292,8 @@ export default function WarrantyLookup() {
 
   // ===== Danh sách SP đã mua có bảo hành =====
   return (
-    <div className="min-h-screen bg-slate-50">
-      <ClientHeader maxWidth="max-w-4xl" />
+    <div className="min-h-screen pt-14 bg-slate-50">
+      <ClientHeader />
 
       <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
         {/* Hero */}

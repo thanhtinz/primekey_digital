@@ -73,32 +73,49 @@ export default function CartPage() {
     onError: (err) => toast.error(err.message),
   });
 
+  const cartCheckout = trpc.checkout.cartCheckout.useMutation({
+    onSuccess: (data) => {
+      // Clear cart after successful checkout
+      clearCart.mutate({ email });
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
+        navigate("/track-order");
+      }
+    },
+    onError: (err) => { toast.error(err.message); setCheckingOut(false); },
+  });
+
   const handleCheckout = async () => {
     if (cartItems.length === 0) { toast.error("Giỏ hàng trống"); return; }
     setCheckingOut(true);
     try {
-      // Create invoice from cart items
       const items = cartItems.map((item: any) => ({
         productId: item.productId,
         packageId: item.packageId,
-        name: item.product?.name + (item.package ? ` - ${item.package.name}` : ""),
+        name: (item.product?.name || "SP") + (item.package ? ` - ${item.package.name}` : ""),
         quantity: item.quantity,
         unitPrice: item.package ? parseFloat(item.package.price) : 0,
+        customFieldValues: item.customFieldValues || undefined,
       }));
-      // Use the client checkout endpoint
-      // For now, show a toast that checkout is processing
-      // The actual checkout flow will create an invoice via admin backend
-      toast.info("Chức năng thanh toán giỏ hàng sẽ sớm được hoàn thiện. Vui lòng liên hệ shop để đặt hàng.");
+      cartCheckout.mutate({
+        email,
+        customerName: customer?.name || undefined,
+        items,
+        couponCode: appliedCoupon?.code || undefined,
+        referralCode: appliedReferral ? referralCode : undefined,
+        origin: window.location.origin,
+      });
     } catch (err: any) {
       toast.error(err.message || "Lỗi khi thanh toán");
-    } finally {
       setCheckingOut(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ClientHeader backHref="/catalog" backLabel="Tiếp tục mua" title="Giỏ Hàng" />
+    <div className="min-h-screen pt-14 bg-gray-50">
+      <ClientHeader />
       <div className="container max-w-5xl mx-auto px-4 py-6">
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>

@@ -312,7 +312,7 @@ export default function LandingPage() {
                       : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                   }`}
                 >
-                  {cat.icon && <span className="text-base">{cat.icon}</span>}
+                  {cat.icon && (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-base`} /> : <span className="text-base">{cat.icon}</span>)}
                   {cat.name}
                 </button>
               ))}
@@ -353,7 +353,7 @@ export default function LandingPage() {
                             className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-blue-50 transition-all min-w-[80px] group"
                           >
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center text-2xl group-hover:border-blue-300 group-hover:shadow-sm transition-all">
-                              {cat.icon || <Package className="h-6 w-6 text-slate-400" />}
+                              {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span>{cat.icon}</span>) : <Package className="h-6 w-6 text-slate-400" />}
                             </div>
                             <span className="text-xs font-medium text-slate-700 text-center line-clamp-1 max-w-[80px]">{cat.name}</span>
                           </button>

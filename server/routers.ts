@@ -1138,14 +1138,41 @@ export const appRouter = router({
         const { getDb } = await import("./db");
         const drizzleDb = await getDb();
         if (!drizzleDb) return null;
-        const { products: productsTable, productPackages } = await import("../drizzle/schema");
+        const { products: productsTable, productPackages, productCategories } = await import("../drizzle/schema");
         const { eq, and } = await import("drizzle-orm");
         const [product] = await drizzleDb.select().from(productsTable).where(eq(productsTable.id, input.id)).limit(1);
         if (!product) return null;
         const packages = await drizzleDb.select().from(productPackages)
           .where(and(eq(productPackages.productId, input.id), eq(productPackages.isActive, true)))
           .orderBy(productPackages.sortOrder);
-        return { ...product, packages };
+        // Fetch category info including parent
+        let categoryInfo: { name: string; icon: string | null; parentName: string | null; parentIcon: string | null } | null = null;
+        if (product.categoryId) {
+          const allCats = await drizzleDb.select().from(productCategories);
+          const cat = allCats.find(c => c.id === product.categoryId);
+          if (cat) {
+            const parent = cat.parentId ? allCats.find(c => c.id === cat.parentId) : null;
+            categoryInfo = {
+              name: cat.name,
+              icon: cat.icon,
+              parentName: parent?.name || null,
+              parentIcon: parent?.icon || null,
+            };
+          }
+        }
+        // Count total sold (from orders)
+        let totalSold = 0;
+        try {
+          const { invoiceItems, invoices } = await import("../drizzle/schema");
+          const allInvoices = await drizzleDb.select().from(invoices).where(eq(invoices.status, "PAID"));
+          const paidIds = allInvoices.map(inv => inv.id);
+          if (paidIds.length > 0) {
+            const allItems = await drizzleDb.select().from(invoiceItems);
+            totalSold = allItems.filter(item => paidIds.includes(item.invoiceId) && item.productId === input.id)
+              .reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
+          }
+        } catch { /* ignore */ }
+        return { ...product, packages, categoryInfo, totalSold };
       }),
 
     get: protectedProcedure
@@ -3450,10 +3477,11 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       const { productCategories } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
-      const { asc } = await import("drizzle-orm");
+      const { asc, isNotNull } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
-      return drizzleDb.select().from(productCategories).orderBy(asc(productCategories.sortOrder), asc(productCategories.name));
+      // Only return categories that have userId (belong to a shop owner)
+      return drizzleDb.select().from(productCategories).where(isNotNull(productCategories.userId)).orderBy(asc(productCategories.sortOrder), asc(productCategories.name));
     }),
     listProtected: protectedProcedure.query(async ({ ctx }) => {
       const { productCategories } = await import("../drizzle/schema");
@@ -4020,6 +4048,55 @@ export const appRouter = router({
       }),
 
     // Đăng xuất
+    updateProfile: publicProcedure
+      .input(z.object({ token: z.string(), name: z.string().optional(), phone: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Session expired");
+        // Update session name
+        if (input.name) {
+          await drizzleDb.update(customerSessions).set({ name: input.name }).where(eq(customerSessions.token, input.token));
+        }
+        // Update customer record if exists
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (customer) {
+          const updates: any = {};
+          if (input.name) updates.name = input.name;
+          if (input.phone) updates.phone = input.phone;
+          if (Object.keys(updates).length > 0) {
+            await drizzleDb.update(customers).set(updates).where(eq(customers.id, customer.id));
+          }
+        }
+        return { success: true };
+      }),
+    uploadAvatar: publicProcedure
+      .input(z.object({ token: z.string(), dataUrl: z.string() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Session expired");
+        const { storagePut } = await import("./storage");
+        const matches = input.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) throw new Error("Invalid data URL format");
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, "base64");
+        const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const fileKey = `avatars/${session.email.replace(/[^a-zA-Z0-9]/g, "_")}-${Date.now()}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, mimeType);
+        // Store avatar URL in session (we'll use a simple approach)
+        await drizzleDb.update(customerSessions).set({ name: session.name }).where(eq(customerSessions.token, input.token));
+        return { url };
+      }),
     logout: publicProcedure
       .input(z.object({ token: z.string() }))
       .mutation(async ({ input }) => {
@@ -4239,6 +4316,320 @@ export const appRouter = router({
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
       return drizzleDb.select().from(referrals).orderBy(desc(referrals.createdAt)).limit(200);
+    }),
+  }),
+
+  // ─── Checkout (Customer-facing) ────────────────────────────────────────────
+  checkout: router({
+    // Buy Now: single product purchase
+    buyNow: publicProcedure.input(z.object({
+      email: z.string().email(),
+      customerName: z.string().optional(),
+      productId: z.number(),
+      packageId: z.number(),
+      quantity: z.number().min(1).optional(),
+      couponCode: z.string().optional(),
+      referralCode: z.string().optional(),
+      customFieldValues: z.array(z.object({ fieldName: z.string(), fieldValue: z.string() })).optional(),
+      origin: z.string(), // window.location.origin
+    })).mutation(async ({ input }) => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const { products: productsTable, productPackages, customers, invoices, invoiceItems, users, paymentGatewaysConfig, coupons, couponUsages } = await import("../drizzle/schema");
+      const { eq, and, sql } = await import("drizzle-orm");
+
+      // Get owner (first user)
+      const [owner] = await drizzleDb.select().from(users).limit(1);
+      if (!owner) throw new Error("Hệ thống chưa được cấu hình");
+
+      // Get product + package
+      const [product] = await drizzleDb.select().from(productsTable).where(eq(productsTable.id, input.productId)).limit(1);
+      if (!product) throw new Error("Sản phẩm không tồn tại");
+      const [pkg] = await drizzleDb.select().from(productPackages).where(eq(productPackages.id, input.packageId)).limit(1);
+      if (!pkg) throw new Error("Gói sản phẩm không tồn tại");
+
+      const qty = input.quantity || 1;
+      const unitPrice = Number(pkg.price);
+      const subtotal = unitPrice * qty;
+
+      // Apply coupon if provided
+      let discountAmount = 0;
+      let couponId: number | null = null;
+      if (input.couponCode) {
+        const [coupon] = await drizzleDb.select().from(coupons).where(eq(coupons.code, input.couponCode.toUpperCase())).limit(1);
+        if (coupon && coupon.isActive) {
+          couponId = coupon.id;
+          if (coupon.discountType === "percent") {
+            discountAmount = subtotal * Number(coupon.discountValue) / 100;
+            const maxDisc = Number(coupon.maxDiscountAmount || 0);
+            if (maxDisc > 0 && discountAmount > maxDisc) discountAmount = maxDisc;
+          } else {
+            discountAmount = Number(coupon.discountValue);
+          }
+          if (discountAmount > subtotal) discountAmount = subtotal;
+          discountAmount = Math.round(discountAmount);
+          // Record coupon usage (defer until invoice is created)
+          await drizzleDb.update(coupons).set({ usedCount: (coupon.usedCount || 0) + 1 } as any).where(eq(coupons.id, coupon.id));
+        }
+      }
+
+      const totalAmount = Math.max(subtotal - discountAmount, 0);
+
+      // Find or create customer
+      let [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
+      if (!customer) {
+        await drizzleDb.insert(customers).values({
+          userId: owner.id,
+          name: input.customerName || input.email.split("@")[0],
+          email: input.email,
+        } as any);
+        [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
+      }
+
+      // Generate invoice number
+      const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+      const orderCode = Date.now() % 9007199254740991;
+
+      // Create invoice
+      await drizzleDb.insert(invoices).values({
+        userId: owner.id,
+        invoiceNumber,
+        customerId: customer.id,
+        currency: "VND",
+        subtotal: String(subtotal),
+        discountAmount: String(discountAmount),
+        discountCodeId: couponId,
+        taxAmount: "0",
+        totalAmount: String(totalAmount),
+        status: "CREATED",
+        paymentMethod: "PAYOS",
+        notes: input.customFieldValues ? JSON.stringify(input.customFieldValues) : null,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+      } as any);
+
+      // Get created invoice
+      const [createdInvoice] = await drizzleDb.select().from(invoices).where(eq(invoices.invoiceNumber, invoiceNumber)).limit(1);
+      if (!createdInvoice) throw new Error("Không thể tạo đơn hàng");
+
+      // Record coupon usage with invoiceId
+      if (couponId && discountAmount > 0) {
+        await drizzleDb.insert(couponUsages).values({ couponId, invoiceId: createdInvoice.id, customerEmail: input.email, discountAmount: String(discountAmount) } as any);
+      }
+
+      // Create invoice item
+      await drizzleDb.insert(invoiceItems).values({
+        invoiceId: createdInvoice.id,
+        productId: input.productId,
+        name: `${product.name} - ${pkg.name}`,
+        quantity: String(qty),
+        unitPrice: String(unitPrice),
+        discount: "0",
+        taxAmount: "0",
+        totalAmount: String(unitPrice * qty),
+      } as any);
+
+      // Create PayOS payment link
+      let paymentUrl = "";
+      let qrCode = "";
+      try {
+        const [gatewayConfig] = await drizzleDb.select().from(paymentGatewaysConfig).where(eq(paymentGatewaysConfig.userId, owner.id)).limit(1);
+        if (gatewayConfig?.payosApiKey && gatewayConfig?.payosClientId && gatewayConfig?.payosChecksumKey) {
+          const payosResult = await createPayOSPaymentLink(
+            {
+              clientId: gatewayConfig.payosClientId,
+              apiKey: gatewayConfig.payosApiKey,
+              checksumKey: gatewayConfig.payosChecksumKey,
+            },
+            {
+              orderCode,
+              amount: Math.round(totalAmount),
+              description: `TT ${invoiceNumber}`.slice(0, 25),
+              buyerName: customer.name || "Khach hang",
+              buyerEmail: customer.email || "",
+              buyerPhone: customer.phone || "",
+              buyerAddress: customer.address || "",
+              returnUrl: `${input.origin}/track-order`,
+              cancelUrl: `${input.origin}/product/${input.productId}`,
+              webhookUrl: `${input.origin}/api/webhooks/payos`,
+            }
+          );
+          paymentUrl = payosResult.checkoutUrl;
+          qrCode = payosResult.qrCode;
+          // Update invoice with payment info
+          await drizzleDb.update(invoices).set({
+            paymentUrl,
+            qrCode,
+            paymentTransactionId: String(payosResult.paymentLinkId),
+          } as any).where(eq(invoices.id, createdInvoice.id));
+        } else {
+          throw new Error("Chưa cấu hình PayOS. Vui lòng liên hệ admin.");
+        }
+      } catch (err: any) {
+        // If PayOS fails, still return invoice but without payment URL
+        console.error("[checkout.buyNow] PayOS error:", err);
+        if (!paymentUrl) {
+          throw new Error(err.message || "Không thể tạo link thanh toán. Vui lòng thử lại.");
+        }
+      }
+
+      // Send Telegram notification
+      void sendTelegramNotification(owner.id, `🛒 <b>Đơn hàng mới (Mua ngay)</b>\nMã: ${invoiceNumber}\nKhách: ${input.email}\nSP: ${product.name} - ${pkg.name}\nTổng: ${totalAmount.toLocaleString("vi-VN")}đ`);
+
+      return { success: true, invoiceId: createdInvoice.id, invoiceNumber, paymentUrl, qrCode };
+    }),
+
+    // Cart checkout: multiple products
+    cartCheckout: publicProcedure.input(z.object({
+      email: z.string().email(),
+      customerName: z.string().optional(),
+      items: z.array(z.object({
+        productId: z.number(),
+        packageId: z.number().nullable().optional(),
+        name: z.string(),
+        quantity: z.number().min(1),
+        unitPrice: z.number(),
+        customFieldValues: z.string().optional(), // JSON string
+      })),
+      couponCode: z.string().optional(),
+      referralCode: z.string().optional(),
+      origin: z.string(),
+    })).mutation(async ({ input }) => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const { customers, invoices, invoiceItems, users, paymentGatewaysConfig, coupons, couponUsages } = await import("../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+
+      if (input.items.length === 0) throw new Error("Giỏ hàng trống");
+
+      // Get owner
+      const [owner] = await drizzleDb.select().from(users).limit(1);
+      if (!owner) throw new Error("Hệ thống chưa được cấu hình");
+
+      const subtotal = input.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+
+      // Apply coupon
+      let discountAmount = 0;
+      let couponId: number | null = null;
+      if (input.couponCode) {
+        const [coupon] = await drizzleDb.select().from(coupons).where(eq(coupons.code, input.couponCode.toUpperCase())).limit(1);
+        if (coupon && coupon.isActive) {
+          couponId = coupon.id;
+          if (coupon.discountType === "percent") {
+            discountAmount = subtotal * Number(coupon.discountValue) / 100;
+            const maxDisc = Number(coupon.maxDiscountAmount || 0);
+            if (maxDisc > 0 && discountAmount > maxDisc) discountAmount = maxDisc;
+          } else {
+            discountAmount = Number(coupon.discountValue);
+          }
+          if (discountAmount > subtotal) discountAmount = subtotal;
+          discountAmount = Math.round(discountAmount);
+          await drizzleDb.update(coupons).set({ usedCount: (coupon.usedCount || 0) + 1 } as any).where(eq(coupons.id, coupon.id));
+        }
+      }
+
+      const totalAmount = Math.max(subtotal - discountAmount, 0);
+
+      // Find or create customer
+      let [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
+      if (!customer) {
+        await drizzleDb.insert(customers).values({
+          userId: owner.id,
+          name: input.customerName || input.email.split("@")[0],
+          email: input.email,
+        } as any);
+        [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
+      }
+
+      const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+      const orderCode = Date.now() % 9007199254740991;
+
+      // Create invoice
+      await drizzleDb.insert(invoices).values({
+        userId: owner.id,
+        invoiceNumber,
+        customerId: customer.id,
+        currency: "VND",
+        subtotal: String(subtotal),
+        discountAmount: String(discountAmount),
+        discountCodeId: couponId,
+        taxAmount: "0",
+        totalAmount: String(totalAmount),
+        status: "CREATED",
+        paymentMethod: "PAYOS",
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      } as any);
+
+      const [createdInvoice] = await drizzleDb.select().from(invoices).where(eq(invoices.invoiceNumber, invoiceNumber)).limit(1);
+      if (!createdInvoice) throw new Error("Không thể tạo đơn hàng");
+
+      // Record coupon usage with invoiceId
+      if (couponId && discountAmount > 0) {
+        await drizzleDb.insert(couponUsages).values({ couponId, invoiceId: createdInvoice.id, customerEmail: input.email, discountAmount: String(discountAmount) } as any);
+      }
+
+      // Create invoice items
+      for (const item of input.items) {
+        await drizzleDb.insert(invoiceItems).values({
+          invoiceId: createdInvoice.id,
+          productId: item.productId,
+          name: item.name,
+          quantity: String(item.quantity),
+          unitPrice: String(item.unitPrice),
+          discount: "0",
+          taxAmount: "0",
+          totalAmount: String(item.unitPrice * item.quantity),
+        } as any);
+      }
+
+      // Create PayOS payment link
+      let paymentUrl = "";
+      let qrCode = "";
+      try {
+        const [gatewayConfig] = await drizzleDb.select().from(paymentGatewaysConfig).where(eq(paymentGatewaysConfig.userId, owner.id)).limit(1);
+        if (gatewayConfig?.payosApiKey && gatewayConfig?.payosClientId && gatewayConfig?.payosChecksumKey) {
+          const payosResult = await createPayOSPaymentLink(
+            {
+              clientId: gatewayConfig.payosClientId,
+              apiKey: gatewayConfig.payosApiKey,
+              checksumKey: gatewayConfig.payosChecksumKey,
+            },
+            {
+              orderCode,
+              amount: Math.round(totalAmount),
+              description: `TT ${invoiceNumber}`.slice(0, 25),
+              buyerName: customer.name || "Khach hang",
+              buyerEmail: customer.email || "",
+              buyerPhone: customer.phone || "",
+              buyerAddress: customer.address || "",
+              returnUrl: `${input.origin}/track-order`,
+              cancelUrl: `${input.origin}/cart`,
+              webhookUrl: `${input.origin}/api/webhooks/payos`,
+            }
+          );
+          paymentUrl = payosResult.checkoutUrl;
+          qrCode = payosResult.qrCode;
+          await drizzleDb.update(invoices).set({
+            paymentUrl,
+            qrCode,
+            paymentTransactionId: String(payosResult.paymentLinkId),
+          } as any).where(eq(invoices.id, createdInvoice.id));
+        } else {
+          throw new Error("Chưa cấu hình PayOS. Vui lòng liên hệ admin.");
+        }
+      } catch (err: any) {
+        console.error("[checkout.cartCheckout] PayOS error:", err);
+        if (!paymentUrl) {
+          throw new Error(err.message || "Không thể tạo link thanh toán. Vui lòng thử lại.");
+        }
+      }
+
+      // Send Telegram notification
+      const itemNames = input.items.map(i => `${i.name} x${i.quantity}`).join(", ");
+      void sendTelegramNotification(owner.id, `🛒 <b>Đơn hàng mới (Giỏ hàng)</b>\nMã: ${invoiceNumber}\nKhách: ${input.email}\nSP: ${itemNames}\nTổng: ${totalAmount.toLocaleString("vi-VN")}đ`);
+
+      return { success: true, invoiceId: createdInvoice.id, invoiceNumber, paymentUrl, qrCode };
     }),
   }),
 });

@@ -35,8 +35,8 @@ export default function WishlistPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ClientHeader backHref="/catalog" backLabel="Xem sản phẩm" title="Yêu Thích" />
+    <div className="min-h-screen pt-14 bg-gray-50">
+      <ClientHeader />
       <div className="container max-w-4xl mx-auto px-4 py-6">
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>

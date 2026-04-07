@@ -987,3 +987,32 @@
 - [x] Client: hiển thị danh sách SP đã mua có bảo hành (ảnh, tên, gói, thời hạn BH)
 - [x] Client: nút "Yêu cầu bảo hành" trên mỗi SP → tạo đơn BH theo quy trình
 - [x] Client: bỏ form tìm kiếm SP bảo hành cũ
+
+## Phase 18: Đồng bộ header + Fix bugs + Mua ngay + Thanh toán
+
+### Header đồng bộ
+- [x] Đồng bộ header các trang client với trang chính (logo + cart icon + hamburger menu)
+- [x] Bỏ header cũ ở các trang con (ProductCatalog, ProductDetail, TrackOrder, v.v.)
+
+### Fix bugs
+- [x] Fix upload avatar không hoạt động
+- [x] Xóa sạch mockup data danh mục còn sót trong DB (hệ thống tự tạo) - fix: filter by userId
+- [x] Fix mức giá bộ lọc trang catalog bị dài hơn card (mobile)
+
+### Icon CSS cho danh mục
+- [x] Thêm FontAwesome CDN
+- [x] Admin: chọn icon CSS/FontAwesome khi tạo/sửa danh mục
+- [x] Client: hiển thị icon FontAwesome thay vì icon thường
+
+### Redesign trang chi tiết SP
+- [x] Header: ảnh SP lớn trên nền gradient
+- [x] Tên SP + nút share + nút yêu thích (heart đỏ)
+- [x] Rating stars + số đánh giá
+- [x] Tags danh mục (từ categoryInfo)
+- [x] Badge "Đã bán X" (từ totalSold)
+- [x] Danh sách gói SP: mỗi gói có ảnh nhỏ, tên, "Giao ngay", giá
+
+### Hoàn thiện mua ngay + thanh toán giỏ hàng
+- [x] Nút "Mua ngay" tạo đơn hàng thực tế (tạo invoice + redirect thanh toán PayOS)
+- [x] Giỏ hàng: thanh toán nhiều SP cùng lúc (tạo invoice tổng + redirect thanh toán PayOS)
+- [x] Tích hợp coupon + mã giới thiệu khi thanh toán

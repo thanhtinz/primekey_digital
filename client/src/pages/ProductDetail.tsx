@@ -16,7 +16,7 @@ import { toast } from "sonner";
 const formatVND = (val: string | number | null | undefined) => {
   if (!val) return "0 ₫";
   const num = typeof val === "string" ? parseFloat(val) : val;
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(num);
+  return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
 };
 
 const getDiscountPercent = (price: string | number, originalPrice: string | number | null | undefined) => {
@@ -26,6 +26,12 @@ const getDiscountPercent = (price: string | number, originalPrice: string | numb
   if (op <= p) return 0;
   return Math.round((1 - p / op) * 100);
 };
+
+function CategoryIcon({ icon, className = "" }: { icon: string | null | undefined; className?: string }) {
+  if (!icon) return null;
+  if (icon.startsWith("fa-")) return <i className={`${icon} ${className}`} />;
+  return <span className={className}>{icon}</span>;
+}
 
 export default function ProductDetail() {
   const params = useParams<{ id: string }>();
@@ -59,12 +65,12 @@ export default function ProductDetail() {
   const toggleWishlist = trpc.wishlist.toggle.useMutation({
     onSuccess: (data: any) => {
       utils.wishlist.list.invalidate({ email });
-      toast.success(data?.added ? "\u0110\u00e3 th\u00eam v\u00e0o y\u00eau th\u00edch" : "\u0110\u00e3 b\u1ecf kh\u1ecfi y\u00eau th\u00edch");
+      toast.success(data?.added ? "Đã thêm vào yêu thích" : "Đã bỏ khỏi yêu thích");
     },
     onError: (err) => toast.error(err.message),
   });
   const addToCart = trpc.cart.add.useMutation({
-    onSuccess: () => { utils.cart.count.invalidate({ email }); toast.success("\u0110\u00e3 th\u00eam v\u00e0o gi\u1ecf h\u00e0ng!"); },
+    onSuccess: () => { utils.cart.count.invalidate({ email }); toast.success("Đã thêm vào giỏ hàng!"); },
     onError: (err) => toast.error(err.message),
   });
   const submitReview = trpc.products.submitReview.useMutation({
@@ -73,10 +79,22 @@ export default function ProductDetail() {
       setShowReviewForm(false);
       setReviewComment("");
       setReviewRating(5);
-      toast.success("\u0110\u00e1nh gi\u00e1 \u0111\u00e3 \u0111\u01b0\u1ee3c g\u1eedi! Ch\u1edd duy\u1ec7t.");
+      toast.success("Đánh giá đã được gửi! Chờ duyệt.");
     },
     onError: (err) => toast.error(err.message),
   });
+  const buyNow = trpc.checkout.buyNow.useMutation({
+    onSuccess: (data) => {
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
+        setLocation("/track-order");
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const [buyingNow, setBuyingNow] = useState(false);
 
   const avgRating = (productReviews as any[]).length > 0
     ? (productReviews as any[]).reduce((sum: number, r: any) => sum + r.rating, 0) / (productReviews as any[]).length
@@ -93,10 +111,26 @@ export default function ProductDetail() {
     }
   };
 
+  // Validate custom fields helper
+  const validateCustomFields = () => {
+    const cf = customFields as any[];
+    if (cf.length > 0) {
+      const missing = cf.some((f: any) => !customFieldInputs[f.fieldName]?.trim());
+      if (missing) { setShowCustomFieldError(true); toast.error("Vui lòng điền đầy đủ thông tin yêu cầu"); return false; }
+    }
+    setShowCustomFieldError(false);
+    return true;
+  };
+
+  const getCustomFieldValues = () => {
+    const cf = customFields as any[];
+    return cf.length > 0 ? cf.map((f: any) => ({ fieldName: f.fieldName, fieldValue: customFieldInputs[f.fieldName] || "" })) : undefined;
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <ClientHeader backHref="/catalog" />
+      <div className="min-h-screen pt-14 bg-gray-50">
+        <ClientHeader />
         <div className="max-w-2xl mx-auto px-4 py-8 space-y-4 animate-pulse">
           <div className="h-64 bg-gray-200 rounded-2xl" />
           <div className="h-8 bg-gray-200 rounded w-3/4" />
@@ -109,8 +143,8 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <ClientHeader backHref="/catalog" />
+      <div className="min-h-screen pt-14 bg-gray-50">
+        <ClientHeader />
         <div className="text-center py-20">
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-700 mb-2">Không tìm thấy sản phẩm</h2>
@@ -124,6 +158,8 @@ export default function ProductDetail() {
 
   const packages = (product as any).packages || [];
   const selectedPackage = packages.find((p: any) => p.id === selectedPackageId) || null;
+  const categoryInfo = (product as any).categoryInfo;
+  const totalSold = (product as any).totalSold || 0;
 
   const minPrice = packages.length > 0
     ? Math.min(...packages.map((p: any) => parseFloat(p.price)))
@@ -137,87 +173,129 @@ export default function ProductDetail() {
   const displayOriginalPrice = selectedPackage?.originalPrice ? parseFloat(selectedPackage.originalPrice) : null;
   const discount = displayOriginalPrice ? getDiscountPercent(displayPrice, displayOriginalPrice) : 0;
 
+  // Build category tags
+  const categoryTags: { name: string; icon: string | null }[] = [];
+  if (categoryInfo) {
+    if (categoryInfo.parentName) {
+      categoryTags.push({ name: categoryInfo.parentName, icon: categoryInfo.parentIcon });
+    }
+    categoryTags.push({ name: categoryInfo.name, icon: categoryInfo.icon });
+  } else if (product.category) {
+    categoryTags.push({ name: product.category, icon: null });
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ClientHeader backHref="/catalog" />
+    <div className="min-h-screen pt-14 bg-gray-50">
+      <ClientHeader />
 
-      <div className="max-w-2xl mx-auto px-4 pb-24">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-gray-500 py-3 flex-wrap">
-          <button onClick={() => setLocation("/")} className="hover:text-blue-600">Trang chủ</button>
-          <ChevronRight className="w-3 h-3" />
-          <button onClick={() => setLocation("/catalog")} className="hover:text-blue-600">Sản phẩm</button>
-          {product.category && (
-            <>
-              <ChevronRight className="w-3 h-3" />
-              <span className="text-gray-600">{product.category}</span>
-            </>
-          )}
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-800 font-medium truncate max-w-[120px]">{product.name}</span>
-        </nav>
+      {/* ===== HERO SECTION - Gradient background with product image ===== */}
+      <div className="bg-gradient-to-br from-teal-600 via-teal-500 to-cyan-500 relative overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
 
-        {/* Hero image with gradient overlay */}
-        <div className="relative rounded-2xl overflow-hidden mb-4 shadow-md">
-          {(product as any).imageUrl ? (
-            <div className="relative">
-              <img src={(product as any).imageUrl} alt={product.name} className="w-full aspect-[16/9] object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
-                {product.category && (
-                  <span className="bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                    {product.category}
-                  </span>
-                )}
-                {discount > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                    GIẢM {discount}%
-                  </span>
-                )}
-              </div>
-              <div className="absolute top-3 right-3 flex gap-2">
-                <button onClick={handleShare} className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm">
-                  {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4 text-gray-500" />}
-                </button>
-                <button onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui l\u00f2ng \u0111\u0103ng nh\u1eadp"); }} className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm">
-                  <Heart className={`w-4 h-4 ${isInWishlist ? "fill-red-500 text-red-500" : "text-gray-500"}`} />
-                </button>
-              </div>
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-white/70 mb-4 flex-wrap">
+            <button onClick={() => setLocation("/")} className="hover:text-white transition-colors">Trang chủ</button>
+            <ChevronRight className="w-3 h-3" />
+            <button onClick={() => setLocation("/catalog")} className="hover:text-white transition-colors">Sản phẩm</button>
+            {categoryInfo?.parentName && (
+              <>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-white/80">{categoryInfo.parentName}</span>
+              </>
+            )}
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium truncate max-w-[120px]">{product.name}</span>
+          </nav>
+
+          {/* Product image card */}
+          <div className="flex justify-center">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-[280px] aspect-square flex items-center justify-center p-2">
+              {(product as any).imageUrl ? (
+                <img
+                  src={(product as any).imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center">
+                  <Package className="w-20 h-20 text-gray-300" />
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="w-full aspect-[16/9] bg-gradient-to-br from-teal-400 via-blue-500 to-indigo-600 flex items-center justify-center relative">
-              <Package className="w-20 h-20 text-white/60" />
-              <div className="absolute top-3 left-3 flex gap-2">
-                {product.category && (
-                  <span className="bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full border border-white/30">
-                    {product.category}
-                  </span>
-                )}
-              </div>
-              <div className="absolute top-3 right-3 flex gap-2">
-                <button onClick={handleShare} className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
-                  {copied ? <CheckCircle className="w-4 h-4 text-green-300" /> : <Share2 className="w-4 h-4 text-white" />}
-                </button>
-                <button onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui l\u00f2ng \u0111\u0103ng nh\u1eadp"); }} className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
-                  <Heart className={`w-4 h-4 ${isInWishlist ? "fill-red-500 text-red-500" : "text-white"}`} />
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
+      </div>
 
-        {/* Product name + meta */}
-        <div className="mb-4">
-          <h1 className="text-xl font-bold text-gray-900 mb-2 leading-tight">{product.name}</h1>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1">
+      {/* ===== PRODUCT INFO SECTION ===== */}
+      <div className="max-w-2xl mx-auto px-4 -mt-2 relative z-10 pb-28">
+        <div className="bg-white rounded-t-3xl shadow-sm border border-gray-100 px-5 pt-5 pb-4">
+          {/* Product name + action buttons */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h1 className="text-xl font-bold text-gray-900 leading-tight flex-1">{product.name}</h1>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Cashback badge */}
+              <div className="relative">
+                <button onClick={handleShare} className="w-10 h-10 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center group hover:bg-green-100 transition-colors" title="Chia sẻ">
+                  {copied ? <CheckCircle className="w-5 h-5 text-green-500" /> : <Share2 className="w-5 h-5 text-green-600" />}
+                </button>
+              </div>
+              {/* Wishlist button */}
+              <button
+                onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui lòng đăng nhập"); }}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                  isInWishlist
+                    ? "bg-red-500 text-white shadow-md shadow-red-200"
+                    : "bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-400"
+                }`}
+                title={isInWishlist ? "Bỏ yêu thích" : "Yêu thích"}
+              >
+                <Heart className={`w-5 h-5 ${isInWishlist ? "fill-white" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Rating */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-0.5">
               {[1,2,3,4,5].map(i => (
                 <Star key={i} className={`w-4 h-4 ${i <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
               ))}
-              <span className="text-sm text-gray-600 ml-1">
-                {avgRating > 0 ? avgRating.toFixed(1) : "0.0"} ({(productReviews as any[]).length} \u0111\u00e1nh gi\u00e1)
-              </span>
             </div>
+            <span className="text-sm font-semibold text-gray-700">
+              {avgRating > 0 ? avgRating.toFixed(1) : "0.0"}
+            </span>
+            <span className="text-sm text-gray-400">
+              ({(productReviews as any[]).length} đánh giá)
+            </span>
+          </div>
+
+          {/* Category tags */}
+          {categoryTags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {categoryTags.map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-700"
+                >
+                  {tag.icon && <CategoryIcon icon={tag.icon} className="text-sm" />}
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Sold count badge */}
+          {totalSold > 0 && (
+            <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium px-3 py-1 rounded-full mb-3">
+              <i className="fa-solid fa-fire text-amber-500" /> Đã bán {totalSold}
+            </div>
+          )}
+
+          {/* Quick info badges */}
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1 text-emerald-600 text-sm font-medium">
               <Zap className="w-4 h-4" /> Giao ngay
             </div>
@@ -232,98 +310,72 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Price display */}
-        <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-          <div className="flex items-baseline gap-3 mb-1">
-            <span className="text-2xl font-bold text-red-500">
-              {selectedPackage
-                ? formatVND(displayPrice)
-                : hasMultiPrice
-                  ? `${formatVND(minPrice)} ~ ${formatVND(maxPrice)}`
-                  : formatVND(displayPrice)
-              }
-            </span>
-            {displayOriginalPrice && (
-              <span className="text-gray-400 text-sm line-through">{formatVND(displayOriginalPrice)}</span>
-            )}
-            {discount > 0 && (
-              <span className="bg-red-100 text-red-500 text-xs font-bold px-2 py-0.5 rounded-full">-{discount}%</span>
-            )}
-          </div>
-          {!selectedPackage && hasMultiPrice && (
-            <p className="text-xs text-gray-500">Chọn gói bên dưới để xem giá cụ thể</p>
-          )}
-        </div>
-
-        {/* Package selection */}
+        {/* ===== PACKAGE LIST - Card style matching reference ===== */}
         {packages.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <Package className="w-4 h-4 text-blue-600" />
-              Chọn gói
-            </h3>
-            {packages.length === 0 ? (
-              <div className="text-center py-6 text-gray-400">
-                <Package className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">Sản phẩm này hiện chưa có gói nào</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {packages.map((pkg: any) => {
-                  const pkgDiscount = getDiscountPercent(pkg.price, pkg.originalPrice);
-                  const isSelected = selectedPackageId === pkg.id;
-                  return (
-                    <button
-                      key={pkg.id}
-                      onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                      className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
-                        isSelected
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 bg-gray-50 hover:border-blue-300"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            isSelected ? "border-blue-500 bg-blue-500" : "border-gray-300"
-                          }`}>
-                            {isSelected && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-800 text-sm">{pkg.name}</span>
-                            {pkg.description && (
-                              <p className="text-xs text-gray-500 mt-0.5">{pkg.description}</p>
-                            )}
-                            {(pkg.warrantyMonths ?? 0) > 0 && (
-                              <p className="text-xs text-blue-500 mt-0.5 flex items-center gap-0.5">
-                                <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths} tháng
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0 ml-3">
-                          <div className="font-bold text-red-500 text-sm">{formatVND(pkg.price)}</div>
-                          {pkg.originalPrice && (
-                            <div className="flex items-center gap-1 justify-end">
-                              <span className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</span>
-                              {pkgDiscount > 0 && (
-                                <span className="text-xs bg-red-100 text-red-500 px-1 rounded font-medium">-{pkgDiscount}%</span>
-                              )}
-                            </div>
+          <div className="mt-3">
+            <div className="space-y-2">
+              {packages.map((pkg: any) => {
+                const pkgDiscount = getDiscountPercent(pkg.price, pkg.originalPrice);
+                const isSelected = selectedPackageId === pkg.id;
+                return (
+                  <button
+                    key={pkg.id}
+                    onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
+                    className={`w-full text-left bg-white rounded-2xl border-2 p-4 transition-all shadow-sm hover:shadow-md ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50/30"
+                        : "border-gray-200 hover:border-blue-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Package thumbnail */}
+                      <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                        {(product as any).imageUrl ? (
+                          <img src={(product as any).imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-8 h-8 text-gray-300" />
+                        )}
+                      </div>
+                      {/* Package info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{pkg.name}</h4>
+                        {pkg.description && (
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 font-medium">
+                            <Zap className="w-3 h-3" /> Giao ngay
+                          </span>
+                          {(pkg.warrantyMonths ?? 0) > 0 && (
+                            <span className="text-xs text-blue-500 flex items-center gap-0.5">
+                              <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths}T
+                            </span>
                           )}
                         </div>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      {/* Price */}
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <div className="font-bold text-red-500 text-base">{formatVND(pkg.price)}</div>
+                        {pkg.originalPrice && (
+                          <div className="flex items-center gap-1 justify-end">
+                            <span className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</span>
+                            {pkgDiscount > 0 && (
+                              <span className="text-xs bg-red-100 text-red-500 px-1 rounded font-medium">-{pkgDiscount}%</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
         {/* Notes / Lưu ý */}
         {(product as any).notes && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-3">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
               <div>
@@ -336,7 +388,7 @@ export default function ProductDetail() {
 
         {/* Description */}
         {product.description && (
-          <div className="bg-white rounded-2xl overflow-hidden mb-4 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-2xl overflow-hidden mt-3 shadow-sm border border-gray-100">
             <button
               onClick={() => setShowFullDesc(!showFullDesc)}
               className="w-full flex items-center justify-between p-4"
@@ -362,7 +414,7 @@ export default function ProductDetail() {
 
         {/* Custom Fields - User Input Required */}
         {(customFields as any[]).length > 0 && (
-          <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-2xl p-4 mt-3 shadow-sm border border-gray-100">
             <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-600" />
               Thông tin cần điền
@@ -394,7 +446,7 @@ export default function ProductDetail() {
 
         {/* Contact info */}
         {((publicInfo as any)?.companyPhone || (publicInfo as any)?.companyEmail) && (
-          <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-2xl p-4 mt-3 shadow-sm border border-gray-100">
             <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Liên hệ tư vấn</p>
             <div className="flex flex-col gap-2">
               {(publicInfo as any).companyPhone && (
@@ -412,7 +464,7 @@ export default function ProductDetail() {
         )}
 
         {/* Reviews */}
-        <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl p-4 mt-3 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -493,17 +545,10 @@ export default function ProductDetail() {
             onClick={() => {
               if (!email) { toast.info("Vui lòng đăng nhập để thêm giỏ hàng"); return; }
               if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
-              // Validate custom fields
-              const cf = customFields as any[];
-              if (cf.length > 0) {
-                const missing = cf.some((f: any) => !customFieldInputs[f.fieldName]?.trim());
-                if (missing) { setShowCustomFieldError(true); toast.error("Vui lòng điền đầy đủ thông tin yêu cầu"); return; }
-              }
-              setShowCustomFieldError(false);
+              if (!validateCustomFields()) return;
               const pkgId = selectedPackage?.id || packages[0]?.id;
               if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
-              const cfValues = cf.length > 0 ? cf.map((f: any) => ({ fieldName: f.fieldName, fieldValue: customFieldInputs[f.fieldName] || "" })) : undefined;
-              addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: cfValues });
+              addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: getCustomFieldValues() });
             }}
             className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-3 rounded-xl font-semibold text-sm shadow-md hover:bg-blue-700 transition-all active:scale-95 flex-shrink-0"
           >
@@ -511,22 +556,27 @@ export default function ProductDetail() {
             Giỏ hàng
           </button>
           <button
+            disabled={buyNow.isPending}
             onClick={() => {
               if (!email) { toast.info("Vui lòng đăng nhập để mua hàng"); return; }
               if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
-              // Validate custom fields
-              const cf = customFields as any[];
-              if (cf.length > 0) {
-                const missing = cf.some((f: any) => !customFieldInputs[f.fieldName]?.trim());
-                if (missing) { setShowCustomFieldError(true); toast.error("Vui lòng điền đầy đủ thông tin yêu cầu"); return; }
-              }
-              setShowCustomFieldError(false);
-              toast.info("Chức năng mua ngay sẽ sớm được hoàn thiện");
+              if (!validateCustomFields()) return;
+              const pkgId = selectedPackage?.id || packages[0]?.id;
+              if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
+              buyNow.mutate({
+                email,
+                customerName: customer?.name || undefined,
+                productId,
+                packageId: pkgId,
+                quantity: 1,
+                customFieldValues: getCustomFieldValues(),
+                origin: window.location.origin,
+              });
             }}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0"
+            className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0 disabled:opacity-60"
           >
-            <Zap className="w-4 h-4" />
-            Mua ngay
+            {buyNow.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            {buyNow.isPending ? "Đang xử lý..." : "Mua ngay"}
           </button>
         </div>
       </div>

@@ -41,8 +41,8 @@ export default function LoyaltyPage() {
   const history = loyaltyData?.history || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-white text-slate-800">
-      <ClientHeader maxWidth="max-w-5xl" />
+    <div className="min-h-screen pt-14 bg-gradient-to-br from-white via-slate-50 to-white text-slate-800">
+      <ClientHeader />
 
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}

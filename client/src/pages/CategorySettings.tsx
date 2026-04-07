@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, FolderTree, ChevronRight, Loader2, Layers } from "lucide-react";
+import FontAwesomeIconPicker, { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
 
 interface CategoryForm {
   name: string;
@@ -16,6 +17,15 @@ interface CategoryForm {
 }
 
 const defaultForm: CategoryForm = { name: "", icon: "", parentId: null, sortOrder: 0 };
+
+function CategoryIcon({ icon, size = "md" }: { icon?: string | null; size?: "sm" | "md" | "lg" }) {
+  const sizeMap = { sm: "text-sm", md: "text-lg", lg: "text-2xl" };
+  if (!icon) return null;
+  if (isFontAwesomeIcon(icon)) {
+    return <FontAwesomeIcon iconClass={icon} className={`${sizeMap[size]} text-blue-600`} />;
+  }
+  return <span className={size === "sm" ? "text-sm" : size === "lg" ? "text-2xl" : "text-lg"}>{icon}</span>;
+}
 
 export default function CategorySettings() {
   const utils = trpc.useUtils();
@@ -130,8 +140,12 @@ export default function CategorySettings() {
                   <div key={parent.id}>
                     {/* Parent row */}
                     <div className="flex items-center gap-3 px-5 py-3.5 bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
-                      <div className="h-9 w-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg flex-shrink-0">
-                        {parent.icon || parent.name.charAt(0).toUpperCase()}
+                      <div className="h-9 w-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        {parent.icon ? (
+                          <CategoryIcon icon={parent.icon} size="md" />
+                        ) : (
+                          <span className="text-blue-600 font-bold text-lg">{parent.name.charAt(0).toUpperCase()}</span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -157,8 +171,12 @@ export default function CategorySettings() {
                         {children.map((child: any) => (
                           <div key={child.id} className="flex items-center gap-3 pl-12 pr-5 py-2.5 hover:bg-blue-50/30 transition-colors border-t border-gray-50">
                             <ChevronRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                            <div className="h-7 w-7 rounded-md bg-gray-100 flex items-center justify-center text-gray-500 text-sm flex-shrink-0">
-                              {child.icon || <Layers className="w-3.5 h-3.5" />}
+                            <div className="h-7 w-7 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              {child.icon ? (
+                                <CategoryIcon icon={child.icon} size="sm" />
+                              ) : (
+                                <Layers className="w-3.5 h-3.5 text-gray-500" />
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <span className="text-gray-700 text-sm font-medium">{child.name}</span>
@@ -200,9 +218,14 @@ export default function CategorySettings() {
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={form.parentId ? "VD: Netflix, Spotify..." : "VD: Giải trí, Phần mềm..."} className="mt-1.5" />
             </div>
             <div>
-              <Label className="text-sm font-medium">Icon / Emoji</Label>
-              <Input value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="VD: 🎬 hoặc 💻" className="mt-1.5" maxLength={10} />
-              <p className="text-xs text-gray-400 mt-1">Nhập emoji hoặc ký tự đại diện cho danh mục</p>
+              <Label className="text-sm font-medium">Icon danh mục</Label>
+              <div className="mt-1.5">
+                <FontAwesomeIconPicker
+                  value={form.icon}
+                  onChange={(iconClass) => setForm(f => ({ ...f, icon: iconClass }))}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Chọn icon FontAwesome hoặc nhập emoji tùy ý</p>
             </div>
             {!form.parentId && !editingId && (
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-600">

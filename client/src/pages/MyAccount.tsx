@@ -46,6 +46,48 @@ export default function MyAccount() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const { customer, token, logout, isLoading: authLoading } = useCustomerAuth();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+
+  const uploadAvatarMutation = trpc.customer.uploadAvatar.useMutation({
+    onSuccess: (data) => {
+      setAvatarUrl(data.url);
+      toast.success("Cập nhật ảnh đại diện thành công!");
+    },
+    onError: () => toast.error("Đã xảy ra lỗi khi upload ảnh"),
+  });
+
+  const updateProfileMutation = trpc.customer.updateProfile.useMutation({
+    onSuccess: () => {
+      toast.success("Cập nhật hồ sơ thành công!");
+      setIsEditingProfile(false);
+    },
+    onError: () => toast.error("Đã xảy ra lỗi"),
+  });
+
+  const handleAvatarUpload = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file || !token) return;
+      if (file.size > 2 * 1024 * 1024) { toast.error("Ảnh tối đa 2MB"); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadAvatarMutation.mutate({ token, dataUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  const handleSaveProfile = () => {
+    if (!token) return;
+    updateProfileMutation.mutate({ token, name: editName || undefined, phone: editPhone || undefined });
+  };
 
   const { data: orders = [], isLoading: ordersLoading } = trpc.customer.myOrders.useQuery(
     { token: token! },
@@ -77,7 +119,7 @@ export default function MyAccount() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen pt-14 bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
           <p className="text-slate-500">Đang tải...</p>
@@ -115,21 +157,8 @@ export default function MyAccount() {
   const referralCode = customer.email.split("@")[0].toUpperCase().slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <ClientHeader
-        maxWidth="max-w-3xl"
-        title="Tài Khoản"
-        rightSlot={
-          <button
-            onClick={handleLogout}
-            disabled={logoutMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 text-xs font-medium transition border border-red-200 disabled:opacity-50"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Thoát</span>
-          </button>
-        }
-      />
+    <div className="min-h-screen pt-14 bg-slate-50">
+      <ClientHeader />
 
       <div className="max-w-3xl mx-auto px-4 py-5 space-y-4">
         {/* ===== Profile Hero ===== */}
@@ -591,17 +620,25 @@ export default function MyAccount() {
               <h3 className="text-sm font-semibold text-slate-800 mb-4">Ảnh đại diện</h3>
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                    {customerName.charAt(0).toUpperCase()}
-                  </div>
-                  <button className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-md hover:bg-blue-700 transition" onClick={() => toast.info("Tính năng upload avatar sẽ sớm được hoàn thiện")}>
-                    <Camera className="h-3 w-3" />
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-xl object-cover shadow-lg" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                      {customerName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <button
+                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-md hover:bg-blue-700 transition disabled:opacity-50"
+                    onClick={handleAvatarUpload}
+                    disabled={uploadAvatarMutation.isPending}
+                  >
+                    {uploadAvatarMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
                   </button>
                 </div>
                 <div>
                   <p className="font-semibold text-slate-800 text-sm">{customerName}</p>
                   <p className="text-xs text-slate-400">{customer.email}</p>
-                  <p className="text-[10px] text-slate-300 mt-1">Nhấn camera để thay đổi</p>
+                  <p className="text-[10px] text-slate-300 mt-1">Nhấn camera để thay đổi (định dạng JPG/PNG, tối đa 2MB)</p>
                 </div>
               </div>
             </div>
@@ -610,25 +647,51 @@ export default function MyAccount() {
             <div className="bg-white border border-slate-200 rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-slate-800">Thông tin cá nhân</h3>
-                <button className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1" onClick={() => toast.info("Tính năng chỉnh sửa hồ sơ sẽ sớm được hoàn thiện")}>
-                  <Wrench className="h-3 w-3" /> Chỉnh sửa
-                </button>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { label: "Họ và tên", value: customer.name || "Chưa cập nhật", icon: User },
-                  { label: "Email", value: customer.email, icon: Mail },
-                  { label: "Số điện thoại", value: "Chưa cập nhật", icon: Phone },
-                ].map((field) => (
-                  <div key={field.label} className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50">
-                    <field.icon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">{field.label}</p>
-                      <p className="text-sm font-medium text-slate-700 truncate">{field.value}</p>
-                    </div>
+                {!isEditingProfile ? (
+                  <button className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1" onClick={() => { setEditName(customer.name || ""); setEditPhone(""); setIsEditingProfile(true); }}>
+                    <Wrench className="h-3 w-3" /> Chỉnh sửa
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button className="text-xs text-slate-500 hover:text-slate-700 font-medium" onClick={() => setIsEditingProfile(false)}>Hủy</button>
+                    <button className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 disabled:opacity-50" onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
+                      {updateProfileMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />} Lưu
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
+              {isEditingProfile ? (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">Họ và tên</label>
+                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nhập họ tên" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">Email</label>
+                    <Input value={customer.email} disabled className="h-9 text-sm bg-slate-50" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">Số điện thoại</label>
+                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Nhập số điện thoại" className="h-9 text-sm" />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {[
+                    { label: "Họ và tên", value: customer.name || "Chưa cập nhật", icon: User },
+                    { label: "Email", value: customer.email, icon: Mail },
+                    { label: "Số điện thoại", value: "Chưa cập nhật", icon: Phone },
+                  ].map((field) => (
+                    <div key={field.label} className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50">
+                      <field.icon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{field.label}</p>
+                        <p className="text-sm font-medium text-slate-700 truncate">{field.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Account security */}
