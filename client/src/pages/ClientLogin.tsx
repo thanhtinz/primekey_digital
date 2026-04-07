@@ -3,7 +3,6 @@ import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Mail, LogIn, ArrowLeft, User } from "lucide-react";
-import { ClientHeader } from "@/components/ClientHeader";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 export default function ClientLogin() {
@@ -40,9 +39,7 @@ export default function ClientLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] flex flex-col">
-      <ClientHeader />
-      <div className="flex-1 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0a0f1e] flex flex-col items-center justify-center px-4">
       {/* Background gradient */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
@@ -124,7 +121,6 @@ export default function ClientLogin() {
             Quay về trang chủ
           </button>
         </div>
-      </div>
       </div>
     </div>
   );

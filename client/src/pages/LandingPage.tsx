@@ -64,17 +64,35 @@ export default function LandingPage() {
     setLocation(href);
   };
 
+  // Nav chính hiển thị trực tiếp trên desktop
   const navLinks = [
     { label: "Flash Sale", href: "/flash-sale", icon: Flame },
-    { label: "So Sánh SP", href: "/compare", icon: BarChart3 },
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
     { label: "Bảo Hành", href: "/warranty", icon: Shield },
     { label: "Tích Điểm", href: "/loyalty", icon: Gift },
-    { label: "Hàng Chờ", href: "/queue", icon: ListOrdered },
     { label: "BXH", href: "/leaderboard", icon: Trophy },
     { label: "FAQ", href: "/faq", icon: HelpCircle },
-    { label: "Đánh Giá", href: "/feedbacks-public", icon: Star },
   ];
+
+  // Nav phụ trong dropdown "Thêm"
+  const moreLinks = [
+    { label: "So Sánh Sản Phẩm", href: "/compare", icon: BarChart3 },
+    { label: "Hàng Chờ", href: "/queue", icon: ListOrdered },
+    { label: "Đánh Giá Sản Phẩm", href: "/feedbacks-public", icon: Star },
+  ];
+
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    if (moreOpen) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [moreOpen]);
 
   // Quick access cards
   const quickCards = [
@@ -190,17 +208,42 @@ export default function LandingPage() {
           </button>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-0.5">
             {navLinks.map(link => (
               <button
                 key={link.href}
                 onClick={() => navigate(link.href)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all whitespace-nowrap"
               >
-                <link.icon className="h-3.5 w-3.5" />
+                <link.icon className="h-3.5 w-3.5 flex-shrink-0" />
                 {link.label}
               </button>
             ))}
+            {/* Dropdown “Thêm” */}
+            <div ref={moreRef} className="relative">
+              <button
+                onClick={() => setMoreOpen(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+              >
+                <Menu className="h-3.5 w-3.5" />
+                Thêm
+                <ChevronRight className={`h-3 w-3 transition-transform ${moreOpen ? "rotate-90" : ""}`} />
+              </button>
+              {moreOpen && (
+                <div className="absolute top-full right-0 mt-1 w-52 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
+                  {moreLinks.map(link => (
+                    <button
+                      key={link.href}
+                      onClick={() => { setMoreOpen(false); navigate(link.href); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-all text-left"
+                    >
+                      <link.icon className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                      {link.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Right actions */}
