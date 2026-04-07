@@ -560,9 +560,8 @@
 
 - [x] Redesign WarrantyLookup.tsx: dùng dark background (slate-900), white text, giống TrackOrder và PublicFeedbacks
 
-## Update: Landing Page - Nội Dung Tính Năng Mới
+## Update: Landing Page - Nội Dung Tính Năng Khách Hàng
 
-- [x] Cập nhật features grid (6 → 9 tính năng): thêm Bảo Hành, Telegram, Hóa Đơn Định Kỳ, Báo Cáo Nâng Cao, Quản Lý KH, Trang Cảm Ơn
-- [x] Cập nhật hero tagline: "Quản Lý Hóa Đơn Chuyên Nghiệp & Tự Động" + mô tả đầy đủ tính năng mới
-- [x] Cập nhật how-it-works: bước 3 đổi thành "Tra Cứu Bảo Hành"
-- [x] Cập nhật stats bar: "9+ Tính năng quản lý" thay vì "99.9% Uptime"
+- [x] Cập nhật features grid: giữ 5 tính năng khách hàng (Hóa Đơn, Thanh Toán QR, Bảo Hành, Đánh Giá, Trang Cảm Ơn)
+- [x] Thêm section "Dành Cho Khách Hàng" với 4 card chi tiết: Hóa Đơn, Thanh Toán, Bảo Hành, Đánh Giá & Trang Cảm Ơn
+- [x] Mỗi card có mô tả chi tiết và 3 lợi ích chính (CheckCircle icons)

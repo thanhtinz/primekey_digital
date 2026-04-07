@@ -55,63 +55,35 @@ export default function LandingPage() {
     {
       icon: <Receipt className="h-6 w-6 text-blue-400" />,
       title: "Hóa Đơn Chuyên Nghiệp",
-      desc: "Tạo hóa đơn đẹp với logo thương hiệu riêng, nhiều mẫu thiết kế. Gửi tự động qua email, xuất PDF chuyên nghiệp.",
+      desc: "Nhận hóa đơn đẹp với logo thương hiệu, mã QR thanh toán. Gửi tự động qua email, có thể tải PDF bất cứ lúc nào.",
       badge: "Phổ biến",
       badgeColor: "bg-blue-500/20 text-blue-300",
     },
     {
       icon: <CreditCard className="h-6 w-6 text-green-400" />,
       title: "Thanh Toán QR Tức Thì",
-      desc: "Tích hợp PayOS — khách quét QR thanh toán ngay, hệ thống xác nhận tự động không cần chờ đợi.",
+      desc: "Quét mã QR trong hóa đơn để thanh toán ngay qua ngân hàng. Xác nhận tức thì, không cần chờ đợi.",
       badge: "Mới",
       badgeColor: "bg-green-500/20 text-green-300",
     },
     {
       icon: <Shield className="h-6 w-6 text-cyan-400" />,
-      title: "Quản Lý Bảo Hành",
-      desc: "Theo dõi thời hạn bảo hành từng sản phẩm. Khách hàng tra cứu bảo hành 24/7 bằng mã đơn hàng.",
+      title: "Tra Cứu Bảo Hành",
+      desc: "Nhập mã hóa đơn để kiểm tra thời hạn bảo hành, ngày bắt đầu, ngày hết hạn và số ngày còn lại.",
       badge: "Mới",
       badgeColor: "bg-cyan-500/20 text-cyan-300",
     },
     {
-      icon: <Bell className="h-6 w-6 text-yellow-400" />,
-      title: "Thông Báo Telegram",
-      desc: "Nhận thông báo đơn mới, thanh toán thành công qua Telegram bot tức thì. Không bỏ lỡ đơn nào.",
-      badge: null,
-      badgeColor: "",
-    },
-    {
-      icon: <Clock className="h-6 w-6 text-purple-400" />,
-      title: "Hóa Đơn Định Kỳ",
-      desc: "Tạo hóa đơn lặp lại tự động theo tuần hoặc tháng — phù hợp cho dịch vụ thuê bảo trì, đăng ký định kỳ.",
-      badge: null,
-      badgeColor: "",
-    },
-    {
-      icon: <BarChart3 className="h-6 w-6 text-rose-400" />,
-      title: "Báo Cáo Nâng Cao",
-      desc: "Phân tích doanh thu theo khách hàng, tỷ lệ chuyển đổi theo sản phẩm, so sánh tháng. Xuất Excel dễ dàng.",
-      badge: null,
-      badgeColor: "",
-    },
-    {
       icon: <MessageSquare className="h-6 w-6 text-amber-400" />,
-      title: "Thu Thập Đánh Giá",
-      desc: "Tự động gửi link đánh giá sau khi hoàn thành đơn. Nhúng widget reviews lên website ngoài bằng 1 dòng code.",
-      badge: null,
-      badgeColor: "",
-    },
-    {
-      icon: <Users className="h-6 w-6 text-indigo-400" />,
-      title: "Quản Lý Khách Hàng",
-      desc: "Nhập khách hàng và sản phẩm hàng loạt từ Excel. Tìm kiếm nâng cao theo SĐT, địa chỉ, ghi chú.",
+      title: "Viết Đánh Giá",
+      desc: "Nhận link đánh giá sau khi mua hàng. Chia sẻ trải nghiệm của bạn và giúp công ty cải thiện dịch vụ.",
       badge: null,
       badgeColor: "",
     },
     {
       icon: <TrendingUp className="h-6 w-6 text-teal-400" />,
-      title: "Trang Cảm Ơn Tùy Chỉnh",
-      desc: "Thiết kế trang cảm ơn riêng với logo, màu gradient, lời nhắn và social links. Tạo ấn tượng sau mỗi đơn hàng.",
+      title: "Trang Cảm Ơn Đặc Biệt",
+      desc: "Sau khi thanh toán, bạn sẽ thấy trang cảm ơn với logo, màu sắc và lời nhắn riêng của công ty.",
       badge: null,
       badgeColor: "",
     },
@@ -388,8 +360,8 @@ export default function LandingPage() {
               <Package className="h-3.5 w-3.5" />
               TÍNH NĂNG NỔI BẬT
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Mọi Thứ Bạn Cần</h2>
-            <p className="text-slate-400 text-lg">Giải pháp toàn diện: hóa đơn, thanh toán, bảo hành, báo cáo và tự động hóa</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Trải Nghiệm Khách Hàng</h2>
+            <p className="text-slate-400 text-lg">Mọi thứ bạn cần để quản lý đơn hàng và bảo hành</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -501,6 +473,127 @@ export default function LandingPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Dành Cho Khách Hàng - Chi Tiết */}
+      <section
+        ref={observe("customer-benefits")}
+        className={`py-20 border-t border-white/10 transition-all duration-700 ${
+          revealed.has("customer-benefits") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-slate-400 text-xs mb-4">
+              <CheckCircle className="h-3.5 w-3.5" />
+              LỢI ÍCH KHÁCH HÀNG
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Tại Sao Chọn Chúng Tôi?</h2>
+            <p className="text-slate-400 text-lg">Khách hàng của chúng tôi tận hưởng một trải nghiệm đẹp và tiện lợi</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Hóa Đơn Chuyên Nghiệp */}
+            <div className="bg-gradient-to-br from-blue-600/10 to-blue-800/10 border border-blue-500/20 rounded-2xl p-8 hover:border-blue-400/40 transition-all">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                <Receipt className="h-6 w-6 text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Hóa Đơn Đẹp & Đầy Đủ</h3>
+              <p className="text-slate-400 leading-relaxed mb-4">
+                Mỗi hóa đơn đều có logo thương hiệu, mã QR thanh toán và thông tin chi tiết. Bạn nhận qua email và có thể tải PDF bất cứ lúc nào.
+              </p>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Nhận tự động qua email
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Mã QR thanh toán sẵn sàng
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Tải PDF khi cần
+                </li>
+              </ul>
+            </div>
+
+            {/* Thanh Toán Dễ Dàng */}
+            <div className="bg-gradient-to-br from-green-600/10 to-green-800/10 border border-green-500/20 rounded-2xl p-8 hover:border-green-400/40 transition-all">
+              <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4">
+                <CreditCard className="h-6 w-6 text-green-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Thanh Toán QR Tức Thì</h3>
+              <p className="text-slate-400 leading-relaxed mb-4">
+                Quét mã QR trong hóa đơn để thanh toán ngay qua ứng dụng ngân hàng của bạn. Xác nhận tức thì, không cần chờ đợi.
+              </p>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Quét QR từ hóa đơn
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Xác nhận tức thì
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  An toàn và bảo mật
+                </li>
+              </ul>
+            </div>
+
+            {/* Tra Cứu Bảo Hành */}
+            <div className="bg-gradient-to-br from-cyan-600/10 to-cyan-800/10 border border-cyan-500/20 rounded-2xl p-8 hover:border-cyan-400/40 transition-all">
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Tra Cứu Bảo Hành 24/7</h3>
+              <p className="text-slate-400 leading-relaxed mb-4">
+                Nhập mã hóa đơn để kiểm tra thời hạn bảo hành, ngày bắt đầu, ngày hết hạn và số ngày còn lại. Bất cứ lúc nào, bất kỳ đâu.
+              </p>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Tra cứu không cần đăng nhập
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Xem ngày hết hạn rõ ràng
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Nhận thông báo nhắc sắp hết hạn
+                </li>
+              </ul>
+            </div>
+
+            {/* Viết Đánh Giá & Trang Cảm Ơn */}
+            <div className="bg-gradient-to-br from-amber-600/10 to-amber-800/10 border border-amber-500/20 rounded-2xl p-8 hover:border-amber-400/40 transition-all">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4">
+                <MessageSquare className="h-6 w-6 text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Trải Nghiệm Đẹp</h3>
+              <p className="text-slate-400 leading-relaxed mb-4">
+                Sau khi thanh toán, bạn sẽ thấy trang cảm ơn đẹp với logo công ty. Bạn có thể chia sẻ đánh giá và giúp công ty cải thiện.
+              </p>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Trang cảm ơn đẹp và uy tín
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Viết đánh giá dễ dàng
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Giúp công ty phát triển
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
