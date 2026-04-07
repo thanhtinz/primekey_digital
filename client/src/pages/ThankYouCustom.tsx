@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, Plus, Trash2, Eye, ExternalLink } from "lucide-react";
+import { Heart, Plus, Trash2, Eye, ExternalLink, Palette } from "lucide-react";
 
 const PLATFORM_OPTIONS = [
   { value: "facebook", label: "Facebook" },
@@ -19,21 +19,44 @@ const PLATFORM_OPTIONS = [
   { value: "website", label: "Website" },
 ];
 
+// Preset gradient themes
+const GRADIENT_PRESETS = [
+  { label: "Xanh Lá (Mặc định)", from: "#f0fdf4", to: "#eff6ff" },
+  { label: "Tím Hồng", from: "#fdf4ff", to: "#fce7f3" },
+  { label: "Cam Vàng", from: "#fff7ed", to: "#fefce8" },
+  { label: "Xanh Dương", from: "#eff6ff", to: "#f0f9ff" },
+  { label: "Hồng Đào", from: "#fff1f2", to: "#fdf4ff" },
+  { label: "Xanh Ngọc", from: "#f0fdfa", to: "#ecfeff" },
+  { label: "Tối Sang Trọng", from: "#0f172a", to: "#1e1b4b" },
+  { label: "Tùy Chỉnh", from: "", to: "" },
+];
+
 export default function ThankYouCustom() {
   const { data: settings, refetch } = trpc.settings.get.useQuery();
   const [form, setForm] = useState({
     thankYouTitle: "Cảm Ơn Bạn Đã Thanh Toán!",
     thankYouMessage: "Đơn hàng của bạn đã được xác nhận. Chúng tôi sẽ liên hệ sớm nhất có thể.",
     thankYouSocialLinks: [] as Array<{ platform: string; url: string }>,
+    thankYouBgFrom: "#f0fdf4",
+    thankYouBgTo: "#eff6ff",
   });
+  const [selectedPreset, setSelectedPreset] = useState(0);
 
   useEffect(() => {
     if (settings) {
+      const s = settings as any;
+      const bgFrom = s.thankYouBgFrom || "#f0fdf4";
+      const bgTo = s.thankYouBgTo || "#eff6ff";
       setForm({
-        thankYouTitle: (settings as any).thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!",
-        thankYouMessage: (settings as any).thankYouMessage || "Đơn hàng của bạn đã được xác nhận. Chúng tôi sẽ liên hệ sớm nhất có thể.",
-        thankYouSocialLinks: (settings as any).thankYouSocialLinks || [],
+        thankYouTitle: s.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!",
+        thankYouMessage: s.thankYouMessage || "Đơn hàng của bạn đã được xác nhận. Chúng tôi sẽ liên hệ sớm nhất có thể.",
+        thankYouSocialLinks: s.thankYouSocialLinks || [],
+        thankYouBgFrom: bgFrom,
+        thankYouBgTo: bgTo,
       });
+      // Tìm preset tương ứng
+      const presetIdx = GRADIENT_PRESETS.findIndex(p => p.from === bgFrom && p.to === bgTo);
+      setSelectedPreset(presetIdx >= 0 ? presetIdx : GRADIENT_PRESETS.length - 1);
     }
   }, [settings]);
 
@@ -46,6 +69,17 @@ export default function ThankYouCustom() {
   const removeLink = (idx: number) => setForm(f => ({ ...f, thankYouSocialLinks: f.thankYouSocialLinks.filter((_, i) => i !== idx) }));
   const updateLink = (idx: number, field: "platform" | "url", value: string) =>
     setForm(f => ({ ...f, thankYouSocialLinks: f.thankYouSocialLinks.map((l, i) => i === idx ? { ...l, [field]: value } : l) }));
+
+  const applyPreset = (idx: number) => {
+    setSelectedPreset(idx);
+    const preset = GRADIENT_PRESETS[idx];
+    if (preset.from && preset.to) {
+      setForm(f => ({ ...f, thankYouBgFrom: preset.from, thankYouBgTo: preset.to }));
+    }
+  };
+
+  // Detect if text should be dark or light based on bg color
+  const isDarkBg = form.thankYouBgFrom.startsWith("#0") || form.thankYouBgFrom.startsWith("#1") || form.thankYouBgFrom.startsWith("#2");
 
   return (
     <DashboardLayoutCustom>
@@ -64,7 +98,7 @@ export default function ThankYouCustom() {
           </a>
         </div>
 
-        {/* Form */}
+        {/* Form nội dung */}
         <Card>
           <CardHeader>
             <CardTitle>Nội Dung Trang Cảm Ơn</CardTitle>
@@ -125,6 +159,102 @@ export default function ThankYouCustom() {
                 ))}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Màu nền gradient */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="w-5 h-5" />
+              Màu Nền Trang Cảm Ơn
+            </CardTitle>
+            <CardDescription>Chọn màu gradient cho nền trang cảm ơn</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Preset grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {GRADIENT_PRESETS.slice(0, -1).map((preset, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => applyPreset(idx)}
+                  className={`relative h-14 rounded-lg border-2 transition-all overflow-hidden ${
+                    selectedPreset === idx ? "border-blue-500 ring-2 ring-blue-200" : "border-transparent hover:border-gray-300"
+                  }`}
+                  style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
+                  title={preset.label}
+                >
+                  {selectedPreset === idx && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-white/80 flex items-center justify-center">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                      </div>
+                    </div>
+                  )}
+                  <span className="absolute bottom-1 left-0 right-0 text-center text-[10px] font-medium text-gray-700 bg-white/60 py-0.5 px-1 truncate">
+                    {preset.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Custom color pickers */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Tùy Chỉnh Màu</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Màu Bắt Đầu</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={form.thankYouBgFrom}
+                      onChange={e => {
+                        setSelectedPreset(GRADIENT_PRESETS.length - 1);
+                        setForm(f => ({ ...f, thankYouBgFrom: e.target.value }));
+                      }}
+                      className="w-9 h-9 rounded cursor-pointer border border-input"
+                    />
+                    <Input
+                      value={form.thankYouBgFrom}
+                      onChange={e => {
+                        setSelectedPreset(GRADIENT_PRESETS.length - 1);
+                        setForm(f => ({ ...f, thankYouBgFrom: e.target.value }));
+                      }}
+                      className="font-mono text-sm"
+                      placeholder="#f0fdf4"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Màu Kết Thúc</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={form.thankYouBgTo}
+                      onChange={e => {
+                        setSelectedPreset(GRADIENT_PRESETS.length - 1);
+                        setForm(f => ({ ...f, thankYouBgTo: e.target.value }));
+                      }}
+                      className="w-9 h-9 rounded cursor-pointer border border-input"
+                    />
+                    <Input
+                      value={form.thankYouBgTo}
+                      onChange={e => {
+                        setSelectedPreset(GRADIENT_PRESETS.length - 1);
+                        setForm(f => ({ ...f, thankYouBgTo: e.target.value }));
+                      }}
+                      className="font-mono text-sm"
+                      placeholder="#eff6ff"
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Gradient preview bar */}
+              <div
+                className="h-8 rounded-md border"
+                style={{ background: `linear-gradient(to right, ${form.thankYouBgFrom}, ${form.thankYouBgTo})` }}
+              />
+            </div>
 
             <Button className="w-full" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Đang lưu..." : "Lưu Thay Đổi"}
@@ -132,25 +262,32 @@ export default function ThankYouCustom() {
           </CardContent>
         </Card>
 
-        {/* Preview */}
+        {/* Preview realtime */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <Eye className="w-4 h-4" />
-              Xem Trước
+              Xem Trước Realtime
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/20 rounded-xl p-6 text-center space-y-3">
+            <div
+              className="rounded-xl p-6 text-center space-y-3 transition-all duration-300"
+              style={{ background: `linear-gradient(135deg, ${form.thankYouBgFrom}, ${form.thankYouBgTo})` }}
+            >
               <div className="inline-flex items-center justify-center w-12 h-12 bg-green-600 rounded-full">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-lg font-bold">{form.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!"}</h3>
-              <p className="text-sm text-muted-foreground">{form.thankYouMessage || "Đơn hàng của bạn đã được xác nhận."}</p>
+              <h3 className={`text-lg font-bold ${isDarkBg ? "text-white" : "text-gray-900"}`}>
+                {form.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!"}
+              </h3>
+              <p className={`text-sm ${isDarkBg ? "text-gray-300" : "text-gray-500"}`}>
+                {form.thankYouMessage || "Đơn hàng của bạn đã được xác nhận."}
+              </p>
               {form.thankYouSocialLinks.length > 0 && (
                 <div className="flex flex-wrap gap-2 justify-center mt-2">
                   {form.thankYouSocialLinks.map((link, i) => (
-                    <Badge key={i} variant="outline" className="text-xs">
+                    <Badge key={i} variant="outline" className={`text-xs ${isDarkBg ? "border-white/30 text-white" : ""}`}>
                       {PLATFORM_OPTIONS.find(p => p.value === link.platform)?.label || link.platform}
                     </Badge>
                   ))}

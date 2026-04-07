@@ -528,3 +528,12 @@
 ## Fix: Đồng Bộ Trang Cảm Ơn
 
 - [x] Trang /thank-you công khai lấy tiêu đề, nội dung, social links từ cấu hình /settings/thank-you. Hiển thị logo/tên công ty, social links nếu có.
+
+## Feature: Màu Nền & Nút Đánh Giá Trang Cảm Ơn
+
+- [x] DB schema: thêm cột thankYouBgFrom, thankYouBgTo (màu gradient) vào userSettings
+- [x] Backend: cập nhật updateThankYou procedure nhận thankYouBgFrom, thankYouBgTo
+- [x] Backend: getThankYouPublic trả về thankYouBgFrom, thankYouBgTo
+- [x] /settings/thank-you: thêm color picker chọn màu gradient từ/đến (8 preset + custom color picker)
+- [x] /thank-you công khai: áp dụng màu gradient từ config thay vì hardcode xanh lá
+- [x] /thank-you công khai: thêm nút "Viết Đánh Giá" (amber) khi có reviewToken của đơn hàng

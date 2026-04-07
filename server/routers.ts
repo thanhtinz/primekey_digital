@@ -2436,6 +2436,8 @@ export const appRouter = router({
         thankYouTitle: z.string().optional(),
         thankYouMessage: z.string().optional(),
         thankYouSocialLinks: z.array(z.object({ platform: z.string(), url: z.string() })).optional(),
+        thankYouBgFrom: z.string().optional(),
+        thankYouBgTo: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
@@ -2459,6 +2461,8 @@ export const appRouter = router({
           thankYouSocialLinks: (settings?.thankYouSocialLinks as Array<{platform: string; url: string}> | null) || [],
           companyName: settings?.companyName || "Invoice Prime",
           logoUrl: settings?.logoUrl || null,
+          thankYouBgFrom: settings?.thankYouBgFrom || "#f0fdf4",
+          thankYouBgTo: settings?.thankYouBgTo || "#eff6ff",
         };
       }),
     exportBackup: protectedProcedure.mutation(async ({ ctx }) => {

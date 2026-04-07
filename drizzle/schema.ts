@@ -210,6 +210,8 @@ export const userSettings = mysqlTable("userSettings", {
   thankYouTitle: varchar("thankYouTitle", { length: 255 }),
   thankYouMessage: text("thankYouMessage"),
   thankYouSocialLinks: json("thankYouSocialLinks"),
+  thankYouBgFrom: varchar("thankYouBgFrom", { length: 50 }),
+  thankYouBgTo: varchar("thankYouBgTo", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

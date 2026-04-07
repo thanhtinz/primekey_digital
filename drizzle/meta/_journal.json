@@ -71,6 +71,13 @@
       "when": 1775531050709,
       "tag": "0009_purple_jasper_sitwell",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1775533905782,
+      "tag": "0010_hot_star_brand",
+      "breakpoints": true
     }
   ]
 }

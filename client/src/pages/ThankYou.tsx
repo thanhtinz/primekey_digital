@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Download, Search, Star, ArrowLeft, Loader2, ExternalLink } from "lucide-react";
+import { CheckCircle2, Download, Search, Star, ArrowLeft, Loader2, ExternalLink, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 const PLATFORM_ICONS: Record<string, string> = {
@@ -65,10 +65,22 @@ export default function ThankYou() {
   const message = thankYouConfig?.thankYouMessage || "Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi. Đơn hàng của bạn đã được xác nhận.";
   const socialLinks = thankYouConfig?.thankYouSocialLinks || [];
   const companyName = thankYouConfig?.companyName || "Invoice Prime";
-  const logoUrl = thankYouConfig?.logoUrl;
+  const logoUrl = (thankYouConfig as any)?.logoUrl;
+  const bgFrom = (thankYouConfig as any)?.thankYouBgFrom || "#f0fdf4";
+  const bgTo = (thankYouConfig as any)?.thankYouBgTo || "#eff6ff";
+
+  // Detect dark background for text color
+  const isDarkBg = bgFrom.startsWith("#0") || bgFrom.startsWith("#1") || bgFrom.startsWith("#2");
+
+  // Review link từ reviewToken của đơn hàng
+  const reviewToken = (invoice as any)?.reviewToken;
+  const reviewUrl = reviewToken ? `${window.location.origin}/review/${reviewToken}` : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex flex-col items-center justify-center p-4">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-4 transition-all duration-500"
+      style={{ background: `linear-gradient(135deg, ${bgFrom}, ${bgTo})` }}
+    >
       {/* Confetti particles */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
@@ -98,7 +110,7 @@ export default function ThankYou() {
               <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
                 {companyName.charAt(0).toUpperCase()}
               </div>
-              <span className="font-semibold text-gray-700">{companyName}</span>
+              <span className={`font-semibold ${isDarkBg ? "text-white" : "text-gray-700"}`}>{companyName}</span>
             </div>
           )}
         </div>
@@ -169,6 +181,19 @@ export default function ThankYou() {
                   Tải Hóa Đơn PDF
                 </Button>
               )}
+
+              {/* Nút Viết Đánh Giá - chỉ hiện khi có reviewToken */}
+              {reviewUrl && (
+                <Button
+                  className="w-full gap-2 bg-amber-500 hover:bg-amber-600 text-white"
+                  onClick={() => window.location.href = reviewUrl}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Viết Đánh Giá
+                  <Star className="h-4 w-4 fill-white" />
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 className="w-full gap-2"
@@ -212,7 +237,7 @@ export default function ThankYou() {
         </Card>
 
         {/* Footer note */}
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className={`text-center text-xs mt-4 ${isDarkBg ? "text-gray-400" : "text-gray-400"}`}>
           Bạn sẽ nhận được email xác nhận trong vài phút. Nếu không nhận được, vui lòng kiểm tra thư mục spam.
         </p>
       </div>
