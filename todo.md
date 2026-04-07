@@ -666,3 +666,10 @@
 - [x] Kiểm tra và sửa lỗi trên tất cả các trang - 0 TS errors
 - [x] Cải tiến responsive mobile cho tất cả trang mới
 - [x] Đảm bảo tất cả trang public có dark theme nhất quán
+
+## Cập nhật Landing Page - Giới thiệu tính năng khách hàng
+
+- [x] Cập nhật section features: thêm Queue, BXH Chi Tiêu, Flash Sale, Bảo Hành cải tiến
+- [x] Cập nhật section "Cách Hoạt Động" cho phù hợp với các tính năng mới
+- [x] Thêm section riêng cho "Tính Năng Dành Cho Khách Hàng" (tra cứu, bảo hành, queue, BXH, flash sale)
+- [x] Cập nhật stats/số liệu trên landing page

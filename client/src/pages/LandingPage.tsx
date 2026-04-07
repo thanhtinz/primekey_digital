@@ -49,9 +49,9 @@ export default function LandingPage() {
   ];
 
   const stats = [
-    { value: "9+", label: "Tính năng quản lý", icon: Package },
+    { value: "15+", label: "Tính năng quản lý", icon: Package },
     { value: "< 3s", label: "Xác nhận thanh toán", icon: Zap },
-    { value: "24/7", label: "Tra cứu đơn hàng", icon: Clock },
+    { value: "24/7", label: "Tra cứu & bảo hành", icon: Clock },
     { value: "100%", label: "Bảo mật dữ liệu", icon: Lock },
   ];
 
@@ -67,15 +67,36 @@ export default function LandingPage() {
       icon: <CreditCard className="h-6 w-6 text-green-400" />,
       title: "Thanh Toán QR Tức Thì",
       desc: "Quét mã QR trong hóa đơn để thanh toán ngay qua ngân hàng. Xác nhận tức thì, không cần chờ đợi.",
-      badge: "Mới",
-      badgeColor: "bg-green-500/20 text-green-300",
+      badge: null,
+      badgeColor: "",
     },
     {
       icon: <Shield className="h-6 w-6 text-cyan-400" />,
       title: "Tra Cứu Bảo Hành",
-      desc: "Nhập mã hóa đơn để kiểm tra thời hạn bảo hành, ngày bắt đầu, ngày hết hạn và số ngày còn lại.",
+      desc: "Nhập mã hóa đơn để kiểm tra thời hạn bảo hành, điều khoản, thông tin liên hệ và số ngày còn lại.",
+      badge: null,
+      badgeColor: "",
+    },
+    {
+      icon: <ListOrdered className="h-6 w-6 text-orange-400" />,
+      title: "Hàng Chờ Đơn Hàng",
+      desc: "Xem vị trí đơn hàng của bạn trong hàng chờ xử lý. Cập nhật tự động mỗi 15 giây, miễn phí không cần đăng nhập.",
       badge: "Mới",
-      badgeColor: "bg-cyan-500/20 text-cyan-300",
+      badgeColor: "bg-orange-500/20 text-orange-300",
+    },
+    {
+      icon: <Trophy className="h-6 w-6 text-yellow-400" />,
+      title: "BXH Chi Tiêu",
+      desc: "Xem bảng xếp hạng khách hàng chi tiêu nhiều nhất theo ngày, tuần, tháng hoặc năm. Top 20 ưu đãi đặc biệt.",
+      badge: "Mới",
+      badgeColor: "bg-yellow-500/20 text-yellow-300",
+    },
+    {
+      icon: <ShoppingBag className="h-6 w-6 text-red-400" />,
+      title: "Flash Sale",
+      desc: "Săn sản phẩm giảm giá sốc với đồng hồ đếm ngược. Giá gốc, giá sale và % giảm hiển thị rõ ràng.",
+      badge: "Hot",
+      badgeColor: "bg-red-500/20 text-red-300",
     },
     {
       icon: <MessageSquare className="h-6 w-6 text-amber-400" />,
@@ -88,6 +109,13 @@ export default function LandingPage() {
       icon: <TrendingUp className="h-6 w-6 text-teal-400" />,
       title: "Trang Cảm Ơn Đặc Biệt",
       desc: "Sau khi thanh toán, bạn sẽ thấy trang cảm ơn với logo, màu sắc và lời nhắn riêng của công ty.",
+      badge: null,
+      badgeColor: "",
+    },
+    {
+      icon: <Search className="h-6 w-6 text-indigo-400" />,
+      title: "Tra Cứu Đơn Hàng Chi Tiết",
+      desc: "Xem đầy đủ thông tin: sản phẩm, số lượng, giá, thuế, giảm giá, ghi chú và trạng thái giao hàng.",
       badge: null,
       badgeColor: "",
     },
@@ -104,15 +132,22 @@ export default function LandingPage() {
     {
       step: "02",
       icon: Search,
-      title: "Theo Dõi Đơn Hàng",
-      desc: "Nhập email để xem trạng thái đơn hàng realtime: Đã tạo → Thanh toán → Giao hàng → Bảo hành. Không cần đăng ký.",
+      title: "Theo Dõi Đơn Hàng & Hàng Chờ",
+      desc: "Nhập email để xem trạng thái đơn hàng realtime. Xem vị trí trong hàng chờ xử lý, cập nhật tự động mỗi 15 giây.",
       color: "from-green-500 to-emerald-600",
     },
     {
       step: "03",
+      icon: ShoppingBag,
+      title: "Flash Sale & BXH",
+      desc: "Săn sản phẩm giảm giá sốc với đồng hồ đếm ngược. Xem BXH khách hàng chi tiêu nhiều nhất theo ngày, tuần, tháng.",
+      color: "from-red-500 to-orange-600",
+    },
+    {
+      step: "04",
       icon: Shield,
-      title: "Tra Cứu Bảo Hành",
-      desc: "Nhập mã hóa đơn để kiểm tra thời hạn bảo hành, ngày bắt đầu, ngày hết hạn và số ngày còn lại bất cứ lúc nào.",
+      title: "Bảo Hành & Đánh Giá",
+      desc: "Tra cứu bảo hành bất cứ lúc nào. Xem điều khoản, thời hạn, liên hệ hỗ trợ. Viết đánh giá để giúp cải thiện dịch vụ.",
       color: "from-purple-500 to-violet-600",
     },
   ];
@@ -232,8 +267,8 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-2xl mx-auto">
-              Tạo hóa đơn, thanh toán QR, quản lý bảo hành, hóa đơn định kỳ, báo cáo nâng cao
-              và thông báo Telegram — tất cả trong một nền tảng, không cần cài đặt.
+              Tạo hóa đơn, thanh toán QR, quản lý bảo hành, flash sale, BXH chi tiêu,
+              hàng chờ đơn hàng và thông báo Telegram — tất cả trong một nền tảng.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -321,9 +356,9 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
             {/* Connector line desktop */}
-            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-blue-500/50 via-green-500/50 to-purple-500/50" />
+            <div className="hidden lg:block absolute top-16 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-blue-500/50 via-green-500/50 via-red-500/50 to-purple-500/50" />
 
             {howItWorks.map((step, i) => {
               const Icon = step.icon;
@@ -405,10 +440,10 @@ export default function LandingPage() {
               DÀNH CHO KHÁCH HÀNG
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Truy Cập Nhanh</h2>
-            <p className="text-slate-400 text-lg">Không cần đăng nhập — tra cứu và xem đánh giá ngay</p>
+            <p className="text-slate-400 text-lg">Không cần đăng nhập — tra cứu, mua sắm và xem đánh giá ngay</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             <Card
               className="bg-gradient-to-br from-blue-600/15 to-blue-800/15 border-blue-500/25 cursor-pointer hover:border-blue-400/50 hover:from-blue-600/20 hover:to-blue-800/20 transition-all group"
               onClick={() => setLocation("/track-order")}
@@ -456,20 +491,89 @@ export default function LandingPage() {
             </Card>
 
             <Card
+              className="bg-gradient-to-br from-orange-600/15 to-orange-800/15 border-orange-500/25 cursor-pointer hover:border-orange-400/50 hover:from-orange-600/20 hover:to-orange-800/20 transition-all group"
+              onClick={() => setLocation("/queue")}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 bg-orange-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-orange-500/30 transition-colors">
+                    <ListOrdered className="h-7 w-7 text-orange-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-white mb-1.5 text-lg">Hàng Chờ Đơn Hàng</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed mb-3">
+                      Xem vị trí đơn hàng trong hàng chờ xử lý, cập nhật tự động mỗi 15 giây.
+                    </p>
+                    <div className="flex items-center gap-1.5 text-orange-400 text-sm font-medium group-hover:gap-2.5 transition-all">
+                      <span>Xem hàng chờ</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
               className="bg-gradient-to-br from-yellow-600/15 to-amber-800/15 border-yellow-500/25 cursor-pointer hover:border-yellow-400/50 hover:from-yellow-600/20 hover:to-amber-800/20 transition-all group"
-              onClick={() => setLocation("/feedbacks-public")}
+              onClick={() => setLocation("/leaderboard")}
             >
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-14 h-14 bg-yellow-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-yellow-500/30 transition-colors">
-                    <Star className="h-7 w-7 text-yellow-400 fill-yellow-400" />
+                    <Trophy className="h-7 w-7 text-yellow-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-white mb-1.5 text-lg">BXH Chi Tiêu</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed mb-3">
+                      Top 20 khách hàng chi tiêu nhiều nhất. Lọc theo ngày, tuần, tháng, năm.
+                    </p>
+                    <div className="flex items-center gap-1.5 text-yellow-400 text-sm font-medium group-hover:gap-2.5 transition-all">
+                      <span>Xem BXH</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="bg-gradient-to-br from-red-600/15 to-red-800/15 border-red-500/25 cursor-pointer hover:border-red-400/50 hover:from-red-600/20 hover:to-red-800/20 transition-all group"
+              onClick={() => setLocation("/flash-sale")}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 bg-red-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-red-500/30 transition-colors">
+                    <ShoppingBag className="h-7 w-7 text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-white mb-1.5 text-lg">Flash Sale</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed mb-3">
+                      Săn sản phẩm giảm giá sốc với đồng hồ đếm ngược. Số lượng có hạn!
+                    </p>
+                    <div className="flex items-center gap-1.5 text-red-400 text-sm font-medium group-hover:gap-2.5 transition-all">
+                      <span>Xem Flash Sale</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="bg-gradient-to-br from-amber-600/15 to-amber-800/15 border-amber-500/25 cursor-pointer hover:border-amber-400/50 hover:from-amber-600/20 hover:to-amber-800/20 transition-all group"
+              onClick={() => setLocation("/feedbacks-public")}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 bg-amber-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-500/30 transition-colors">
+                    <Star className="h-7 w-7 text-amber-400 fill-amber-400" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-white mb-1.5 text-lg">Đánh Giá Khách Hàng</h3>
                     <p className="text-slate-400 text-sm leading-relaxed mb-3">
                       Xem những phản hồi thực tế từ khách hàng đã mua hàng và sử dụng dịch vụ.
                     </p>
-                    <div className="flex items-center gap-1.5 text-yellow-400 text-sm font-medium group-hover:gap-2.5 transition-all">
+                    <div className="flex items-center gap-1.5 text-amber-400 text-sm font-medium group-hover:gap-2.5 transition-all">
                       <span>Xem đánh giá</span>
                       <ArrowRight className="h-4 w-4" />
                     </div>
@@ -498,7 +602,7 @@ export default function LandingPage() {
             <p className="text-slate-400 text-lg">Khách hàng của chúng tôi tận hưởng một trải nghiệm đẹp và tiện lợi</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {/* Hóa Đơn Chuyên Nghiệp */}
             <div className="bg-gradient-to-br from-blue-600/10 to-blue-800/10 border border-blue-500/20 rounded-2xl p-8 hover:border-blue-400/40 transition-all">
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
@@ -570,6 +674,56 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-400" />
                   Nhận thông báo nhắc sắp hết hạn
+                </li>
+              </ul>
+            </div>
+
+            {/* Hàng Chờ & BXH */}
+            <div className="bg-gradient-to-br from-orange-600/10 to-orange-800/10 border border-orange-500/20 rounded-2xl p-8 hover:border-orange-400/40 transition-all">
+              <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center mb-4">
+                <ListOrdered className="h-6 w-6 text-orange-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Hàng Chờ & BXH Chi Tiêu</h3>
+              <p className="text-slate-400 leading-relaxed mb-4">
+                Xem vị trí đơn hàng trong hàng chờ xử lý, cập nhật tự động. Xem bảng xếp hạng khách hàng chi tiêu nhiều nhất.
+              </p>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Cập nhật tự động mỗi 15 giây
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Top 20 khách hàng theo ngày/tuần/tháng/năm
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Không cần đăng nhập
+                </li>
+              </ul>
+            </div>
+
+            {/* Flash Sale */}
+            <div className="bg-gradient-to-br from-red-600/10 to-red-800/10 border border-red-500/20 rounded-2xl p-8 hover:border-red-400/40 transition-all">
+              <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                <ShoppingBag className="h-6 w-6 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">Flash Sale & Khuyến Mãi</h3>
+              <p className="text-slate-400 leading-relaxed mb-4">
+                Săn sản phẩm giảm giá sốc với đồng hồ đếm ngược. Giá gốc, giá sale và % giảm hiển thị rõ ràng.
+              </p>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Đồng hồ đếm ngược realtime
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Giá gốc vs giá sale rõ ràng
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  Số lượng có hạn, nhanh tay mua ngay!
                 </li>
               </ul>
             </div>
@@ -679,35 +833,43 @@ export default function LandingPage() {
               Bắt Đầu Ngay Hôm Nay
             </h2>
             <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-              Tra cứu đơn hàng của bạn hoặc liên hệ với chúng tôi nếu cần hỗ trợ.
+              Tra cứu đơn hàng, săn flash sale, xem BXH chi tiêu hoặc liên hệ nếu cần hỗ trợ.
               Đội ngũ luôn sẵn sàng giúp đỡ 24/7.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-wrap gap-3 justify-center">
               <Button
                 onClick={() => setLocation("/track-order")}
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-500 text-white h-12 px-8 text-base gap-2 shadow-lg shadow-blue-500/25 hover:-translate-y-0.5 transition-all"
+                className="bg-blue-600 hover:bg-blue-500 text-white h-12 px-6 text-base gap-2 shadow-lg shadow-blue-500/25 hover:-translate-y-0.5 transition-all"
               >
                 <Search className="h-5 w-5" />
-                Tra Cứu Đơn Hàng
+                Tra Cứu Đơn
+              </Button>
+              <Button
+                onClick={() => setLocation("/flash-sale")}
+                size="lg"
+                className="bg-red-600 hover:bg-red-500 text-white h-12 px-6 text-base gap-2 shadow-lg shadow-red-500/25 hover:-translate-y-0.5 transition-all"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                Flash Sale
               </Button>
               <Button
                 onClick={() => setLocation("/warranty")}
                 size="lg"
                 variant="outline"
-                className="border-blue-400/30 text-blue-300 hover:bg-blue-500/10 bg-blue-500/5 h-12 px-8 text-base gap-2 hover:-translate-y-0.5 transition-all"
+                className="border-blue-400/30 text-blue-300 hover:bg-blue-500/10 bg-blue-500/5 h-12 px-6 text-base gap-2 hover:-translate-y-0.5 transition-all"
               >
                 <Shield className="h-5 w-5" />
-                Tra Cứu Bảo Hành
+                Bảo Hành
               </Button>
               <Button
-                onClick={() => setLocation("/feedbacks-public")}
+                onClick={() => setLocation("/leaderboard")}
                 size="lg"
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/10 bg-white/5 h-12 px-8 text-base gap-2 hover:-translate-y-0.5 transition-all"
+                className="border-yellow-400/30 text-yellow-300 hover:bg-yellow-500/10 bg-yellow-500/5 h-12 px-6 text-base gap-2 hover:-translate-y-0.5 transition-all"
               >
-                <Star className="h-5 w-5" />
-                Xem Đánh Giá
+                <Trophy className="h-5 w-5" />
+                BXH
               </Button>
             </div>
           </div>
@@ -749,10 +911,18 @@ export default function LandingPage() {
                 <button onClick={() => setLocation("/warranty")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
                   <Shield className="h-3.5 w-3.5" /> Tra Cứu Bảo Hành
                 </button>
+                <button onClick={() => setLocation("/queue")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
+                  <ListOrdered className="h-3.5 w-3.5" /> Hàng Chờ Đơn Hàng
+                </button>
+                <button onClick={() => setLocation("/leaderboard")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
+                  <Trophy className="h-3.5 w-3.5" /> BXH Chi Tiêu
+                </button>
+                <button onClick={() => setLocation("/flash-sale")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
+                  <ShoppingBag className="h-3.5 w-3.5" /> Flash Sale
+                </button>
                 <button onClick={() => setLocation("/feedbacks-public")} className="flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors text-sm">
                   <Star className="h-3.5 w-3.5" /> Xem Đánh Giá
                 </button>
-
               </div>
             </div>
 
@@ -805,7 +975,7 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-            <p className="text-slate-600 text-xs">© 2025 Invoice Prime. All rights reserved.</p>
+            <p className="text-slate-600 text-xs">© {new Date().getFullYear()} {publicInfo?.companyName || "Invoice Prime"}. All rights reserved.</p>
             <div className="flex items-center gap-2 text-slate-600 text-xs">
               <Lock className="h-3 w-3" />
               <span>Bảo mật SSL 256-bit</span>
