@@ -584,7 +584,7 @@ export const appRouter = router({
           companyName: settings?.companyName || defaultTemplate?.companyName || "Công Ty",
           companyPhone: settings?.companyPhone || "",
           companyEmail: settings?.companyEmail || "",
-          companyLogo: defaultTemplate?.logo || null,
+          companyLogo: settings?.logoUrl || defaultTemplate?.logo || null,
           accentColor: defaultTemplate?.accentColor || "#2563eb",
           items: items.map(item => ({
             name: item.name,

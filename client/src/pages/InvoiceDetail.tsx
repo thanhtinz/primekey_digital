@@ -80,6 +80,7 @@ export default function InvoiceDetail() {
   const [transitionNote, setTransitionNote] = useState("");
   const [regenerateQR, setRegenerateQR] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const { data: invoice, isLoading, error } = trpc.invoices.get.useQuery({ id: invoiceId }, { enabled: !!invoiceId });
   const { data: notes, refetch: refetchNotes } = trpc.notes.list.useQuery({ invoiceId }, { enabled: !!invoiceId });
   const { data: currentUser } = trpc.auth.me.useQuery();
@@ -377,8 +378,8 @@ export default function InvoiceDetail() {
             {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CopyPlus className="h-4 w-4" />}
             Nhân Bản
           </Button>
-          {/* Manual Status Transition Dropdown */}
-          <DropdownMenu>
+          {/* Manual Status Transition Dropdown - controlled open state to avoid Dialog conflict */}
+          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50" disabled={isTransitioning}>
                 {isTransitioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -398,9 +399,10 @@ export default function InvoiceDetail() {
                     className={`gap-2 ${isCurrent ? "opacity-50 cursor-not-allowed" : ""}`}
                     onSelect={(e) => {
                       if (isCurrent) return;
-                      e.preventDefault(); // prevent Radix from closing dropdown immediately
-                      // Use setTimeout to let dropdown close animation finish before opening Dialog
-                      setTimeout(() => openTransitionModal(status), 50);
+                      e.preventDefault();
+                      // Close dropdown first, then open dialog after animation
+                      setDropdownOpen(false);
+                      setTimeout(() => openTransitionModal(status), 150);
                     }}
                   >
                     <Icon className="h-4 w-4" />

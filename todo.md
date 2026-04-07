@@ -617,3 +617,8 @@
 
 - [x] Khôi phục nút "Sao Chép Link Thanh Toán" - hiển thị cho CREATED/PAID/SHIPPING
 - [x] Sửa dropdown "Chuyển Trạng Thái" - dùng onSelect+preventDefault+setTimeout để tránh Radix conflict với Dialog
+
+## Fix: Trang /pay + InvoiceDetail Dropdown
+
+- [x] Trang /pay: lấy logo từ settings.logoUrl trước, fallback sang template logo
+- [x] InvoiceDetail: sửa dropdown Chuyển Trạng Thái - controlled open state + setDropdownOpen(false) + setTimeout(150ms)
