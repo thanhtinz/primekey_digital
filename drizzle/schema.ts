@@ -54,6 +54,21 @@ export const products = mysqlTable("products", {
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
 
+// Product Packages table - các gói khác nhau của một sản phẩm
+export const productPackages = mysqlTable("product_packages", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // Tên gói: "1 tháng", "3 tháng", "1 năm"
+  price: decimal("price", { precision: 15, scale: 2 }).notNull(),
+  originalPrice: decimal("originalPrice", { precision: 15, scale: 2 }), // Giá gốc (nếu có giảm giá)
+  description: text("description"), // Mô tả ngắn về gói
+  sortOrder: int("sortOrder").default(0),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProductPackage = typeof productPackages.$inferSelect;
+export type InsertProductPackage = typeof productPackages.$inferInsert;
+
 // Taxes table
 export const taxes = mysqlTable("taxes", {
   id: int("id").autoincrement().primaryKey(),

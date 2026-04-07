@@ -416,44 +416,64 @@ export default function LandingPage() {
                   Xem tất cả <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {filteredProducts.slice(0, 24).map((product: any) => {
                   const sale = saleMap.get(product.id) as any;
-                  const salePrice = sale ? product.price * (1 - sale.discountPercent / 100) : null;
+                  const salePrice = sale ? Math.round(product.price * (1 - sale.discountPercent / 100)) : null;
+                  const pkgPrices = (product.packages || []).map((p: any) => parseFloat(p.price));
+                  const minPkgPrice = pkgPrices.length > 0 ? Math.min(...pkgPrices) : null;
+                  const maxPkgPrice = pkgPrices.length > 0 ? Math.max(...pkgPrices) : null;
+                  const hasMultiPkg = pkgPrices.length > 1;
                   return (
                     <div
                       key={product.id}
                       onClick={() => navigate(`/product/${product.id}`)}
-                      className="group bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                      className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
                     >
-                      <div className="aspect-square bg-slate-100 flex items-center justify-center relative overflow-hidden">
+                      {/* Product image banner */}
+                      <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
                         {(product as any).imageUrl ? (
                           <img src={(product as any).imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         ) : (
-                          <Package className="h-10 w-10 text-slate-300" />
+                          <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                            <Package className="h-10 w-10 text-slate-300" />
+                          </div>
                         )}
                         {sale && (
-                          <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                            -{sale.discountPercent}%
+                          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow">
+                            GIẢM {sale.discountPercent}%
                           </div>
                         )}
                         {(product as any).warrantyMonths > 0 && (
-                          <div className="absolute bottom-2 right-2 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                          <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-green-600 text-xs px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                             <Shield className="h-2.5 w-2.5" />
-                            {(product as any).warrantyMonths}T
+                            BH {(product as any).warrantyMonths}T
                           </div>
                         )}
                       </div>
+                      {/* Card body */}
                       <div className="p-3">
-                        <p className="text-sm font-medium text-slate-800 line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">{product.name}</p>
-                        <div className="flex items-baseline gap-1.5">
+                        <p className="text-sm font-semibold text-gray-800 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors leading-tight">{product.name}</p>
+                        <div className="mb-2">
                           {salePrice !== null ? (
-                            <>
-                              <span className="text-sm font-bold text-orange-500">{formatPrice(salePrice, product.currency ?? "VND")}</span>
-                              <span className="text-xs text-slate-400 line-through">{formatPrice(product.price, product.currency ?? "VND")}</span>
-                            </>
+                            <div>
+                              <div className="text-sm font-bold text-red-500">{formatPrice(salePrice)}</div>
+                              <div className="text-xs text-gray-400 line-through">{formatPrice(product.price)}</div>
+                            </div>
+                          ) : minPkgPrice !== null ? (
+                            <div className="text-sm font-bold text-red-500">
+                              {hasMultiPkg ? `${formatPrice(minPkgPrice)} ~ ${formatPrice(maxPkgPrice!)}` : formatPrice(minPkgPrice)}
+                            </div>
                           ) : (
-                            <span className="text-sm font-bold text-blue-600">{formatPrice(product.price, product.currency ?? "VND")}</span>
+                            <div className="text-sm font-bold text-red-500">{formatPrice(product.price)}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span className="flex items-center gap-0.5 text-emerald-600 font-medium">
+                            <Zap className="h-3 w-3" /> Giao ngay
+                          </span>
+                          {(product.packages || []).length > 0 && (
+                            <span className="text-gray-400">{(product.packages || []).length} gói</span>
                           )}
                         </div>
                       </div>

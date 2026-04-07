@@ -1073,19 +1073,50 @@ export const appRouter = router({
         return product;
       }),
 
-    // Public: lấy sản phẩm của owner (single-tenant, userId=1)
-    listPublic: publicProcedure.query(async () => {
-      const { getDb } = await import("./db");
-      const drizzleDb = await getDb();
-      if (!drizzleDb) return [];
-      const { products: productsTable } = await import("../drizzle/schema");
-      const { eq } = await import("drizzle-orm");
-      // Lấy userId của owner (user đầu tiên trong hệ thống)
-      const { users } = await import("../drizzle/schema");
-      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
-      if (!owner) return [];
-      return drizzleDb.select().from(productsTable).where(eq(productsTable.userId, owner.id));
-    }),
+    // Public: lấy sản phẩm của owner (single-tenant, userId=1) kèm packages
+    listPublic: publicProcedure
+      .input(z.object({ category: z.string().optional() }).optional())
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const { products: productsTable, productPackages, users } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner) return [];
+        const conditions = [eq(productsTable.userId, owner.id)];
+        if (input?.category) conditions.push(eq(productsTable.category, input.category));
+        const productRows = await drizzleDb.select().from(productsTable).where(and(...conditions)).orderBy(productsTable.createdAt);
+        // Lấy packages cho tất cả sản phẩm
+        const productIds = productRows.map(p => p.id);
+        let allPackages: any[] = [];
+        if (productIds.length > 0) {
+          const { inArray } = await import("drizzle-orm");
+          allPackages = await drizzleDb.select().from(productPackages)
+            .where(and(inArray(productPackages.productId, productIds), eq(productPackages.isActive, true)))
+            .orderBy(productPackages.sortOrder);
+        }
+        return productRows.map(p => ({
+          ...p,
+          packages: allPackages.filter(pkg => pkg.productId === p.id),
+        }));
+      }),
+    // Public: lấy 1 sản phẩm kèm packages theo id
+    getPublicById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return null;
+        const { products: productsTable, productPackages } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const [product] = await drizzleDb.select().from(productsTable).where(eq(productsTable.id, input.id)).limit(1);
+        if (!product) return null;
+        const packages = await drizzleDb.select().from(productPackages)
+          .where(and(eq(productPackages.productId, input.id), eq(productPackages.isActive, true)))
+          .orderBy(productPackages.sortOrder);
+        return { ...product, packages };
+      }),
 
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -1178,6 +1209,85 @@ export const appRouter = router({
         const fileKey = `product-images/${ctx.user.id}/${fileName}`;
         const { url } = await storagePut(fileKey, buffer, mimeType);
         return { url };
+      }),
+    // Packages CRUD
+    listPackages: protectedProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const { productPackages } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return drizzleDb.select().from(productPackages)
+          .where(eq(productPackages.productId, input.productId))
+          .orderBy(productPackages.sortOrder);
+      }),
+    createPackage: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        name: z.string(),
+        price: z.number(),
+        originalPrice: z.number().optional(),
+        description: z.string().optional(),
+        sortOrder: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const product = await db.getProductById(input.productId);
+        if (!product || product.userId !== ctx.user.id) throw new Error("Product not found");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const { productPackages } = await import("../drizzle/schema");
+        await drizzleDb.insert(productPackages).values({
+          productId: input.productId,
+          name: input.name,
+          price: String(input.price),
+          originalPrice: input.originalPrice ? String(input.originalPrice) : null,
+          description: input.description,
+          sortOrder: input.sortOrder ?? 0,
+          isActive: input.isActive ?? true,
+        });
+        return { success: true };
+      }),
+    updatePackage: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        price: z.number().optional(),
+        originalPrice: z.number().nullable().optional(),
+        description: z.string().optional(),
+        sortOrder: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const { productPackages } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, price, originalPrice, ...rest } = input;
+        const updateData: any = { ...rest };
+        if (price !== undefined) updateData.price = String(price);
+        if (originalPrice !== undefined) updateData.originalPrice = originalPrice !== null ? String(originalPrice) : null;
+        await drizzleDb.update(productPackages).set(updateData).where(eq(productPackages.id, id));
+        return { success: true };
+      }),
+    deletePackage: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const { productPackages } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await drizzleDb.delete(productPackages).where(eq(productPackages.id, input.id));
+        return { success: true };
       }),
   }),
 
