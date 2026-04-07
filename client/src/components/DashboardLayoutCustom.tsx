@@ -73,6 +73,7 @@ const adminNavGroups = [
       { label: "Quản Lý Bảo Hành", href: "/warranties", icon: Shield },
       { label: "Cấu Hình Bảo Hành", href: "/settings/warranty", icon: Shield },
       { label: "Flash Sale", href: "/settings/flash-sale", icon: ShoppingBag },
+      { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
     ],
   },
   {
@@ -214,19 +215,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-slate-700/60">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-base shadow-lg overflow-hidden flex-shrink-0">
+            <div className="flex-shrink-0">
               {appLogo ? (
-                <img src={appLogo} alt={appName} className="w-full h-full object-cover" />
+                <img src={appLogo} alt={appName} className="h-9 max-w-[120px] rounded-lg object-contain" />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-blue-500/30">
-                  {appInitials}
+                <div className="h-9 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <span className="text-white font-bold text-sm">{appInitials}</span>
                 </div>
               )}
             </div>
-            <div className="min-w-0">
-              <h1 className="font-bold text-base leading-tight truncate">{appName}</h1>
-              <p className="text-xs text-slate-400">Quản lý hóa đơn</p>
-            </div>
+            {!appLogo && (
+              <div className="min-w-0">
+                <h1 className="font-bold text-base leading-tight truncate">{appName}</h1>
+                <p className="text-xs text-slate-400">Quản lý hóa đơn</p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Trophy, Medal, Crown, Loader2 } from "lucide-react";
+import { ArrowLeft, Trophy, Medal, Crown, Loader2, TrendingUp, Users, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
 
 const PERIODS = [
@@ -16,11 +16,40 @@ function formatCurrency(amount: string | number | null | undefined) {
   return `${num.toLocaleString("vi-VN")} ₫`;
 }
 
-function getRankStyle(rank: number) {
-  if (rank === 1) return { bg: "bg-gradient-to-r from-yellow-500/30 to-amber-500/20", border: "border-yellow-500/40", text: "text-yellow-400", icon: Crown };
-  if (rank === 2) return { bg: "bg-gradient-to-r from-slate-400/20 to-slate-300/10", border: "border-slate-400/30", text: "text-slate-300", icon: Medal };
-  if (rank === 3) return { bg: "bg-gradient-to-r from-orange-600/20 to-orange-500/10", border: "border-orange-500/30", text: "text-orange-400", icon: Medal };
-  return { bg: "bg-white/5", border: "border-white/10", text: "text-slate-400", icon: null };
+function PodiumCard({ entry, rank }: { entry: any; rank: number }) {
+  const configs: Record<number, { gradient: string; border: string; text: string; glow: string; height: string; icon: typeof Crown; iconColor: string }> = {
+    1: { gradient: "from-yellow-500/40 via-amber-500/20 to-yellow-600/10", border: "border-yellow-500/50", text: "text-yellow-400", glow: "shadow-yellow-500/20", height: "h-40", icon: Crown, iconColor: "text-yellow-400" },
+    2: { gradient: "from-slate-400/30 via-slate-300/15 to-slate-400/5", border: "border-slate-400/40", text: "text-slate-300", glow: "shadow-slate-400/10", height: "h-32", icon: Medal, iconColor: "text-slate-300" },
+    3: { gradient: "from-orange-600/30 via-orange-500/15 to-orange-600/5", border: "border-orange-500/40", text: "text-orange-400", glow: "shadow-orange-500/10", height: "h-28", icon: Medal, iconColor: "text-orange-400" },
+  };
+  const cfg = configs[rank]!;
+  const RankIcon = cfg.icon;
+
+  return (
+    <div className={`flex flex-col items-center ${rank === 1 ? "order-2 -mt-4" : rank === 2 ? "order-1 mt-4" : "order-3 mt-6"}`}>
+      {/* Avatar */}
+      <div className={`relative mb-3`}>
+        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br ${cfg.gradient} border-2 ${cfg.border} flex items-center justify-center shadow-lg ${cfg.glow}`}>
+          <span className="text-white font-bold text-xl sm:text-2xl">
+            {entry.name ? entry.name.charAt(0).toUpperCase() : "?"}
+          </span>
+        </div>
+        <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-slate-900 border-2 ${cfg.border} flex items-center justify-center`}>
+          <RankIcon className={`h-3.5 w-3.5 ${cfg.iconColor}`} />
+        </div>
+      </div>
+
+      {/* Info */}
+      <p className="text-white font-bold text-sm sm:text-base text-center truncate max-w-[120px]">{entry.name}</p>
+      <p className={`font-bold text-base sm:text-lg ${cfg.text} mt-0.5`}>{formatCurrency(entry.totalSpent)}</p>
+      <p className="text-slate-500 text-xs mt-0.5">{entry.orderCount} đơn</p>
+
+      {/* Podium bar */}
+      <div className={`${cfg.height} w-24 sm:w-28 mt-3 rounded-t-xl bg-gradient-to-t ${cfg.gradient} border ${cfg.border} border-b-0 flex items-start justify-center pt-3`}>
+        <span className={`font-black text-2xl sm:text-3xl ${cfg.text}`}>#{rank}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function LeaderboardPage() {
@@ -30,36 +59,65 @@ export default function LeaderboardPage() {
   const { data: leaderboard = [], isLoading } = trpc.leaderboard.getTop.useQuery({ period }, { staleTime: 30_000 });
 
   const brandName = publicInfo?.companyName || "Invoice Prime";
+  const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+  const totalSpent = leaderboard.reduce((s, e) => s + (typeof e.totalSpent === "string" ? parseFloat(e.totalSpent) : (e.totalSpent || 0)), 0);
+  const totalOrders = leaderboard.reduce((s, e) => s + (e.orderCount || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-      <header className="border-b border-white/10 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      {/* Header */}
+      <header className="border-b border-white/10 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50 px-4 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button onClick={() => setLocation("/")} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm">Trang Chủ</span>
           </button>
           <div className="flex items-center gap-3">
             {publicInfo?.logoUrl ? (
-              <img src={publicInfo.logoUrl} alt={brandName} className="w-8 h-8 rounded-lg object-cover" />
+              <img src={publicInfo.logoUrl} alt={brandName} className="h-8 max-w-[120px] rounded-lg object-contain" />
             ) : (
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+              <div className="h-8 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">IP</span>
               </div>
             )}
-            <span className="text-white font-semibold">{brandName}</span>
+            {!publicInfo?.logoUrl && <span className="text-white font-semibold hidden sm:block">{brandName}</span>}
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-500/20 rounded-2xl mb-4">
-            <Trophy className="h-8 w-8 text-yellow-400" />
+      <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+        {/* Hero */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-500/30 to-amber-500/10 rounded-3xl mb-4 border border-yellow-500/20">
+            <Trophy className="h-10 w-10 text-yellow-400" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Bảng Xếp Hạng Chi Tiêu</h1>
-          <p className="text-slate-400">Top khách hàng thân thiết chi tiêu nhiều nhất</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">
+            Bảng Xếp Hạng <span className="text-yellow-400">Chi Tiêu</span>
+          </h1>
+          <p className="text-slate-400 text-base">Top khách hàng thân thiết chi tiêu nhiều nhất</p>
         </div>
+
+        {/* Stats summary */}
+        {leaderboard.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4 text-center">
+              <Users className="h-5 w-5 text-blue-400 mx-auto mb-1" />
+              <p className="text-white font-bold text-lg sm:text-xl">{leaderboard.length}</p>
+              <p className="text-slate-500 text-xs">Khách hàng</p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4 text-center">
+              <ShoppingCart className="h-5 w-5 text-emerald-400 mx-auto mb-1" />
+              <p className="text-white font-bold text-lg sm:text-xl">{totalOrders}</p>
+              <p className="text-slate-500 text-xs">Tổng đơn</p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4 text-center">
+              <TrendingUp className="h-5 w-5 text-yellow-400 mx-auto mb-1" />
+              <p className="text-white font-bold text-sm sm:text-base truncate">{formatCurrency(totalSpent)}</p>
+              <p className="text-slate-500 text-xs">Tổng chi tiêu</p>
+            </div>
+          </div>
+        )}
 
         {/* Period tabs */}
         <div className="flex justify-center mb-8">
@@ -68,9 +126,9 @@ export default function LeaderboardPage() {
               <button
                 key={p.key}
                 onClick={() => setPeriod(p.key)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   period === p.key
-                    ? "bg-blue-600 text-white shadow-lg"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/20"
                     : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -81,58 +139,97 @@ export default function LeaderboardPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-yellow-400" />
           </div>
         ) : leaderboard.length === 0 ? (
           <Card className="bg-white/5 border-white/10">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-slate-400">
-              <Trophy className="h-16 w-16 mb-4 opacity-50" />
-              <p className="text-lg font-medium text-white">Chưa có dữ liệu</p>
-              <p className="text-sm mt-1">Chưa có đơn hàng nào trong khoảng thời gian này</p>
+            <CardContent className="flex flex-col items-center justify-center py-20 text-slate-400">
+              <Trophy className="h-20 w-20 mb-4 opacity-30" />
+              <p className="text-xl font-bold text-white mb-1">Chưa có dữ liệu</p>
+              <p className="text-sm">Chưa có đơn hàng nào trong khoảng thời gian này</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {leaderboard.map((entry) => {
-              const style = getRankStyle(entry.rank);
-              const RankIcon = style.icon;
-              return (
-                <Card key={entry.rank} className={`${style.bg} border ${style.border} overflow-hidden transition-all hover:scale-[1.01]`}>
-                  <CardContent className="p-4 flex items-center gap-4">
-                    {/* Rank */}
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      entry.rank <= 3 ? "bg-white/10" : "bg-white/5"
-                    }`}>
-                      {RankIcon ? (
-                        <RankIcon className={`h-6 w-6 ${style.text}`} />
-                      ) : (
-                        <span className={`font-bold text-lg ${style.text}`}>#{entry.rank}</span>
-                      )}
-                    </div>
+          <>
+            {/* Podium - Top 3 */}
+            {top3.length >= 2 && (
+              <div className="flex justify-center items-end gap-2 sm:gap-4 mb-10 px-4">
+                {top3.map((entry, i) => (
+                  <PodiumCard key={entry.rank} entry={entry} rank={i + 1} />
+                ))}
+              </div>
+            )}
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white truncate">{entry.name}</p>
-                      {entry.email && (
-                        <p className="text-slate-500 text-xs mt-0.5">{entry.email}</p>
-                      )}
-                      <p className="text-slate-400 text-xs mt-0.5">{entry.orderCount} đơn hàng</p>
-                    </div>
+            {/* Rest of leaderboard */}
+            {rest.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-slate-400 text-sm font-medium px-1 mb-3">Xếp hạng tiếp theo</h3>
+                {rest.map((entry) => (
+                  <Card key={entry.rank} className="bg-white/[0.04] border-white/10 hover:bg-white/[0.07] transition-all">
+                    <CardContent className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+                      {/* Rank number */}
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                        <span className="font-bold text-slate-400">#{entry.rank}</span>
+                      </div>
 
-                    {/* Amount */}
-                    <div className="text-right flex-shrink-0">
-                      <p className={`font-bold text-lg ${entry.rank <= 3 ? style.text : "text-white"}`}>
-                        {formatCurrency(entry.totalSpent)}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">
+                          {entry.name ? entry.name.charAt(0).toUpperCase() : "?"}
+                        </span>
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-white text-sm truncate">{entry.name}</p>
+                        {entry.email && (
+                          <p className="text-slate-600 text-xs mt-0.5 truncate">{entry.email}</p>
+                        )}
+                      </div>
+
+                      {/* Stats */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-white text-sm sm:text-base">{formatCurrency(entry.totalSpent)}</p>
+                        <p className="text-slate-500 text-xs">{entry.orderCount} đơn</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Only top3 and no rest - show as list if only 1 entry */}
+            {top3.length === 1 && (
+              <div className="space-y-2">
+                {top3.map((entry) => {
+                  const cfg = { bg: "bg-gradient-to-r from-yellow-500/30 to-amber-500/20", border: "border-yellow-500/40", text: "text-yellow-400" };
+                  return (
+                    <Card key={entry.rank} className={`${cfg.bg} border ${cfg.border}`}>
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                          <Crown className={`h-6 w-6 ${cfg.text}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-white truncate">{entry.name}</p>
+                          <p className="text-slate-400 text-xs mt-0.5">{entry.orderCount} đơn hàng</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold text-lg ${cfg.text}`}>{formatCurrency(entry.totalSpent)}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      <footer className="py-6 text-center text-xs text-slate-600 border-t border-white/5">
+        © {new Date().getFullYear()} {brandName}. Bảng xếp hạng cập nhật tự động.
+      </footer>
     </div>
   );
 }

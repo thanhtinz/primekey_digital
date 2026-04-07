@@ -52,6 +52,7 @@ const FlashSaleSettings = lazy(() => import("./pages/FlashSaleSettings"));
 const QueuePage = lazy(() => import("./pages/QueuePage"));
 const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const FlashSalePage = lazy(() => import("./pages/FlashSalePage"));
+const CouponSettings = lazy(() => import("./pages/CouponSettings"));
 
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
@@ -163,6 +164,7 @@ function Router() {
         <Route path="/settings/email-templates" component={() => isAdmin ? <EmailTemplateEditor /> : <ForbiddenPage />} />
         <Route path="/settings/warranty" component={() => isAdmin ? <WarrantySettingsPage /> : <ForbiddenPage />} />
         <Route path="/settings/flash-sale" component={() => isAdmin ? <FlashSaleSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/coupons" component={() => isAdmin ? <CouponSettings /> : <ForbiddenPage />} />
         <Route path="/settings" component={() => isAdmin ? <Settings /> : <ForbiddenPage />} />
         <Route path="/warranties" component={() => isAdmin ? <WarrantyManagement /> : <ForbiddenPage />} />
         <Route path="/staff" component={() => isAdmin ? <StaffManagement /> : <ForbiddenPage />} />

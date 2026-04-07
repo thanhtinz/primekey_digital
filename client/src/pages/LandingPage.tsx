@@ -7,7 +7,7 @@ import {
   CheckCircle, ArrowRight, CreditCard, Users, BarChart3, Bell,
   Clock, Smartphone, Lock, TrendingUp, Package, ChevronRight,
   Mail, Phone, MapPin, Building2, Receipt, Send, ListOrdered,
-  Trophy, ShoppingBag
+  Trophy, ShoppingBag, Flame, Tag
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -38,6 +38,7 @@ export default function LandingPage() {
   const { revealed, observe } = useScrollReveal();
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
   const { data: realReviews } = trpc.reviews.getPublic.useQuery();
+  const { data: activeSales = [] } = trpc.flashSale.getActive.useQuery(undefined, { staleTime: 60_000 });
 
   const navLinks = [
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
@@ -189,16 +190,16 @@ export default function LandingPage() {
               <img
                 src={publicInfo.companyLogo}
                 alt={publicInfo?.companyName || "Logo"}
-                className="w-9 h-9 rounded-xl object-contain bg-white/10"
+                className="h-9 max-w-[140px] rounded-lg object-contain"
               />
             ) : (
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <div className="h-9 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <span className="text-white font-bold text-sm">
                   {publicInfo?.companyName ? publicInfo.companyName.slice(0, 2).toUpperCase() : "IP"}
                 </span>
               </div>
             )}
-            <span className="font-bold text-lg hidden sm:block">{publicInfo?.companyName || "Invoice Prime"}</span>
+            {!publicInfo?.companyLogo && <span className="font-bold text-lg hidden sm:block">{publicInfo?.companyName || "Invoice Prime"}</span>}
           </button>
 
           <div className="hidden md:flex items-center gap-1">
@@ -253,6 +254,27 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
+            {/* Flash Sale Banner */}
+            {activeSales.length > 0 && (
+              <button
+                onClick={() => setLocation("/flash-sale")}
+                className="group inline-flex items-center gap-3 bg-gradient-to-r from-red-600/20 via-orange-500/15 to-red-600/20 border border-red-500/30 rounded-2xl px-5 py-3 mb-6 hover:border-red-500/50 transition-all hover:scale-[1.02] cursor-pointer"
+              >
+                <div className="relative">
+                  <Flame className="h-5 w-5 text-red-400 animate-bounce" />
+                </div>
+                <div className="text-left">
+                  <p className="text-red-300 font-bold text-sm">
+                    Flash Sale đang diễn ra — {activeSales.length} ưu đãi
+                  </p>
+                  <p className="text-red-400/60 text-xs">
+                    Giảm đến {Math.max(...activeSales.map(s => s.discountPercent || 0))}% — Nhanh tay kẻo lỡ!
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-red-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+            )}
+
             <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 text-blue-300 text-sm mb-8">
               <Zap className="h-4 w-4 fill-blue-400 text-blue-400" />
               Nền tảng hóa đơn & thanh toán cho doanh nghiệp Việt
@@ -887,14 +909,14 @@ export default function LandingPage() {
                   <img
                     src={publicInfo.companyLogo}
                     alt={publicInfo?.companyName || "Logo"}
-                    className="w-9 h-9 rounded-xl object-contain bg-white/10"
+                    className="h-9 max-w-[140px] rounded-lg object-contain"
                   />
                 ) : (
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <div className="h-9 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
                     <span className="text-white font-bold text-sm">{publicInfo?.companyName ? publicInfo.companyName.slice(0,2).toUpperCase() : "IP"}</span>
                   </div>
                 )}
-                <span className="font-bold text-white text-lg">{publicInfo?.companyName || "Invoice Prime"}</span>
+                {!publicInfo?.companyLogo && <span className="font-bold text-white text-lg">{publicInfo?.companyName || "Invoice Prime"}</span>}
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">
                 Nền tảng hóa đơn và thanh toán chuyên nghiệp cho doanh nghiệp Việt Nam.

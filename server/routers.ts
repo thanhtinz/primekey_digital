@@ -2921,5 +2921,138 @@ export const appRouter = router({
         }));
       }),
   }),
+
+  // ===== COUPON =====
+  coupon: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { coupons } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(coupons).orderBy(desc(coupons.createdAt));
+    }),
+    create: protectedProcedure.input(z.object({
+      code: z.string().min(1).max(50),
+      description: z.string().optional(),
+      discountType: z.enum(["percent", "fixed"]),
+      discountValue: z.number().min(0),
+      minOrderAmount: z.number().min(0).optional(),
+      maxDiscountAmount: z.number().min(0).optional(),
+      maxUses: z.number().min(0).optional(),
+      maxUsesPerCustomer: z.number().min(0).optional(),
+      startsAt: z.string().optional(),
+      expiresAt: z.string().optional(),
+      isActive: z.boolean().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { coupons } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("Database not available");
+      await drizzleDb.insert(coupons).values({
+        code: input.code.toUpperCase(),
+        description: input.description || null,
+        discountType: input.discountType,
+        discountValue: String(input.discountValue),
+        minOrderAmount: String(input.minOrderAmount || 0),
+        maxDiscountAmount: input.maxDiscountAmount ? String(input.maxDiscountAmount) : null,
+        maxUses: input.maxUses || 0,
+        maxUsesPerCustomer: input.maxUsesPerCustomer || 1,
+        startsAt: input.startsAt ? new Date(input.startsAt) : null,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        isActive: input.isActive ?? true,
+      });
+      return { success: true };
+    }),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      code: z.string().min(1).max(50).optional(),
+      description: z.string().optional(),
+      discountType: z.enum(["percent", "fixed"]).optional(),
+      discountValue: z.number().min(0).optional(),
+      minOrderAmount: z.number().min(0).optional(),
+      maxDiscountAmount: z.number().min(0).optional(),
+      maxUses: z.number().min(0).optional(),
+      maxUsesPerCustomer: z.number().min(0).optional(),
+      startsAt: z.string().optional(),
+      expiresAt: z.string().optional(),
+      isActive: z.boolean().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { coupons } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("Database not available");
+      const updates: any = {};
+      if (input.code !== undefined) updates.code = input.code.toUpperCase();
+      if (input.description !== undefined) updates.description = input.description;
+      if (input.discountType !== undefined) updates.discountType = input.discountType;
+      if (input.discountValue !== undefined) updates.discountValue = String(input.discountValue);
+      if (input.minOrderAmount !== undefined) updates.minOrderAmount = String(input.minOrderAmount);
+      if (input.maxDiscountAmount !== undefined) updates.maxDiscountAmount = input.maxDiscountAmount ? String(input.maxDiscountAmount) : null;
+      if (input.maxUses !== undefined) updates.maxUses = input.maxUses;
+      if (input.maxUsesPerCustomer !== undefined) updates.maxUsesPerCustomer = input.maxUsesPerCustomer;
+      if (input.startsAt !== undefined) updates.startsAt = input.startsAt ? new Date(input.startsAt) : null;
+      if (input.expiresAt !== undefined) updates.expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
+      if (input.isActive !== undefined) updates.isActive = input.isActive;
+      await drizzleDb.update(coupons).set(updates).where(eq(coupons.id, input.id));
+      return { success: true };
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+      const { coupons } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("Database not available");
+      await drizzleDb.delete(coupons).where(eq(coupons.id, input.id));
+      return { success: true };
+    }),
+    // Public: validate coupon code
+    validate: publicProcedure.input(z.object({
+      code: z.string().min(1),
+      orderAmount: z.number().min(0),
+      customerEmail: z.string().optional(),
+    })).query(async ({ input }) => {
+      const { coupons, couponUsages } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and, sql } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { valid: false, error: "Database not available" };
+      const [coupon] = await drizzleDb.select().from(coupons).where(eq(coupons.code, input.code.toUpperCase())).limit(1);
+      if (!coupon) return { valid: false, error: "M\u00e3 gi\u1ea3m gi\u00e1 kh\u00f4ng t\u1ed3n t\u1ea1i" };
+      if (!coupon.isActive) return { valid: false, error: "M\u00e3 gi\u1ea3m gi\u00e1 \u0111\u00e3 ng\u1eebng ho\u1ea1t \u0111\u1ed9ng" };
+      const now = new Date();
+      if (coupon.startsAt && now < coupon.startsAt) return { valid: false, error: "M\u00e3 gi\u1ea3m gi\u00e1 ch\u01b0a b\u1eaft \u0111\u1ea7u" };
+      if (coupon.expiresAt && now > coupon.expiresAt) return { valid: false, error: "M\u00e3 gi\u1ea3m gi\u00e1 \u0111\u00e3 h\u1ebft h\u1ea1n" };
+      if (coupon.maxUses && coupon.maxUses > 0 && (coupon.usedCount || 0) >= coupon.maxUses) return { valid: false, error: "M\u00e3 gi\u1ea3m gi\u00e1 \u0111\u00e3 h\u1ebft l\u01b0\u1ee3t s\u1eed d\u1ee5ng" };
+      const minOrder = Number(coupon.minOrderAmount || 0);
+      if (input.orderAmount < minOrder) return { valid: false, error: `\u0110\u01a1n h\u00e0ng t\u1ed1i thi\u1ec3u ${minOrder.toLocaleString("vi-VN")}\u0111 \u0111\u1ec3 s\u1eed d\u1ee5ng m\u00e3 n\u00e0y` };
+      // Check per-customer usage
+      if (input.customerEmail && coupon.maxUsesPerCustomer && coupon.maxUsesPerCustomer > 0) {
+        const usages = await drizzleDb.select({ count: sql<number>`count(*)` }).from(couponUsages)
+          .where(and(eq(couponUsages.couponId, coupon.id), eq(couponUsages.customerEmail, input.customerEmail)));
+        if ((usages[0]?.count || 0) >= coupon.maxUsesPerCustomer) return { valid: false, error: "B\u1ea1n \u0111\u00e3 s\u1eed d\u1ee5ng m\u00e3 n\u00e0y r\u1ed3i" };
+      }
+      // Calculate discount
+      let discountAmount = 0;
+      if (coupon.discountType === "percent") {
+        discountAmount = input.orderAmount * Number(coupon.discountValue) / 100;
+        const maxDisc = Number(coupon.maxDiscountAmount || 0);
+        if (maxDisc > 0 && discountAmount > maxDisc) discountAmount = maxDisc;
+      } else {
+        discountAmount = Number(coupon.discountValue);
+      }
+      if (discountAmount > input.orderAmount) discountAmount = input.orderAmount;
+      return {
+        valid: true,
+        couponId: coupon.id,
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: Number(coupon.discountValue),
+        discountAmount: Math.round(discountAmount),
+        description: coupon.description,
+      };
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;

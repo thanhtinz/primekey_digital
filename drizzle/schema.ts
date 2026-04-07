@@ -403,3 +403,36 @@ export const flashSales = mysqlTable("flashSales", {
 });
 export type FlashSale = typeof flashSales.$inferSelect;
 export type InsertFlashSale = typeof flashSales.$inferInsert;
+
+
+// Coupons table
+export const coupons = mysqlTable("coupons", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  description: text("description"),
+  discountType: mysqlEnum("discountType", ["percent", "fixed"]).notNull().default("percent"),
+  discountValue: decimal("discountValue", { precision: 15, scale: 2 }).notNull(), // % or VND
+  minOrderAmount: decimal("minOrderAmount", { precision: 15, scale: 2 }).default("0"),
+  maxDiscountAmount: decimal("maxDiscountAmount", { precision: 15, scale: 2 }), // cap for percent type
+  maxUses: int("maxUses").default(0), // 0 = unlimited
+  usedCount: int("usedCount").default(0),
+  maxUsesPerCustomer: int("maxUsesPerCustomer").default(1),
+  startsAt: timestamp("startsAt"),
+  expiresAt: timestamp("expiresAt"),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = typeof coupons.$inferInsert;
+
+// Coupon usages tracking
+export const couponUsages = mysqlTable("coupon_usages", {
+  id: int("id").autoincrement().primaryKey(),
+  couponId: int("couponId").notNull(),
+  invoiceId: int("invoiceId").notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  discountAmount: decimal("discountAmount", { precision: 15, scale: 2 }).notNull(),
+  usedAt: timestamp("usedAt").defaultNow().notNull(),
+});
+export type CouponUsage = typeof couponUsages.$inferSelect;

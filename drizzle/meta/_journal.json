@@ -99,6 +99,13 @@
       "when": 1775567630134,
       "tag": "0013_reflective_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1775570673088,
+      "tag": "0014_hot_deathstrike",
+      "breakpoints": true
     }
   ]
 }

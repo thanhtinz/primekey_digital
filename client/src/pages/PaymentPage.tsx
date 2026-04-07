@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import {
   CheckCircle2,
   Clock,
@@ -15,6 +16,9 @@ import {
   Phone,
   Mail,
   ShoppingCart,
+  Tag,
+  X,
+  Loader2,
 } from "lucide-react";
 
 function formatCurrency(amount: string | number, currency: string) {
@@ -43,6 +47,13 @@ export default function PaymentPage() {
   const [localQrCode, setLocalQrCode] = useState<string | null>(null);
   const [localPaymentUrl, setLocalPaymentUrl] = useState<string | null>(null);
   const [localExpiresAt, setLocalExpiresAt] = useState<number | null>(null);
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    couponId: number; code: string; discountAmount: number; description?: string | null;
+  } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -139,7 +150,44 @@ export default function PaymentPage() {
   const subtotal = typeof invoice.subtotal === "string" ? parseFloat(invoice.subtotal) : invoice.subtotal;
   const taxAmount = typeof invoice.taxAmount === "string" ? parseFloat(invoice.taxAmount || "0") : (invoice.taxAmount || 0);
   const discountAmount = typeof invoice.discountAmount === "string" ? parseFloat(invoice.discountAmount || "0") : (invoice.discountAmount || 0);
-  const totalAmount = typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount;
+  const rawTotal = typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount;
+  const couponDiscount = appliedCoupon?.discountAmount || 0;
+  const totalAmount = Math.max(0, rawTotal - couponDiscount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponError(null);
+    setCouponLoading(true);
+    try {
+      const result = await utils.client.coupon.validate.query({
+        code: couponCode.trim(),
+        orderAmount: rawTotal,
+        customerEmail: (invoice as any).customerEmail || undefined,
+      });
+      if (result.valid && result.couponId) {
+        setAppliedCoupon({
+          couponId: result.couponId,
+          code: result.code!,
+          discountAmount: result.discountAmount!,
+          description: result.description,
+        });
+        setCouponError(null);
+      } else {
+        setCouponError(result.error || "M\u00e3 kh\u00f4ng h\u1ee3p l\u1ec7");
+        setAppliedCoupon(null);
+      }
+    } catch (e: any) {
+      setCouponError(e.message || "L\u1ed7i ki\u1ec3m tra m\u00e3 gi\u1ea3m gi\u00e1");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError(null);
+  };
   const companyLogo = (invoice as any).companyLogo as string | null;
   const accentColor = (invoice as any).accentColor as string || "#2563eb";
   // Use local (regenerated) values if available
@@ -298,12 +346,76 @@ export default function PaymentPage() {
                     <span>-{formatCurrency(discountAmount, invoice.currency || "VND")}</span>
                   </div>
                 )}
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="w-3 h-3" />
+                      Mã giảm giá ({appliedCoupon?.code})
+                    </span>
+                    <span>-{formatCurrency(couponDiscount, invoice.currency || "VND")}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-bold text-base text-slate-800 pt-0.5">
                   <span>Tổng cộng</span>
                   <span style={{ color: accentColor }}>{formatCurrency(totalAmount, invoice.currency || "VND")}</span>
                 </div>
               </div>
+
+
+              {/* Coupon Code Input */}
+              {!appliedCoupon ? (
+                <div className="mb-5">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 uppercase tracking-wide font-semibold mb-2">
+                    <Tag className="w-3.5 h-3.5" />
+                    Mã giảm giá
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={couponCode}
+                      onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(null); }}
+                      placeholder="Nhập mã giảm giá..."
+                      className="font-mono text-sm"
+                      onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                    />
+                    <Button
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      variant="outline"
+                      size="sm"
+                      className="flex-shrink-0 gap-1.5"
+                    >
+                      {couponLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Tag className="w-3.5 h-3.5" />}
+                      Áp dụng
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <p className="text-xs text-red-500 mt-1.5">{couponError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="mb-5 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-emerald-600" />
+                      <div>
+                        <span className="font-mono font-bold text-emerald-700">{appliedCoupon.code}</span>
+                        {appliedCoupon.description && (
+                          <p className="text-xs text-emerald-600 mt-0.5">{appliedCoupon.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-emerald-700">
+                        -{formatCurrency(appliedCoupon.discountAmount, invoice.currency || "VND")}
+                      </span>
+                      <button onClick={handleRemoveCoupon} className="text-emerald-500 hover:text-red-500 transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* QR Code */}
               {displayQrCode ? (

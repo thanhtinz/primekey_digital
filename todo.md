@@ -673,3 +673,41 @@
 - [x] Cập nhật section "Cách Hoạt Động" cho phù hợp với các tính năng mới
 - [x] Thêm section riêng cho "Tính Năng Dành Cho Khách Hàng" (tra cứu, bảo hành, queue, BXH, flash sale)
 - [x] Cập nhật stats/số liệu trên landing page
+
+## Batch 5: Logo, Bảo Hành Sản Phẩm, UI Cải Tiến, Flash Sale Banner, Coupon
+
+### Logo Website
+- [x] Sửa logo từ hình vuông sang hình dài/tự nhiên (aspect ratio phù hợp)
+- [x] Cập nhật tất cả nơi hiển thị logo: landing page, nav, footer, trang public, dashboard sidebar
+
+### Bảo Hành Theo Sản Phẩm
+- [x] Thêm trường warrantyMonths vào bảng products trong schema (đã có sẵn)
+- [x] Cập nhật form tạo/sửa sản phẩm: cho chọn thời gian bảo hành (tháng) (đã có sẵn)
+- [x] Khi tạo bảo hành, ưu tiên lấy warrantyMonths từ sản phẩm (lấy max của các SP trong đơn)
+
+### Cải Tiến UI Trang Khách Hàng
+- [x] TrackOrder: redesign chuyên nghiệp hơn, hiển thị chi tiết đầy đủ
+- [x] WarrantyLookup: redesign đẹp hơn, thông tin rõ ràng
+- [x] QueuePage: cải tiến layout, thêm animation, thông tin đầy đủ
+- [x] LeaderboardPage: cải tiến visual, thêm podium top 3
+- [x] FlashSalePage: cải tiến countdown, thêm progress bar stock
+
+### Banner Flash Sale trên Landing Page
+- [x] Thêm banner Flash Sale nổi bật vào hero section khi có sale đang chạy
+- [x] Hiển thị số ưu đãi, % giảm cao nhất, link đến /flash-sale
+
+### Hệ Thống Coupon
+- [x] DB schema: bảng coupons (code, discountType, discountValue, minOrder, maxUses, usedCount, expiresAt)
+- [x] Backend: router coupon CRUD + validate coupon
+- [x] Trang cấu hình Coupon trong dashboard
+- [x] Trang /pay: thêm input nhập mã giảm giá, hiển thị giảm giá
+
+## Fix: Ẩn tên website khi đã có logo
+- [x] Tất cả trang public: nếu có logo thì chỉ hiển thị logo, không hiển thị tên website bên cạnh
+- [x] Landing page header/nav + footer
+- [x] TrackOrder header
+- [x] WarrantyLookup header
+- [x] QueuePage header
+- [x] LeaderboardPage header
+- [x] FlashSalePage header
+- [x] DashboardLayoutCustom sidebar
