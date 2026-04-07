@@ -187,6 +187,9 @@ export default function InvoiceDetail() {
       if (result.emailSent) msg += " · Email đã gửi";
       if (result.paymentLinkRegenerated) msg += " · QR mới đã tạo";
       toast.success(msg);
+      if ((result as any).emailError) {
+        toast.warning(`Email không gửi được: ${(result as any).emailError}`);
+      }
       setShowTransitionModal(false);
     } catch (err: any) {
       toast.error(err.message || "Chuyển trạng thái thất bại");
@@ -373,15 +376,6 @@ export default function InvoiceDetail() {
           <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={isDuplicating} className="gap-2">
             {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CopyPlus className="h-4 w-4" />}
             Nhân Bản
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyPaymentLink}
-            className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
-          >
-            <Link2 className="h-4 w-4" />
-            Sao Chép Link Thanh Toán
           </Button>
           {/* Manual Status Transition Dropdown */}
           <DropdownMenu>

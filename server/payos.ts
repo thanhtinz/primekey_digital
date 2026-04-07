@@ -59,8 +59,15 @@ export async function createPayOSPaymentLink(
       paymentLinkId: result.data.id,
       checkoutUrl: result.data.checkoutUrl,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("PayOS payment link creation error:", error);
+    // Provide clearer error messages for common issues
+    if (error?.cause?.code === "ENOTFOUND" || error?.message?.includes("fetch failed")) {
+      throw new Error("Không thể kết nối đến PayOS. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau khi publish.");
+    }
+    if (error?.message?.includes("PayOS API error")) {
+      throw new Error(`PayOS trả về lỗi. Vui lòng kiểm tra lại Client ID, API Key và Checksum Key trong cài đặt.`);
+    }
     throw error;
   }
 }

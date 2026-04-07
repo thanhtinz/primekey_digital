@@ -565,3 +565,50 @@
 - [x] Cập nhật features grid: giữ 5 tính năng khách hàng (Hóa Đơn, Thanh Toán QR, Bảo Hành, Đánh Giá, Trang Cảm Ơn)
 - [x] Thêm section "Dành Cho Khách Hàng" với 4 card chi tiết: Hóa Đơn, Thanh Toán, Bảo Hành, Đánh Giá & Trang Cảm Ơn
 - [x] Mỗi card có mô tả chi tiết và 3 lợi ích chính (CheckCircle icons)
+
+## Bug Fix: QR Code, SMTP, Email
+
+- [ ] Bug: QR code tạo mã thanh toán báo "fetch failed"
+- [ ] Bug: SMTP settings không lưu lại password (field bị clear sau khi save)
+- [ ] Bug: Email không gửi được (liên quan SMTP config)
+- [ ] Bug: Giao diện InvoiceDetail còn lỗi layout trên mobile
+
+## Bug Fix: QR Code, SMTP, Email, InvoiceDetail
+
+- [ ] Bug: QR code tạo mã thanh toán báo "fetch failed"
+- [ ] Bug: SMTP settings không lưu lại password (field bị clear sau khi save)
+- [ ] Bug: Email không gửi được (liên quan SMTP config)
+- [ ] Bug: Giao diện InvoiceDetail lỗi layout trên mobile - cần redesign lại
+
+## Bug Fix: SMTP + PayOS + InvoiceDetail
+
+- [ ] SMTP: smtp.get trả về hasPassword flag thay vì bỏ password hoàn toàn
+- [ ] SMTP: UI hiển thị "Đã lưu mật khẩu ✓" khi hasPassword=true, placeholder rõ ràng
+- [ ] SMTP: test email thực sự gửi và báo lỗi chi tiết nếu thất bại
+- [ ] PayOS: thông báo lỗi rõ ràng "Không kết nối được PayOS" thay vì "fetch failed"
+- [ ] PayOS: trang cấu hình cải thiện UX, hướng dẫn rõ ràng
+- [ ] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp
+- [ ] InvoiceDetail: layout mobile tối ưu, action buttons wrap gọn hơn
+- [ ] InvoiceDetail: cải thiện thông báo lỗi khi gửi email thất bại
+
+## Bug Fix: InvoiceDetail Lag + SMTP + PayOS
+
+- [ ] InvoiceDetail: tối ưu performance - giảm re-render, tách queries, dùng staleTime
+- [ ] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp (xuất hiện 2 lần)
+- [ ] InvoiceDetail: cải thiện layout mobile - action buttons wrap gọn hơn
+- [ ] SMTP: UI hiển thị "Đã lưu mật khẩu ✓" khi hasPassword=true
+- [ ] PayOS: thông báo lỗi rõ ràng hơn khi không kết nối được
+
+## Feature: Social Icons Trang Cảm Ơn
+
+- [x] Thêm icon SVG cho từng mạng xã hội (Facebook, Instagram, Zalo, TikTok, YouTube, Twitter/X, Website) trên trang /thank-you
+
+## Bug Fix Summary (Completed)
+
+- [x] SMTP: smtp.get trả về hasPassword flag - UI hiển thị "Đã lưu mật khẩu ✓" khi hasPassword=true
+- [x] Email: sendEmail throw lỗi rõ ràng khi SMTP chưa cấu hình (thay vì trả về true giả)
+- [x] Email: truyền userId vào sendEmail trong email.sendInvoice và sendPaymentConfirmation
+- [x] Email: manualTransition trả về emailError khi gửi thất bại, UI hiển thị toast.warning
+- [x] PayOS: thông báo lỗi rõ ràng "Không thể kết nối đến PayOS" thay vì "fetch failed"
+- [x] InvoiceDetail: bỏ nút "Sao Chép Link Thanh Toán" bị trùng lặp
+- [x] Social icons: thêm SVG icons cho tất cả mạng xã hội trên trang /thank-you

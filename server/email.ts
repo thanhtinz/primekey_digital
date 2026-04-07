@@ -47,13 +47,18 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       console.log("[Email] Sent via SMTP to:", options.to);
       return true;
     } else {
-      // Log only (SMTP not configured)
-      console.log("[Email] SMTP not configured. Would send to:", options.to, "Subject:", options.subject);
-      return true; // Return true so app doesn't break
+      // SMTP not configured - throw error so UI can show proper message
+      const reason = !smtpCfg ? "Chưa có cấu hình SMTP" 
+        : !smtpCfg.enabled ? "SMTP đang bị tắt" 
+        : !smtpCfg.host ? "Thiếu SMTP Host" 
+        : !smtpCfg.user ? "Thiếu tài khoản SMTP" 
+        : "Thiếu mật khẩu SMTP";
+      console.log("[Email] SMTP not configured:", reason, "- Would send to:", options.to);
+      throw new Error(`${reason}. Vào Cài Đặt > SMTP để thiết lập.`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Email] Failed to send email:", error);
-    return false;
+    throw error; // Re-throw so callers can handle and show proper error messages
   }
 }
 

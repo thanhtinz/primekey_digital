@@ -28,6 +28,8 @@ export default function SmtpSettings() {
       setHost(config.host || "smtp.gmail.com");
       setPort(config.port || 587);
       setUser(config.user || "");
+      // Don't set password - server never returns it for security
+      // hasPassword flag tells us if password is already saved
       setFromName(config.fromName || "Invoice Prime");
       setFromEmail(config.fromEmail || "");
       setSecure(config.secure || false);
@@ -162,12 +164,18 @@ export default function SmtpSettings() {
 
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">Mật khẩu ứng dụng</label>
+                  {config?.hasPassword && !password && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md text-sm text-green-700">
+                      <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                      <span>Đã lưu mật khẩu. Nhập mới để thay đổi.</span>
+                    </div>
+                  )}
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Nhập mật khẩu mới (để trống nếu không đổi)"
+                      placeholder={config?.hasPassword ? "Để trống nếu không muốn đổi mật khẩu" : "Nhập App Password (16 ký tự)"}
                       className="pr-10"
                     />
                     <button
@@ -178,7 +186,7 @@ export default function SmtpSettings() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Dùng App Password từ Google (16 ký tự)</p>
+                  <p className="text-xs text-muted-foreground">Dùng App Password từ Google (16 ký tự) — không dùng mật khẩu Gmail thường</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

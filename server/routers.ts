@@ -456,6 +456,7 @@ export const appRouter = router({
 
         // Auto-send email for all transitions (except FAILED/EXPIRED unless explicitly noted)
         let emailSentOk = false;
+        let emailError: string | undefined;
         let paymentLinkRegenOk = !!(paymentUrl && (input.regeneratePaymentLink || input.newStatus === "CREATED"));
         const autoEmailStatuses = ["PAID", "SHIPPING", "WARRANTY", "CREATED"];
         if (autoEmailStatuses.includes(input.newStatus)) {
@@ -522,9 +523,10 @@ export const appRouter = router({
               await sendEmail({ to: customer.email, subject, html, userId: ctx.user.id });
               emailSentOk = true;
             }
-          } catch (emailErr) {
+          } catch (emailErr: any) {
             console.error("[manualTransition] Email error:", emailErr);
-            // Continue without failing
+            emailError = emailErr?.message || "Gửi email thất bại";
+            // Continue without failing - status change still succeeds
           }
         }
 
@@ -544,6 +546,7 @@ export const appRouter = router({
           qrCode: qrCode || invoice.qrCode,
           reviewToken,
           emailSent: emailSentOk,
+          emailError: emailError || undefined,
           paymentLinkRegenerated: paymentLinkRegenOk,
         };
       }),
@@ -1831,14 +1834,15 @@ export const appRouter = router({
           paymentUrl: paymentPageUrl,
         });
         
-        const success = await sendEmail({
-          to: input.recipientEmail,
-          subject: `Hóa Đơn ${invoice.invoiceNumber}`,
-          html,
-        });
-        
-        return { success };
-      }),
+         const success = await sendEmail({
+           to: input.recipientEmail,
+           subject: `Hóa Đơn ${invoice.invoiceNumber}`,
+           html,
+           userId: ctx.user.id,
+         });
+         
+         return { success };
+       }),
 
     sendPaymentConfirmation: protectedProcedure
       .input(z.object({ invoiceId: z.number(), recipientEmail: z.string().email() }))
@@ -1848,20 +1852,21 @@ export const appRouter = router({
         if (!invoice || invoice.userId !== ctx.user.id) {
           throw new Error("Invoice not found");
         }
-        
+        const userSettings = await db.getUserSettings(ctx.user.id);
         const html = generatePaymentConfirmationEmailHTML({
           invoiceNumber: invoice.invoiceNumber,
-          customerName: "Customer Name",
+          customerName: "Khách Hàng",
           totalAmount: typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount,
           currency: invoice.currency || "VND",
           paidAt: invoice.paidAt || new Date(),
-          companyName: "Your Company",
+          companyName: userSettings?.companyName || "Công Ty",
         });
         
         const success = await sendEmail({
           to: input.recipientEmail,
           subject: `Xác Nhận Thanh Toán - ${invoice.invoiceNumber}`,
           html,
+          userId: ctx.user.id,
         });
         
         return { success };
@@ -2020,12 +2025,13 @@ export const appRouter = router({
       if (!ctx.user) throw new Error("Unauthorized");
       const config = await db.getSmtpConfig(ctx.user.id);
       if (!config) return null;
-      // Don't return password
+      // Return hasPassword flag instead of actual password for security
       return {
         id: config.id,
         host: config.host,
         port: config.port,
         user: config.user,
+        hasPassword: !!(config.password && config.password.length > 0),
         fromName: config.fromName,
         fromEmail: config.fromEmail,
         secure: config.secure,
