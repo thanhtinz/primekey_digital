@@ -792,3 +792,36 @@
 - [x] Header Client Portal: hiển thị nút đăng nhập/tài khoản dựa trên localStorage token
 - [x] Đổi tên "Landing Page" → "Client Portal" trong code và navigation
 - [x] Trang /login (admin): giữ nguyên đăng nhập bằng username/password
+
+## Client Portal - Auth Guard + Chi Tiết SP + Trang Cá Nhân
+
+- [ ] CustomerAuth context: lưu token/email trong localStorage, expose useCustomerAuth() hook
+- [ ] Auth guard: các trang TrackOrder, Warranty, Loyalty, WarrantyRequest yêu cầu login khách
+- [ ] Nếu chưa login → redirect /client-login?redirect=<trang hiện tại>
+- [ ] Sau login → tự động redirect về trang đã yêu cầu, không hỏi lại email
+- [ ] Trang /product/:id - chi tiết sản phẩm: ảnh, mô tả, giá, bảo hành, nút liên hệ mua
+- [ ] Click sản phẩm trên trang chủ → điều hướng đến /product/:id
+- [ ] Trang /my-account nâng cấp: tabs Tổng Quan, Đơn Hàng, Điểm Thưởng, Bảo Hành, Yêu Cầu BH, Coupon
+- [ ] Tab Tổng Quan: stats (tổng đơn, tổng chi tiêu, điểm hiện tại, bảo hành còn hiệu lực)
+- [ ] Tab Đơn Hàng: danh sách đơn hàng với filter trạng thái, click xem chi tiết
+- [ ] Tab Điểm Thưởng: lịch sử tích/đổi điểm, số điểm hiện tại, hướng dẫn đổi điểm
+- [ ] Tab Bảo Hành: danh sách bảo hành còn hiệu lực, ngày hết hạn, sản phẩm
+- [ ] Tab Yêu Cầu BH: lịch sử yêu cầu bảo hành, trạng thái xử lý
+- [ ] Tab Coupon: danh sách coupon khả dụng (nếu có coupon cá nhân)
+- [ ] Header: hiển thị tên khách hàng sau khi login (lấy từ customer.me)
+
+## Nav + So Sánh + Auth Guard
+
+- [ ] Bỏ "Sản Phẩm" (/catalog) khỏi nav menu (trang chủ đã là catalog)
+- [ ] Thêm "So Sánh" (/compare) vào nav menu riêng
+- [ ] Trang /compare: tách biệt hoàn toàn, có thể chọn sản phẩm để so sánh
+
+## Phase 7 (Session Continuity): Client Portal Enhancement
+- [x] Thêm products.getPublic procedure (lấy 1 sản phẩm theo id, không cần auth)
+- [x] Tạo trang ProductDetail (/product/:id) với thông tin chi tiết sản phẩm
+- [x] Sửa product card trong LandingPage để click dẫn đến /product/:id
+- [x] CustomerAuthContext đã có và hoạt động
+- [x] CustomerGuard component đã có và bảo vệ các trang cần đăng nhập
+- [x] Thêm customer.myWarranties procedure
+- [x] Nâng cấp MyAccount page: tab Bảo Hành, stats card, quick links, logout cải tiến
+- [x] Viết unit tests cho customer procedures và products.getPublic (19 tests passed)

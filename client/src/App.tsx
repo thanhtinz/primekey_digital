@@ -74,6 +74,8 @@ const FAQPage = lazy(() => import("./pages/FAQPage"));
 // Client Portal
 const ClientLogin = lazy(() => import("./pages/ClientLogin"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+import { CustomerGuard } from "./components/CustomerGuard";
 
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
@@ -99,7 +101,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require auth (always accessible)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -141,7 +143,11 @@ function Router() {
           <Route path="/warranty-request" component={() => <WarrantyRequestPage />} />
           <Route path="/faq" component={() => <FAQPage />} />
           <Route path="/client-login" component={() => <ClientLogin />} />
-          <Route path="/my-account" component={() => <MyAccount />} />
+          <Route path="/my-account" component={() => <CustomerGuard><MyAccount /></CustomerGuard>} />
+          <Route path="/product/:id" component={() => <ProductDetail />} />
+          <Route path="/track-order" component={() => <CustomerGuard><TrackOrder /></CustomerGuard>} />
+          <Route path="/loyalty" component={() => <CustomerGuard><LoyaltyPage /></CustomerGuard>} />
+          <Route path="/warranty-request" component={() => <CustomerGuard><WarrantyRequestPage /></CustomerGuard>} />
         </Switch>
       </Suspense>
     );

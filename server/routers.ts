@@ -1059,6 +1059,20 @@ export const appRouter = router({
       return db.getProductsByUserId(ctx.user.id);
     }),
 
+    // Public: lấy 1 sản phẩm theo id (không cần auth)
+    getPublic: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return null;
+        const { products: productsTable } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [product] = await drizzleDb.select().from(productsTable).where(eq(productsTable.id, input.id)).limit(1);
+        if (!product) return null;
+        return product;
+      }),
+
     // Public: lấy sản phẩm của owner (single-tenant, userId=1)
     listPublic: publicProcedure.query(async () => {
       const { getDb } = await import("./db");
@@ -3628,6 +3642,22 @@ export const appRouter = router({
         const history = await drizzleDb.select().from(loyaltyPoints).where(eq(loyaltyPoints.customerEmail, session.email));
         const points = history.reduce((acc, h) => acc + h.points, 0);
         return { points, history };
+      }),
+
+    // Bảo hành của khách
+    myWarranties: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions, warranties, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return [];
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) return [];
+        return drizzleDb.select().from(warranties).where(eq(warranties.customerId, customer.id));
       }),
 
     // Đăng xuất

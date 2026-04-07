@@ -65,8 +65,8 @@ export default function LandingPage() {
   };
 
   const navLinks = [
-    { label: "Sản Phẩm", href: "/catalog", icon: Package },
     { label: "Flash Sale", href: "/flash-sale", icon: Flame },
+    { label: "So Sánh SP", href: "/compare", icon: BarChart3 },
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
     { label: "Bảo Hành", href: "/warranty", icon: Shield },
     { label: "Tích Điểm", href: "/loyalty", icon: Gift },
@@ -384,7 +384,7 @@ export default function LandingPage() {
                   return (
                     <div
                       key={product.id}
-                      onClick={() => navigate("/catalog")}
+                      onClick={() => navigate(`/product/${product.id}`)}
                       className="group bg-[#161b22] border border-white/5 rounded-2xl overflow-hidden hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/10 transition-all cursor-pointer"
                     >
                       {/* Product image placeholder */}
