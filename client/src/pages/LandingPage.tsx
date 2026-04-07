@@ -88,8 +88,8 @@ export default function LandingPage() {
     },
     {
       icon: <BarChart3 className="h-6 w-6 text-rose-400" />,
-      title: "Báo Cáo & Thống Kê",
-      desc: "Dashboard trực quan theo dõi doanh thu, sản phẩm bán chạy, khách hàng thân thiết theo ngày/tuần/tháng.",
+      title: "Lịch Sử Đơn Hàng",
+      desc: "Xem lại toàn bộ lịch sử mua hàng, trạng thái từng đơn và thông tin bảo hành bất cứ lúc nào qua email.",
       badge: null,
       badgeColor: "",
     },
@@ -460,30 +460,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section
-        ref={observe("testimonials")}
-        className={`py-20 border-t border-white/10 transition-all duration-700 ${
-          revealed.has("testimonials") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-slate-400 text-xs mb-4">
-              <MessageSquare className="h-3.5 w-3.5" />
-              KHÁCH HÀNG NÓI GÌ
+      {/* Testimonials - chỉ hiển thị khi có reviews thật đã được duyệt */}
+      {realReviews && realReviews.length > 0 && (
+        <section
+          ref={observe("testimonials")}
+          className={`py-20 border-t border-white/10 transition-all duration-700 ${
+            revealed.has("testimonials") ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
+        >
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-slate-400 text-xs mb-4">
+                <MessageSquare className="h-3.5 w-3.5" />
+                KHÁCH HÀNG NÓI GÌ
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Phản Hồi Thực Tế</h2>
+              <div className="flex items-center justify-center gap-1 mb-2">
+                {[1,2,3,4,5].map(s => (
+                  <Star key={s} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                ))}
+              </div>
+              <p className="text-slate-400">{realReviews.length} đánh giá từ khách hàng thực tế</p>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Phản Hồi Thực Tế</h2>
-            <div className="flex items-center justify-center gap-1 mb-2">
-              {[1,2,3,4,5].map(s => (
-                <Star key={s} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-              ))}
-            </div>
-            <p className="text-slate-400">Được tin dùng bởi hàng trăm khách hàng</p>
-          </div>
-
-          {/* Dùng reviews thực nếu có, fallback về testimonials mẫu nếu chưa có */}
-          {realReviews && realReviews.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {realReviews.slice(0, 6).map((review, i) => {
                 const avatarColors = [
@@ -519,33 +517,9 @@ export default function LandingPage() {
                 );
               })}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {testimonials.map((t, i) => (
-                <Card key={i} className="bg-white/5 border-white/10 hover:bg-white/8 transition-all">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-1 mb-4">
-                      {[1,2,3,4,5].map(s => (
-                        <Star key={s} className={`h-4 w-4 ${s <= t.stars ? "text-yellow-400 fill-yellow-400" : "text-slate-600"}`} />
-                      ))}
-                    </div>
-                    <p className="text-slate-300 text-sm leading-relaxed mb-5 italic">"{t.content}"</p>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 bg-gradient-to-br ${t.avatarColor} rounded-full flex items-center justify-center flex-shrink-0`}>
-                        <span className="text-white font-bold text-xs">{t.avatar}</span>
-                      </div>
-                      <div>
-                        <div className="text-white font-semibold text-sm">{t.name}</div>
-                        <div className="text-slate-500 text-xs">{t.role}</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section

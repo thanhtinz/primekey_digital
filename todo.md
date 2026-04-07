@@ -459,3 +459,10 @@
 - [x] **[BUG]** InvoiceDetail không hiển thị danh sách sản phẩm - thêm bảng Chi Tiết Sản Phẩm
 - [x] **[BUG]** updateStatus email có URL rỗng - thêm origin từ frontend
 - [x] TypeScript: 0 errors, 13/13 tests passed
+
+## Fix: Landing Page Features & Testimonials Thật
+
+- [x] Xóa card "Báo Cáo & Thống Kê" khỏi section features - thay bằng "Lịch Sử Đơn Hàng"
+- [x] Kiểm tra và xóa tất cả các feature cards liên quan đến dashboard nội bộ
+- [x] Testimonials: dùng reviews thật từ DB (reviews.getPublic) thay vì mockup data
+- [x] Ẩn section testimonials khi không có reviews thật (đã được duyệt)
