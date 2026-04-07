@@ -322,8 +322,12 @@ export default function LandingPage() {
 
         {/* ===== CHILD CATEGORIES ICON SCROLL ===== */}
         {(() => {
-          const childCats = selectedParentCat ? getChildCats(selectedParentCat) : categories.filter((c: any) => !c.parentId);
-          const displayCats = selectedParentCat ? childCats : parentCats;
+          // "Tất cả" → hiển thị tất cả danh mục con (có parentId)
+          // Chọn danh mục lớn → chỉ hiển thị danh mục con của nó
+          const allChildCats = categories.filter((c: any) => !!c.parentId);
+          const displayCats = selectedParentCat
+            ? getChildCats(selectedParentCat)
+            : allChildCats;
           if (displayCats.length === 0) return null;
           return (
             <section className="px-4 mb-6">
@@ -338,27 +342,18 @@ export default function LandingPage() {
                     )}
                     <div ref={catScrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-1"
                       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                      {displayCats.map((cat: any) => {
-                        const childCount = getChildCats(cat.id).length;
-                        return (
-                          <button
-                            key={cat.id}
-                            onClick={() => {
-                              if (!cat.parentId) {
-                                setSelectedParentCat(cat.id === selectedParentCat ? null : cat.id);
-                              } else {
-                                navigate(`/catalog?category=${cat.id}`);
-                              }
-                            }}
-                            className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-blue-50 transition-all min-w-[80px] group"
-                          >
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center text-2xl group-hover:border-blue-300 group-hover:shadow-sm transition-all">
-                              {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span>{cat.icon}</span>) : <Package className="h-6 w-6 text-slate-400" />}
-                            </div>
-                            <span className="text-xs font-medium text-slate-700 text-center line-clamp-1 max-w-[80px]">{cat.name}</span>
-                          </button>
-                        );
-                      })}
+                      {displayCats.map((cat: any) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => navigate(`/catalog?category=${cat.id}`)}
+                          className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-blue-50 transition-all min-w-[80px] group"
+                        >
+                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center text-2xl group-hover:border-blue-300 group-hover:shadow-sm transition-all">
+                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span>{cat.icon}</span>) : <Package className="h-6 w-6 text-slate-400" />}
+                          </div>
+                          <span className="text-xs font-medium text-slate-700 text-center line-clamp-1 max-w-[80px]">{cat.name}</span>
+                        </button>
+                      ))}
                     </div>
                     {displayCats.length > 5 && (
                       <button onClick={() => scrollCats("right")}

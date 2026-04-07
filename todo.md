@@ -1016,3 +1016,15 @@
 - [x] Nút "Mua ngay" tạo đơn hàng thực tế (tạo invoice + redirect thanh toán PayOS)
 - [x] Giỏ hàng: thanh toán nhiều SP cùng lúc (tạo invoice tổng + redirect thanh toán PayOS)
 - [x] Tích hợp coupon + mã giới thiệu khi thanh toán
+
+## Phase 19: Fix UI danh mục + Tích hợp bảo hành vào user
+
+### Fix card danh mục nhỏ (LandingPage)
+- [x] "Tất cả" tab → hiển thị tất cả danh mục con trong card scroll
+- [x] Chọn danh mục lớn → chỉ hiển thị danh mục con của danh mục đó trong card
+- [x] Không tự tạo mockup danh mục trong code (xác nhận: không có code nào tự tạo)
+
+### Tích hợp bảo hành vào trang user
+- [x] Tích hợp vào section "Bảo hành" trong MyAccount (giữ /warranty cho user cũ )
+- [x] Hiển thị danh sách SP đã mua có bảo hành trong tab bảo hành của trang user
+- [x] Nút "Yêu cầu bảo hành" trực tiếp từ trang user (form inline)

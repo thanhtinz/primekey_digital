@@ -104,6 +104,25 @@ export default function MyAccount() {
     { enabled: !!token, staleTime: 30_000 }
   );
 
+  const { data: warrantyProducts = [], isLoading: warrantyProductsLoading } = trpc.customer.myWarrantyProducts.useQuery(
+    { token: token! },
+    { enabled: !!token && activeTab === "warranty", staleTime: 30_000 }
+  );
+
+  const [showWarrantyForm, setShowWarrantyForm] = useState(false);
+  const [warrantyInvoiceCode, setWarrantyInvoiceCode] = useState("");
+  const [warrantyDescription, setWarrantyDescription] = useState("");
+
+  const submitWarrantyRequest = trpc.warrantyRequest.create.useMutation({
+    onSuccess: () => {
+      toast.success("Đã gửi yêu cầu bảo hành! Shop sẽ liên hệ sớm.");
+      setWarrantyInvoiceCode("");
+      setWarrantyDescription("");
+      setShowWarrantyForm(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const logoutMutation = trpc.customer.logout.useMutation({
     onSuccess: () => {
       logout();
@@ -505,34 +524,147 @@ export default function MyAccount() {
 
         {/* ===== Tab: Warranty ===== */}
         {activeTab === "warranty" && (
-          <div className="space-y-3">
-            {warrantiesLoading ? (
-              <div className="text-center py-16 text-slate-500">
-                <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
-                Đang tải yêu cầu bảo hành...
+          <div className="space-y-4">
+            {/* Hero banner */}
+            <div className="bg-gradient-to-br from-teal-600 to-cyan-700 rounded-xl p-4 text-white">
+              <div className="flex items-center gap-2 mb-1">
+                <Shield className="h-5 w-5" />
+                <h3 className="font-bold">Bảo Hành Sản Phẩm</h3>
               </div>
-            ) : warranties.length === 0 ? (
-              <div className="text-center py-16 bg-white border border-slate-200 rounded-xl">
-                <Shield className="h-14 w-14 text-slate-200 mx-auto mb-3" />
-                <p className="text-slate-600 font-semibold">Không có yêu cầu bảo hành</p>
-                <p className="text-slate-400 text-sm mt-1">Các yêu cầu bảo hành sẽ hiển thị tại đây</p>
+              <p className="text-teal-100 text-sm">Quản lý bảo hành các sản phẩm đã mua và gửi yêu cầu hỗ trợ khi cần.</p>
+              <button
+                onClick={() => setShowWarrantyForm(!showWarrantyForm)}
+                className="mt-3 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition flex items-center gap-1.5"
+              >
+                <Wrench className="h-3.5 w-3.5" /> Yêu cầu bảo hành
+              </button>
+            </div>
+
+            {/* Warranty request form */}
+            {showWarrantyForm && (
+              <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-1.5">
+                  <Wrench className="h-4 w-4 text-teal-500" /> Gửi yêu cầu bảo hành
+                </h4>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Mã đơn hàng (nếu có)</label>
+                  <Input
+                    placeholder="VD: INV-ABC123"
+                    value={warrantyInvoiceCode}
+                    onChange={(e) => setWarrantyInvoiceCode(e.target.value.toUpperCase())}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Mô tả vấn đề <span className="text-red-400">*</span></label>
+                  <textarea
+                    placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."
+                    value={warrantyDescription}
+                    onChange={(e) => setWarrantyDescription(e.target.value)}
+                    rows={3}
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={submitWarrantyRequest.isPending || warrantyDescription.length < 10}
+                    onClick={() => submitWarrantyRequest.mutate({
+                      invoiceCode: warrantyInvoiceCode || undefined,
+                      customerEmail: customer.email,
+                      customerName: customer.name || undefined,
+                      description: warrantyDescription,
+                    })}
+                    className="bg-teal-600 hover:bg-teal-700 gap-1"
+                  >
+                    {submitWarrantyRequest.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+                    Gửi yêu cầu
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowWarrantyForm(false)}>Hủy</Button>
+                </div>
               </div>
-            ) : (
-              warranties.map((warranty: any) => {
-                const status = warrantyStatusMap[warranty.status] || { label: warranty.status, color: "text-slate-500 bg-slate-100" };
-                return (
-                  <div key={warranty.id} className="bg-white border border-slate-200 rounded-xl p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-semibold text-slate-800 text-sm">Mã SP: {warranty.productCode}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{formatDate(warranty.createdAt)}</p>
+            )}
+
+            {/* Products with warranty */}
+            <div>
+              <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                <Package className="h-4 w-4 text-teal-500" /> Sản phẩm được bảo hành
+              </h4>
+              {warrantyProductsLoading ? (
+                <div className="text-center py-8 text-slate-400">
+                  <div className="w-6 h-6 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin mx-auto mb-2" />
+                  Đang tải...
+                </div>
+              ) : (warrantyProducts as any[]).length === 0 ? (
+                <div className="text-center py-10 bg-white border border-slate-200 rounded-xl">
+                  <Shield className="h-12 w-12 text-slate-200 mx-auto mb-2" />
+                  <p className="text-slate-500 text-sm font-medium">Chưa có sản phẩm bảo hành</p>
+                  <p className="text-slate-400 text-xs mt-1">Sản phẩm có bảo hành sẽ hiển thị sau khi được xác nhận thanh toán</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(warrantyProducts as any[]).map((item: any) => {
+                    const expiryDate = item.warrantyExpiryDate ? new Date(item.warrantyExpiryDate) : null;
+                    const now = new Date();
+                    const isExpired = expiryDate && expiryDate < now;
+                    const daysLeft = expiryDate ? Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                    return (
+                      <div key={item.id} className="bg-white border border-slate-200 rounded-xl p-4">
+                        <div className="flex gap-3">
+                          {item.productImage ? (
+                            <img src={item.productImage} alt={item.productName} className="w-14 h-14 rounded-lg object-cover border border-slate-100 flex-shrink-0" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                              <Package className="h-6 w-6 text-teal-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-slate-800 text-sm line-clamp-1">{item.productName}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">Đơn: {item.invoiceNumber}</p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
+                                isExpired ? "text-red-600 bg-red-50" : "text-green-600 bg-green-50"
+                              }`}>
+                                <Shield className="h-2.5 w-2.5" />
+                                {isExpired ? "Hết bảo hành" : daysLeft !== null ? `Còn ${daysLeft} ngày` : `${item.warrantyMonths} tháng`}
+                              </span>
+                              {expiryDate && (
+                                <span className="text-[10px] text-slate-400">Hết: {formatDate(expiryDate)}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${status.color}`}>{status.label}</span>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-2 border-t border-slate-100 pt-2">Lý do: {warranty.reason}</p>
-                  </div>
-                );
-              })
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Past warranty requests */}
+            {(warranties as any[]).length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-slate-400" /> Yêu cầu đã gửi
+                </h4>
+                <div className="space-y-2">
+                  {(warranties as any[]).map((warranty: any) => {
+                    const status = warrantyStatusMap[warranty.status] || { label: warranty.status, color: "text-slate-500 bg-slate-100" };
+                    return (
+                      <div key={warranty.id} className="bg-white border border-slate-200 rounded-xl p-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-xs text-slate-500">{formatDate(warranty.createdAt)}</p>
+                            {warranty.invoiceCode && <p className="text-xs text-slate-600 mt-0.5">Đơn: {warranty.invoiceCode}</p>}
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${status.color}`}>{status.label}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1.5 border-t border-slate-100 pt-1.5 line-clamp-2">{warranty.description}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         )}
