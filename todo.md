@@ -952,3 +952,22 @@
 - [x] Nút Lọc + nút Reset
 - [x] Hiển thị tổng số sản phẩm
 - [x] Grid sản phẩm responsive
+
+## Phase 15: Chuyển tính năng vào trang user + Fix UI
+
+### Header/Nav
+- [x] Bỏ link Tra Cứu Đơn, Bảo Hành, Tích Điểm, BXH khỏi menu header chính
+- [x] Giữ lại Flash Sale, FAQ, Thêm trên header
+- [x] Cập nhật mobile menu tương ứng
+
+### Fix UI Catalog
+- [x] Thu nhỏ filter panel trang catalog - mức giá đang bự hơn card
+- [x] Cải thiện layout bộ lọc compact hơn
+
+### Trang User (MyAccount)
+- [x] Thêm section Giới thiệu bạn bè (referral code, copy, thống kê)
+- [x] Thêm quick link Đơn hàng vào trang user
+- [x] Thêm quick link Bảo hành vào trang user
+- [x] Thêm quick link Tích điểm vào trang user
+- [x] Thêm quick link BXH Chi tiêu vào trang user
+- [x] Hoàn thiện UI trang user chuyên nghiệp hơn

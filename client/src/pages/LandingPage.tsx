@@ -59,10 +59,7 @@ export default function LandingPage() {
 
   const navLinks = [
     { label: "Flash Sale", href: "/flash-sale", icon: Flame },
-    { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
-    { label: "Bảo Hành", href: "/warranty", icon: Shield },
-    { label: "Tích Điểm", href: "/loyalty", icon: Gift },
-    { label: "BXH", href: "/leaderboard", icon: Trophy },
+    { label: "Sản Phẩm", href: "/catalog", icon: Package },
     { label: "FAQ", href: "/faq", icon: HelpCircle },
   ];
 

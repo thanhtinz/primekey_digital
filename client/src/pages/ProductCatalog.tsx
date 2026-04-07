@@ -176,12 +176,12 @@ export default function ProductCatalog() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 pb-8">
-        {/* ===== FILTER PANEL ===== */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            {/* Danh mục (parent) */}
+        {/* ===== FILTER PANEL (compact) ===== */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5">
+          {/* Row 1: Danh mục + Thể loại */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Danh mục</label>
+              <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Danh mục</label>
               <select
                 value={selectedParentCat ?? ""}
                 onChange={e => {
@@ -189,7 +189,7 @@ export default function ProductCatalog() {
                   setSelectedParentCat(val);
                   setSelectedChildCat(null);
                 }}
-                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+                className="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
               >
                 <option value="">Tất cả</option>
                 {parentCats.map((cat: any) => (
@@ -197,15 +197,13 @@ export default function ProductCatalog() {
                 ))}
               </select>
             </div>
-
-            {/* Thể loại (child) */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Thể loại</label>
+              <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Thể loại</label>
               <select
                 value={selectedChildCat ?? ""}
                 onChange={e => setSelectedChildCat(e.target.value ? Number(e.target.value) : null)}
                 disabled={!selectedParentCat || childCats.length === 0}
-                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Tất cả</option>
                 {childCats.map((cat: any) => (
@@ -215,57 +213,55 @@ export default function ProductCatalog() {
             </div>
           </div>
 
-          {/* Price range */}
-          <div className="mb-4">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Mức giá</label>
+          {/* Row 2: Mức giá */}
+          <div className="mb-3">
+            <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Mức giá</label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                placeholder="Mức giá từ"
+                placeholder="Từ"
                 value={priceFrom}
                 onChange={e => setPriceFrom(e.target.value)}
-                className="flex-1 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <span className="text-gray-400 font-medium">-</span>
+              <span className="text-gray-300 text-xs">~</span>
               <input
                 type="number"
-                placeholder="Mức giá đến"
+                placeholder="Đến"
                 value={priceTo}
                 onChange={e => setPriceTo(e.target.value)}
-                className="flex-1 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
-          {/* Sort + Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+          {/* Row 3: Sắp xếp + Actions */}
+          <div className="flex items-end gap-2">
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sắp xếp</label>
+              <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Sắp xếp</label>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as SortOption)}
-                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+                className="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
               >
                 {(Object.entries(sortLabels) as [SortOption, string][]).map(([key, label]) => (
                   <option key={key} value={key}>{label}</option>
                 ))}
               </select>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleApplyFilter}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-sm font-medium transition-colors"
-              >
-                <Filter className="h-4 w-4" /> Lọc
-              </button>
-              <button
-                onClick={handleResetFilter}
-                className="flex items-center justify-center p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-colors"
-                title="Đặt lại bộ lọc"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </button>
-            </div>
+            <button
+              onClick={handleApplyFilter}
+              className="flex items-center justify-center gap-1.5 px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Filter className="h-3.5 w-3.5" /> Lọc
+            </button>
+            <button
+              onClick={handleResetFilter}
+              className="flex items-center justify-center p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-lg transition-colors"
+              title="Đặt lại"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
 
