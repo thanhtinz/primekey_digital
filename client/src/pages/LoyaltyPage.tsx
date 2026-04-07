@@ -41,28 +41,28 @@ export default function LoyaltyPage() {
   const history = loyaltyData?.history || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-white text-slate-800">
       <ClientHeader maxWidth="max-w-5xl" />
 
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Star className="w-10 h-10 text-yellow-400" />
+          <div className="w-20 h-20 bg-yellow-50 border border-yellow-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Star className="w-10 h-10 text-yellow-500" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Điểm Thành Viên</h1>
-          <p className="text-slate-400">Nhập email để xem điểm tích lũy và lịch sử giao dịch</p>
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">Điểm Thành Viên</h1>
+          <p className="text-slate-500">Nhập email để xem điểm tích lũy và lịch sử giao dịch</p>
         </div>
 
         {/* Search */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 mb-6">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6">
           <div className="flex gap-3">
             <Input
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
               placeholder="Nhập email của bạn..."
-              className="bg-slate-900/60 border-slate-600 text-white placeholder:text-slate-500 focus:border-yellow-500"
+              className="bg-slate-50 border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-yellow-500"
             />
             <Button onClick={handleSearch} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold gap-2 flex-shrink-0">
               <Search className="w-4 h-4" /> Tra Cứu
@@ -71,25 +71,25 @@ export default function LoyaltyPage() {
         </div>
 
         {/* Results */}
-        {isLoading && <div className="text-center py-8 text-slate-400">Đang tra cứu...</div>}
+        {isLoading && <div className="text-center py-8 text-slate-500">Đang tra cứu...</div>}
 
         {loyaltyData && (
           <div className="space-y-4">
             {/* Points card */}
-            <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-2xl p-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm">Tổng điểm tích lũy</p>
-                  <p className="text-4xl font-bold text-yellow-400 mt-1">{points.toLocaleString()}</p>
-                  <p className="text-slate-400 text-sm mt-1">điểm</p>
+                  <p className="text-slate-500 text-sm">Tổng điểm tích lũy</p>
+                  <p className="text-4xl font-bold text-yellow-500 mt-1">{points.toLocaleString()}</p>
+                  <p className="text-slate-500 text-sm mt-1">điểm</p>
                 </div>
-                <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center">
-                  <Star className="w-8 h-8 text-yellow-400" />
+                <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center">
+                  <Star className="w-8 h-8 text-yellow-500" />
                 </div>
               </div>
               {points > 0 && (
-                <div className="mt-4 pt-4 border-t border-yellow-500/20">
-                  <div className="flex items-center gap-2 text-green-400 text-sm">
+                <div className="mt-4 pt-4 border-t border-yellow-200">
+                  <div className="flex items-center gap-2 text-green-600 text-sm">
                     <Gift className="w-4 h-4" />
                     <span>Điểm có thể đổi thưởng tại cửa hàng</span>
                   </div>
@@ -99,19 +99,19 @@ export default function LoyaltyPage() {
 
             {/* History */}
             {history.length > 0 && (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-700 flex items-center gap-2">
-                  <History className="w-4 h-4 text-slate-400" />
-                  <h3 className="text-white font-semibold">Lịch Sử Giao Dịch</h3>
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200 flex items-center gap-2">
+                  <History className="w-4 h-4 text-slate-500" />
+                  <h3 className="font-semibold text-slate-800">Lịch Sử Giao Dịch</h3>
                 </div>
-                <div className="divide-y divide-slate-700">
+                <div className="divide-y divide-slate-200">
                   {history.map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between px-5 py-3">
                       <div>
-                        <p className="text-white text-sm">{item.reason === "EARNED_ORDER" ? "Tích điểm từ đơn hàng" : item.reason === "REDEEMED" ? "Đổi điểm" : item.reason}</p>
+                        <p className="text-sm text-slate-800">{item.reason === "EARNED_ORDER" ? "Tích điểm từ đơn hàng" : item.reason === "REDEEMED" ? "Đổi điểm" : item.reason}</p>
                         <p className="text-slate-500 text-xs mt-0.5">{new Date(item.createdAt).toLocaleDateString("vi-VN")}</p>
                       </div>
-                      <span className={`font-bold text-sm ${item.points > 0 ? "text-green-400" : "text-red-400"}`}>
+                      <span className={`font-bold text-sm ${item.points > 0 ? "text-green-600" : "text-red-500"}`}>
                         {item.points > 0 ? "+" : ""}{item.points}
                       </span>
                     </div>
@@ -121,9 +121,9 @@ export default function LoyaltyPage() {
             )}
 
             {history.length === 0 && points === 0 && (
-              <div className="text-center py-8 bg-slate-800/30 border border-dashed border-slate-700 rounded-xl">
-                <Star className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                <p className="text-slate-400">Chưa có điểm tích lũy cho email này</p>
+              <div className="text-center py-8 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                <Star className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                <p className="text-slate-500">Chưa có điểm tích lũy cho email này</p>
                 <p className="text-slate-500 text-sm mt-1">Mua hàng để bắt đầu tích điểm!</p>
               </div>
             )}
@@ -138,9 +138,9 @@ export default function LoyaltyPage() {
               { icon: TrendingUp, title: "Tích lũy", desc: "Điểm được cộng dồn theo từng giao dịch" },
               { icon: Gift, title: "Đổi thưởng", desc: "Dùng điểm để được giảm giá cho đơn hàng tiếp theo" },
             ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 text-center">
-                <Icon className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-                <p className="text-white text-sm font-medium">{title}</p>
+              <div key={title} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                <Icon className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-800">{title}</p>
                 <p className="text-slate-500 text-xs mt-1">{desc}</p>
               </div>
             ))}

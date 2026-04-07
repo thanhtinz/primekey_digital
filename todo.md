@@ -834,3 +834,22 @@
 - [x] Cập nhật admin UI để upload ảnh, nhập chi tiết, lưu ý sản phẩm
 - [x] Cập nhật ProductDetail hiển thị ảnh, chi tiết, lưu ý
 - [x] Cập nhật LandingPage, ProductCatalog, ProductCompare hiển thị ảnh sản phẩm
+
+## Phase 11: Đổi giao diện client sang Light Theme
+- [x] Cập nhật ClientHeader sang light theme
+- [x] Cập nhật LandingPage sang light theme
+- [x] Cập nhật ProductDetail sang light theme
+- [x] Cập nhật ProductCatalog sang light theme
+- [x] Cập nhật ProductCompare sang light theme
+- [x] Cập nhật FlashSalePage sang light theme
+- [x] Cập nhật LeaderboardPage sang light theme
+- [x] Cập nhật TrackOrder sang light theme
+- [x] Cập nhật LoyaltyPage sang light theme
+- [x] Cập nhật WarrantyLookup sang light theme
+- [x] Cập nhật WarrantyRequestPage sang light theme
+- [x] Cập nhật ReviewPage sang light theme
+- [x] Cập nhật PublicFeedbacks sang light theme
+- [x] Cập nhật FAQPage sang light theme
+- [x] Cập nhật QueuePage sang light theme
+- [x] Cập nhật MyAccount sang light theme
+- [x] Cập nhật ClientLogin sang light theme

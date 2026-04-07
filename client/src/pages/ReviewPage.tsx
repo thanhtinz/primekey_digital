@@ -49,20 +49,20 @@ export default function ReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center">
-        <div className="h-8 w-8 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="h-8 w-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error || !reviewInfo) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Link Không Hợp Lệ</h2>
-          <p className="text-slate-400 mb-6">Link đánh giá này không tồn tại hoặc đã hết hạn.</p>
-          <Button onClick={() => setLocation("/")} variant="outline" className="border-white/20 text-white hover:bg-white/10">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Link Không Hợp Lệ</h2>
+          <p className="text-slate-500 mb-6">Link đánh giá này không tồn tại hoặc đã hết hạn.</p>
+          <Button onClick={() => setLocation("/")} variant="outline" className="border-slate-200 text-slate-800 hover:bg-slate-100">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Về Trang Chủ
           </Button>
@@ -73,21 +73,21 @@ export default function ReviewPage() {
 
   if (submitted || reviewInfo.reviewSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-10 w-10 text-green-400" />
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">Cảm Ơn Bạn!</h2>
-          <p className="text-slate-400 mb-2">
-            Đánh giá của bạn cho đơn hàng <strong className="text-white">{reviewInfo.invoiceNumber}</strong> đã được ghi nhận.
+          <h2 className="text-2xl font-bold text-slate-800 mb-3">Cảm Ơn Bạn!</h2>
+          <p className="text-slate-600 mb-2">
+            Đánh giá của bạn cho đơn hàng <strong className="text-slate-800">{reviewInfo.invoiceNumber}</strong> đã được ghi nhận.
           </p>
           <p className="text-slate-500 text-sm mb-8">Chúng tôi sẽ xem xét và hiển thị đánh giá của bạn sớm nhất.</p>
           <div className="flex gap-3 justify-center">
-            <Button onClick={() => setLocation("/")} variant="outline" className="border-white/20 text-white hover:bg-white/10">
+            <Button onClick={() => setLocation("/")} variant="outline" className="border-slate-200 text-slate-800 hover:bg-slate-100">
               Về Trang Chủ
             </Button>
-            <Button onClick={() => setLocation("/track-order")} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => setLocation("/track-order")} className="bg-blue-600 hover:bg-blue-700 text-white">
               Tra Cứu Đơn Hàng
             </Button>
           </div>
@@ -97,28 +97,28 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
+    <div className="min-h-screen bg-slate-50">
       <ClientHeader maxWidth="max-w-2xl" />
 
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-500/20 rounded-2xl mb-4">
-            <Star className="h-8 w-8 text-yellow-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-2xl mb-4">
+            <Star className="h-8 w-8 text-yellow-500" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Đánh Giá Đơn Hàng</h1>
-          <p className="text-slate-400">
-            Đơn hàng <strong className="text-white">{reviewInfo.invoiceNumber}</strong>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Đánh Giá Đơn Hàng</h1>
+          <p className="text-slate-500">
+            Đơn hàng <strong className="text-slate-800">{reviewInfo.invoiceNumber}</strong>
           </p>
         </div>
 
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Rating Stars */}
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-3">
-                  Đánh giá của bạn <span className="text-red-400">*</span>
+                <label className="text-sm font-medium text-slate-600 block mb-3">
+                  Đánh giá của bạn <span className="text-red-500">*</span>
                 </label>
                 <div className="flex gap-2 justify-center">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -134,22 +134,29 @@ export default function ReviewPage() {
                         className={`h-10 w-10 transition-colors ${
                           star <= (hoverRating || rating)
                             ? "text-yellow-400 fill-yellow-400"
-                            : "text-slate-600"
+                            : "text-slate-400"
                         }`}
                       />
                     </button>
                   ))}
                 </div>
                 {rating > 0 && (
-                  <p className="text-center text-sm text-slate-400 mt-2">
-                    {["", "Rất tệ", "Tệ", "Bình thường", "Tốt", "Xuất sắc"][rating]}
+                  <p className="text-center text-sm text-slate-500 mt-2">
+                    {[
+                      "",
+                      "Rất tệ",
+                      "Tệ",
+                      "Bình thường",
+                      "Tốt",
+                      "Xuất sắc",
+                    ][rating]}
                   </p>
                 )}
               </div>
 
               {/* Customer Name */}
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2">
+                <label className="text-sm font-medium text-slate-600 block mb-2">
                   Tên của bạn (tùy chọn)
                 </label>
                 <Input
@@ -157,13 +164,13 @@ export default function ReviewPage() {
                   placeholder="Nguyễn Văn A"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-slate-500"
+                  className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
                 />
               </div>
 
               {/* Comment */}
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2">
+                <label className="text-sm font-medium text-slate-600 block mb-2">
                   Nhận xét (tùy chọn)
                 </label>
                 <Textarea
@@ -171,12 +178,12 @@ export default function ReviewPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={4}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 resize-none"
+                  className="bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 resize-none"
                 />
               </div>
 
               {submitMutation.error && (
-                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span>{submitMutation.error.message}</span>
                 </div>
@@ -188,7 +195,7 @@ export default function ReviewPage() {
                 disabled={rating === 0 || submitMutation.isPending}
               >
                 {submitMutation.isPending ? (
-                  <div className="h-4 w-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  <div className="h-4 w-4 border-2 border-slate-400/50 border-t-slate-500 rounded-full animate-spin" />
                 ) : (
                   <><Star className="h-4 w-4 mr-2" />Gửi Đánh Giá</>
                 )}
@@ -202,9 +209,9 @@ export default function ReviewPage() {
         </Card>
 
         {/* Info */}
-        <div className="flex items-start gap-3 mt-6 bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3">
-          <Package className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
-          <p className="text-blue-300 text-sm">
+        <div className="flex items-start gap-3 mt-6 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+          <Package className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p className="text-blue-700 text-sm">
             Đánh giá của bạn sẽ được kiểm duyệt trước khi hiển thị công khai. Cảm ơn bạn đã dành thời gian chia sẻ!
           </p>
         </div>

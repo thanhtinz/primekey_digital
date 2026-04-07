@@ -40,12 +40,12 @@ export function ClientHeader({
   const initials = companyName.slice(0, 2).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0d1117]/95 backdrop-blur-md border-b border-white/8 shadow-sm shadow-black/20">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
       <div className={`${maxWidth} mx-auto px-4 h-14 flex items-center justify-between gap-3`}>
         {/* Left: Back button */}
         <button
           onClick={() => navigate(backHref)}
-          className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm flex-shrink-0"
+          className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors text-sm flex-shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
           <span className="hidden sm:inline">{backLabel}</span>
@@ -54,7 +54,7 @@ export function ClientHeader({
         {/* Center: Title or Logo */}
         <div className="flex items-center gap-2 flex-1 justify-center">
           {title ? (
-            <span className="text-white font-semibold text-sm truncate">{title}</span>
+            <span className="text-slate-800 font-semibold text-sm truncate">{title}</span>
           ) : (
             <button
               onClick={() => navigate("/")}
@@ -71,7 +71,7 @@ export function ClientHeader({
                   <div className="h-7 w-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
                     <span className="text-white font-bold text-xs">{initials}</span>
                   </div>
-                  <span className="text-white font-semibold text-sm hidden sm:inline">{companyName}</span>
+                  <span className="text-slate-800 font-semibold text-sm hidden sm:inline">{companyName}</span>
                 </>
               )}
             </button>
@@ -84,7 +84,7 @@ export function ClientHeader({
             isLoggedIn ? (
               <button
                 onClick={() => navigate("/my-account")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600/20 hover:bg-green-600/30 text-green-400 text-xs font-medium transition border border-green-600/30"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition border border-blue-200"
               >
                 <User className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Tài Khoản</span>
@@ -92,7 +92,7 @@ export function ClientHeader({
             ) : (
               <button
                 onClick={() => navigate("/client-login")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/8 hover:bg-white/15 text-slate-300 hover:text-white text-xs font-medium transition border border-white/10"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition"
               >
                 <LogIn className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Đăng Nhập</span>
