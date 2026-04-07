@@ -288,8 +288,8 @@ export default function Products() {
                       const pkgs = product.packages || [];
                       const isExpanded = expandedProduct === product.id;
                       return (
-                        <tbody key={product.id}>
-                          <tr className="hover:bg-gray-50 transition-colors">
+                        <>
+                          <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-2.5">
                                 {product.imageUrl ? (
@@ -390,7 +390,7 @@ export default function Products() {
                               </td>
                             </tr>
                           )}
-                        </tbody>
+                        </>
                       );
                     })}
                   </tbody>

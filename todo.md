@@ -979,3 +979,11 @@
 - [x] Custom fields: lưu giá trị user nhập vào cart item / order
 - [x] Trang tra cứu đơn: bỏ card nhập email (đã login mới xem được)
 - [x] Trang so sánh SP: fix không thêm được SP để so sánh
+
+## Phase 17: Cải tiến trang bảo hành
+
+- [x] Backend: router lấy danh sách SP đã mua có bảo hành (từ đơn hàng PAID)
+- [x] Backend: router tạo đơn bảo hành trực tiếp từ SP đã mua
+- [x] Client: hiển thị danh sách SP đã mua có bảo hành (ảnh, tên, gói, thời hạn BH)
+- [x] Client: nút "Yêu cầu bảo hành" trên mỗi SP → tạo đơn BH theo quy trình
+- [x] Client: bỏ form tìm kiếm SP bảo hành cũ

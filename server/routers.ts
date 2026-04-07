@@ -3965,6 +3965,60 @@ export const appRouter = router({
         return drizzleDb.select().from(warranties).where(eq(warranties.customerId, customer.id));
       }),
 
+    // SP đã mua có bảo hành (để hiển thị trên trang bảo hành)
+    myWarrantyProducts: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions, invoices: invoicesTable, invoiceItems, customers, products: productsTable, productPackages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and, inArray } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return [];
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) return [];
+        // Lấy đơn hàng PAID hoặc WARRANTY
+        const paidOrders = await drizzleDb.select().from(invoicesTable).where(
+          and(
+            eq(invoicesTable.customerId, customer.id),
+            inArray(invoicesTable.status, ["PAID", "WARRANTY", "SHIPPING"])
+          )
+        );
+        if (paidOrders.length === 0) return [];
+        // Lấy items từ các đơn hàng
+        const orderIds = paidOrders.map(o => o.id);
+        const allItems = await drizzleDb.select().from(invoiceItems).where(inArray(invoiceItems.invoiceId, orderIds));
+        // Lấy thông tin sản phẩm
+        const productIds = Array.from(new Set(allItems.filter(i => i.productId).map(i => i.productId!)));
+        let productsMap: Record<number, any> = {};
+        if (productIds.length > 0) {
+          const prods = await drizzleDb.select().from(productsTable).where(inArray(productsTable.id, productIds));
+          prods.forEach(p => { productsMap[p.id] = p; });
+        }
+        // Map items với thông tin bảo hành
+        const result = allItems.map(item => {
+          const order = paidOrders.find(o => o.id === item.invoiceId);
+          const product = item.productId ? productsMap[item.productId] : null;
+          return {
+            id: item.id,
+            invoiceId: item.invoiceId,
+            invoiceNumber: order?.invoiceNumber || "",
+            productId: item.productId,
+            productName: item.name,
+            productImage: product?.imageUrl || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            paidAt: order?.paidAt,
+            warrantyMonths: order?.warrantyMonths || product?.warrantyMonths || 0,
+            warrantyStartDate: order?.warrantyStartDate,
+            warrantyExpiryDate: order?.warrantyExpiryDate,
+            orderStatus: order?.status,
+          };
+        }).filter(item => item.warrantyMonths > 0); // Chỉ lấy SP có bảo hành
+        return result;
+      }),
+
     // Đăng xuất
     logout: publicProcedure
       .input(z.object({ token: z.string() }))
