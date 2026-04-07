@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +42,7 @@ export default function LoyaltyPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <ClientHeader maxWidth="max-w-4xl" rightSlot={<Link href="/track" className="text-slate-400 hover:text-white text-xs transition-colors">Tra cứu đơn</Link>} />
+      <ClientHeader maxWidth="max-w-5xl" />
 
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}
