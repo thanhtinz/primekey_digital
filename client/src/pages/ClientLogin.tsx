@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Mail, LogIn, ArrowLeft, User } from "lucide-react";
 import { ClientHeader } from "@/components/ClientHeader";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 export default function ClientLogin() {
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const { login } = useCustomerAuth();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [step, setStep] = useState<"email" | "name">("email");
@@ -14,13 +17,13 @@ export default function ClientLogin() {
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
   const loginMutation = trpc.customer.login.useMutation({
     onSuccess: (data) => {
-      // Lưu token vào localStorage
-      localStorage.setItem("customerToken", data.token);
-      localStorage.setItem("customerEmail", data.email);
-      localStorage.setItem("customerName", data.name || data.email.split("@")[0]);
+      // Cập nhật CustomerAuth context
+      login(data.token, data.email);
       toast.success(`Chào mừng ${data.name || data.email}!`);
-      // Redirect về trang chủ client
-      navigate("/");
+      // Redirect về trang trước nếu có redirect param, ngược lại về trang chủ
+      const params = new URLSearchParams(search);
+      const redirectTo = params.get("redirect");
+      navigate(redirectTo ? decodeURIComponent(redirectTo) : "/");
     },
     onError: (err) => {
       toast.error("Đăng nhập thất bại: " + err.message);

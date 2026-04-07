@@ -4,18 +4,28 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { useEffect } from "react";
 import { Star, CheckCircle, AlertCircle, Package, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClientHeader } from "@/components/ClientHeader";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 export default function ReviewPage() {
   const { token } = useParams<{ token: string }>();
   const [, setLocation] = useLocation();
+  const { customer, isLoggedIn } = useCustomerAuth();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  // Tự điền tên từ session khi đã đăng nhập
+  useEffect(() => {
+    if (isLoggedIn && customer?.name && !customerName) {
+      setCustomerName(customer.name);
+    }
+  }, [isLoggedIn, customer?.name]);
 
   const { data: reviewInfo, isLoading, error } = trpc.reviews.getByToken.useQuery(
     { token: token || "" },

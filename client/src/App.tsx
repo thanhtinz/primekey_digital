@@ -100,7 +100,7 @@ const ForbiddenPage = () => (
   </div>
 );
 
-// Routes that never require auth (always accessible)
+// Routes that never require admin auth (always accessible to public or customers)
 const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product"];
 
 function isAlwaysPublic(path: string) {
@@ -128,7 +128,7 @@ function Router() {
     return (
       <Suspense fallback={<PageLoader />}>
         <Switch>
-          <Route path="/track-order" component={() => <TrackOrder />} />
+          {/* Fully public - no login required */}
           <Route path="/feedbacks-public" component={() => <PublicFeedbacks />} />
           <Route path="/review/:token" component={() => <ReviewPage />} />
           <Route path="/thank-you" component={() => <ThankYou />} />
@@ -139,15 +139,14 @@ function Router() {
           <Route path="/flash-sale" component={() => <FlashSalePage />} />
           <Route path="/catalog" component={() => <ProductCatalog />} />
           <Route path="/compare" component={() => <ProductCompare />} />
-          <Route path="/loyalty" component={() => <LoyaltyPage />} />
-          <Route path="/warranty-request" component={() => <WarrantyRequestPage />} />
           <Route path="/faq" component={() => <FAQPage />} />
           <Route path="/client-login" component={() => <ClientLogin />} />
-          <Route path="/my-account" component={() => <CustomerGuard><MyAccount /></CustomerGuard>} />
           <Route path="/product/:id" component={() => <ProductDetail />} />
+          {/* Customer-only - requires customer login */}
           <Route path="/track-order" component={() => <CustomerGuard><TrackOrder /></CustomerGuard>} />
           <Route path="/loyalty" component={() => <CustomerGuard><LoyaltyPage /></CustomerGuard>} />
           <Route path="/warranty-request" component={() => <CustomerGuard><WarrantyRequestPage /></CustomerGuard>} />
+          <Route path="/my-account" component={() => <CustomerGuard><MyAccount /></CustomerGuard>} />
         </Switch>
       </Suspense>
     );
@@ -167,7 +166,7 @@ function Router() {
           <Route path="/login" component={() => <Login onLoginSuccess={handleLoginSuccess} />} />
           {/* Client portal routes accessible without admin auth */}
           <Route path="/client-login" component={() => <ClientLogin />} />
-          <Route path="/my-account" component={() => <MyAccount />} />
+          <Route path="/my-account" component={() => <CustomerGuard><MyAccount /></CustomerGuard>} />
           <Route component={() => <LandingPage />} />
         </Switch>
       </Suspense>

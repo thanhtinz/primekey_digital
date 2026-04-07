@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Star, Search, Gift, TrendingUp, History, ShoppingBag } from "lucide-react";
 import { ClientHeader } from "@/components/ClientHeader";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 function formatVND(amount: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 }
 
 export default function LoyaltyPage() {
+  const { customer, isLoggedIn } = useCustomerAuth();
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
   const [email, setEmail] = useState("");
   const [searchEmail, setSearchEmail] = useState("");
@@ -19,6 +21,14 @@ export default function LoyaltyPage() {
     { email: searchEmail },
     { enabled: !!searchEmail }
   );
+
+  // Tự điền email từ session khi đã đăng nhập
+  useEffect(() => {
+    if (isLoggedIn && customer?.email && !searchEmail) {
+      setEmail(customer.email);
+      setSearchEmail(customer.email);
+    }
+  }, [isLoggedIn, customer?.email]);
 
   const logo = publicInfo?.logoUrl;
   const siteName = publicInfo?.companyName || "Invoice Prime";

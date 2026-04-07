@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useEffect } from "react";
 import { Shield, CheckCircle2, AlertCircle, Upload, Phone, Mail, ArrowLeft } from "lucide-react";
 import { ClientHeader } from "@/components/ClientHeader";
 import { toast } from "sonner";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 export default function WarrantyRequestPage() {
+  const { customer, isLoggedIn } = useCustomerAuth();
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
   const { data: warrantySettings } = trpc.warranty.getSettings.useQuery();
 
@@ -27,6 +30,17 @@ export default function WarrantyRequestPage() {
     productName: "",
   });
   const [submitted, setSubmitted] = useState(false);
+
+  // Tự điền email và tên từ session khi đã đăng nhập
+  useEffect(() => {
+    if (isLoggedIn && customer?.email) {
+      setForm(f => ({
+        ...f,
+        customerEmail: f.customerEmail || customer.email,
+        customerName: f.customerName || customer.name || "",
+      }));
+    }
+  }, [isLoggedIn, customer?.email, customer?.name]);
 
   const logo = publicInfo?.logoUrl;
   const siteName = publicInfo?.companyName || "Invoice Prime";

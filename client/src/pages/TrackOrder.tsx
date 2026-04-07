@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, User, Phone, ShoppingBag, CreditCard, ChevronDown, ChevronUp, ExternalLink, Mail, FileText, Receipt } from "lucide-react";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 const STATUS_CONFIG: Record<string, {
   label: string;
@@ -269,9 +270,18 @@ function OrderCard({ order }: { order: any }) {
 
 export default function TrackOrder() {
   const [, setLocation] = useLocation();
+  const { customer, isLoggedIn } = useCustomerAuth();
   const [email, setEmail] = useState("");
   const [searchEmail, setSearchEmail] = useState("");
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+
+  // Tự điền email từ session khi đã đăng nhập
+  useEffect(() => {
+    if (isLoggedIn && customer?.email && !searchEmail) {
+      setEmail(customer.email);
+      setSearchEmail(customer.email);
+    }
+  }, [isLoggedIn, customer?.email]);
 
   const { data: orders, isLoading, error } = trpc.invoices.getByEmail.useQuery(
     { email: searchEmail },
