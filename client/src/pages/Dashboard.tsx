@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw, Package, Users, Star, AlertTriangle } from "lucide-react";
+import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw, Package, Users, Star, AlertTriangle, Send, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 
 function StatCardSkeleton() {
   return (
@@ -51,13 +53,34 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const [isSendingBulk, setIsSendingBulk] = useState(false);
   const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats } = trpc.reports.getDashboardStats.useQuery();
   const { data: revenueByMonth, isLoading: revenueLoading } = trpc.reports.getRevenueByMonth.useQuery();
   const { data: invoiceStats, isLoading: invoiceStatsLoading } = trpc.reports.getInvoiceStats.useQuery();
   const { data: recentInvoices, isLoading: invoicesLoading } = trpc.invoices.list.useQuery();
   const { data: topProducts } = trpc.reports.getTopProducts.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
-  const { data: expiringSoon } = trpc.invoices.getExpiringSoon.useQuery();
+  const { data: expiringSoon, refetch: refetchExpiring } = trpc.invoices.getExpiringSoon.useQuery();
+  const sendBulkReminderMutation = trpc.reminders.sendBulkReminder.useMutation();
+
+  const handleSendBulkReminder = async () => {
+    if (!expiringSoon || expiringSoon.length === 0) return;
+    if (!confirm(`Gửi email nhắc nhở cho ${expiringSoon.length} khách hàng có đơn sắp hết hạn?`)) return;
+    setIsSendingBulk(true);
+    try {
+      const invoiceIds = expiringSoon.map((inv: any) => inv.id);
+      const result = await sendBulkReminderMutation.mutateAsync({
+        invoiceIds,
+        origin: window.location.origin,
+      });
+      toast.success(`Đã gửi ${result.sent} email nhắc nhở thành công`);
+      refetchExpiring();
+    } catch {
+      toast.error("Gửi email thất bại");
+    } finally {
+      setIsSendingBulk(false);
+    }
+  };
 
   const revenueData = (revenueByMonth || []).map(item => ({
     month: item.month,
@@ -380,7 +403,19 @@ export default function Dashboard() {
                   <AlertTriangle className="h-4 w-4 text-orange-500" />
                   Hóa Đơn Sắp Hết Hạn ({expiringSoon.length})
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-orange-600 hover:text-orange-700 text-xs">Xem tất cả →</Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSendBulkReminder}
+                    disabled={isSendingBulk}
+                    className="text-xs h-7 px-2.5 border-orange-300 text-orange-700 hover:bg-orange-100 gap-1.5"
+                  >
+                    {isSendingBulk ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                    Gửi Nhắc Tất Cả
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-orange-600 hover:text-orange-700 text-xs">Xem tất cả →</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

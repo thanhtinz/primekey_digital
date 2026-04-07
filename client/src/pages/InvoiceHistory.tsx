@@ -389,6 +389,7 @@ export default function InvoiceHistory() {
                         />
                       </th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500">Số HĐ</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 hidden lg:table-cell">Khách Hàng</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500 hidden md:table-cell">Ngày Tạo</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-500">Số Tiền</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-500">Trạng Thái</th>
@@ -411,6 +412,9 @@ export default function InvoiceHistory() {
                           </td>
                           <td className="py-3.5 px-4">
                             <span className="font-medium text-blue-600">{inv.invoiceNumber}</span>
+                          </td>
+                          <td className="py-3.5 px-4 hidden lg:table-cell">
+                            <span className="text-gray-700 text-sm">{(inv as any).customerName || <span className="text-gray-400 italic">—</span>}</span>
                           </td>
                           <td className="py-3.5 px-4 text-gray-500 hidden md:table-cell">
                             {new Date(inv.createdAt).toLocaleDateString("vi-VN")}

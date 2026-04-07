@@ -4,20 +4,38 @@ import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Bell, Send, Clock, CheckCircle, XCircle, RefreshCw,
-  FileText, Mail, AlertTriangle, Loader2
+  FileText, Mail, AlertTriangle, Loader2, Settings2, CalendarClock
 } from "lucide-react";
+
+const REMINDER_HOURS_OPTIONS = [
+  { value: "1", label: "1 giờ trước khi hết hạn" },
+  { value: "2", label: "2 giờ trước khi hết hạn" },
+  { value: "4", label: "4 giờ trước khi hết hạn" },
+  { value: "6", label: "6 giờ trước khi hết hạn" },
+  { value: "12", label: "12 giờ trước khi hết hạn" },
+  { value: "24", label: "24 giờ (1 ngày) trước khi hết hạn" },
+  { value: "48", label: "48 giờ (2 ngày) trước khi hết hạn" },
+  { value: "72", label: "72 giờ (3 ngày) trước khi hết hạn" },
+];
 
 export default function Reminders() {
   const [isSending, setIsSending] = useState(false);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
 
   const { data: pendingInvoices, isLoading: pendingLoading, refetch: refetchPending } =
     trpc.reminders.getPending.useQuery();
 
   const { data: logs, isLoading: logsLoading, refetch: refetchLogs } =
     trpc.reminders.getLogs.useQuery();
+
+  const { data: userSettings, refetch: refetchSettings } =
+    trpc.settings.get.useQuery();
 
   const sendRemindersMutation = trpc.reminders.sendPending.useMutation({
     onSuccess: (data) => {
@@ -30,12 +48,40 @@ export default function Reminders() {
     },
   });
 
+  const updateNotificationsMutation = trpc.settings.updateNotifications.useMutation({
+    onSuccess: () => {
+      toast.success("Đã lưu cài đặt nhắc nhở");
+      refetchSettings();
+    },
+    onError: () => {
+      toast.error("Lưu cài đặt thất bại");
+    },
+  });
+
   const handleSendReminders = async () => {
     setIsSending(true);
     try {
       await sendRemindersMutation.mutateAsync();
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleToggleAutoReminder = async (enabled: boolean) => {
+    setIsSavingSchedule(true);
+    try {
+      await updateNotificationsMutation.mutateAsync({ invoiceReminder: enabled });
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  };
+
+  const handleChangeReminderHours = async (hours: string) => {
+    setIsSavingSchedule(true);
+    try {
+      await updateNotificationsMutation.mutateAsync({ reminderHoursBefore: parseInt(hours) });
+    } finally {
+      setIsSavingSchedule(false);
     }
   };
 
@@ -51,6 +97,9 @@ export default function Reminders() {
     return `${Math.floor(hours / 24)} ngày`;
   };
 
+  const autoReminderEnabled = userSettings?.invoiceReminder ?? true;
+  const reminderHoursBefore = userSettings?.reminderHoursBefore ?? 24;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -62,7 +111,7 @@ export default function Reminders() {
               Nhắc Nhở Thanh Toán
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Tự động gửi email nhắc nhở khách hàng có đơn chưa thanh toán sau 24h và 48h
+              Tự động gửi email nhắc nhở khách hàng có đơn chưa thanh toán
             </p>
           </div>
           <Button
@@ -125,6 +174,80 @@ export default function Reminders() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Auto Reminder Schedule Settings */}
+        <Card className="shadow-sm border-blue-100">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-blue-500" />
+              Cài Đặt Lên Lịch Nhắc Nhở Tự Động
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* Toggle auto reminder */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="space-y-1">
+                <Label htmlFor="auto-reminder-toggle" className="text-sm font-medium text-gray-800 cursor-pointer">
+                  Bật nhắc nhở email tự động
+                </Label>
+                <p className="text-xs text-gray-500">
+                  Hệ thống sẽ tự động gửi email nhắc nhở khi hóa đơn sắp hết hạn theo lịch đã cài đặt
+                </p>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                {isSavingSchedule && <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />}
+                <Switch
+                  id="auto-reminder-toggle"
+                  checked={autoReminderEnabled}
+                  onCheckedChange={handleToggleAutoReminder}
+                  disabled={isSavingSchedule}
+                />
+              </div>
+            </div>
+
+            {/* Reminder hours before */}
+            <div className={`p-4 rounded-lg border transition-opacity ${autoReminderEnabled ? "bg-white border-blue-100 opacity-100" : "bg-gray-50 border-gray-100 opacity-50 pointer-events-none"}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-sm font-medium text-gray-800">
+                    Thời điểm gửi nhắc nhở
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    Gửi email nhắc nhở cho khách hàng trước khi hóa đơn hết hạn
+                  </p>
+                </div>
+                <Select
+                  value={String(reminderHoursBefore)}
+                  onValueChange={handleChangeReminderHours}
+                  disabled={isSavingSchedule || !autoReminderEnabled}
+                >
+                  <SelectTrigger className="w-full sm:w-72">
+                    <SelectValue placeholder="Chọn thời điểm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REMINDER_HOURS_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Info note */}
+            <div className="flex items-start gap-2.5 p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <Settings2 className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-blue-700 space-y-1">
+                <p className="font-medium">Lưu ý về nhắc nhở tự động:</p>
+                <ul className="space-y-0.5 list-disc list-inside text-blue-600">
+                  <li>Nhắc nhở tự động chạy khi có sự kiện hệ thống (không phải cron job thời gian thực)</li>
+                  <li>Để gửi ngay lập tức, nhấn nút <strong>"Gửi Nhắc Nhở Ngay"</strong> ở trên</li>
+                  <li>Mỗi hóa đơn chỉ nhận tối đa 1 email nhắc nhở theo loại (24h/48h)</li>
+                  <li>Cần cấu hình SMTP trong <strong>Cài Đặt → SMTP</strong> để gửi email</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Pending Invoices */}
         <Card className="shadow-sm">

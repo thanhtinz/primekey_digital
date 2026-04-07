@@ -32,7 +32,7 @@ export const appRouter = router({
   invoices: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
-      return db.getInvoicesByUserId(ctx.user.id);
+      return db.getInvoicesByUserIdWithCustomer(ctx.user.id);
     }),
 
     get: protectedProcedure
@@ -180,7 +180,7 @@ export const appRouter = router({
       .input(z.object({ productName: z.string() }))
       .query(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        if (!input.productName.trim()) return db.getInvoicesByUserId(ctx.user.id);
+        if (!input.productName.trim()) return db.getInvoicesByUserIdWithCustomer(ctx.user.id);
         return db.searchInvoicesByProduct(ctx.user.id, input.productName.trim());
       }),
 
@@ -1374,6 +1374,7 @@ export const appRouter = router({
       .input(z.object({
         emailNotifications: z.boolean().optional(),
         invoiceReminder: z.boolean().optional(),
+        reminderHoursBefore: z.number().int().min(1).max(168).optional(),
         paymentConfirmation: z.boolean().optional(),
         weeklyReport: z.boolean().optional(),
       }))
@@ -1973,6 +1974,33 @@ export const appRouter = router({
       const pending = await db.getPendingInvoicesForReminder();
       return pending;
     }),
+    // Send bulk reminder emails for specific invoice IDs (for expiring soon widget)
+    sendBulkReminder: protectedProcedure
+      .input(z.object({
+        invoiceIds: z.array(z.number()),
+        origin: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { sendEmail } = await import("./email");
+        let sent = 0;
+        for (const invoiceId of input.invoiceIds) {
+          const inv = await db.getInvoiceById(invoiceId);
+          if (!inv || inv.userId !== ctx.user.id) continue;
+          const customer = inv.customerId ? await db.getCustomerById(inv.customerId) : null;
+          if (!customer?.email) continue;
+          const origin = input.origin || "";
+          const paymentUrl = inv.paymentUrl || (origin ? `${origin}/pay/${inv.id}` : "");
+          const success = await sendEmail({
+            to: customer.email,
+            subject: `Nhắc nhở: Đơn hàng ${inv.invoiceNumber} sắp hết hạn`,
+            html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto"><h2 style="color:#ea580c">⚠️ Đơn Hàng Sắp Hết Hạn</h2><p>Xin chào <strong>${customer.name || "Quý khách"}</strong>,</p><p>Đơn hàng <strong>${inv.invoiceNumber}</strong> của bạn sắp hết hạn. Tổng tiền: <strong>${Number(inv.totalAmount).toLocaleString("vi-VN")} ${inv.currency || "VND"}</strong>.</p>${paymentUrl ? `<p><a href="${paymentUrl}" style="background:#3b82f6;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Thanh Toán Ngay</a></p>` : ""}<p style="color:#6b7280;font-size:12px">Email này được gửi tự động bởi hệ thống quản lý hóa đơn.</p></div>`,
+            userId: ctx.user.id,
+          });
+          if (success) sent++;
+        }
+        return { sent, total: input.invoiceIds.length };
+      }),
   }),
   invoiceTemplates2: router({
     update: protectedProcedure

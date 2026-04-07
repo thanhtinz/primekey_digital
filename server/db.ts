@@ -709,3 +709,35 @@ export async function searchInvoicesByProduct(userId: number, productName: strin
   return db.select().from(invoices)
     .where(and(eq(invoices.userId, userId), inArray(invoices.id, invoiceIds)));
 }
+
+// Get invoices with customer name (JOIN customers) for InvoiceHistory
+export async function getInvoicesByUserIdWithCustomer(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: invoices.id,
+    userId: invoices.userId,
+    invoiceNumber: invoices.invoiceNumber,
+    customerId: invoices.customerId,
+    customerName: customers.name,
+    customerEmail: customers.email,
+    templateId: invoices.templateId,
+    currency: invoices.currency,
+    subtotal: invoices.subtotal,
+    discountAmount: invoices.discountAmount,
+    taxAmount: invoices.taxAmount,
+    totalAmount: invoices.totalAmount,
+    status: invoices.status,
+    paymentMethod: invoices.paymentMethod,
+    paymentUrl: invoices.paymentUrl,
+    qrCode: invoices.qrCode,
+    paymentTransactionId: invoices.paymentTransactionId,
+    paidAt: invoices.paidAt,
+    expiresAt: invoices.expiresAt,
+    notes: invoices.notes,
+    createdAt: invoices.createdAt,
+    updatedAt: invoices.updatedAt,
+  }).from(invoices)
+    .leftJoin(customers, eq(invoices.customerId, customers.id))
+    .where(eq(invoices.userId, userId));
+}

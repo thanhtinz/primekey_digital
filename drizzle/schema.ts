@@ -197,6 +197,7 @@ export const userSettings = mysqlTable("userSettings", {
   faviconUrl: text("faviconUrl"),
   emailNotifications: boolean("emailNotifications").default(true),
   invoiceReminder: boolean("invoiceReminder").default(true),
+  reminderHoursBefore: int("reminderHoursBefore").default(24),
   paymentConfirmation: boolean("paymentConfirmation").default(true),
   weeklyReport: boolean("weeklyReport").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

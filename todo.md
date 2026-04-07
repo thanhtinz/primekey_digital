@@ -487,3 +487,14 @@
 - [x] Backend: procedure invoices.getExpiringSoon - lấy danh sách hóa đơn CREATED hết hạn trong 24h
 - [x] Dashboard: widget "Sắp Hết Hạn" - hiển thị danh sách hóa đơn CREATED hết hạn trong 24h
 - [x] TypeScript: 0 errors, 13/13 tests passed
+
+## Tính Năng Mới: Email Nhắc Hàng Loạt, Lên Lịch Tự Động, Cột Khách Hàng (Hoàn Thành)
+
+- [x] InvoiceHistory: thêm cột "Khách Hàng" vào bảng (hiển thị tên khách, ẩn trên mobile nhỏ)
+- [x] Backend: invoices.list và listByProduct trả về customerName cùng với invoice
+- [x] Dashboard widget "Sắp Hết Hạn": thêm nút "Gửi Nhắc Tất Cả" gửi email cho tất cả đơn sắp hết hạn
+- [x] Backend: procedure reminders.sendBulkReminder - gửi email nhắc cho danh sách invoiceIds
+- [x] Reminders page: thêm section "Lên Lịch Tự Động" với toggle bật/tắt và chọn số giờ trước khi hết hạn
+- [x] Backend: settings.updateNotifications hỗ trợ reminderHoursBefore
+- [x] DB schema: thêm cột reminderHoursBefore vào userSettings + migration
+- [x] TypeScript: 0 errors, 13/13 tests passed
