@@ -573,7 +573,6 @@ export default function LandingPage() {
               <h4 className="text-slate-800 font-semibold mb-3 text-sm">Mua Sắm</h4>
               <ul className="space-y-2">
                 {[
-                  { label: "Tất Cả Sản Phẩm", href: "/catalog" },
                   { label: "Flash Sale", href: "/flash-sale" },
                   { label: "So Sánh Sản Phẩm", href: "/compare" },
                   { label: "Đánh Giá Sản Phẩm", href: "/feedbacks-public" },
