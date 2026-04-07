@@ -931,3 +931,24 @@
 - [x] Cập nhật trang user: upload avatar, thêm tính năng
 - [x] Bỏ phần "Tiện ích dành cho bạn" ngoài trang client
 - [x] Trang chính chỉ hiển thị SP nổi bật (isFeatured)
+
+## Phase 14: Redesign trang chính + trang catalog theo mẫu
+
+### Trang chính (LandingPage)
+- [x] Bỏ search bar và filter tabs cũ
+- [x] Thêm banner chào mừng có thể đóng (dismissable)
+- [x] Thêm filter tabs danh mục lớn (Tất cả, Tiện Ích, Gift Cards, Trò chơi...)
+- [x] Thêm section danh mục icon scroll ngang (hiển thị danh mục con với icon)
+- [x] Section "Sản phẩm nổi bật" với mô tả + nút "Xem tất cả"
+- [x] Product cards hiển thị đẹp hơn (ảnh banner lớn, giá nổi bật)
+- [x] Bỏ phần hero cũ, thay bằng layout mới gọn gàng
+
+### Trang catalog (/catalog)
+- [x] Thêm breadcrumb (Trang chủ > Sản phẩm)
+- [x] Header gradient với tiêu đề "Tất cả sản phẩm" + mô tả
+- [x] Filter panel: Danh mục dropdown + Thể loại (danh mục con) dropdown
+- [x] Filter panel: Mức giá từ - đến
+- [x] Filter panel: Sắp xếp (Mặc định, Giá tăng, Giá giảm, Mới nhất)
+- [x] Nút Lọc + nút Reset
+- [x] Hiển thị tổng số sản phẩm
+- [x] Grid sản phẩm responsive
