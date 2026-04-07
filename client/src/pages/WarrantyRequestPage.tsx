@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Shield, CheckCircle2, ArrowLeft, AlertCircle, Upload, Phone, Mail } from "lucide-react";
+import { Shield, CheckCircle2, AlertCircle, Upload, Phone, Mail, ArrowLeft } from "lucide-react";
+import { ClientHeader } from "@/components/ClientHeader";
 import { toast } from "sonner";
 
 export default function WarrantyRequestPage() {
@@ -66,17 +67,7 @@ export default function WarrantyRequestPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Nav */}
-      <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            {logo ? <img src={logo} alt={siteName} className="h-8 w-auto object-contain" /> : <span className="text-white font-bold text-lg">{siteName}</span>}
-          </Link>
-          <Link href="/warranty" className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Tra cứu bảo hành
-          </Link>
-        </div>
-      </nav>
+      <ClientHeader maxWidth="max-w-4xl" backHref="/warranty" backLabel="Bảo Hành" rightSlot={<Link href="/warranty" className="text-slate-400 hover:text-white text-xs transition-colors">Tra cứu bảo hành</Link>} />
 
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}

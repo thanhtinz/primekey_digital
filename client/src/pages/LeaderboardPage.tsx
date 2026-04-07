@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Trophy, Medal, Crown, Loader2, TrendingUp, Users, ShoppingCart } from "lucide-react";
+import { Trophy, Medal, Crown, Loader2, TrendingUp, Users, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
+import { ClientHeader } from "@/components/ClientHeader";
 
 const PERIODS = [
   { key: "day", label: "Hôm Nay" },
@@ -66,25 +67,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50 px-4 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <button onClick={() => setLocation("/")} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Trang Chủ</span>
-          </button>
-          <div className="flex items-center gap-3">
-            {publicInfo?.logoUrl ? (
-              <img src={publicInfo.logoUrl} alt={brandName} className="h-8 max-w-[120px] rounded-lg object-contain" />
-            ) : (
-              <div className="h-8 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">IP</span>
-              </div>
-            )}
-            {!publicInfo?.logoUrl && <span className="text-white font-semibold hidden sm:block">{brandName}</span>}
-          </div>
-        </div>
-      </header>
+      <ClientHeader maxWidth="max-w-5xl" />
 
       <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
         {/* Hero */}

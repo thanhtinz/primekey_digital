@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Shield, Search, CheckCircle, AlertCircle, Package,
-  Calendar, User, Clock, ShieldCheck, ShieldX, ShieldAlert, ArrowLeft, Phone, FileText, Tag, Info
+  Calendar, User, Clock, ShieldCheck, ShieldX, ShieldAlert, Phone, FileText, Tag, Info
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { ClientHeader } from "@/components/ClientHeader";
 
 function WarrantyStatus({ startDate, expiryDate, warrantyMonths }: {
   startDate?: string | null;
@@ -163,27 +164,7 @@ export default function WarrantyLookup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <button onClick={() => setLocation("/")} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Trang Chủ</span>
-          </button>
-          <div className="flex items-center gap-3">
-            {publicInfo?.companyLogo ? (
-              <img src={publicInfo.companyLogo} alt="Logo" className="h-8 max-w-[120px] rounded-lg object-contain" />
-            ) : (
-              <div className="h-8 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">
-                  {publicInfo?.companyName ? publicInfo.companyName.slice(0, 2).toUpperCase() : "IP"}
-                </span>
-              </div>
-            )}
-            {!publicInfo?.companyLogo && <span className="text-white font-semibold hidden sm:block">{brandName}</span>}
-          </div>
-        </div>
-      </header>
+      <ClientHeader maxWidth="max-w-4xl" />
 
       <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
         {/* Hero */}

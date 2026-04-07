@@ -1,6 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Shield, Package, Tag, Star, Share2, CheckCircle, Flame, Phone, Mail } from "lucide-react";
+import { Shield, Package, Tag, Star, Share2, CheckCircle, Flame, Phone, Mail, ArrowLeft } from "lucide-react";
+import { ClientHeader } from "@/components/ClientHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
@@ -69,24 +70,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0f1e]/95 backdrop-blur border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => setLocation("/")}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm">Quay lại</span>
-          </button>
-          <div className="flex-1" />
-          {(publicInfo as any)?.logoUrl ? (
-            <img src={(publicInfo as any).logoUrl} alt="logo" className="h-8 object-contain" />
-          ) : (
-            <span className="font-bold text-white">{(publicInfo as any)?.companyName || "Cửa Hàng"}</span>
-          )}
-        </div>
-      </header>
+      <ClientHeader maxWidth="max-w-5xl" backLabel="Quay lại" />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

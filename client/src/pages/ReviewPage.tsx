@@ -4,8 +4,9 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Star, CheckCircle, AlertCircle, ArrowLeft, Package } from "lucide-react";
+import { Star, CheckCircle, AlertCircle, Package, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ClientHeader } from "@/components/ClientHeader";
 
 export default function ReviewPage() {
   const { token } = useParams<{ token: string }>();
@@ -87,24 +88,7 @@ export default function ReviewPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/10 px-4 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <button
-            onClick={() => setLocation("/")}
-            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Trang Chủ</span>
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">IP</span>
-            </div>
-            <span className="text-white font-semibold">Invoice Prime</span>
-          </div>
-        </div>
-      </header>
+      <ClientHeader maxWidth="max-w-2xl" />
 
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Title */}

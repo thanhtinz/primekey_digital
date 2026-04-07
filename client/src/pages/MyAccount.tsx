@@ -4,10 +4,11 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   User, Package, Star, LogOut, ShoppingBag, Shield,
-  ArrowLeft, Gift, Clock, CheckCircle, XCircle, AlertCircle,
+  Gift, Clock, CheckCircle, XCircle, AlertCircle,
   Wrench, Phone, Mail, ChevronRight, TrendingUp, Award
 } from "lucide-react";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
+import { ClientHeader } from "@/components/ClientHeader";
 
 function formatCurrency(amount: number | string) {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -99,24 +100,20 @@ export default function MyAccount() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1e]">
-      {/* Header */}
-      <header className="bg-[#0d1526]/95 backdrop-blur border-b border-white/10 sticky top-0 z-40">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="text-slate-400 hover:text-white flex items-center gap-1.5 text-sm transition">
-            <ArrowLeft className="h-4 w-4" />
-            Trang chủ
-          </button>
-          <h1 className="text-white font-semibold">Tài Khoản Của Tôi</h1>
+      <ClientHeader
+        maxWidth="max-w-3xl"
+        title="Tài Khoản Của Tôi"
+        rightSlot={
           <button
             onClick={handleLogout}
             disabled={logoutMutation.isPending}
-            className="text-red-400 hover:text-red-300 flex items-center gap-1.5 text-sm transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium transition border border-red-500/20 disabled:opacity-50"
           >
-            <LogOut className="h-4 w-4" />
-            Thoát
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Thoát</span>
           </button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
         {/* Profile Hero Card */}

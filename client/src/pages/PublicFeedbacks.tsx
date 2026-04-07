@@ -1,7 +1,8 @@
 import { trpc } from "@/lib/trpc";
-import { Star, MessageSquare, ArrowLeft, Package } from "lucide-react";
+import { Star, MessageSquare, Package } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { ClientHeader } from "@/components/ClientHeader";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -31,24 +32,7 @@ export default function PublicFeedbacks() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/10 px-4 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <button
-            onClick={() => setLocation("/")}
-            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Trang Chủ</span>
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">IP</span>
-            </div>
-            <span className="text-white font-semibold">Invoice Prime</span>
-          </div>
-        </div>
-      </header>
+      <ClientHeader maxWidth="max-w-5xl" />
 
       <div className="max-w-5xl mx-auto px-4 py-12">
         {/* Title */}

@@ -4,7 +4,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, ShoppingBag, ArrowLeft, Scale, Shield, Star, ChevronRight, Flame } from "lucide-react";
+import { Search, ShoppingBag, Scale, Shield, Star, ChevronRight, Flame } from "lucide-react";
+import { ClientHeader } from "@/components/ClientHeader";
 
 function formatVND(amount: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -51,20 +52,17 @@ export default function ProductCatalog() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Nav */}
-      <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            {logo ? <img src={logo} alt={siteName} className="h-8 w-auto object-contain" /> : <span className="text-white font-bold text-lg">{siteName}</span>}
-          </Link>
+      <ClientHeader
+        maxWidth="max-w-7xl"
+        rightSlot={
           <div className="flex items-center gap-3">
-            <Link href="/compare" className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
-              <Scale className="w-4 h-4" /> So sánh {compareList.length > 0 && <Badge className="bg-blue-600 text-white text-xs px-1.5 py-0">{compareList.length}</Badge>}
+            <Link href="/compare" className="text-slate-400 hover:text-white text-xs flex items-center gap-1 transition-colors">
+              <Scale className="w-3.5 h-3.5" /> So sánh {compareList.length > 0 && <Badge className="bg-blue-600 text-white text-xs px-1.5 py-0">{compareList.length}</Badge>}
             </Link>
-            <Link href="/track" className="text-slate-400 hover:text-white text-sm transition-colors">Tra cứu đơn</Link>
+            <Link href="/track" className="text-slate-400 hover:text-white text-xs transition-colors">Tra cứu đơn</Link>
           </div>
-        </div>
-      </nav>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}

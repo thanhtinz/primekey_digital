@@ -3,7 +3,8 @@ import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { HelpCircle, ChevronDown, ChevronUp, Search, ArrowLeft, MessageCircle } from "lucide-react";
+import { HelpCircle, ChevronDown, ChevronUp, Search, MessageCircle } from "lucide-react";
+import { ClientHeader } from "@/components/ClientHeader";
 
 export default function FAQPage() {
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
@@ -28,15 +29,7 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Nav */}
-      <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            {logo ? <img src={logo} alt={siteName} className="h-8 w-auto object-contain" /> : <span className="text-white font-bold text-lg">{siteName}</span>}
-          </Link>
-          <Link href="/track" className="text-slate-400 hover:text-white text-sm transition-colors">Tra cứu đơn</Link>
-        </div>
-      </nav>
+      <ClientHeader maxWidth="max-w-4xl" rightSlot={<Link href="/track" className="text-slate-400 hover:text-white text-xs transition-colors">Tra cứu đơn</Link>} />
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         {/* Header */}

@@ -4,6 +4,7 @@ import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Scale, ShoppingBag, Shield, X, Plus, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { ClientHeader } from "@/components/ClientHeader";
 
 function formatVND(amount: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -46,17 +47,7 @@ export default function ProductCompare() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Nav */}
-      <nav className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            {logo ? <img src={logo} alt={siteName} className="h-8 w-auto object-contain" /> : <span className="text-white font-bold text-lg">{siteName}</span>}
-          </Link>
-          <Link href="/products" className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Quay lại catalog
-          </Link>
-        </div>
-      </nav>
+      <ClientHeader maxWidth="max-w-7xl" backHref="/products" backLabel="Catalog" />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}

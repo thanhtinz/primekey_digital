@@ -3,8 +3,9 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, ArrowLeft, User, Phone, ShoppingBag, CreditCard, ChevronDown, ChevronUp, ExternalLink, Mail, FileText, Receipt } from "lucide-react";
+import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, User, Phone, ShoppingBag, CreditCard, ChevronDown, ChevronUp, ExternalLink, Mail, FileText, Receipt } from "lucide-react";
 import { useLocation } from "wouter";
+import { ClientHeader } from "@/components/ClientHeader";
 
 const STATUS_CONFIG: Record<string, {
   label: string;
@@ -297,25 +298,7 @@ export default function TrackOrder() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50 px-4 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <button onClick={() => setLocation("/")} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Trang Chủ</span>
-          </button>
-          <div className="flex items-center gap-3">
-            {publicInfo?.logoUrl ? (
-              <img src={publicInfo.logoUrl} alt={brandName} className="h-8 max-w-[120px] rounded-lg object-contain" />
-            ) : (
-              <div className="h-8 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">IP</span>
-              </div>
-            )}
-            {!publicInfo?.logoUrl && <span className="text-white font-semibold hidden sm:block">{brandName}</span>}
-          </div>
-        </div>
-      </header>
+      <ClientHeader maxWidth="max-w-5xl" />
 
       <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
         {/* Hero */}
