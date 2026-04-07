@@ -6,7 +6,8 @@ import {
   Menu, X, FileText, Search, MessageSquare, Star, Shield, Zap,
   CheckCircle, ArrowRight, CreditCard, Users, BarChart3, Bell,
   Clock, Smartphone, Lock, TrendingUp, Package, ChevronRight,
-  Mail, Phone, MapPin, Building2, Receipt, Send
+  Mail, Phone, MapPin, Building2, Receipt, Send, ListOrdered,
+  Trophy, ShoppingBag
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -41,6 +42,9 @@ export default function LandingPage() {
   const navLinks = [
     { label: "Tra Cứu Đơn", href: "/track-order", icon: Search },
     { label: "Bảo Hành", href: "/warranty", icon: Shield },
+    { label: "Hàng Chờ", href: "/queue", icon: ListOrdered },
+    { label: "BXH", href: "/leaderboard", icon: Trophy },
+    { label: "Flash Sale", href: "/flash-sale", icon: ShoppingBag },
     { label: "Đánh Giá", href: "/feedbacks-public", icon: Star },
   ];
 

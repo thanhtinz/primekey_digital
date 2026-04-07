@@ -5,7 +5,8 @@ import {
   Menu, X, LogOut, Home, FileText, History, Users, Package,
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
   Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
-  RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code
+  RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code,
+  Shield, ShoppingBag
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -64,6 +65,14 @@ const adminNavGroups = [
     label: "Phân Tích Nâng Cao",
     items: [
       { label: "Báo Cáo Nâng Cao", href: "/advanced-reports", icon: TrendingUp },
+    ],
+  },
+  {
+    label: "Bảo Hành & Khuyến Mãi",
+    items: [
+      { label: "Quản Lý Bảo Hành", href: "/warranties", icon: Shield },
+      { label: "Cấu Hình Bảo Hành", href: "/settings/warranty", icon: Shield },
+      { label: "Flash Sale", href: "/settings/flash-sale", icon: ShoppingBag },
     ],
   },
   {

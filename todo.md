@@ -622,3 +622,47 @@
 
 - [x] Trang /pay: lấy logo từ settings.logoUrl trước, fallback sang template logo
 - [x] InvoiceDetail: sửa dropdown Chuyển Trạng Thái - controlled open state + setDropdownOpen(false) + setTimeout(150ms)
+
+## Batch 4: Cải Tiến Lớn - Thương Mại Hóa
+
+### Tra Cứu Đơn Hàng - Hiển thị đầy đủ thông tin
+- [x] Hiển thị danh sách sản phẩm (tên, SL, giá, thành tiền) trong mỗi đơn hàng
+- [x] Hiển thị tên khách hàng, email, số điện thoại
+- [x] Hiển thị tổng tiền, thuế, giảm giá rõ ràng
+- [x] Hiển thị ghi chú đơn hàng nếu có
+
+### Bảo Hành - Cải tiến toàn diện
+- [x] Trang cấu hình bảo hành trong dashboard (/settings/warranty) - cấu hình điều khoản, thời hạn mặc định
+- [x] Trang quản lý bảo hành trong dashboard (/warranties) - danh sách tất cả đơn bảo hành
+- [x] Nút tạo/kích hoạt bảo hành từ InvoiceDetail
+- [x] Backend: router warranty CRUD + cấu hình warranty settings
+
+### Trang Queue Công Khai
+- [x] Trang /queue hiển thị danh sách đơn hàng đang chờ xử lý
+- [x] Sắp xếp theo thứ tự thời gian (đơn cũ nhất trước)
+- [x] Hiển thị số thứ tự, mã đơn, trạng thái, thời gian chờ
+- [x] Dark theme nhất quán với các trang public khác
+- [x] Thêm link Queue vào navigation landing page
+
+### Trang BXH Chi Tiêu Công Khai
+- [x] Trang /leaderboard hiển thị top người dùng chi tiêu nhiều nhất
+- [x] Bộ lọc theo: Ngày, Tuần, Tháng, Năm
+- [x] Hiển thị rank, tên (ẩn 1 phần), tổng chi tiêu, số đơn hàng
+- [x] Dark theme nhất quán
+- [x] Backend: router leaderboard với aggregate queries
+- [x] Thêm link BXH vào navigation landing page
+
+### Flash Sale
+- [x] Trang /flash-sale công khai hiển thị sản phẩm đang giảm giá
+- [x] Trang cấu hình Flash Sale trong dashboard (/settings/flash-sale)
+- [x] DB schema: bảng flash_sales (productId, discountPercent, startTime, endTime, maxQuantity)
+- [x] Backend: router flash-sale CRUD + public query
+- [x] Hiển thị countdown thời gian còn lại, giá gốc vs giá sale
+- [x] Dark theme nhất quán
+- [x] Thêm link Flash Sale vào navigation landing page
+
+### Polish Final - Thương Mại Hóa
+- [x] Sửa tất cả hardcode (tên công ty, logo, URL) - dùng publicInfo từ settings
+- [x] Kiểm tra và sửa lỗi trên tất cả các trang - 0 TS errors
+- [x] Cải tiến responsive mobile cho tất cả trang mới
+- [x] Đảm bảo tất cả trang public có dark theme nhất quán

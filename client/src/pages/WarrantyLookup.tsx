@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Shield, Search, CheckCircle, AlertCircle, Package,
-  Calendar, User, Clock, ShieldCheck, ShieldX, ShieldAlert, ArrowLeft
+  Calendar, User, Clock, ShieldCheck, ShieldX, ShieldAlert, ArrowLeft, Phone
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -136,6 +136,7 @@ export default function WarrantyLookup() {
   );
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
+  const { data: warrantyPublicSettings } = trpc.warranty.getPublicSettings.useQuery(undefined, { staleTime: 300_000 });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,6 +294,30 @@ export default function WarrantyLookup() {
                 />
               </CardContent>
             </Card>
+
+            {/* Warranty Terms & Contact */}
+            {warrantyPublicSettings?.termsAndConditions && (
+              <Card className="bg-white/5 border-white/10">
+                <CardContent className="p-5">
+                  <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-400" />
+                    Điều Khoản Bảo Hành
+                  </h3>
+                  <p className="text-slate-400 text-sm whitespace-pre-line">{warrantyPublicSettings.termsAndConditions}</p>
+                </CardContent>
+              </Card>
+            )}
+            {warrantyPublicSettings?.contactInfo && (
+              <Card className="bg-white/5 border-white/10">
+                <CardContent className="p-5">
+                  <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-green-400" />
+                    Liên Hệ Bảo Hành
+                  </h3>
+                  <p className="text-slate-400 text-sm whitespace-pre-line">{warrantyPublicSettings.contactInfo}</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 

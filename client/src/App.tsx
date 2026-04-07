@@ -44,6 +44,15 @@ const DataBackup = lazy(() => import("./pages/DataBackup"));
 const AdvancedSearch = lazy(() => import("./pages/AdvancedSearch"));
 const WeeklyReports = lazy(() => import("./pages/WeeklyReports"));
 const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
+
+// Batch 4: New pages
+const WarrantySettingsPage = lazy(() => import("./pages/WarrantySettingsPage"));
+const WarrantyManagement = lazy(() => import("./pages/WarrantyManagement"));
+const FlashSaleSettings = lazy(() => import("./pages/FlashSaleSettings"));
+const QueuePage = lazy(() => import("./pages/QueuePage"));
+const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
+const FlashSalePage = lazy(() => import("./pages/FlashSalePage"));
+
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -68,7 +77,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require auth (always accessible)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -87,12 +96,10 @@ function Router() {
   const isAdmin = user?.role === "admin";
 
   const handleLoginSuccess = () => {
-    // After login, navigate to dashboard using hard redirect
-    // This triggers a full page reload which re-runs the tRPC auth.me query
     window.location.replace("/dashboard");
   };
 
-  // Always-public routes (track order, review, public feedbacks)
+  // Always-public routes
   if (isAlwaysPublic(location)) {
     return (
       <Suspense fallback={<PageLoader />}>
@@ -103,6 +110,9 @@ function Router() {
           <Route path="/thank-you" component={() => <ThankYou />} />
           <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
           <Route path="/warranty" component={() => <WarrantyLookup />} />
+          <Route path="/queue" component={() => <QueuePage />} />
+          <Route path="/leaderboard" component={() => <LeaderboardPage />} />
+          <Route path="/flash-sale" component={() => <FlashSalePage />} />
         </Switch>
       </Suspense>
     );
@@ -151,7 +161,10 @@ function Router() {
         <Route path="/settings/paypal" component={() => isAdmin ? <PayPalSettings /> : <ForbiddenPage />} />
         <Route path="/settings/smtp" component={() => isAdmin ? <SmtpSettings /> : <ForbiddenPage />} />
         <Route path="/settings/email-templates" component={() => isAdmin ? <EmailTemplateEditor /> : <ForbiddenPage />} />
+        <Route path="/settings/warranty" component={() => isAdmin ? <WarrantySettingsPage /> : <ForbiddenPage />} />
+        <Route path="/settings/flash-sale" component={() => isAdmin ? <FlashSaleSettings /> : <ForbiddenPage />} />
         <Route path="/settings" component={() => isAdmin ? <Settings /> : <ForbiddenPage />} />
+        <Route path="/warranties" component={() => isAdmin ? <WarrantyManagement /> : <ForbiddenPage />} />
         <Route path="/staff" component={() => isAdmin ? <StaffManagement /> : <ForbiddenPage />} />
         <Route path="/activity-log" component={() => isAdmin ? <ActivityLog /> : <ForbiddenPage />} />
         <Route path="/reminders" component={() => isAdmin ? <Reminders /> : <ForbiddenPage />} />

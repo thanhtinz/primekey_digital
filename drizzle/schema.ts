@@ -346,3 +346,60 @@ export const emailCampaignRecipients = mysqlTable("emailCampaignRecipients", {
 });
 export type EmailCampaignRecipient = typeof emailCampaignRecipients.$inferSelect;
 export type InsertEmailCampaignRecipient = typeof emailCampaignRecipients.$inferInsert;
+
+// Warranty Claims table
+export const warranties = mysqlTable("warranties", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // shop owner
+  invoiceId: int("invoiceId").notNull(),
+  customerId: int("customerId").notNull(),
+  invoiceNumber: varchar("invoiceNumber", { length: 50 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  customerPhone: varchar("customerPhone", { length: 20 }),
+  productNames: text("productNames"), // comma separated
+  reason: text("reason"),
+  status: mysqlEnum("status", ["PENDING", "IN_PROGRESS", "COMPLETED", "REJECTED"]).default("PENDING").notNull(),
+  resolution: text("resolution"),
+  warrantyStartDate: timestamp("warrantyStartDate"),
+  warrantyExpiryDate: timestamp("warrantyExpiryDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Warranty = typeof warranties.$inferSelect;
+export type InsertWarranty = typeof warranties.$inferInsert;
+
+// Warranty Settings table
+export const warrantySettings = mysqlTable("warrantySettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  defaultMonths: int("defaultMonths").default(12),
+  termsAndConditions: text("termsAndConditions"),
+  contactInfo: text("contactInfo"),
+  autoActivateOnPaid: boolean("autoActivateOnPaid").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WarrantySettings = typeof warrantySettings.$inferSelect;
+export type InsertWarrantySettings = typeof warrantySettings.$inferInsert;
+
+// Flash Sales table
+export const flashSales = mysqlTable("flashSales", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  productId: int("productId").notNull(),
+  productName: varchar("productName", { length: 255 }).notNull(),
+  originalPrice: decimal("originalPrice", { precision: 15, scale: 2 }).notNull(),
+  salePrice: decimal("salePrice", { precision: 15, scale: 2 }).notNull(),
+  discountPercent: int("discountPercent").notNull(),
+  startTime: timestamp("startTime").notNull(),
+  endTime: timestamp("endTime").notNull(),
+  maxQuantity: int("maxQuantity").default(0), // 0 = unlimited
+  soldQuantity: int("soldQuantity").default(0),
+  isActive: boolean("isActive").default(true),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FlashSale = typeof flashSales.$inferSelect;
+export type InsertFlashSale = typeof flashSales.$inferInsert;

@@ -228,6 +228,10 @@ export default function InvoiceDetail() {
   const duplicateMutation = trpc.invoices.duplicate.useMutation();
   const createNoteMutation = trpc.notes.create.useMutation();
   const deleteNoteMutation = trpc.notes.delete.useMutation();
+  const createWarrantyMutation = trpc.warranty.create.useMutation({
+    onSuccess: () => toast.success("Đã tạo yêu cầu bảo hành thành công"),
+    onError: (e: any) => toast.error(e.message || "Lỗi tạo bảo hành"),
+  });
   const utils = trpc.useUtils();
 
   const handleDelete = useCallback(async () => {
@@ -536,6 +540,21 @@ export default function InvoiceDetail() {
                 Copy Link Đánh Giá
               </Button>
             )}
+
+            {/* Tạo Bảo Hành */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!invoice?.id) return;
+                createWarrantyMutation.mutate({ invoiceId: invoice.id });
+              }}
+              disabled={createWarrantyMutation?.isPending}
+              className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+            >
+              {createWarrantyMutation?.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+              Tạo Bảo Hành
+            </Button>
 
             <Button
               variant="outline"

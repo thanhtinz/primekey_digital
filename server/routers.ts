@@ -680,18 +680,54 @@ export const appRouter = router({
     getByEmail: publicProcedure
       .input(z.object({ email: z.string().email() }))
       .query(async ({ input }) => {
-        const invoiceList = await db.getInvoicesByCustomerEmail(input.email);
-        // Return safe data only (no internal fields)
-        return invoiceList.map(inv => ({
-          id: inv.id,
-          invoiceNumber: inv.invoiceNumber,
-          status: inv.status,
-          totalAmount: inv.totalAmount,
-          currency: inv.currency,
-          createdAt: inv.createdAt,
-          updatedAt: inv.updatedAt,
-          notes: inv.notes,
-        }));
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const { invoices: invoicesTable, invoiceItems, customers } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        // Find customers by email
+        const customerList = await drizzleDb.select().from(customers).where(eq(customers.email, input.email));
+        if (customerList.length === 0) return [];
+        const results = [];
+        for (const customer of customerList) {
+          const invs = await drizzleDb
+            .select({
+              id: invoicesTable.id,
+              invoiceNumber: invoicesTable.invoiceNumber,
+              status: invoicesTable.status,
+              totalAmount: invoicesTable.totalAmount,
+              subtotal: invoicesTable.subtotal,
+              taxAmount: invoicesTable.taxAmount,
+              discountAmount: invoicesTable.discountAmount,
+              currency: invoicesTable.currency,
+              createdAt: invoicesTable.createdAt,
+              updatedAt: invoicesTable.updatedAt,
+              paidAt: invoicesTable.paidAt,
+              notes: invoicesTable.notes,
+              publicNote: invoicesTable.publicNote,
+              paymentUrl: invoicesTable.paymentUrl,
+              warrantyStartDate: invoicesTable.warrantyStartDate,
+              warrantyExpiryDate: invoicesTable.warrantyExpiryDate,
+              warrantyMonths: invoicesTable.warrantyMonths,
+            })
+            .from(invoicesTable)
+            .where(eq(invoicesTable.customerId, customer.id));
+          for (const inv of invs) {
+            const items = await drizzleDb
+              .select({ name: invoiceItems.name, quantity: invoiceItems.quantity, unitPrice: invoiceItems.unitPrice, totalAmount: invoiceItems.totalAmount })
+              .from(invoiceItems)
+              .where(eq(invoiceItems.invoiceId, inv.id));
+            results.push({
+              ...inv,
+              customerName: customer.name,
+              customerPhone: customer.phone,
+              items,
+            });
+          }
+        }
+        // Sort by createdAt descending
+        results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return results;
       }),
 
     // Public lookup by invoice number (for warranty page)
@@ -2581,6 +2617,308 @@ export const appRouter = router({
         if (!ctx.user) throw new Error("Unauthorized");
         await db.upsertUserSettings(ctx.user.id, input);
         return { success: true };
+      }),
+  }),
+
+  // ========== WARRANTY ==========
+  warranty: router({
+    // Get warranty settings
+    getSettings: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const { warrantySettings } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const rows = await drizzleDb.select().from(warrantySettings).where(eq(warrantySettings.userId, ctx.user.id)).limit(1);
+      return rows[0] || null;
+    }),
+    // Update warranty settings
+    updateSettings: protectedProcedure
+      .input(z.object({
+        defaultMonths: z.number().min(0).max(120),
+        termsAndConditions: z.string().optional(),
+        contactInfo: z.string().optional(),
+        autoActivateOnPaid: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB error");
+        const { warrantySettings } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const existing = await drizzleDb.select().from(warrantySettings).where(eq(warrantySettings.userId, ctx.user.id)).limit(1);
+        if (existing[0]) {
+          await drizzleDb.update(warrantySettings).set(input).where(eq(warrantySettings.userId, ctx.user.id));
+        } else {
+          await drizzleDb.insert(warrantySettings).values({ userId: ctx.user.id, ...input });
+        }
+        return { success: true };
+      }),
+    // List all warranty claims
+    list: protectedProcedure
+      .input(z.object({ status: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const { warranties } = await import("../drizzle/schema");
+        const { eq, desc, and } = await import("drizzle-orm");
+        let conditions = [eq(warranties.userId, ctx.user.id)];
+        if (input?.status) {
+          conditions.push(eq(warranties.status, input.status as any));
+        }
+        return drizzleDb.select().from(warranties).where(and(...conditions)).orderBy(desc(warranties.createdAt));
+      }),
+    // Create warranty claim from invoice
+    create: protectedProcedure
+      .input(z.object({
+        invoiceId: z.number(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB error");
+        const { warranties, invoices: invoicesTable, invoiceItems, customers } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        // Get invoice
+        const inv = await drizzleDb.select().from(invoicesTable).where(eq(invoicesTable.id, input.invoiceId)).limit(1);
+        if (!inv[0]) throw new Error("Invoice not found");
+        const invoice = inv[0];
+        // Get customer
+        const cust = await drizzleDb.select().from(customers).where(eq(customers.id, invoice.customerId)).limit(1);
+        // Get items
+        const items = await drizzleDb.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoice.id));
+        const productNames = items.map(i => i.name).join(", ");
+        await drizzleDb.insert(warranties).values({
+          userId: ctx.user.id,
+          invoiceId: invoice.id,
+          customerId: invoice.customerId,
+          invoiceNumber: invoice.invoiceNumber,
+          customerName: cust[0]?.name || "",
+          customerEmail: cust[0]?.email || "",
+          customerPhone: cust[0]?.phone || "",
+          productNames,
+          reason: input.reason || "",
+          warrantyStartDate: invoice.warrantyStartDate,
+          warrantyExpiryDate: invoice.warrantyExpiryDate,
+        });
+        return { success: true };
+      }),
+    // Update warranty status
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "REJECTED"]),
+        resolution: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB error");
+        const { warranties } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        await drizzleDb.update(warranties).set({ status: input.status, resolution: input.resolution }).where(and(eq(warranties.id, input.id), eq(warranties.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    // Delete warranty
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB error");
+        const { warranties } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        await drizzleDb.delete(warranties).where(and(eq(warranties.id, input.id), eq(warranties.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    // Get public warranty settings (for WarrantyLookup page)
+    getPublicSettings: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const { warrantySettings } = await import("../drizzle/schema");
+      const rows = await drizzleDb.select({ termsAndConditions: warrantySettings.termsAndConditions, contactInfo: warrantySettings.contactInfo }).from(warrantySettings).limit(1);
+      return rows[0] || null;
+    }),
+  }),
+
+  // ========== FLASH SALE ==========
+  flashSale: router({
+    // List all (admin)
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const { flashSales } = await import("../drizzle/schema");
+      const { eq, desc } = await import("drizzle-orm");
+      return drizzleDb.select().from(flashSales).where(eq(flashSales.userId, ctx.user.id)).orderBy(desc(flashSales.createdAt));
+    }),
+    // Create
+    create: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        productName: z.string(),
+        originalPrice: z.string(),
+        salePrice: z.string(),
+        discountPercent: z.number(),
+        startTime: z.string(),
+        endTime: z.string(),
+        maxQuantity: z.number().default(0),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB error");
+        const { flashSales } = await import("../drizzle/schema");
+        await drizzleDb.insert(flashSales).values({
+          userId: ctx.user.id,
+          productId: input.productId,
+          productName: input.productName,
+          originalPrice: input.originalPrice,
+          salePrice: input.salePrice,
+          discountPercent: input.discountPercent,
+          startTime: new Date(input.startTime),
+          endTime: new Date(input.endTime),
+          maxQuantity: input.maxQuantity,
+          description: input.description,
+        });
+        return { success: true };
+      }),
+    // Update
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        salePrice: z.string().optional(),
+        discountPercent: z.number().optional(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        maxQuantity: z.number().optional(),
+        isActive: z.boolean().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB error");
+        const { flashSales } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const { id, ...data } = input;
+        const updateData: any = { ...data };
+        if (data.startTime) updateData.startTime = new Date(data.startTime);
+        if (data.endTime) updateData.endTime = new Date(data.endTime);
+        await drizzleDb.update(flashSales).set(updateData).where(and(eq(flashSales.id, id), eq(flashSales.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    // Delete
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB error");
+        const { flashSales } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        await drizzleDb.delete(flashSales).where(and(eq(flashSales.id, input.id), eq(flashSales.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    // Public: get active flash sales
+    getActive: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const { flashSales } = await import("../drizzle/schema");
+      const { eq, and, gte, lte } = await import("drizzle-orm");
+      const now = new Date();
+      return drizzleDb.select().from(flashSales)
+        .where(and(eq(flashSales.isActive, true), lte(flashSales.startTime, now), gte(flashSales.endTime, now)))
+        .orderBy(flashSales.endTime);
+    }),
+  }),
+
+  // ========== QUEUE (Public) ==========
+  queue: router({
+    getOrders: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(50) }).optional())
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const { invoices: invoicesTable, customers } = await import("../drizzle/schema");
+        const { eq, asc, inArray } = await import("drizzle-orm");
+        const rows = await drizzleDb
+          .select({
+            id: invoicesTable.id,
+            invoiceNumber: invoicesTable.invoiceNumber,
+            status: invoicesTable.status,
+            totalAmount: invoicesTable.totalAmount,
+            currency: invoicesTable.currency,
+            createdAt: invoicesTable.createdAt,
+            customerName: customers.name,
+          })
+          .from(invoicesTable)
+          .leftJoin(customers, eq(invoicesTable.customerId, customers.id))
+          .where(inArray(invoicesTable.status, ["CREATED", "PAID", "SHIPPING"]))
+          .orderBy(asc(invoicesTable.createdAt))
+          .limit(input?.limit || 50);
+        return rows;
+      }),
+  }),
+
+  // ========== LEADERBOARD (Public) ==========
+  leaderboard: router({
+    getTop: publicProcedure
+      .input(z.object({ period: z.enum(["day", "week", "month", "year"]) }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const { invoices: invoicesTable, customers } = await import("../drizzle/schema");
+        const { eq, gte, sql, and, inArray } = await import("drizzle-orm");
+        // Calculate date range
+        const now = new Date();
+        let startDate: Date;
+        switch (input.period) {
+          case "day": startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); break;
+          case "week": { const d = new Date(now); d.setDate(d.getDate() - d.getDay()); d.setHours(0,0,0,0); startDate = d; break; }
+          case "month": startDate = new Date(now.getFullYear(), now.getMonth(), 1); break;
+          case "year": startDate = new Date(now.getFullYear(), 0, 1); break;
+        }
+        const rows = await drizzleDb
+          .select({
+            customerName: customers.name,
+            customerEmail: customers.email,
+            totalSpent: sql<string>`SUM(CAST(${invoicesTable.totalAmount} AS DECIMAL(15,2)))`.as("totalSpent"),
+            orderCount: sql<number>`COUNT(${invoicesTable.id})`.as("orderCount"),
+          })
+          .from(invoicesTable)
+          .leftJoin(customers, eq(invoicesTable.customerId, customers.id))
+          .where(and(
+            inArray(invoicesTable.status, ["PAID", "SHIPPING", "WARRANTY"]),
+            gte(invoicesTable.createdAt, startDate)
+          ))
+          .groupBy(customers.id, customers.name, customers.email)
+          .orderBy(sql`totalSpent DESC`)
+          .limit(20);
+        return rows.map((r, i) => ({
+          rank: i + 1,
+          name: r.customerName || "Ẩn danh",
+          email: r.customerEmail ? r.customerEmail.replace(/(.)(.*)(@.*)/, "$1***$3") : "",
+          totalSpent: r.totalSpent || "0",
+          orderCount: r.orderCount || 0,
+        }));
       }),
   }),
 });
