@@ -752,16 +752,15 @@
 - [ ] Thông báo Telegram khi có yêu cầu bảo hành mới
 
 ### 6. Thông Báo Flash Sale Qua Email
-- [ ] Schema: bảng flash_sale_subscribers (email, subscribedAt)
-- [ ] Form đăng ký nhận thông báo Flash Sale trên trang /flash-sale
-- [ ] Backend: gửi email thông báo khi tạo Flash Sale mới
-- [ ] Dashboard: quản lý danh sách subscriber
+- [x] Form đăng ký nhận thông báo Flash Sale trên trang /flash-sale (flashSaleSubscriber.subscribe)
+- [x] Backend: gửi email thông báo khi tạo Flash Sale mới (flashSaleSubscriber router)
+- [x] Dashboard: quản lý danh sách subscriber (flashSaleSubscriber.list, delete)
 
 ### 7. Trang FAQ / Hỏi Đáp
-- [ ] Schema: bảng faqs (question, answer, category, sortOrder, isPublished)
-- [ ] Trang /faq công khai: hiển thị câu hỏi theo nhóm, có accordion
-- [ ] Dashboard: CRUD FAQ, sắp xếp thứ tự
-- [ ] Thêm link FAQ vào landing page footer
+- [x] Schema: bảng faqs (question, answer, category, sortOrder, isPublished)
+- [x] Trang /faq công khai: hiển thị câu hỏi theo nhóm, có accordion
+- [x] Dashboard: CRUD FAQ, sắp xếp thứ tự (FAQSettings.tsx)
+- [x] Thêm link FAQ vào landing page footer (liên kết đã có)
 
 ### 8. Hóa Đơn VAT
 - [ ] Thêm trường vatNumber, vatCompanyName, vatAddress vào invoices
