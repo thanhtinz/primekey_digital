@@ -736,7 +736,7 @@
 ### 3. Trang So Sánh Sản Phẩm
 - [ ] Trang /compare: chọn tối đa 3 sản phẩm để so sánh
 - [ ] Bảng so sánh: tên, giá, bảo hành, mô tả
-- [ ] Nút "So sánh" trên trang catalog
+- [x] Nút "So sánh" trên trang catalog
 
 ### 4. Tích Điểm Thành Viên
 - [ ] Schema: bảng loyalty_points (customerId, points, reason, invoiceId, createdAt)

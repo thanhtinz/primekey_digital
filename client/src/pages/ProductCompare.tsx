@@ -47,7 +47,7 @@ export default function ProductCompare() {
   }, [allProducts, selectedIds, searchQuery]);
 
   const compareFields = [
-    { key: "price", label: "Giá bán", render: (p: any) => <span className="text-blue-600 font-bold">{formatVND(Number(p.price))}</span> },
+    { key: "price", label: "Giá bán", render: (p: any) => <span className="text-blue-600 font-bold">{formatVND(Number(p.minPrice || p.price || 0))}</span> },
     { key: "warrantyMonths", label: "Bảo hành", render: (p: any) => p.warrantyMonths > 0 ? <span className="text-green-600 flex items-center gap-1"><Shield className="w-3.5 h-3.5" />{p.warrantyMonths} tháng</span> : <span className="text-slate-400">Không có</span> },
     { key: "category", label: "Danh mục", render: (p: any) => <span className="text-slate-600">{p.category || "—"}</span> },
     { key: "description", label: "Mô tả", render: (p: any) => <span className="text-slate-500 text-sm">{p.description || "—"}</span> },
@@ -88,7 +88,7 @@ export default function ProductCompare() {
                       </div>
                     )}
                     <h3 className="text-slate-800 font-semibold text-sm">{product.name}</h3>
-                    <p className="text-blue-600 font-bold mt-1">{formatVND(Number(product.price))}</p>
+                    <p className="text-blue-600 font-bold mt-1">{formatVND(Number(product.minPrice || product.price || 0))}</p>
                   </div>
                 ) : (
                   <div className="text-center w-full">
@@ -130,7 +130,7 @@ export default function ProductCompare() {
                                 )}
                                 <div className="flex-1 min-w-0">
                                   <p className="text-xs font-medium text-slate-700 truncate">{p.name}</p>
-                                  <p className="text-[10px] text-blue-600">{formatVND(Number(p.price || 0))}</p>
+                                  <p className="text-[10px] text-blue-600">{formatVND(Number(p.minPrice || p.price || 0))}</p>
                                 </div>
                                 <Plus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
                               </button>
