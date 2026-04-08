@@ -1175,6 +1175,62 @@ export const appRouter = router({
         return { ...product, packages, categoryInfo, totalSold };
       }),
 
+    getRelated: publicProcedure
+      .input(z.object({ productId: z.number(), categoryId: z.number().nullable().optional(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const { products: productsTable, productPackages } = await import("../drizzle/schema");
+        const { eq, ne, and, isNotNull } = await import("drizzle-orm");
+        const limit = input.limit || 8;
+        let related: any[] = [];
+        // First try same category
+        if (input.categoryId) {
+          related = await drizzleDb.select().from(productsTable)
+            .where(and(
+              ne(productsTable.id, input.productId),
+              eq(productsTable.categoryId, input.categoryId),
+              isNotNull(productsTable.imageUrl)
+            ))
+            .limit(limit);
+        }
+        // If not enough, fill with other products from same user
+        if (related.length < limit) {
+          const [currentProduct] = await drizzleDb.select({ userId: productsTable.userId })
+            .from(productsTable).where(eq(productsTable.id, input.productId)).limit(1);
+          if (currentProduct) {
+            const moreProducts = await drizzleDb.select().from(productsTable)
+              .where(and(
+                ne(productsTable.id, input.productId),
+                eq(productsTable.userId, currentProduct.userId)
+              ))
+              .limit(limit);
+            // Merge without duplicates
+            const existingIds = new Set(related.map((p: any) => p.id));
+            for (const p of moreProducts) {
+              if (!existingIds.has(p.id)) { related.push(p); existingIds.add(p.id); }
+              if (related.length >= limit) break;
+            }
+          }
+        }
+        // Attach min price from packages
+        const productIds = related.map((p: any) => p.id);
+        let pricesMap: Record<number, number> = {};
+        if (productIds.length > 0) {
+          const { inArray } = await import("drizzle-orm");
+          const pkgs = await drizzleDb.select().from(productPackages)
+            .where(and(inArray(productPackages.productId, productIds), eq(productPackages.isActive, true)));
+          pkgs.forEach((pkg: any) => {
+            const price = Number(pkg.price);
+            if (!pricesMap[pkg.productId] || price < pricesMap[pkg.productId]) {
+              pricesMap[pkg.productId] = price;
+            }
+          });
+        }
+        return related.map((p: any) => ({ ...p, minPrice: pricesMap[p.id] || null }));
+      }),
+
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input, ctx }) => {
@@ -3926,7 +3982,7 @@ export const appRouter = router({
         const [session] = await drizzleDb.select().from(customerSessions)
           .where(eq(customerSessions.token, input.token)).limit(1);
         if (!session || session.expiresAt < new Date()) return null;
-        return { email: session.email, name: session.name };
+        return { email: session.email, name: session.name, avatarUrl: (session as any).avatarUrl || null };
       }),
 
     // Lịch sử đơn hàng của khách (theo email)
@@ -4093,8 +4149,8 @@ export const appRouter = router({
         const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
         const fileKey = `avatars/${session.email.replace(/[^a-zA-Z0-9]/g, "_")}-${Date.now()}.${ext}`;
         const { url } = await storagePut(fileKey, buffer, mimeType);
-        // Store avatar URL in session (we'll use a simple approach)
-        await drizzleDb.update(customerSessions).set({ name: session.name }).where(eq(customerSessions.token, input.token));
+        // Save avatar URL to session
+        await drizzleDb.update(customerSessions).set({ avatarUrl: url } as any).where(eq(customerSessions.token, input.token));
         return { url };
       }),
     logout: publicProcedure
@@ -4466,11 +4522,46 @@ export const appRouter = router({
           throw new Error("Chưa cấu hình PayOS. Vui lòng liên hệ admin.");
         }
       } catch (err: any) {
-        // If PayOS fails, still return invoice but without payment URL
+        // PayOS failed: log but still return invoice so customer can track order
         console.error("[checkout.buyNow] PayOS error:", err);
-        if (!paymentUrl) {
-          throw new Error(err.message || "Không thể tạo link thanh toán. Vui lòng thử lại.");
+        // paymentUrl stays empty - frontend will redirect to track-order
+      }
+
+      // Send email to customer with payment link (same as admin manual invoice)
+      try {
+        const db = await import("./db");
+        const userSettings = await db.getUserSettings(owner.id);
+        const companyName = userSettings?.companyName || "Invoice Prime";
+        const paymentPageUrl = paymentUrl || `${input.origin}/pay/${createdInvoice.id}`;
+        const customTemplate = await db.getEmailTemplateByType(owner.id, "CREATED").catch(() => null);
+        const replaceVars = (str: string) => str
+          .replace(/{{customerName}}/g, customer.name || input.email)
+          .replace(/{{invoiceNumber}}/g, invoiceNumber)
+          .replace(/{{totalAmount}}/g, `${totalAmount.toLocaleString("vi-VN")} đ`)
+          .replace(/{{status}}/g, "Chờ thanh toán")
+          .replace(/{{trackUrl}}/g, `${input.origin}/track-order`)
+          .replace(/{{reviewUrl}}/g, "")
+          .replace(/{{companyName}}/g, companyName)
+          .replace(/{{paymentUrl}}/g, paymentPageUrl);
+        let html: string;
+        let subject: string;
+        if (customTemplate) {
+          html = replaceVars(customTemplate.htmlBody);
+          subject = replaceVars(customTemplate.subject);
+        } else {
+          html = generateInvoiceEmailHTML({
+            invoiceNumber,
+            customerName: customer.name || input.email,
+            totalAmount,
+            currency: "VND",
+            companyName,
+            paymentUrl: paymentPageUrl,
+          });
+          subject = `Hóa Đơn ${invoiceNumber} - Link Thanh Toán`;
         }
+        await sendEmail({ to: input.email, subject, html, userId: owner.id });
+      } catch (emailErr) {
+        console.error("[checkout.buyNow] Email error:", emailErr);
       }
 
       // Send Telegram notification
@@ -4619,10 +4710,47 @@ export const appRouter = router({
           throw new Error("Chưa cấu hình PayOS. Vui lòng liên hệ admin.");
         }
       } catch (err: any) {
+        // PayOS failed: log but still return invoice so customer can track order
         console.error("[checkout.cartCheckout] PayOS error:", err);
-        if (!paymentUrl) {
-          throw new Error(err.message || "Không thể tạo link thanh toán. Vui lòng thử lại.");
+        // paymentUrl stays empty - frontend will redirect to track-order
+      }
+
+      // Send email to customer with payment link (same as admin manual invoice)
+      try {
+        const db = await import("./db");
+        const userSettings = await db.getUserSettings(owner.id);
+        const companyName = userSettings?.companyName || "Invoice Prime";
+        const paymentPageUrl = paymentUrl || `${input.origin}/pay/${createdInvoice.id}`;
+        const customTemplate = await db.getEmailTemplateByType(owner.id, "CREATED").catch(() => null);
+        const replaceVars = (str: string) => str
+          .replace(/{{customerName}}/g, customer.name || input.email)
+          .replace(/{{invoiceNumber}}/g, invoiceNumber)
+          .replace(/{{totalAmount}}/g, `${totalAmount.toLocaleString("vi-VN")} đ`)
+          .replace(/{{status}}/g, "Chờ thanh toán")
+          .replace(/{{trackUrl}}/g, `${input.origin}/track-order`)
+          .replace(/{{reviewUrl}}/g, "")
+          .replace(/{{companyName}}/g, companyName)
+          .replace(/{{paymentUrl}}/g, paymentPageUrl);
+        let html: string;
+        let subject: string;
+        if (customTemplate) {
+          html = replaceVars(customTemplate.htmlBody);
+          subject = replaceVars(customTemplate.subject);
+        } else {
+          const itemNamesForEmail = input.items.map(i => `${i.name} x${i.quantity}`).join(", ");
+          html = generateInvoiceEmailHTML({
+            invoiceNumber,
+            customerName: customer.name || input.email,
+            totalAmount,
+            currency: "VND",
+            companyName,
+            paymentUrl: paymentPageUrl,
+          });
+          subject = `Hóa Đơn ${invoiceNumber} - Link Thanh Toán`;
         }
+        await sendEmail({ to: input.email, subject, html, userId: owner.id });
+      } catch (emailErr) {
+        console.error("[checkout.cartCheckout] Email error:", emailErr);
       }
 
       // Send Telegram notification

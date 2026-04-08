@@ -1028,3 +1028,16 @@
 - [x] Tích hợp vào section "Bảo hành" trong MyAccount (giữ /warranty cho user cũ )
 - [x] Hiển thị danh sách SP đã mua có bảo hành trong tab bảo hành của trang user
 - [x] Nút "Yêu cầu bảo hành" trực tiếp từ trang user (form inline)
+
+## ## Phase 20: Fix bugs + Sản phẩm liên quan
+### Fix lỗi tạo hoá đơn PayOS
+- [x] Debug lỗi checkout.buyNow và checkout.cartCheckout
+- [x] Fix: tạo invoice thành công nhưng PayOS trả về lỗi → gửi email xác nhận + fallback về trang track-order
+- [x] Fix: nếu PayOS chưa cấu hình → tạo invoice và gửi email với link /pay
+### Fix cập nhật avatar
+- [x] Debug tại sao avatar upload xong không tự lưu vào profile
+- [x] Fix: thêm avatarUrl vào customerSessions table, lưu vào DB sau upload
+- [x] Fix: customer.me query trả về avatarUrl, CustomerAuthContext cập nhật state
+### Sản phẩm liên quan (ProductDetail)
+- [x] Thêm products.getRelated query - lấy SP cùng danh mục hoặc cùng shop
+- [x] Hiển thị grid SP liên quan ở cuối trang chi tiết SP (responsive 2-4 columns)

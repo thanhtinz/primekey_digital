@@ -575,6 +575,7 @@ export const customerSessions = mysqlTable("customer_sessions", {
   id: int("id").autoincrement().primaryKey(),
   email: varchar("email", { length: 320 }).notNull(),
   name: varchar("name", { length: 255 }),
+  avatarUrl: text("avatarUrl"),
   token: varchar("token", { length: 128 }).notNull().unique(),
   expiresAt: timestamp("expiresAt").notNull(),
   createdAt: timestamp("createdAt_cs").defaultNow().notNull(),

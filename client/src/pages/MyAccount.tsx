@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -50,11 +50,21 @@ export default function MyAccount() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const utils = trpc.useUtils();
+
+  // Initialize avatarUrl from customer data
+  useEffect(() => {
+    if (customer?.avatarUrl && !avatarUrl) {
+      setAvatarUrl(customer.avatarUrl);
+    }
+  }, [customer?.avatarUrl]);
 
   const uploadAvatarMutation = trpc.customer.uploadAvatar.useMutation({
     onSuccess: (data) => {
       setAvatarUrl(data.url);
-      toast.success("Cập nhật ảnh đại diện thành công!");
+      // Refresh customer data so avatarUrl persists across page reloads
+      utils.customer.me.invalidate({ token: token! });
+      toast.success("Ảnh đại diện đã được cập nhật!");
     },
     onError: () => toast.error("Đã xảy ra lỗi khi upload ảnh"),
   });

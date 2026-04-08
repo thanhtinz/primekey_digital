@@ -59,6 +59,10 @@ export default function ProductDetail() {
   const { data: productReviews = [] } = trpc.products.getReviews.useQuery({ productId }, { enabled: !!productId });
   const { data: customFields = [] } = trpc.products.getCustomFields.useQuery({ productId }, { enabled: !!productId });
   const { data: wishlistItems = [] } = trpc.wishlist.list.useQuery({ email }, { enabled: !!email });
+  const { data: relatedProducts = [] } = trpc.products.getRelated.useQuery(
+    { productId, categoryId: product?.categoryId || undefined, limit: 8 },
+    { enabled: !!productId && !!product }
+  );
   const isInWishlist = wishlistItems.some((w: any) => w.productId === productId);
   const utils = trpc.useUtils();
 
@@ -86,13 +90,15 @@ export default function ProductDetail() {
   const buyNow = trpc.checkout.buyNow.useMutation({
     onSuccess: (data) => {
       if (data.paymentUrl) {
+        // Redirect to PayOS payment page
         window.location.href = data.paymentUrl;
       } else {
-        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
-        setLocation("/track-order");
+        // PayOS not configured or failed - invoice created, email sent with /pay link
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo! Kiểm tra email để nhận link thanh toán.`);
+        setLocation(`/track-order?invoice=${data.invoiceNumber}`);
       }
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: any) => toast.error(err.message || "Lỗi khi tạo đơn hàng"),
   });
   const [buyingNow, setBuyingNow] = useState(false);
 
@@ -580,6 +586,34 @@ export default function ProductDetail() {
           </button>
         </div>
       </div>
+
+      {/* Related Products Section */}
+      {relatedProducts.length > 0 && (
+        <div className="mt-16 pt-8 border-t border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-6">Sản phẩm liên quan</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {relatedProducts.map((p: any) => (
+              <a
+                key={p.id}
+                href={`/product/${p.id}`}
+                className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
+                  {p.imageUrl && (
+                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  )}
+                </div>
+                <div className="p-3">
+                  <p className="text-xs md:text-sm font-medium text-gray-800 line-clamp-2 mb-2">{p.name}</p>
+                  {p.minPrice && (
+                    <p className="text-sm md:text-base font-bold text-red-500">{formatVND(p.minPrice)}</p>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

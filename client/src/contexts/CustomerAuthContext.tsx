@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 interface CustomerInfo {
   email: string;
   name?: string | null;
+  avatarUrl?: string | null;
 }
 
 interface CustomerAuthContextType {
@@ -55,6 +56,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
       setCustomer({
         email: meQuery.data.email,
         name: meQuery.data.name,
+        avatarUrl: (meQuery.data as any).avatarUrl || null,
       });
     } else if (meQuery.error) {
       // Token invalid or expired

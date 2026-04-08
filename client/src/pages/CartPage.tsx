@@ -78,13 +78,15 @@ export default function CartPage() {
       // Clear cart after successful checkout
       clearCart.mutate({ email });
       if (data.paymentUrl) {
+        // Redirect to PayOS payment page
         window.location.href = data.paymentUrl;
       } else {
-        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
-        navigate("/track-order");
+        // PayOS not configured or failed - invoice created, email sent with /pay link
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo! Kiểm tra email để nhận link thanh toán.`);
+        navigate(`/track-order?invoice=${data.invoiceNumber}`);
       }
     },
-    onError: (err) => { toast.error(err.message); setCheckingOut(false); },
+    onError: (err: any) => { toast.error(err.message || "Lỗi khi thanh toán"); setCheckingOut(false); },
   });
 
   const handleCheckout = async () => {
