@@ -8,12 +8,77 @@ import {
   Wrench, Phone, Mail, ChevronRight, TrendingUp, Award,
   Heart, ShoppingCart, Users2, Camera, Loader2,
   Copy, Share2, Trophy, Search, CreditCard, BarChart3,
-  ArrowRight, Sparkles, Eye
+  ArrowRight, Sparkles, Eye, Lock, EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ClientHeader } from "@/components/ClientHeader";
+
+// ChangePasswordForm component
+function ChangePasswordForm({ token }: { token: string }) {
+  const [oldPwd, setOldPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+
+  const changePwdMutation = trpc.customer.changePassword.useMutation({
+    onSuccess: () => {
+      toast.success("Đổi mật khẩu thành công!");
+      setOldPwd(""); setNewPwd(""); setConfirmPwd("");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPwd !== confirmPwd) { toast.error("Mật khẩu xác nhận không khớp"); return; }
+    if (newPwd.length < 6) { toast.error("Mật khẩu mới tối thiểu 6 ký tự"); return; }
+    changePwdMutation.mutate({ token, oldPassword: oldPwd, newPassword: newPwd });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div>
+        <label className="text-xs text-slate-500 mb-1 block">Mật khẩu hiện tại</label>
+        <div className="relative">
+          <input type={showOld ? "text" : "password"} value={oldPwd} onChange={e => setOldPwd(e.target.value)}
+            placeholder="Nhập mật khẩu cũ" required
+            className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" onClick={() => setShowOld(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+            {showOld ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-slate-500 mb-1 block">Mật khẩu mới</label>
+        <div className="relative">
+          <input type={showNew ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)}
+            placeholder="Tối thiểu 6 ký tự" required minLength={6}
+            className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" onClick={() => setShowNew(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+            {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-slate-500 mb-1 block">Xác nhận mật khẩu mới</label>
+        <input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
+          placeholder="Nhập lại mật khẩu mới" required
+          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            confirmPwd && confirmPwd !== newPwd ? "border-red-400" : "border-slate-300"
+          }`} />
+        {confirmPwd && confirmPwd !== newPwd && <p className="text-red-500 text-xs mt-1">Mật khẩu không khớp</p>}
+      </div>
+      <button type="submit" disabled={changePwdMutation.isPending || !oldPwd || !newPwd || newPwd !== confirmPwd}
+        className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2">
+        {changePwdMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+        {changePwdMutation.isPending ? "Đang cập nhật..." : "Đổi Mật Khẩu"}
+      </button>
+    </form>
+  );
+}
 
 function formatCurrency(amount: number | string) {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -52,10 +117,10 @@ export default function MyAccount() {
   const [editPhone, setEditPhone] = useState("");
   const utils = trpc.useUtils();
 
-  // Initialize avatarUrl from customer data
+  // Sync avatarUrl from customer data (including after reload)
   useEffect(() => {
-    if (customer?.avatarUrl && !avatarUrl) {
-      setAvatarUrl(customer.avatarUrl);
+    if (customer?.avatarUrl !== undefined) {
+      setAvatarUrl(customer.avatarUrl || null);
     }
   }, [customer?.avatarUrl]);
 
@@ -195,8 +260,14 @@ export default function MyAccount() {
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
           <div className="relative flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 ring-2 ring-white/30">
-              {customerName.charAt(0).toUpperCase()}
+            <div className="w-14 h-14 rounded-xl flex-shrink-0 ring-2 ring-white/30 overflow-hidden">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={customerName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-bold">
+                  {customerName.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-bold truncate">{customerName}</h2>
@@ -469,8 +540,23 @@ export default function MyAccount() {
                         </div>
                       )}
                     </div>
-                    <div className="bg-slate-50 border-t border-slate-100 px-4 py-2 flex justify-end">
-                      <button onClick={() => navigate(`/order/${order.id}`)} className="text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1">
+                    <div className="bg-slate-50 border-t border-slate-100 px-4 py-2 flex justify-between items-center gap-2">
+                      <a
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); window.open(`/api/invoices/${order.id}/pdf?token=${token}`, '_blank'); }}
+                        className="text-slate-500 hover:text-slate-700 text-xs font-medium flex items-center gap-1"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Xuất PDF
+                      </a>
+                      {(order.status === 'CREATED' || order.status === 'sent') && order.paymentLink && (
+                        <a href={order.paymentLink} target="_blank" rel="noopener noreferrer"
+                          className="text-green-600 hover:text-green-700 text-xs font-medium flex items-center gap-1">
+                          <CreditCard className="h-3.5 w-3.5" />
+                          Thanh toán ngay
+                        </a>
+                      )}
+                      <button onClick={() => navigate(`/track-order?invoice=${order.invoiceNumber}`)} className="text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1">
                         Chi tiết <ChevronRight className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -834,6 +920,15 @@ export default function MyAccount() {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Change password */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <Lock className="h-4 w-4 text-slate-500" />
+                Đổi Mật Khẩu
+              </h3>
+              <ChangePasswordForm token={token!} />
             </div>
 
             {/* Account security */}

@@ -32,6 +32,8 @@ export default function LandingPage() {
   const { data: activeSales = [] } = trpc.flashSale.getActive.useQuery(undefined, { staleTime: 60_000 });
   const { data: productsRaw } = trpc.products.listPublic.useQuery(undefined, { staleTime: 60_000, retry: false });
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
+  const { data: bannersData = [] } = trpc.banner.getPublic.useQuery(undefined, { staleTime: 60_000 });
+  const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
 
   const phone = publicInfo?.companyPhone;
   const email = publicInfo?.companyEmail;
@@ -276,6 +278,38 @@ export default function LandingPage() {
           </div>
         )}
 
+        {/* ===== IMAGE BANNER CAROUSEL ===== */}
+        {bannersData.length > 0 && (
+          <div className="mx-4 mt-3 mb-2 relative overflow-hidden rounded-2xl" style={{maxWidth: "100%"}}>
+            <div className="max-w-7xl mx-auto">
+              <div className="relative rounded-2xl overflow-hidden" style={{height: "180px"}}>
+                {bannersData.map((banner: any, idx: number) => (
+                  <a
+                    key={banner.id}
+                    href={banner.linkUrl || undefined}
+                    className={"absolute inset-0 transition-opacity duration-700 " + (idx === currentBannerIdx ? "opacity-100" : "opacity-0 pointer-events-none")}
+                  >
+                    <img src={banner.imageUrl} alt={banner.title || "Banner"} className="w-full h-full object-cover" />
+                    {banner.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                        <p className="text-white font-bold text-sm">{banner.title}</p>
+                        {banner.subtitle && <p className="text-white/80 text-xs">{banner.subtitle}</p>}
+                      </div>
+                    )}
+                  </a>
+                ))}
+                {bannersData.length > 1 && (
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {bannersData.map((_: any, idx: number) => (
+                      <button key={idx} onClick={() => setCurrentBannerIdx(idx)}
+                        className={"w-2 h-2 rounded-full transition-all " + (idx === currentBannerIdx ? "bg-white w-4" : "bg-white/50")} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         {/* ===== FLASH SALE BANNER ===== */}
         {activeSales.length > 0 && (
           <div className="mx-4 mt-2 mb-2">

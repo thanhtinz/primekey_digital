@@ -49,6 +49,10 @@ export default function ProductDetail() {
   const [reviewHover, setReviewHover] = useState(0);
   const [customFieldInputs, setCustomFieldInputs] = useState<Record<string, string>>({});
   const [showCustomFieldError, setShowCustomFieldError] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [notes, setNotes] = useState("");
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const { data: product, isLoading } = trpc.products.getPublicById.useQuery(
     { id: productId },
@@ -126,6 +130,25 @@ export default function ProductDetail() {
     }
     setShowCustomFieldError(false);
     return true;
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setValidatingCoupon(true);
+    try {
+      // Use 0 as placeholder - server validates coupon code validity regardless of amount
+      const result = await utils.coupon.validate.fetch({ code: couponCode, orderAmount: 0, customerEmail: email });
+      if (result && result.valid) {
+        setAppliedCoupon(result);
+        toast.success("Áp dụng mã giảm giá thành công!");
+      } else {
+        toast.error((result as any)?.error || "Mã giảm giá không hợp lệ");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Mã giảm giá không hợp lệ");
+    } finally {
+      setValidatingCoupon(false);
+    }
   };
 
   const getCustomFieldValues = () => {
@@ -512,9 +535,13 @@ export default function ProductDetail() {
               {(productReviews as any[]).slice(0, 5).map((review: any) => (
                 <div key={review.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      {(review.customerName || "K")[0].toUpperCase()}
-                    </div>
+                    {review.avatarUrl ? (
+                      <img src={review.avatarUrl} alt={review.customerName || "K"} className="w-7 h-7 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        {(review.customerName || "K")[0].toUpperCase()}
+                      </div>
+                    )}
                     <span className="text-sm font-medium text-gray-800">{review.customerName || "Khách hàng"}</span>
                     <div className="flex items-center gap-0.5 ml-auto">
                       {[1,2,3,4,5].map(i => (
@@ -530,6 +557,58 @@ export default function ProductDetail() {
           )}
         </div>
       </div>
+
+      {/* Coupon + Notes section (before sticky CTA) */}
+      {isLoggedIn && (
+        <div className="max-w-2xl mx-auto px-4 pb-4">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-gray-700">Thông tin đặt hàng</h4>
+            {/* Coupon */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Mã giảm giá</label>
+              {appliedCoupon ? (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                  <span className="text-xs text-green-700 font-medium flex-1">
+                    {appliedCoupon.code} — Giảm {appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `${new Intl.NumberFormat('vi-VN').format(appliedCoupon.discountValue)}₫`}
+                  </span>
+                  <button onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-red-500 hover:text-red-700">Hủy</button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập mã giảm giá"
+                    value={couponCode}
+                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                    className="text-sm h-9"
+                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCoupon(); }}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 px-3 text-xs whitespace-nowrap"
+                    onClick={handleApplyCoupon}
+                    disabled={validatingCoupon || !couponCode.trim()}
+                  >
+                    {validatingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Áp dụng"}
+                  </Button>
+                </div>
+              )}
+            </div>
+            {/* Notes */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Ghi chú đơn hàng (tùy chọn)</label>
+              <textarea
+                placeholder="Nhập ghi chú..."
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={2}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky CTA bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-50">
@@ -576,6 +655,8 @@ export default function ProductDetail() {
                 packageId: pkgId,
                 quantity: 1,
                 customFieldValues: getCustomFieldValues(),
+                couponCode: appliedCoupon?.code || couponCode || undefined,
+                notes: notes || undefined,
                 origin: window.location.origin,
               });
             }}

@@ -18,6 +18,7 @@ export default function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [appliedReferral, setAppliedReferral] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [notes, setNotes] = useState("");
 
   const { data: cartItems = [], isLoading } = trpc.cart.list.useQuery(
     { email },
@@ -51,7 +52,12 @@ export default function CartPage() {
   }, [cartItems]);
 
   const couponDiscount = appliedCoupon ? (appliedCoupon.discountType === "percentage" ? subtotal * appliedCoupon.discountValue / 100 : appliedCoupon.discountValue) : 0;
-  const total = Math.max(0, subtotal - couponDiscount);
+  const { data: taxConfig } = trpc.tax.getPublic.useQuery(undefined, { staleTime: 300_000 });
+  const taxRate = taxConfig?.isEnabled ? parseFloat(taxConfig.taxRate || "0") : 0;
+  const taxName = taxConfig?.taxName || "VAT";
+  const afterDiscount = Math.max(0, subtotal - couponDiscount);
+  const taxAmount = Math.round(afterDiscount * taxRate / 100);
+  const total = afterDiscount + taxAmount;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -75,8 +81,7 @@ export default function CartPage() {
 
   const cartCheckout = trpc.checkout.cartCheckout.useMutation({
     onSuccess: (data) => {
-      // Clear cart after successful checkout
-      clearCart.mutate({ email });
+      // NOTE: Do NOT clear cart after checkout - user may want to reorder
       if (data.paymentUrl) {
         // Redirect to PayOS payment page
         window.location.href = data.paymentUrl;
@@ -107,6 +112,7 @@ export default function CartPage() {
         items,
         couponCode: appliedCoupon?.code || undefined,
         referralCode: appliedReferral ? referralCode : undefined,
+        notes: notes.trim() || undefined,
         origin: window.location.origin,
       });
     } catch (err: any) {
@@ -206,6 +212,12 @@ export default function CartPage() {
                         <span>-{formatPrice(couponDiscount)}</span>
                       </div>
                     )}
+                    {taxAmount > 0 && (
+                      <div className="flex justify-between text-gray-500">
+                        <span>{taxName} ({taxRate}%)</span>
+                        <span>+{formatPrice(taxAmount)}</span>
+                      </div>
+                    )}
                     <div className="border-t pt-2 flex justify-between">
                       <span className="font-semibold text-gray-900">Tổng cộng</span>
                       <span className="font-bold text-red-500 text-lg">{formatPrice(total)}</span>
@@ -254,6 +266,18 @@ export default function CartPage() {
                         </Button>
                       )}
                     </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1.5 block">Ghi chú đơn hàng</label>
+                    <textarea
+                      placeholder="Nhập ghi chú (tùy chọn)"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={2}
+                      className="w-full text-sm border border-gray-200 rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
 
                   <Button

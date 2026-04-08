@@ -1040,3 +1040,64 @@
 ### Sản phẩm liên quan (ProductDetail)
 - [x] Thêm products.getRelated query - lấy SP cùng danh mục hoặc cùng shop
 - [x] Hiển thị grid SP liên quan ở cuối trang chi tiết SP (responsive 2-4 columns)
+
+## Phase 22: Refactor Toàn Diện
+
+### A. Fix Bugs Khẩn Cấp
+- [x] Fix PayOS: sửa signature format (alphabetical sort) và API endpoint (api-merchant.payos.vn/v2)
+- [x] Fix avatar: persist avatarUrl - sửa staleTime trong CustomerAuthContext, avatarUrl đã lưu trong customerSessions
+- [x] Fix coupon trong trang sản phẩm: validate thực sự qua API, hiển thị thông tin giảm giá
+- [x] Fix ghi chú (notes): đã có trong CartPage và ProductDetail, truyền đúng vào mutation
+- [x] Giỏ hàng KHÔNG tự xóa sản phẩm sau khi đặt hàng thành công (đã có comment trong code)
+- [x] Fix feedback/review: chỉ hiện reviews đã approved (isApproved=true) ở trang sản phẩm
+- [x] Thêm quản lý feedback/review trong admin: FeedbacksAdmin.tsx dùng products.getAllReviews
+- [x] Hiển thị avatar trong review: getReviews join với customerSessions để lấy avatarUrl
+
+### B. User Auth Email+Password
+- [ ] Schema: thêm cột password (hashed), isVerified, verificationToken vào customerSessions/customers
+- [ ] Trang /register: form đăng ký (tên, email, mật khẩu, xác nhận mật khẩu)
+- [ ] Trang /login: form đăng nhập email + mật khẩu (thay thế OTP)
+- [ ] Trang /forgot-password: gửi email reset mật khẩu
+- [ ] Trang /reset-password: nhập mật khẩu mới từ link email
+- [ ] Bảo mật: bcrypt hash password, rate limiting login, JWT session
+- [ ] Email xác minh tài khoản sau đăng ký
+- [ ] Trang /my-account: thêm tab đổi mật khẩu
+
+### C. Wallet (Nạp Số Dư)
+- [ ] Schema: bảng wallets (customerId, balance), wallet_transactions (customerId, amount, type, invoiceId)
+- [ ] Trang nạp tiền: tạo PayOS payment link để nạp số dư
+- [ ] Sau khi PayOS callback → cộng số dư vào wallet
+- [ ] Thanh toán bằng số dư: khi checkout chọn "Thanh toán bằng số dư"
+- [ ] Hiển thị số dư trong trang /my-account
+- [ ] Admin: xem lịch sử giao dịch wallet của khách
+
+### D. Xóa/Ẩn Tính Năng
+- [ ] Xóa tính năng so sánh sản phẩm (/compare, nút compare trong catalog)
+- [ ] Xóa tính năng hàng chờ (waitlist)
+- [ ] Xóa tạo đơn thủ công trong admin (chỉ xem đơn từ hệ thống)
+
+### E. Tích Điểm Mở Rộng
+- [ ] Schema: bảng reward_items (name, pointCost, type: gift/spin/game, config)
+- [ ] Trang đổi thưởng: danh sách phần thưởng có thể đổi bằng điểm
+- [ ] Vòng quay may mắn: cấu hình trong admin, quay bằng điểm
+- [ ] Admin: quản lý phần thưởng, cấu hình vòng quay/mini game
+
+### F. Giới Thiệu Bạn Bè Mở Rộng
+- [ ] Rút thưởng về ATM: form nhập số tài khoản ngân hàng
+- [ ] Rút thưởng về số dư: cộng trực tiếp vào wallet
+- [ ] Admin: duyệt yêu cầu rút thưởng về ATM
+
+### G. Banner Trang Chủ
+- [ ] Schema: bảng banners (title, imageUrl, linkUrl, sortOrder, isActive)
+- [ ] Admin: quản lý banner (CRUD, upload ảnh, sắp xếp)
+- [ ] Landing page: hiển thị banner carousel/slider
+
+### H. Thuế (Tax)
+- [ ] Admin: cấu hình thuế suất (%) trong Settings
+- [ ] Tự động tính thuế khi checkout
+- [ ] Hiển thị thuế trong hóa đơn
+
+### I. Xuất Hóa Đơn Từ Trang User
+- [ ] Trang /my-account tab Đơn Hàng: nút "Xuất PDF" cho từng đơn
+- [ ] Tự động xuất hóa đơn PDF khi click (không cần admin)
+- [ ] Hỗ trợ VAT trong hóa đơn PDF

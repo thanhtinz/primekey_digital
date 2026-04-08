@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { generateInvoicePDF } from "./pdf";
@@ -1495,12 +1496,30 @@ export const appRouter = router({
     }),
     // Product reviews
     getReviews: publicProcedure.input(z.object({ productId: z.number() })).query(async ({ input }) => {
-      const { productReviews } = await import("../drizzle/schema");
+      const { productReviews, customerSessions } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq, and, desc } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
-      return drizzleDb.select().from(productReviews).where(and(eq(productReviews.productId, input.productId), eq(productReviews.isApproved, true))).orderBy(desc(productReviews.createdAt));
+      // Join with customerSessions to get avatarUrl
+      const rows = await drizzleDb
+        .select({
+          id: productReviews.id,
+          productId: productReviews.productId,
+          customerEmail: productReviews.customerEmail,
+          customerName: productReviews.customerName,
+          rating: productReviews.rating,
+          comment: productReviews.comment,
+          invoiceId: productReviews.invoiceId,
+          isApproved: productReviews.isApproved,
+          createdAt: productReviews.createdAt,
+          avatarUrl: customerSessions.avatarUrl,
+        })
+        .from(productReviews)
+        .leftJoin(customerSessions, eq(customerSessions.email, productReviews.customerEmail))
+        .where(and(eq(productReviews.productId, input.productId), eq(productReviews.isApproved, true)))
+        .orderBy(desc(productReviews.createdAt));
+      return rows;
     }),
     submitReview: publicProcedure.input(z.object({
       productId: z.number(),
@@ -3974,15 +3993,17 @@ export const appRouter = router({
     me: publicProcedure
       .input(z.object({ token: z.string() }))
       .query(async ({ input }) => {
-        const { customerSessions } = await import("../drizzle/schema");
+        const { customerSessions, customers } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
-        const { eq, gt } = await import("drizzle-orm");
+        const { eq } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) return null;
         const [session] = await drizzleDb.select().from(customerSessions)
           .where(eq(customerSessions.token, input.token)).limit(1);
         if (!session || session.expiresAt < new Date()) return null;
-        return { email: session.email, name: session.name, avatarUrl: (session as any).avatarUrl || null };
+        // Get walletBalance from customers table
+        const [cust] = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, session.email)).limit(1);
+        return { email: session.email, name: session.name, avatarUrl: (session as any).avatarUrl || null, walletBalance: cust?.walletBalance || "0" };
       }),
 
     // Lịch sử đơn hàng của khách (theo email)
@@ -4162,6 +4183,111 @@ export const appRouter = router({
         const drizzleDb = await getDb();
         if (!drizzleDb) return { success: false };
         await drizzleDb.delete(customerSessions).where(eq(customerSessions.token, input.token));
+        return { success: true };
+      }),
+
+    // Đăng ký tài khoản mới với email + mật khẩu
+    register: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+        name: z.string().min(1, "Vui lòng nhập tên"),
+        phone: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { customers, customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        // Get owner
+        const { users } = await import("../drizzle/schema");
+        const [owner] = await drizzleDb.select().from(users).limit(1);
+        if (!owner) throw new Error("Hệ thống chưa được cấu hình");
+        // Check if email already registered
+        const [existing] = await drizzleDb.select({ id: customers.id, passwordHash: customers.passwordHash })
+          .from(customers)
+          .where(and(eq(customers.userId, owner.id), eq(customers.email, input.email)))
+          .limit(1);
+        if (existing?.passwordHash) throw new Error("Email này đã được đăng ký");
+        // Hash password
+        const bcrypt = await import("bcryptjs");
+        const passwordHash = await bcrypt.hash(input.password, 10);
+        if (existing) {
+          // Update existing customer with password
+          await drizzleDb.update(customers).set({ passwordHash, name: input.name, phone: input.phone || null, updatedAt: new Date() } as any).where(eq(customers.id, existing.id));
+        } else {
+          // Create new customer
+          await drizzleDb.insert(customers).values({ userId: owner.id, name: input.name, email: input.email, phone: input.phone || null, passwordHash } as any);
+        }
+        // Create session
+        const crypto = await import("crypto");
+        const token = crypto.randomBytes(48).toString("hex");
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await drizzleDb.insert(customerSessions).values({ email: input.email, name: input.name, token, expiresAt });
+        return { token, name: input.name, email: input.email, expiresAt };
+      }),
+
+    // Đăng nhập bằng email + mật khẩu
+    loginWithPassword: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { customers, customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const { users } = await import("../drizzle/schema");
+        const [owner] = await drizzleDb.select().from(users).limit(1);
+        if (!owner) throw new Error("Hệ thống chưa được cấu hình");
+        const [customer] = await drizzleDb.select()
+          .from(customers)
+          .where(and(eq(customers.userId, owner.id), eq(customers.email, input.email)))
+          .limit(1);
+        if (!customer) throw new Error("Email hoặc mật khẩu không đúng");
+        if (!(customer as any).passwordHash) throw new Error("Tài khoản này chưa đăng ký mật khẩu. Vui lòng đăng ký hoặc dùng email OTP.");
+        const bcrypt = await import("bcryptjs");
+        const valid = await bcrypt.compare(input.password, (customer as any).passwordHash);
+        if (!valid) throw new Error("Email hoặc mật khẩu không đúng");
+        // Create session
+        const crypto = await import("crypto");
+        const token = crypto.randomBytes(48).toString("hex");
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token, expiresAt });
+        return { token, name: customer.name, email: input.email, expiresAt };
+      }),
+
+    // Đổi mật khẩu
+    changePassword: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        oldPassword: z.string(),
+        newPassword: z.string().min(6, "Mật khẩu mới tối thiểu 6 ký tự"),
+      }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phiên đăng nhập hết hạn");
+        const { users } = await import("../drizzle/schema");
+        const [owner] = await drizzleDb.select().from(users).limit(1);
+        const [customer] = await drizzleDb.select().from(customers)
+          .where(and(eq(customers.userId, owner.id), eq(customers.email, session.email)))
+          .limit(1);
+        if (!customer) throw new Error("Tài khoản không tồn tại");
+        const bcrypt = await import("bcryptjs");
+        if ((customer as any).passwordHash) {
+          const valid = await bcrypt.compare(input.oldPassword, (customer as any).passwordHash);
+          if (!valid) throw new Error("Mật khẩu cũ không đúng");
+        }
+        const newHash = await bcrypt.hash(input.newPassword, 10);
+        await drizzleDb.update(customers).set({ passwordHash: newHash, updatedAt: new Date() } as any).where(eq(customers.id, customer.id));
         return { success: true };
       }),
   }),
@@ -4387,6 +4513,7 @@ export const appRouter = router({
       couponCode: z.string().optional(),
       referralCode: z.string().optional(),
       customFieldValues: z.array(z.object({ fieldName: z.string(), fieldValue: z.string() })).optional(),
+      notes: z.string().optional(),
       origin: z.string(), // window.location.origin
     })).mutation(async ({ input }) => {
       const { getDb } = await import("./db");
@@ -4460,7 +4587,7 @@ export const appRouter = router({
         totalAmount: String(totalAmount),
         status: "CREATED",
         paymentMethod: "PAYOS",
-        notes: input.customFieldValues ? JSON.stringify(input.customFieldValues) : null,
+        notes: input.notes || (input.customFieldValues ? JSON.stringify(input.customFieldValues) : null),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
       } as any);
 
@@ -4584,6 +4711,7 @@ export const appRouter = router({
       })),
       couponCode: z.string().optional(),
       referralCode: z.string().optional(),
+      notes: z.string().optional(),
       origin: z.string(),
     })).mutation(async ({ input }) => {
       const { getDb } = await import("./db");
@@ -4649,6 +4777,7 @@ export const appRouter = router({
         totalAmount: String(totalAmount),
         status: "CREATED",
         paymentMethod: "PAYOS",
+        notes: input.notes || null,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       } as any);
 
@@ -4759,6 +4888,513 @@ export const appRouter = router({
 
       return { success: true, invoiceId: createdInvoice.id, invoiceNumber, paymentUrl, qrCode };
     }),
+  }),
+  // ─── Wallet Router ────────────────────────────────────────────────────────
+  wallet: router({
+    getBalance: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const session = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session[0]) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const customer = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, session[0].email)).limit(1);
+        return { balance: parseFloat(customer[0]?.walletBalance || "0") };
+      }),
+
+    getTransactions: publicProcedure
+      .input(z.object({ token: z.string(), limit: z.number().default(20) }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, desc } = await import("drizzle-orm");
+        const { customerSessions, walletTransactions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const session = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session[0]) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return drizzleDb.select().from(walletTransactions)
+          .where(eq(walletTransactions.customerEmail, session[0].email))
+          .orderBy(desc(walletTransactions.createdAt))
+          .limit(input.limit);
+      }),
+
+    topup: publicProcedure
+      .input(z.object({ token: z.string(), amount: z.number().min(10000), returnUrl: z.string() }))
+      .mutation(async ({ input }) => {
+        const { getDb, getPaymentGatewaysConfigByUserId } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customerSessions, customers, walletTransactions, users } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const session = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session[0]) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const owner = await drizzleDb.select().from(users).limit(1);
+        if (!owner[0]) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        // getPaymentGatewaysConfigByUserId returns a single row (the config object)
+        const gatewayConfig = await getPaymentGatewaysConfigByUserId(owner[0].id);
+        if (!gatewayConfig || !gatewayConfig.payosApiKey) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "PayOS chưa được cấu hình" });
+        }
+        const orderCode = Date.now();
+        const paymentResult = await createPayOSPaymentLink(
+          {
+            apiKey: gatewayConfig.payosApiKey || "",
+            clientId: gatewayConfig.payosClientId || "",
+            checksumKey: gatewayConfig.payosChecksumKey || "",
+          },
+          {
+            orderCode,
+            amount: Math.round(input.amount),
+            description: `NAP VI ${session[0].email.split("@")[0].substring(0, 10)}`,
+            buyerName: session[0].name || session[0].email.split("@")[0],
+            buyerEmail: session[0].email,
+            buyerPhone: "",
+            buyerAddress: "",
+            returnUrl: input.returnUrl,
+            cancelUrl: input.returnUrl,
+          }
+        );
+        const paymentUrl = paymentResult.checkoutUrl;
+        const currentCustomer = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, session[0].email)).limit(1);
+        const currentBalance = parseFloat(currentCustomer[0]?.walletBalance || "0");
+        await drizzleDb.insert(walletTransactions).values({
+          customerEmail: session[0].email,
+          type: "topup",
+          amount: input.amount.toString(),
+          balanceBefore: currentBalance.toString(),
+          balanceAfter: currentBalance.toString(),
+          description: `Nạp ví qua PayOS`,
+          payosOrderCode: orderCode,
+          status: "pending",
+        });
+        return { paymentUrl, orderCode };
+      }),
+
+    adminCredit: protectedProcedure
+      .input(z.object({ customerEmail: z.string().email(), amount: z.number(), description: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customers, walletTransactions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const customer = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, input.customerEmail)).limit(1);
+        if (!customer[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy khách hàng" });
+        const currentBalance = parseFloat(customer[0].walletBalance || "0");
+        const newBalance = currentBalance + input.amount;
+        await drizzleDb.update(customers).set({ walletBalance: newBalance.toString() }).where(eq(customers.email, input.customerEmail));
+        await drizzleDb.insert(walletTransactions).values({
+          customerEmail: input.customerEmail,
+          type: input.amount >= 0 ? "topup" : "spend",
+          amount: Math.abs(input.amount).toString(),
+          balanceBefore: currentBalance.toString(),
+          balanceAfter: newBalance.toString(),
+          description: input.description || `Admin điều chỉnh số dư`,
+          status: "completed",
+        });
+        return { success: true, newBalance };
+      }),
+  }),
+
+  // ─── Banner Router ─────────────────────────────────────────────────────────
+  banner: router({
+    getPublic: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const { banners } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(banners).where(eq(banners.isActive, true)).orderBy(banners.sortOrder);
+    }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const { banners } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(banners).where(eq(banners.userId, ctx.user.id)).orderBy(banners.sortOrder);
+    }),
+    create: protectedProcedure
+      .input(z.object({ title: z.string().optional(), imageUrl: z.string().url(), linkUrl: z.string().optional(), sortOrder: z.number().default(0) }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { banners } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.insert(banners).values({ ...input, userId: ctx.user.id, isActive: true });
+        return { success: true };
+      }),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), title: z.string().optional(), imageUrl: z.string().url().optional(), linkUrl: z.string().optional(), sortOrder: z.number().optional(), isActive: z.boolean().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const { banners } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { id, ...data } = input;
+        await drizzleDb.update(banners).set(data).where(and(eq(banners.id, id), eq(banners.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const { banners } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.delete(banners).where(and(eq(banners.id, input.id), eq(banners.userId, ctx.user.id)));
+        return { success: true };
+      }),
+  }),
+
+  // ─── Tax Router ────────────────────────────────────────────────────────────
+  tax: router({
+    getSettings: protectedProcedure.query(async ({ ctx }) => {
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const { taxSettings } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const result = await drizzleDb.select().from(taxSettings).where(eq(taxSettings.userId, ctx.user.id)).limit(1);
+      return result[0] || null;
+    }),
+    getPublic: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const { taxSettings, users } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner[0]) return null;
+      const result = await drizzleDb.select().from(taxSettings).where(and(eq(taxSettings.userId, owner[0].id), eq(taxSettings.isEnabled, true))).limit(1);
+      return result[0] || null;
+    }),
+    save: protectedProcedure
+      .input(z.object({ taxName: z.string().default("VAT"), taxRate: z.number().min(0).max(100), isEnabled: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { taxSettings } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const existing = await drizzleDb.select().from(taxSettings).where(eq(taxSettings.userId, ctx.user.id)).limit(1);
+        if (existing[0]) {
+          await drizzleDb.update(taxSettings).set({ taxName: input.taxName, taxRate: input.taxRate.toString(), isEnabled: input.isEnabled }).where(eq(taxSettings.userId, ctx.user.id));
+        } else {
+          await drizzleDb.insert(taxSettings).values({ userId: ctx.user.id, taxName: input.taxName, taxRate: input.taxRate.toString(), isEnabled: input.isEnabled });
+        }
+        return { success: true };
+      }),
+  }),
+
+  // ─── Loyalty Rewards ─────────────────────────────────────────────────────────
+  loyaltyRewards: router({
+    // Admin: list all rewards
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const { loyaltyRewards } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(loyaltyRewards).where(eq(loyaltyRewards.userId, ctx.user.id)).orderBy(asc(loyaltyRewards.sortOrder));
+    }),
+    // Public: list active rewards
+    getPublic: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const { eq, asc, and } = await import("drizzle-orm");
+      const { loyaltyRewards } = await import("../drizzle/schema");
+      const { users } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner[0]) return [];
+      return drizzleDb.select().from(loyaltyRewards).where(and(eq(loyaltyRewards.userId, owner[0].id), eq(loyaltyRewards.isActive, true))).orderBy(asc(loyaltyRewards.sortOrder));
+    }),
+    create: protectedProcedure
+      .input(z.object({ name: z.string(), description: z.string().optional(), imageUrl: z.string().optional(), pointsCost: z.number().min(1), rewardType: z.enum(["discount_code", "wallet_credit", "physical", "custom"]).default("discount_code"), rewardValue: z.number().default(0), stock: z.number().default(-1), isActive: z.boolean().default(true), sortOrder: z.number().default(0) }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { loyaltyRewards } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const result = await drizzleDb.insert(loyaltyRewards).values({ ...input, userId: ctx.user.id, rewardValue: input.rewardValue.toString() });
+        return { id: (result as any).insertId };
+      }),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), name: z.string().optional(), description: z.string().optional(), imageUrl: z.string().optional(), pointsCost: z.number().optional(), rewardType: z.enum(["discount_code", "wallet_credit", "physical", "custom"]).optional(), rewardValue: z.number().optional(), stock: z.number().optional(), isActive: z.boolean().optional(), sortOrder: z.number().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const { loyaltyRewards } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { id, rewardValue, ...rest } = input;
+        await drizzleDb.update(loyaltyRewards).set({ ...rest, ...(rewardValue !== undefined ? { rewardValue: rewardValue.toString() } : {}) }).where(and(eq(loyaltyRewards.id, id), eq(loyaltyRewards.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const { loyaltyRewards } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.delete(loyaltyRewards).where(and(eq(loyaltyRewards.id, input.id), eq(loyaltyRewards.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    // Customer: redeem a reward
+    redeem: publicProcedure
+      .input(z.object({ token: z.string(), rewardId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, and, sql } = await import("drizzle-orm");
+        const { loyaltyRewards, loyaltyRedemptions, loyaltyPoints, customers, users, customerSessions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const customerEmail = session.email;
+        const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner[0]) throw new TRPCError({ code: "NOT_FOUND" });
+        const ownerId = owner[0].id;
+        // Get reward
+        const reward = await drizzleDb.select().from(loyaltyRewards).where(and(eq(loyaltyRewards.id, input.rewardId), eq(loyaltyRewards.userId, ownerId), eq(loyaltyRewards.isActive, true))).limit(1);
+        if (!reward[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Phần thưởng không tồn tại" });
+        const rewardItem = reward[0];
+        // Check customer points
+        const pointRows = await drizzleDb.select({ points: sql<number>`SUM(points)` }).from(loyaltyPoints).where(and(eq(loyaltyPoints.userId, ownerId), eq(loyaltyPoints.customerEmail, customerEmail)));
+        const totalPoints = Number(pointRows[0]?.points || 0);
+        if (totalPoints < rewardItem.pointsCost) throw new TRPCError({ code: "BAD_REQUEST", message: `Không đủ điểm. Cần ${rewardItem.pointsCost}, bạn có ${totalPoints}` });
+        // Check stock
+        if (rewardItem.stock !== -1 && (rewardItem.stock ?? 0) <= 0) throw new TRPCError({ code: "BAD_REQUEST", message: "Phần thưởng đã hết" });
+        // Deduct points
+        await drizzleDb.insert(loyaltyPoints).values({ userId: ownerId, customerEmail: customerEmail, points: -rewardItem.pointsCost, reason: "REDEEMED" });
+        // Update stock
+        if (rewardItem.stock !== -1) {
+          await drizzleDb.update(loyaltyRewards).set({ stock: (rewardItem.stock ?? 1) - 1 }).where(eq(loyaltyRewards.id, input.rewardId));
+        }
+        // Create redemption record
+        const result = await drizzleDb.insert(loyaltyRedemptions).values({ userId: ownerId, rewardId: input.rewardId, customerEmail: customerEmail, pointsUsed: rewardItem.pointsCost, status: "pending" });
+        // If wallet_credit, add to wallet immediately
+        if (rewardItem.rewardType === "wallet_credit") {
+          const customer = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, customerEmail)).limit(1);
+          const currentBalance = parseFloat(customer[0]?.walletBalance?.toString() || "0");
+          const creditAmount = parseFloat(rewardItem.rewardValue?.toString() || "0");
+          await drizzleDb.update(customers).set({ walletBalance: (currentBalance + creditAmount).toString() }).where(eq(customers.email, customerEmail));
+          await drizzleDb.update(loyaltyRedemptions).set({ status: "fulfilled" }).where(eq(loyaltyRedemptions.id, (result as any).insertId));
+        }
+        return { success: true, redemptionId: (result as any).insertId, rewardType: rewardItem.rewardType };
+      }),
+    // Customer: list own redemptions
+    myRedemptions: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, and, desc } = await import("drizzle-orm");
+        const { loyaltyRedemptions, loyaltyRewards, users, customerSessions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return [];
+        const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner[0]) return [];
+        return drizzleDb.select({ redemption: loyaltyRedemptions, rewardName: loyaltyRewards.name, rewardType: loyaltyRewards.rewardType }).from(loyaltyRedemptions).leftJoin(loyaltyRewards, eq(loyaltyRedemptions.rewardId, loyaltyRewards.id)).where(and(eq(loyaltyRedemptions.userId, owner[0].id), eq(loyaltyRedemptions.customerEmail, session.email))).orderBy(desc(loyaltyRedemptions.createdAt)).limit(20);
+      }),
+  }),
+
+  // ─── Spin Wheel ──────────────────────────────────────────────────────────────
+  spinWheel: router({
+    getConfig: publicProcedure.query(async () => {
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const { spinWheelConfig, spinWheelItems, users } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner[0]) return null;
+      const config = await drizzleDb.select().from(spinWheelConfig).where(eq(spinWheelConfig.userId, owner[0].id)).limit(1);
+      const items = await drizzleDb.select().from(spinWheelItems).where(eq(spinWheelItems.userId, owner[0].id));
+      return { config: config[0] || null, items };
+    }),
+    saveConfig: protectedProcedure
+      .input(z.object({ isEnabled: z.boolean(), pointsPerSpin: z.number().min(0), spinsPerDay: z.number().min(1) }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { spinWheelConfig } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const existing = await drizzleDb.select().from(spinWheelConfig).where(eq(spinWheelConfig.userId, ctx.user.id)).limit(1);
+        if (existing[0]) {
+          await drizzleDb.update(spinWheelConfig).set(input).where(eq(spinWheelConfig.userId, ctx.user.id));
+        } else {
+          await drizzleDb.insert(spinWheelConfig).values({ ...input, userId: ctx.user.id });
+        }
+        return { success: true };
+      }),
+    saveItems: protectedProcedure
+      .input(z.array(z.object({ id: z.number().optional(), label: z.string(), prizeType: z.enum(["points", "wallet_credit", "coupon", "nothing"]), prizeValue: z.number().default(0), probability: z.number().min(0).max(100), color: z.string().default("#4F46E5"), isActive: z.boolean().default(true), sortOrder: z.number().default(0) })))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { spinWheelItems } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        // Delete all and re-insert
+        await drizzleDb.delete(spinWheelItems).where(eq(spinWheelItems.userId, ctx.user.id));
+        if (input.length > 0) {
+          await drizzleDb.insert(spinWheelItems).values(input.map(item => ({ ...item, userId: ctx.user.id, prizeValue: item.prizeValue.toString(), probability: item.probability.toString() })));
+        }
+        return { success: true };
+      }),
+    spin: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, and, sql, gte } = await import("drizzle-orm");
+        const { spinWheelConfig, spinWheelItems, spinHistory, loyaltyPoints, customers, users, customerSessions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const customerEmail = session.email;
+        const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner[0]) throw new TRPCError({ code: "NOT_FOUND" });
+        const ownerId = owner[0].id;
+        const configRows = await drizzleDb.select().from(spinWheelConfig).where(eq(spinWheelConfig.userId, ownerId)).limit(1);
+        const config = configRows[0];
+        if (!config?.isEnabled) throw new TRPCError({ code: "BAD_REQUEST", message: "Vòng quay chưa được bật" });
+        // Check spins today
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const spinsToday = await drizzleDb.select({ count: sql<number>`COUNT(*)` }).from(spinHistory).where(and(eq(spinHistory.userId, ownerId), eq(spinHistory.customerEmail, customerEmail), gte(spinHistory.createdAt, today)));
+        if (Number(spinsToday[0]?.count || 0) >= (config.spinsPerDay ?? 1)) throw new TRPCError({ code: "BAD_REQUEST", message: `Bạn đã hết lượt quay hôm nay (${config.spinsPerDay ?? 1} lượt/ngày)` });
+        // Check points
+        if ((config.pointsPerSpin ?? 0) > 0) {
+          const pointRows = await drizzleDb.select({ points: sql<number>`SUM(points)` }).from(loyaltyPoints).where(and(eq(loyaltyPoints.userId, ownerId), eq(loyaltyPoints.customerEmail, customerEmail)));
+          const totalPoints = Number(pointRows[0]?.points || 0);
+          if (totalPoints < (config.pointsPerSpin ?? 0)) throw new TRPCError({ code: "BAD_REQUEST", message: `Không đủ điểm. Cần ${config.pointsPerSpin ?? 0} điểm để quay` });
+        }
+        // Get active items
+        const items = await drizzleDb.select().from(spinWheelItems).where(and(eq(spinWheelItems.userId, ownerId), eq(spinWheelItems.isActive, true)));
+        if (items.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "Vòng quay chưa có ô nào" });
+        // Weighted random selection
+        const totalProb = items.reduce((sum, item) => sum + parseFloat(item.probability?.toString() || "0"), 0);
+        let rand = Math.random() * totalProb;
+        let winner = items[items.length - 1];
+        for (const item of items) {
+          rand -= parseFloat(item.probability?.toString() || "0");
+          if (rand <= 0) { winner = item; break; }
+        }
+        // Deduct points for spinning
+        if ((config.pointsPerSpin ?? 0) > 0) {
+          await drizzleDb.insert(loyaltyPoints).values({ userId: ownerId, customerEmail: customerEmail, points: -(config.pointsPerSpin ?? 0), reason: "SPIN_WHEEL" });
+        }
+        // Apply prize
+        const prizeValue = parseFloat(winner.prizeValue?.toString() || "0");
+        if (winner.prizeType === "points" && prizeValue > 0) {
+          await drizzleDb.insert(loyaltyPoints).values({ userId: ownerId, customerEmail: customerEmail, points: Math.round(prizeValue), reason: "SPIN_WHEEL_WIN" });
+        } else if (winner.prizeType === "wallet_credit" && prizeValue > 0) {
+          const customer = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, customerEmail)).limit(1);
+          const currentBalance = parseFloat(customer[0]?.walletBalance?.toString() || "0");
+          await drizzleDb.update(customers).set({ walletBalance: (currentBalance + prizeValue).toString() }).where(eq(customers.email, customerEmail));
+        }
+        // Record spin history
+        await drizzleDb.insert(spinHistory).values({ userId: ownerId, customerEmail: customerEmail, spinWheelItemId: winner.id, prizeType: winner.prizeType, prizeValue: winner.prizeValue, pointsUsed: config.pointsPerSpin ?? 0 });
+        return { success: true, winner: { label: winner.label, prizeType: winner.prizeType, prizeValue } };
+      }),
+    myHistory: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, and, desc } = await import("drizzle-orm");
+        const { spinHistory, users, customerSessions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return [];
+        const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner[0]) return [];
+        return drizzleDb.select().from(spinHistory).where(and(eq(spinHistory.userId, owner[0].id), eq(spinHistory.customerEmail, session.email))).orderBy(desc(spinHistory.createdAt)).limit(20);
+      }),
+  }),
+
+  // ─── Referral Withdrawals ─────────────────────────────────────────────────────
+  referralWithdrawals: router({
+    // Customer: request withdrawal
+    create: publicProcedure
+      .input(z.object({ token: z.string(), customerName: z.string().optional(), amount: z.number().min(1), withdrawType: z.enum(["atm", "wallet"]), bankName: z.string().optional(), bankAccount: z.string().optional(), bankHolder: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { referralWithdrawals, customerReferralCodes, customers, users, customerSessions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const customerEmail = session.email;
+        const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner[0]) throw new TRPCError({ code: "NOT_FOUND" });
+        const ownerId = owner[0].id;
+        // Check referral balance
+        const referralCode = await drizzleDb.select().from(customerReferralCodes).where(eq(customerReferralCodes.email, customerEmail)).limit(1);
+        const totalRewards = parseFloat(referralCode[0]?.totalRewards?.toString() || "0");
+        if (totalRewards < input.amount) throw new TRPCError({ code: "BAD_REQUEST", message: `Số dư hoa hồng không đủ. Bạn có ${totalRewards.toLocaleString("vi-VN")}₫` });
+        if (input.withdrawType === "atm" && (!input.bankName || !input.bankAccount || !input.bankHolder)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập đầy đủ thông tin ngân hàng" });
+        }
+        // If wallet, credit immediately
+        if (input.withdrawType === "wallet") {
+          const customer = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, customerEmail)).limit(1);
+          const currentBalance = parseFloat(customer[0]?.walletBalance?.toString() || "0");
+          await drizzleDb.update(customers).set({ walletBalance: (currentBalance + input.amount).toString() }).where(eq(customers.email, customerEmail));
+          // Deduct from referral balance
+          await drizzleDb.update(customerReferralCodes).set({ totalRewards: (totalRewards - input.amount).toString() }).where(eq(customerReferralCodes.email, customerEmail));
+        }
+        const result = await drizzleDb.insert(referralWithdrawals).values({ userId: ownerId, customerEmail: customerEmail, customerName: input.customerName, amount: input.amount.toString(), withdrawType: input.withdrawType, bankName: input.bankName, bankAccount: input.bankAccount, bankHolder: input.bankHolder, status: input.withdrawType === "wallet" ? "completed" : "pending" });
+        return { success: true, id: (result as any).insertId, status: input.withdrawType === "wallet" ? "completed" : "pending" };
+      }),
+    // Customer: list own withdrawals
+    myList: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, and, desc } = await import("drizzle-orm");
+        const { referralWithdrawals, users, customerSessions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return [];
+        const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner[0]) return [];
+        return drizzleDb.select().from(referralWithdrawals).where(and(eq(referralWithdrawals.userId, owner[0].id), eq(referralWithdrawals.customerEmail, session.email))).orderBy(desc(referralWithdrawals.createdAt)).limit(20);
+      }),
+    // Admin: list all withdrawals
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const { referralWithdrawals } = await import("../drizzle/schema");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(referralWithdrawals).where(eq(referralWithdrawals.userId, ctx.user.id)).orderBy(desc(referralWithdrawals.createdAt));
+    }),
+    // Admin: update status
+    updateStatus: protectedProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["pending", "processing", "completed", "rejected"]), adminNote: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const { referralWithdrawals } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.update(referralWithdrawals).set({ status: input.status, adminNote: input.adminNote }).where(and(eq(referralWithdrawals.id, input.id), eq(referralWithdrawals.userId, ctx.user.id)));
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

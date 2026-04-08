@@ -29,6 +29,20 @@
       "when": 1775605115432,
       "tag": "0003_sour_bushwacker",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1775687718581,
+      "tag": "0004_broad_thunderbolt_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1775692571095,
+      "tag": "0005_fluffy_sentry",
+      "breakpoints": true
     }
   ]
 }

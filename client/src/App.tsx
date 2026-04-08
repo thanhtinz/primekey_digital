@@ -64,10 +64,11 @@ const VATInvoicePage = lazy(() => import("./pages/VATInvoicePage"));
 const RefundPage = lazy(() => import("./pages/RefundPage"));
 const TaxReportPage = lazy(() => import("./pages/TaxReportPage"));
 const ReferralSettings = lazy(() => import("./pages/ReferralSettings"));
+const BannerSettings = lazy(() => import("./pages/BannerSettings"));
+const TaxSettings = lazy(() => import("./pages/TaxSettings"));
 
 // Batch 6: Public pages
 const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
-const ProductCompare = lazy(() => import("./pages/ProductCompare"));
 const LoyaltyPage = lazy(() => import("./pages/LoyaltyPage"));
 const WarrantyRequestPage = lazy(() => import("./pages/WarrantyRequestPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
@@ -77,10 +78,9 @@ const ClientLogin = lazy(() => import("./pages/ClientLogin"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CartPage = lazy(() => import("./pages/CartPage"));
-const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 const ReferralPage = lazy(() => import("./pages/ReferralPage"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
 import { CustomerGuard } from "./components/CustomerGuard";
-
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
@@ -142,7 +142,6 @@ function Router() {
           <Route path="/leaderboard" component={() => <LeaderboardPage />} />
           <Route path="/flash-sale" component={() => <FlashSalePage />} />
           <Route path="/catalog" component={() => <ProductCatalog />} />
-          <Route path="/compare" component={() => <ProductCompare />} />
           <Route path="/faq" component={() => <FAQPage />} />
           <Route path="/client-login" component={() => <ClientLogin />} />
           <Route path="/product/:id" component={() => <ProductDetail />} />
@@ -152,8 +151,8 @@ function Router() {
           <Route path="/warranty-request" component={() => <CustomerGuard><WarrantyRequestPage /></CustomerGuard>} />
           <Route path="/my-account" component={() => <CustomerGuard><MyAccount /></CustomerGuard>} />
           <Route path="/cart" component={() => <CustomerGuard><CartPage /></CustomerGuard>} />
-          <Route path="/wishlist" component={() => <CustomerGuard><WishlistPage /></CustomerGuard>} />
           <Route path="/referral" component={() => <CustomerGuard><ReferralPage /></CustomerGuard>} />
+          <Route path="/wallet" component={() => <CustomerGuard><WalletPage /></CustomerGuard>} />
         </Switch>
       </Suspense>
     );
@@ -232,6 +231,8 @@ function Router() {
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
         <Route path="/tax-report" component={() => isAdmin ? <TaxReportPage /> : <ForbiddenPage />} />
         <Route path="/settings/referral" component={() => isAdmin ? <ReferralSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/banners" component={() => isAdmin ? <BannerSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

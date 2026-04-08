@@ -31,6 +31,9 @@ export const customers = mysqlTable("customers", {
   taxCode: varchar("taxCode", { length: 50 }),
   totalSpent: decimal("totalSpent", { precision: 15, scale: 2 }).default("0"),
   totalPaid: decimal("totalPaid", { precision: 15, scale: 2 }).default("0"),
+  passwordHash: varchar("passwordHash", { length: 255 }), // bcrypt hash, null = email-only login
+  emailVerified: boolean("emailVerified").default(false),
+  walletBalance: decimal("walletBalance", { precision: 15, scale: 2 }).default("0"), // số dư ví
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -668,3 +671,133 @@ export const customerReferralCodes = mysqlTable("customer_referral_codes", {
   createdAt: timestamp("createdAt_crc").defaultNow().notNull(),
 });
 export type CustomerReferralCode = typeof customerReferralCodes.$inferSelect;
+
+// ─── Wallet Transactions - lịch sử nạp/trừ số dư ví ────────────────────────
+export const walletTransactions = mysqlTable("wallet_transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  type: mysqlEnum("wt_type", ["topup", "spend", "refund", "reward"]).notNull(), // nạp, chi tiêu, hoàn tiền, thưởng
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  balanceBefore: decimal("balanceBefore", { precision: 15, scale: 2 }).default("0"),
+  balanceAfter: decimal("balanceAfter", { precision: 15, scale: 2 }).default("0"),
+  description: varchar("description", { length: 500 }),
+  invoiceId: int("invoiceId"), // liên kết đơn hàng nếu có
+  payosOrderCode: int("payosOrderCode"), // mã đơn PayOS nạp tiền
+  status: mysqlEnum("wt_status", ["pending", "completed", "failed"]).default("completed"),
+  createdAt: timestamp("createdAt_wt").defaultNow().notNull(),
+});
+export type WalletTransaction = typeof walletTransactions.$inferSelect;
+
+// ─── Banners - banner trang chủ ─────────────────────────────────────────────
+export const banners = mysqlTable("banners", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }),
+  imageUrl: text("imageUrl").notNull(),
+  linkUrl: varchar("linkUrl", { length: 500 }), // link khi click banner
+  sortOrder: int("sortOrder").default(0),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt_bn").defaultNow().notNull(),
+});
+export type Banner = typeof banners.$inferSelect;
+
+// ─── Tax Settings - cấu hình thuế ────────────────────────────────────────────
+export const taxSettings = mysqlTable("tax_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  taxName: varchar("taxName", { length: 100 }).default("VAT"), // tên loại thuế
+  taxRate: decimal("taxRate", { precision: 5, scale: 2 }).default("0"), // % thuế (0-100)
+  isEnabled: boolean("isEnabled").default(false),
+  applyTo: mysqlEnum("apply_to", ["all", "specific"]).default("all"), // áp dụng cho tất cả hay SP cụ thể
+  createdAt: timestamp("createdAt_ts").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt_ts").defaultNow().onUpdateNow().notNull(),
+});
+export type TaxSetting = typeof taxSettings.$inferSelect;
+
+// ─── Loyalty Rewards - phần thưởng đổi điểm ─────────────────────────────────
+export const loyaltyRewards = mysqlTable("loyalty_rewards", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  imageUrl: text("imageUrl"),
+  pointsCost: int("pointsCost").notNull(), // số điểm cần để đổi
+  rewardType: mysqlEnum("reward_type", ["discount_code", "wallet_credit", "physical", "custom"]).default("discount_code"),
+  rewardValue: decimal("rewardValue", { precision: 15, scale: 2 }).default("0"), // giá trị phần thưởng
+  stock: int("stock").default(-1), // -1 = unlimited
+  isActive: boolean("isActive").default(true),
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt_lr").defaultNow().notNull(),
+});
+export type LoyaltyReward = typeof loyaltyRewards.$inferSelect;
+
+// ─── Loyalty Reward Redemptions - lịch sử đổi thưởng ─────────────────────────
+export const loyaltyRedemptions = mysqlTable("loyalty_redemptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  rewardId: int("rewardId").notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }),
+  pointsUsed: int("pointsUsed").notNull(),
+  status: mysqlEnum("redemption_status", ["pending", "fulfilled", "cancelled"]).default("pending"),
+  couponCode: varchar("couponCode", { length: 50 }), // nếu reward là coupon
+  adminNote: text("adminNote"),
+  createdAt: timestamp("createdAt_lrd").defaultNow().notNull(),
+});
+export type LoyaltyRedemption = typeof loyaltyRedemptions.$inferSelect;
+
+// ─── Spin Wheel Items - các ô trong vòng quay ─────────────────────────────────
+export const spinWheelItems = mysqlTable("spin_wheel_items", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  label: varchar("label", { length: 100 }).notNull(), // tên hiển thị
+  prizeType: mysqlEnum("prize_type", ["points", "wallet_credit", "coupon", "nothing"]).default("points"),
+  prizeValue: decimal("prizeValue", { precision: 15, scale: 2 }).default("0"),
+  probability: decimal("probability", { precision: 5, scale: 2 }).default("10"), // % xác suất (tổng = 100)
+  color: varchar("color", { length: 20 }).default("#4F46E5"), // màu ô
+  isActive: boolean("isActive").default(true),
+  sortOrder: int("sortOrder").default(0),
+});
+export type SpinWheelItem = typeof spinWheelItems.$inferSelect;
+
+// ─── Spin Wheel Config - cấu hình vòng quay ───────────────────────────────────
+export const spinWheelConfig = mysqlTable("spin_wheel_config", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  isEnabled: boolean("isEnabled").default(false),
+  pointsPerSpin: int("pointsPerSpin").default(50), // điểm cần để quay
+  spinsPerDay: int("spinsPerDay").default(1), // số lần quay tối đa/ngày
+  updatedAt: timestamp("updatedAt_swc").defaultNow().onUpdateNow().notNull(),
+});
+export type SpinWheelConfig = typeof spinWheelConfig.$inferSelect;
+
+// ─── Spin History - lịch sử quay ─────────────────────────────────────────────
+export const spinHistory = mysqlTable("spin_history", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  spinWheelItemId: int("spinWheelItemId").notNull(),
+  prizeType: varchar("prizeType", { length: 50 }),
+  prizeValue: decimal("prizeValue", { precision: 15, scale: 2 }).default("0"),
+  pointsUsed: int("pointsUsed").default(0),
+  createdAt: timestamp("createdAt_sh").defaultNow().notNull(),
+});
+export type SpinHistoryItem = typeof spinHistory.$inferSelect;
+
+// ─── Referral Withdrawals - yêu cầu rút thưởng giới thiệu ────────────────────
+export const referralWithdrawals = mysqlTable("referral_withdrawals", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  withdrawType: mysqlEnum("withdraw_type", ["atm", "wallet"]).notNull(), // rút về ATM hoặc về ví
+  bankName: varchar("bankName", { length: 100 }), // tên ngân hàng (nếu ATM)
+  bankAccount: varchar("bankAccount", { length: 50 }), // số tài khoản (nếu ATM)
+  bankHolder: varchar("bankHolder", { length: 255 }), // tên chủ tài khoản (nếu ATM)
+  status: mysqlEnum("withdraw_status", ["pending", "processing", "completed", "rejected"]).default("pending"),
+  adminNote: text("adminNote"),
+  createdAt: timestamp("createdAt_rw").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt_rw").defaultNow().onUpdateNow().notNull(),
+});
+export type ReferralWithdrawal = typeof referralWithdrawals.$inferSelect;

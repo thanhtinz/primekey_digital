@@ -6,7 +6,7 @@ import {
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
   Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
   RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code,
-  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck
+  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -26,7 +26,6 @@ const adminNavGroups = [
   {
     label: "Bán Hàng",
     items: [
-      { label: "Tạo Hóa Đơn", href: "/create-invoice", icon: FileText },
       { label: "Lịch Sử Đơn", href: "/invoices", icon: History },
       { label: "Hóa Đơn Định Kỳ", href: "/recurring-invoices", icon: RefreshCw },
       { label: "Khách Hàng", href: "/customers", icon: Users },
@@ -49,6 +48,7 @@ const adminNavGroups = [
       { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
       { label: "Giới Thiệu Bạn Bè", href: "/settings/referral", icon: Users2 },
       { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
+      { label: "Banner Trang Chủ", href: "/settings/banners", icon: Image },
       { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
       { label: "ĐK Flash Sale", href: "/settings/flash-sale-subscribers", icon: MailCheck },
     ],
@@ -60,6 +60,7 @@ const adminNavGroups = [
       { label: "Yêu Cầu BH", href: "/warranty-requests", icon: Wrench },
       { label: "Cấu Hình BH", href: "/settings/warranty", icon: Shield },
       { label: "FAQ / Hỏi Đáp", href: "/settings/faq", icon: HelpCircle },
+      { label: "Đánh Giá KH", href: "/feedbacks", icon: MessageSquare },
     ],
   },
   {
@@ -70,6 +71,7 @@ const adminNavGroups = [
       { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
       { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
       { label: "Báo Cáo Thuế", href: "/tax-report", icon: FileBarChart2 },
+      { label: "Cấu Hình Thuế", href: "/settings/tax", icon: Percent },
     ],
   },
   {

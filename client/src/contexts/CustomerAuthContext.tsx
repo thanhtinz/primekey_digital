@@ -5,6 +5,7 @@ interface CustomerInfo {
   email: string;
   name?: string | null;
   avatarUrl?: string | null;
+  walletBalance?: string | null;
 }
 
 interface CustomerAuthContextType {
@@ -38,7 +39,8 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     {
       enabled: !!token,
       retry: false,
-      staleTime: 60_000,
+      staleTime: 60_000, // Cache for 60s - invalidate manually after avatar upload
+      refetchOnWindowFocus: true,
     }
   );
 
@@ -57,6 +59,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
         email: meQuery.data.email,
         name: meQuery.data.name,
         avatarUrl: (meQuery.data as any).avatarUrl || null,
+        walletBalance: (meQuery.data as any).walletBalance || "0",
       });
     } else if (meQuery.error) {
       // Token invalid or expired

@@ -57,8 +57,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   ];
 
   const moreLinks = [
-    { label: "So Sánh Sản Phẩm", href: "/compare", icon: BarChart3 },
-    { label: "Hàng Chờ", href: "/queue", icon: ListOrdered },
+    { label: "Bảng Xếp Hạng", href: "/leaderboard", icon: BarChart3 },
+    { label: "Ví Tiền", href: "/wallet", icon: ListOrdered },
   ];
 
   const isLoggedIn = typeof window !== "undefined" && !!localStorage.getItem("customerToken");
