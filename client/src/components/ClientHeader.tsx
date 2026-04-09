@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
 
 // Helper to render category icon (emoji or FontAwesome)
@@ -46,8 +47,9 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
   const companyName = publicInfo?.companyName || "ShopKey";
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("customerToken") || "" : "";
-  const isLoggedIn = !!token;
+  const { token: ctxToken, isLoggedIn: ctxLoggedIn, logout: ctxLogout } = useCustomerAuth();
+  const token = ctxToken || "";
+  const isLoggedIn = ctxLoggedIn;
 
   const { data: walletData } = trpc.wallet.getBalance.useQuery(
     { token },
@@ -153,11 +155,10 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("customerToken");
+    ctxLogout();
     setAvatarOpen(false);
     setMenuOpen(false);
     navigate("/");
-    window.location.reload();
   };
 
   return (
@@ -438,7 +439,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                       {[
                         { icon: User, label: "Trang cá nhân", href: "/my-account" },
                         { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
-                        { icon: ShoppingCart, label: "Đơn hàng", href: "/my-account?tab=orders" },
+                        { icon: ShoppingCart, label: "Đơn hàng", href: "/track-order" },
                         { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" },
                       ].map(item => (
                         <button
@@ -475,7 +476,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                   </div>
                 )}
               </div>
-            ) : (
+             ) : (
               <button
                 onClick={() => go("/client-login")}
                 className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors"
@@ -483,7 +484,17 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 <User className="h-5 w-5" />
               </button>
             )}
-
+            {/* Admin shortcut - visible when Manus OAuth admin is logged in */}
+            {(adminUser as any)?.role === "admin" && !isAdmin && (
+              <button
+                onClick={() => go("/dashboard")}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold border border-amber-500/20"
+                title="Quản trị Admin"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                <span>Admin</span>
+              </button>
+            )}
             {/* Hamburger - mobile */}
             <button
               onClick={() => setMenuOpen(v => !v)}

@@ -1306,3 +1306,9 @@ todo updated
 - [x] ClientHeader: admin link đã có trong cả desktop dropdown và mobile menu (hiện khi isAdmin=true)
 - [x] ClientHeader: đổi tên "Tài khoản của tôi" → "Trang cá nhân"
 - [x] Fix lỗi wallet_transactions insert: payosOrderCode INT overflow → BIGINT, db:push done
+
+## Phase: UI Polish (Apr 9, 2026 - Session 7)
+- [x] LeaderboardPage: redesign tabs chuyên nghiệp hơn (underline indicator style)
+- [x] ClientHeader: sửa router "Đơn hàng" trong avatar dropdown → /track-order
+- [x] ClientHeader: sửa "Đơn hàng" trong dropdown → /track-order
+- [x] ClientHeader: sửa dùng CustomerAuthContext (reactive) thay vì đọc localStorage trực tiếp
