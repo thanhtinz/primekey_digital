@@ -46,7 +46,7 @@ export default function ReferralPage() {
 
   if (!settings?.isEnabled) {
     return (
-      <div className="min-h-screen pt-14 bg-gray-50">
+      <div className="min-h-screen pt-20 bg-gray-50">
         <ClientHeader />
         <div className="container max-w-2xl mx-auto px-4 py-20 text-center text-gray-400">
           <Users2 className="h-16 w-16 mx-auto mb-4 opacity-30" />
@@ -58,7 +58,7 @@ export default function ReferralPage() {
   }
 
   return (
-    <div className="min-h-screen pt-14 bg-gray-50">
+    <div className="min-h-screen pt-20 bg-gray-50">
       <ClientHeader />
       <div className="container max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Hero */}

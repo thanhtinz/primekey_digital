@@ -55,7 +55,7 @@ export default function WarrantyRequestPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen pt-14 bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800 flex items-center justify-center p-4">
+      <div className="min-h-screen pt-20 bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
           <div className="w-20 h-20 bg-gradient-to-br from-green-100/50 to-emerald-100/50 border border-green-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-green-600" />
@@ -80,7 +80,7 @@ export default function WarrantyRequestPage() {
   }
 
   return (
-    <div className="min-h-screen pt-14 bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800">
+    <div className="min-h-screen pt-20 bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-800">
       <ClientHeader />
 
       <div className="max-w-2xl mx-auto px-4 py-10">

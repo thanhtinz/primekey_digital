@@ -115,7 +115,7 @@ export default function WarrantyLookup() {
   // Nếu đang loading auth
   if (authLoading) {
     return (
-      <div className="min-h-screen pt-14 bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen pt-20 bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
@@ -124,7 +124,7 @@ export default function WarrantyLookup() {
   // Nếu chưa login → redirect tới login
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen pt-14 bg-slate-50">
+      <div className="min-h-screen pt-20 bg-slate-50">
         <ClientHeader />
         <div className="max-w-3xl mx-auto px-4 py-12">
           <div className="text-center mb-8">
@@ -178,7 +178,7 @@ export default function WarrantyLookup() {
   if (showRequestForm) {
     if (submitted) {
       return (
-        <div className="min-h-screen pt-14 bg-slate-50">
+        <div className="min-h-screen pt-20 bg-slate-50">
           <ClientHeader />
           <div className="max-w-lg mx-auto px-4 py-16 text-center">
             <div className="w-20 h-20 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
@@ -202,7 +202,7 @@ export default function WarrantyLookup() {
     }
 
     return (
-      <div className="min-h-screen pt-14 bg-slate-50">
+      <div className="min-h-screen pt-20 bg-slate-50">
         <ClientHeader />
         <div className="max-w-2xl mx-auto px-4 py-8">
           {/* Back button */}
@@ -292,7 +292,7 @@ export default function WarrantyLookup() {
 
   // ===== Danh sách SP đã mua có bảo hành =====
   return (
-    <div className="min-h-screen pt-14 bg-slate-50">
+    <div className="min-h-screen pt-20 bg-slate-50">
       <ClientHeader />
 
       <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">

@@ -35,7 +35,7 @@ export default function WishlistPage() {
   };
 
   return (
-    <div className="min-h-screen pt-14 bg-gray-50">
+    <div className="min-h-screen pt-20 bg-gray-50">
       <ClientHeader />
       <div className="container max-w-4xl mx-auto px-4 py-6">
         {isLoading ? (

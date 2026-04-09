@@ -782,6 +782,7 @@ export const appRouter = router({
               warrantyStartDate: invoicesTable.warrantyStartDate,
               warrantyExpiryDate: invoicesTable.warrantyExpiryDate,
               warrantyMonths: invoicesTable.warrantyMonths,
+              orderInfo: invoicesTable.orderInfo,
             })
             .from(invoicesTable)
             .where(eq(invoicesTable.customerId, customer.id));
@@ -1046,6 +1047,72 @@ export const appRouter = router({
         if (!ctx.user) throw new Error("Unauthorized");
         await db.updateInvoice(input.id, { publicNote: input.publicNote });
         return { success: true };
+      }),
+    // Customer: get single order by invoiceNumber + email verification
+    getByEmailAndNumber: publicProcedure
+      .input(z.object({ email: z.string().email(), invoiceNumber: z.string() }))
+      .query(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return null;
+        const { invoices: invoicesTable, invoiceItems, customers } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const customerList = await drizzleDb.select().from(customers).where(eq(customers.email, input.email));
+        if (customerList.length === 0) return null;
+        const customerIds = customerList.map(c => c.id);
+        const [inv] = await drizzleDb.select().from(invoicesTable)
+          .where(and(eq(invoicesTable.invoiceNumber, input.invoiceNumber), eq(invoicesTable.customerId, customerIds[0])))
+          .limit(1);
+        if (!inv) return null;
+        const items = await drizzleDb.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, inv.id));
+        const customer = customerList[0];
+        return { ...inv, customerName: customer.name, customerEmail: customer.email, customerPhone: customer.phone, items };
+      }),
+    // Customer: export PDF for their own invoice
+    exportPdfForCustomer: publicProcedure
+      .input(z.object({ email: z.string().email(), invoiceNumber: z.string() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const { invoices: invoicesTable, invoiceItems, customers } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const customerList = await drizzleDb.select().from(customers).where(eq(customers.email, input.email));
+        if (customerList.length === 0) throw new Error("Không tìm thấy đơn hàng");
+        const [inv] = await drizzleDb.select().from(invoicesTable)
+          .where(eq(invoicesTable.invoiceNumber, input.invoiceNumber)).limit(1);
+        if (!inv || !customerList.find(c => c.id === inv.customerId)) throw new Error("Không tìm thấy đơn hàng");
+        const items = await drizzleDb.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, inv.id));
+        const customer = customerList.find(c => c.id === inv.customerId)!;
+        const userSettings = await db.getUserSettings(inv.userId);
+        const pdfBuffer = await generateInvoicePDF({
+          invoiceNumber: inv.invoiceNumber,
+          issueDate: inv.createdAt,
+          dueDate: inv.expiresAt || undefined,
+          customerName: customer.name || "Khách Hàng",
+          customerEmail: customer.email || "",
+          customerAddress: customer.address || "",
+          companyName: userSettings?.companyName || "Công Ty",
+          companyAddress: userSettings?.companyAddress || "",
+          companyPhone: userSettings?.companyPhone || "",
+          companyEmail: userSettings?.companyEmail || "",
+          companyTaxId: userSettings?.taxId || "",
+          items: items.map(item => ({
+            name: item.name,
+            quantity: typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity,
+            unitPrice: typeof item.unitPrice === "string" ? parseFloat(item.unitPrice) : item.unitPrice,
+            taxAmount: typeof item.taxAmount === "string" ? parseFloat(item.taxAmount || "0") : (item.taxAmount || 0),
+            totalAmount: typeof item.totalAmount === "string" ? parseFloat(item.totalAmount) : item.totalAmount,
+          })),
+          subtotal: typeof inv.subtotal === "string" ? parseFloat(inv.subtotal) : inv.subtotal,
+          taxAmount: typeof inv.taxAmount === "string" ? parseFloat(inv.taxAmount) : (inv.taxAmount || 0),
+          discountAmount: typeof inv.discountAmount === "string" ? parseFloat(inv.discountAmount) : (inv.discountAmount || 0),
+          totalAmount: typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : inv.totalAmount,
+          currency: inv.currency || "VND",
+          notes: inv.notes || undefined,
+          paymentUrl: inv.paymentUrl || undefined,
+        });
+        return { success: true, buffer: pdfBuffer.toString("base64"), filename: `${inv.invoiceNumber}.pdf` };
       }),
   }),
   // Customers

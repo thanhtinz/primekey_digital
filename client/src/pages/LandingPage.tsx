@@ -140,7 +140,7 @@ export default function LandingPage() {
       {/* ===== HEADER ===== */}
       <ClientHeader />
 
-      <div className="pt-14 flex-1">
+      <div className="pt-20 flex-1">
         {/* ===== WELCOME BANNER (dismissable) ===== */}
         {!bannerDismissed && (
           <div className="mx-4 mt-4 mb-2">

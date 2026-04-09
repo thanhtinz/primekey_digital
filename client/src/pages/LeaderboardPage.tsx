@@ -66,7 +66,7 @@ export default function LeaderboardPage() {
   const totalOrders = leaderboard.reduce((s, e) => s + (e.orderCount || 0), 0);
 
   return (
-    <div className="min-h-screen pt-14 bg-slate-50">
+    <div className="min-h-screen pt-20 bg-slate-50">
       <ClientHeader />
 
       <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">

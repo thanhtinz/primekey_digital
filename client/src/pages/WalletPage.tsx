@@ -81,7 +81,7 @@ export default function WalletPage() {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <ClientHeader />
-        <div className="flex-1 flex items-center justify-center pt-14 px-4">
+        <div className="flex-1 flex items-center justify-center pt-20 px-4">
           <div className="text-center py-16">
             <Wallet className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">Đăng nhập để sử dụng ví</h2>
