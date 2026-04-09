@@ -1485,3 +1485,10 @@ todo updated
 - [x] Fix icon trong nội dung thông báo dropdown header (ClientHeader notification dropdown)
 - [x] Thay emoji picker trong TagSettings.tsx bằng FA icon picker
 - [x] Thay emoji trong notifTypeIcon (ClientHeader) bằng FA icon
+
+## Phase: Referral Reward Redemption (Apr 9, 2026 - Session 28)
+- [x] Hiển thị % thưởng từ cấu hình referral trên ReferralPage
+- [x] Backend: procedure đổi thưởng referral vào số dư ví
+- [x] Backend: procedure yêu cầu rút thưởng qua banking (lưu yêu cầu, admin duyệt)
+- [x] Frontend: UI đổi thưởng (chọn rút vào ví hoặc banking)
+- [x] Admin: trang xem và duyệt yêu cầu rút thưởng banking
