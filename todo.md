@@ -1447,3 +1447,13 @@ todo updated
 - [x] Fix progress bar OrderDetailPage: căn chỉnh đường kẻ ngang đều giữa các bước
 - [x] Thay tag "BH 3T" bằng tag sản phẩm thực tế từ DB (hiển thị tags của sản phẩm)
 - [x] Xóa số 0 thừa trên card thông tin thanh toán trong OrderDetailPage
+
+## Phase: Fix số 0 + Admin Topup (Apr 9, 2026 - Session 23)
+- [x] Tìm và sửa triệt để số 0 thừa trong OrderDetailPage (warrantyMonths=0 gây ra render 0)
+- [ ] Thêm trang quản lý nạp tiền cho admin (/admin/topup-requests)
+- [ ] Thêm mục "Quản lý nạp tiền" vào sidebar admin
+- [ ] Thêm icon cho tag trong trang TagSettings (form tạo/sửa tag)
+- [x] Thêm mục Quản Lý Ví vào sidebar admin
+- [x] Fix 404 kho ảnh avatar trong admin (/settings/avatars)
+- [x] Thêm icon cho tag trong TagSettings (thêm cột icon vào schema + UI)
+- [x] Thêm mục Quản Lý Ví vào sidebar admin

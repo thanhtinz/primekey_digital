@@ -11,21 +11,29 @@ const PRESET_COLORS = [
   "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
 ];
 
+const PRESET_ICONS = [
+  "🔥", "⭐", "🆕", "💥", "🎁", "🏷️", "✅", "🚀", "💎", "🎯",
+  "🛒", "❤️", "⚡", "🌟", "🏆", "🎉", "💯", "🔑", "🌈", "🎀",
+];
+
 export default function TagSettings() {
   const utils = trpc.useUtils();
   const { data: tags = [], isLoading } = trpc.productTags.list.useQuery(undefined);
 
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState("#3b82f6");
+  const [newIcon, setNewIcon] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
+  const [editIcon, setEditIcon] = useState("");
 
   const createTag = trpc.productTags.create.useMutation({
     onSuccess: () => {
       utils.productTags.list.invalidate();
       setNewName("");
       setNewColor("#3b82f6");
+      setNewIcon("");
       toast.success("Đã tạo tag!");
     },
     onError: (err) => toast.error(err.message),
@@ -50,19 +58,20 @@ export default function TagSettings() {
 
   const handleCreate = () => {
     if (!newName.trim()) { toast.error("Nhập tên tag"); return; }
-    createTag.mutate({ name: newName.trim(), color: newColor });
+    createTag.mutate({ name: newName.trim(), color: newColor, icon: newIcon || undefined });
   };
 
   const startEdit = (tag: any) => {
     setEditingId(tag.id);
     setEditName(tag.name);
     setEditColor(tag.color || "#3b82f6");
+    setEditIcon(tag.icon || "");
   };
 
   const handleUpdate = () => {
     if (!editingId) return;
     if (!editName.trim()) { toast.error("Nhập tên tag"); return; }
-    updateTag.mutate({ id: editingId, name: editName.trim(), color: editColor });
+    updateTag.mutate({ id: editingId, name: editName.trim(), color: editColor, icon: editIcon || null });
   };
 
   return (
@@ -101,6 +110,34 @@ export default function TagSettings() {
               />
             </div>
           </div>
+
+          {/* Icon picker */}
+          <div className="mb-3">
+            <p className="text-xs text-gray-500 mb-2">Icon (emoji) — tùy chọn:</p>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {PRESET_ICONS.map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => setNewIcon(newIcon === emoji ? "" : emoji)}
+                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all hover:scale-110 border-2 ${
+                    newIcon === emoji
+                      ? "border-blue-500 bg-blue-50 scale-110"
+                      : "border-transparent bg-gray-50 hover:bg-gray-100"
+                  }`}
+                  title={emoji}
+                >
+                  {emoji}
+                </button>
+              ))}
+              <Input
+                placeholder="Nhập emoji..."
+                value={newIcon && !PRESET_ICONS.includes(newIcon) ? newIcon : ""}
+                onChange={e => setNewIcon(e.target.value)}
+                className="w-28 h-9 text-sm"
+              />
+            </div>
+          </div>
+
           {/* Preset colors */}
           <div className="flex flex-wrap gap-2 mb-3">
             {PRESET_COLORS.map(c => (
@@ -113,11 +150,18 @@ export default function TagSettings() {
               />
             ))}
           </div>
+
           {/* Preview */}
           {newName && (
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xs text-gray-500">Preview:</span>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: newColor }}>{newName}</span>
+              <span
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white"
+                style={{ backgroundColor: newColor }}
+              >
+                {newIcon && <span>{newIcon}</span>}
+                {newName}
+              </span>
             </div>
           )}
           <Button onClick={handleCreate} disabled={createTag.isPending} className="w-full">
@@ -148,12 +192,20 @@ export default function TagSettings() {
                         onChange={e => setEditName(e.target.value)}
                         className="flex-1 h-8 text-sm"
                         onKeyDown={e => e.key === "Enter" && handleUpdate()}
+                        placeholder="Tên tag"
                       />
                       <input
                         type="color"
                         value={editColor}
                         onChange={e => setEditColor(e.target.value)}
                         className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
+                      />
+                      <Input
+                        value={editIcon}
+                        onChange={e => setEditIcon(e.target.value)}
+                        className="w-16 h-8 text-sm text-center"
+                        placeholder="Icon"
+                        maxLength={4}
                       />
                       <button onClick={handleUpdate} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg">
                         <Check className="w-4 h-4" />
@@ -164,7 +216,13 @@ export default function TagSettings() {
                     </>
                   ) : (
                     <>
-                      <span className="text-sm font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>{tag.name}</span>
+                      <span
+                        className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white"
+                        style={{ backgroundColor: tag.color || '#3b82f6' }}
+                      >
+                        {tag.icon && <span>{tag.icon}</span>}
+                        {tag.name}
+                      </span>
                       <span className="text-xs text-gray-400 font-mono">{tag.color}</span>
                       <div className="ml-auto flex items-center gap-1">
                         <button onClick={() => startEdit(tag)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">

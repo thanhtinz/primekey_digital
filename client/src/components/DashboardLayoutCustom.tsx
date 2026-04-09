@@ -6,7 +6,7 @@ import {
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
   Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
   RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code,
-  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote
+  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -51,7 +51,7 @@ const adminNavGroups = [
       { label: "Yêu Cầu Rút Thưởng", href: "/admin/referral-withdrawals", icon: Banknote },
       { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
       { label: "Banner Trang Chủ", href: "/settings/banners", icon: Image },
-      { label: "Kho Ảnh Avatar", href: "/settings/avatars", icon: User },
+      { label: "Kho Ảnh Avatar", href: "/admin/avatar-gallery", icon: User },
       { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
       { label: "ĐK Flash Sale", href: "/settings/flash-sale-subscribers", icon: MailCheck },
     ],
@@ -73,6 +73,7 @@ const adminNavGroups = [
       { label: "Báo Cáo Nâng Cao", href: "/advanced-reports", icon: TrendingUp },
       { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
       { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
+      { label: "Quản Lý Ví", href: "/wallet-management", icon: Wallet },
       { label: "Báo Cáo Thuế", href: "/tax-report", icon: FileBarChart2 },
       { label: "Cấu Hình Thuế", href: "/settings/tax", icon: Percent },
     ],

@@ -854,6 +854,7 @@ export const productTags = mysqlTable("product_tags", {
   name: varchar("name", { length: 100 }).notNull(),
   slug: varchar("slug", { length: 100 }).notNull(),
   color: varchar("color", { length: 20 }).default("#3b82f6"), // hex color for badge
+  icon: varchar("icon", { length: 50 }), // emoji or icon identifier
   createdAt: timestamp("createdAt_pt").defaultNow().notNull(),
 });
 export type ProductTag = typeof productTags.$inferSelect;

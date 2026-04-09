@@ -311,7 +311,7 @@ export default function OrderDetailPage() {
         )}
 
         {/* Warranty info */}
-        {(order.warrantyStartDate || order.warrantyExpiryDate || (order.warrantyMonths && order.warrantyMonths > 0)) && (
+        {!!(order.warrantyStartDate || order.warrantyExpiryDate || (Number(order.warrantyMonths) > 0)) && (
           <div className={`rounded-2xl border p-5 ${
             order.status === "WARRANTY"
               ? "bg-purple-50 border-purple-200"

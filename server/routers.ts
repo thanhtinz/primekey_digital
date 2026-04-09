@@ -6567,6 +6567,7 @@ export const appRouter = router({
       name: z.string().min(1).max(100),
       slug: z.string().min(1).max(100).optional(),
       color: z.string().optional(),
+      icon: z.string().max(50).optional(),
     })).mutation(async ({ ctx, input }) => {
       const { productTags } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
@@ -6578,14 +6579,16 @@ export const appRouter = router({
         name: input.name,
         slug,
         color: input.color || "#3b82f6",
-      });
-      return { id: (result as any).insertId, name: input.name, slug, color: input.color || "#3b82f6" };
+        icon: input.icon || null,
+      } as any);
+      return { id: (result as any).insertId, name: input.name, slug, color: input.color || "#3b82f6", icon: input.icon || null };
     }),
     // Admin: update tag
     update: protectedProcedure.input(z.object({
       id: z.number(),
       name: z.string().min(1).max(100).optional(),
       color: z.string().optional(),
+      icon: z.string().max(50).optional().nullable(),
     })).mutation(async ({ ctx, input }) => {
       const { productTags } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
@@ -6595,6 +6598,7 @@ export const appRouter = router({
       const updates: any = {};
       if (input.name) updates.name = input.name;
       if (input.color) updates.color = input.color;
+      if (input.icon !== undefined) updates.icon = input.icon;
       await drizzleDb.update(productTags).set(updates).where(and(eq(productTags.id, input.id), eq(productTags.userId, ctx.user.id)));
       return { success: true };
     }),
