@@ -1471,3 +1471,11 @@ todo updated
 - [x] Fix WalletManagement: đang dùng DashboardLayout sai, cần dùng DashboardLayoutCustom
 - [x] Thêm trang quản lý thông báo website cho admin (/admin/notifications)
 - [x] Thêm mục Thông Báo vào sidebar admin
+
+## Phase: PayOS Cancel Handler (Apr 9, 2026 - Session 26)
+- [x] Backend: tạo tRPC procedure payos.handleCancel nhận orderCode + type (order/wallet), cập nhật trạng thái tương ứng
+- [x] Backend: khi type=order → cập nhật order status = 'cancelled'
+- [x] Backend: khi type=wallet → cập nhật wallet transaction status = 'failed'
+- [x] Frontend: trang /payment/cancel gọi handleCancel và hiển thị thông báo phù hợp
+- [x] Frontend: trang /wallet/cancel gọi handleCancel và hiển thị thông báo phù hợp
+- [x] Đảm bảo cancelUrl trong createPaymentLink trỏ đúng trang cancel tương ứng

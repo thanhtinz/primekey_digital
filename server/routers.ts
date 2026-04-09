@@ -450,7 +450,7 @@ export const appRouter = router({
                   buyerPhone: customer?.phone || "",
                   buyerAddress: customer?.address || "",
                   returnUrl: `${origin}/track-order`,
-                  cancelUrl: `${origin}/track-order`,
+                  cancelUrl: `${origin}/payment-cancel?type=order&orderCode=${orderCode}`,
                 }
               );
               paymentUrl = payosResult.checkoutUrl;
@@ -784,7 +784,7 @@ export const appRouter = router({
             buyerPhone: customer?.phone || "",
             buyerAddress: customer?.address || "",
             returnUrl: `${origin}/track-order`,
-            cancelUrl: `${origin}/track-order`,
+            cancelUrl: `${origin}/payment-cancel?type=order&orderCode=${orderCode}`,
           }
         );
         const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
@@ -1164,6 +1164,39 @@ export const appRouter = router({
           paymentUrl: inv.paymentUrl || undefined,
         });
         return { success: true, buffer: pdfBuffer.toString("base64"), filename: `${inv.invoiceNumber}.pdf` };
+      }),
+    // Customer: cancel a CREATED order (called when user cancels PayOS payment)
+    cancelByCustomer: publicProcedure
+      .input(z.object({ token: z.string(), orderCode: z.number() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const { customerSessions, customers, invoices: invoicesTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        // Verify session
+        const session = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session[0]) throw new TRPCError({ code: "UNAUTHORIZED" });
+        // Find customer
+        const customerRow = await drizzleDb.select().from(customers).where(eq(customers.email, session[0].email)).limit(1);
+        if (!customerRow[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy khách hàng" });
+        // Find the invoice by orderCode and customer
+        const invoice = await drizzleDb.select().from(invoicesTable)
+          .where(and(
+            eq((invoicesTable as any).payosOrderCode, input.orderCode),
+            eq(invoicesTable.customerId, customerRow[0].id)
+          ))
+          .limit(1);
+        if (!invoice[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy đơn hàng" });
+        if (invoice[0].status !== "CREATED") {
+          // Already processed - return current status
+          return { success: true, status: invoice[0].status };
+        }
+        // Mark as CANCELLED
+        await drizzleDb.update(invoicesTable)
+          .set({ status: "CANCELLED" } as any)
+          .where(eq(invoicesTable.id, invoice[0].id));
+        return { success: true, status: "CANCELLED" };
       }),
   }),
   // Customers
@@ -5520,7 +5553,7 @@ export const appRouter = router({
               buyerPhone: customer.phone || "",
               buyerAddress: customer.address || "",
               returnUrl: `${input.origin}/track-order`,
-              cancelUrl: `${input.origin}/product/${input.productId}`,
+              cancelUrl: `${input.origin}/payment-cancel?type=order&orderCode=${orderCode}`,
             }
           );
           paymentUrl = payosResult.checkoutUrl;
@@ -5763,7 +5796,7 @@ export const appRouter = router({
                 buyerPhone: customer.phone || "",
                 buyerAddress: customer.address || "",
                 returnUrl: `${input.origin}/track-order`,
-                cancelUrl: `${input.origin}/cart`,
+                cancelUrl: `${input.origin}/payment-cancel?type=order&orderCode=${orderCode}`,
               }
             );
             paymentUrl = payosResult.checkoutUrl;
@@ -5924,7 +5957,7 @@ export const appRouter = router({
             buyerPhone: "",
             buyerAddress: "",
             returnUrl: input.returnUrl,
-            cancelUrl: input.returnUrl,
+            cancelUrl: `${new URL(input.returnUrl).origin}/payment-cancel?type=wallet&orderCode=${orderCode}`,
           }
         );
         const paymentUrl = paymentResult.checkoutUrl;
@@ -5983,9 +6016,38 @@ export const appRouter = router({
           .limit(input.limit)
           .offset(input.offset);
       }),
+    // Cancel a pending topup (called when user cancels PayOS payment)
+    cancelTopup: publicProcedure
+      .input(z.object({ token: z.string(), orderCode: z.number() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const { customerSessions, walletTransactions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        // Verify session
+        const session = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session[0]) throw new TRPCError({ code: "UNAUTHORIZED" });
+        // Find the pending wallet transaction
+        const tx = await drizzleDb.select().from(walletTransactions)
+          .where(and(
+            eq(walletTransactions.payosOrderCode, input.orderCode),
+            eq(walletTransactions.customerEmail, session[0].email)
+          ))
+          .limit(1);
+        if (!tx[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy giao dịch" });
+        if (tx[0].status !== "pending") {
+          // Already processed (paid or failed) - return current status
+          return { success: true, status: tx[0].status };
+        }
+        // Mark as failed (user cancelled)
+        await drizzleDb.update(walletTransactions)
+          .set({ status: "failed" })
+          .where(eq(walletTransactions.id, tx[0].id));
+        return { success: true, status: "failed" };
+      }),
   }),
-
-  // ─── Banner Router ─────────────────────────────────────────────────────────
+  // ─── Banner Routerr ─────────────────────────────────────────────────────────
   banner: router({
     getPublic: publicProcedure.query(async () => {
       const { getDb } = await import("./db");

@@ -94,6 +94,7 @@ import { SupportWidget } from "./components/SupportWidget";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
+const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
 const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
 const CouponStorePage = lazy(() => import("./pages/CouponStorePage"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
@@ -122,7 +123,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/", "/track-order", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/wishlist", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
+const ALWAYS_PUBLIC = ["/", "/track-order", "/payment-cancel", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/wishlist", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -167,6 +168,7 @@ function Router() {
           <Route path="/product/:id" component={() => <ProductDetail />} />
           {/* Customer-only - requires customer login */}
           <Route path="/track-order" component={() => <CustomerGuard><TrackOrder /></CustomerGuard>} />
+          <Route path="/payment-cancel" component={() => <CustomerGuard><PaymentCancel /></CustomerGuard>} />
           <Route path="/order/:invoiceNumber" component={() => <CustomerGuard><OrderDetailPage /></CustomerGuard>} />
           <Route path="/loyalty" component={() => <FeatureGuard featureKey="points"><CustomerGuard><LoyaltyPage /></CustomerGuard></FeatureGuard>} />
           <Route path="/warranty-request" component={() => <FeatureGuard featureKey="warranty"><CustomerGuard><WarrantyRequestPage /></CustomerGuard></FeatureGuard>} />
