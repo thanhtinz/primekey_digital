@@ -299,19 +299,19 @@ export default function LandingPage() {
           return (
             <section className="px-4 mb-6">
               <div className="max-w-7xl mx-auto">
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  <div className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth" ref={catScrollRef}
+                <div className="bg-gray-50 rounded-3xl p-6">
+                  <div className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth" ref={catScrollRef}
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                   {displayCats.map((cat: any) => (
                     <button
                       key={cat.id}
                       onClick={() => navigate(`/catalog?category=${cat.id}`)}
-                      className="flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl bg-white border-2 border-gray-100 hover:border-blue-500 hover:shadow-md transition-all group"
+                      className="flex-shrink-0 flex flex-col items-center gap-4 p-6 rounded-3xl bg-white border border-gray-200 shadow-md hover:shadow-lg hover:border-blue-400 transition-all group"
                     >
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-3xl text-black`} /> : <span className="text-4xl">{cat.icon}</span>) : <Package className="h-8 w-8 text-black" />}
+                      <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-5xl text-black`} /> : <span className="text-6xl">{cat.icon}</span>) : <Package className="h-10 w-10 text-black" />}
                       </div>
-                      <span className="text-sm font-semibold text-slate-800 whitespace-nowrap text-center">{cat.name}</span>
+                      <span className="text-base font-semibold text-slate-800 whitespace-nowrap text-center">{cat.name}</span>
                     </button>
                   ))}
                   </div>
