@@ -46,8 +46,8 @@ export default function WalletPage() {
       const url = data?.paymentUrl || data?.checkoutUrl;
       if (url) {
         setPaymentUrl(url);
-        // Navigate directly to avoid popup blocker issues
-        window.location.href = url;
+        // Open in new tab to keep the current page state
+        window.open(url, "_blank", "noopener,noreferrer");
       } else {
         toast.success("Yêu cầu nạp tiền đã được ghi nhận.");
       }

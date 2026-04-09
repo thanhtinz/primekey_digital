@@ -1408,8 +1408,8 @@ todo updated
 - [x] TypeScript: 0 errors, 53/53 tests passed
 
 ## Phase: Major Improvements (Apr 9, 2026 - Session 19)
-- [ ] Fix số 0 dư trong trang đơn hàng (OrderDetailPage - coupon section)
-- [ ] Fix nút nạp tiền PayOS: giữ paymentUrl sau khi tạo, không mất link khi loading
+- [x] Fix số 0 dư trong trang đơn hàng (OrderDetailPage - coupon section)
+- [x] Fix nút nạp tiền PayOS: giữ paymentUrl sau khi tạo, không mất link khi loading
 - [x] Feature flags block route hoàn toàn: khi tắt tính năng, route trả về 404/redirect
 - [x] Xóa links tính năng bị tắt khỏi MyAccount (wishlist, leaderboard, warranty, referral)
 - [x] Kho ảnh avatar: admin upload/quản lý avatar library
@@ -1417,8 +1417,8 @@ todo updated
 - [ ] Redesign toàn bộ admin dashboard: sidebar gọn gàng, gộp trang liên quan
 - [ ] Cải thiện admin layout: thống nhất design system, chuyên nghiệp hơn
 - [x] Fix tag trạng thái PAID hiển thị "Hoàn thành" → đổi thành "Đang xử lý"
-- [ ] Fix progress bar mất cân bằng trong CartPage (đường kẻ không đều)
-- [ ] Track order: nút "Xem chi tiết" dùng route /order/:invoiceNumber
+- [x] Fix progress bar mất cân bằng trong CartPage (đường kẻ không đều)
+- [x] Track order: nút "Xem chi tiết" dùng route /order/:invoiceNumber
 
 ## Phase: Feature Flags & Avatar Gallery (Apr 9, 2026 - Session 20)
 - [x] Tạo FeatureGuard component: block route hoàn toàn khi feature bị tắt (redirect về /)
