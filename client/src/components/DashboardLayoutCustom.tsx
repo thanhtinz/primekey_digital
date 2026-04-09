@@ -6,7 +6,7 @@ import {
   FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
   Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
   RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code,
-  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent
+  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -47,6 +47,7 @@ const adminNavGroups = [
       { label: "Flash Sale", href: "/settings/flash-sale", icon: ShoppingBag },
       { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
       { label: "Giới Thiệu Bạn Bè", href: "/settings/referral", icon: Users2 },
+      { label: "Yêu Cầu Rút Thưởng", href: "/admin/referral-withdrawals", icon: Banknote },
       { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
       { label: "Banner Trang Chủ", href: "/settings/banners", icon: Image },
       { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },

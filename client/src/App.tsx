@@ -65,7 +65,7 @@ const TaxReportPage = lazy(() => import("./pages/TaxReportPage"));
 const ReferralSettings = lazy(() => import("./pages/ReferralSettings"));
 const BannerSettings = lazy(() => import("./pages/BannerSettings"));
 const TaxSettings = lazy(() => import("./pages/TaxSettings"));
-
+const ReferralWithdrawalsAdmin = lazy(() => import("./pages/ReferralWithdrawalsAdmin"));
 // Batch 6: Public pages
 const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
 const LoyaltyPage = lazy(() => import("./pages/LoyaltyPage"));
@@ -228,6 +228,7 @@ function Router() {
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
         <Route path="/tax-report" component={() => isAdmin ? <TaxReportPage /> : <ForbiddenPage />} />
         <Route path="/settings/referral" component={() => isAdmin ? <ReferralSettings /> : <ForbiddenPage />} />
+        <Route path="/admin/referral-withdrawals" component={() => isAdmin ? <ReferralWithdrawalsAdmin /> : <ForbiddenPage />} />
         <Route path="/settings/banners" component={() => isAdmin ? <BannerSettings /> : <ForbiddenPage />} />
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>

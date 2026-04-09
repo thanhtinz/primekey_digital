@@ -4716,8 +4716,17 @@ export const appRouter = router({
         }
       }
 
-      const totalAmount = Math.max(subtotal - discountAmount, 0);
-
+        // Apply tax from taxSettings
+      let buyNowTaxAmount = 0;
+      try {
+        const { taxSettings } = await import("../drizzle/schema");
+        const [taxSetting] = await drizzleDb.select().from(taxSettings).where(and(eq(taxSettings.userId, owner.id), eq(taxSettings.isEnabled, true))).limit(1);
+        if (taxSetting && taxSetting.isEnabled) {
+          const rate = Number(taxSetting.taxRate || 0);
+          buyNowTaxAmount = Math.round((subtotal - discountAmount) * rate / 100);
+        }
+      } catch {}
+      const totalAmount = Math.max(subtotal - discountAmount + buyNowTaxAmount, 0);
       // Find or create customer
       let [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
       if (!customer) {
@@ -4728,11 +4737,9 @@ export const appRouter = router({
         } as any);
         [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
       }
-
       // Generate invoice number
       const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
       const orderCode = Date.now() % 9007199254740991;
-
       // Create invoice
       await drizzleDb.insert(invoices).values({
         userId: owner.id,
@@ -4741,15 +4748,14 @@ export const appRouter = router({
         currency: "VND",
         subtotal: String(subtotal),
         discountAmount: String(discountAmount),
-        discountCodeId: couponId,
-        taxAmount: "0",
+         discountCodeId: couponId,
+        taxAmount: String(buyNowTaxAmount),
         totalAmount: String(totalAmount),
         status: "CREATED",
         paymentMethod: "PAYOS",
         notes: input.notes || (input.customFieldValues ? JSON.stringify(input.customFieldValues) : null),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
       } as any);
-
       // Get created invoice
       const [createdInvoice] = await drizzleDb.select().from(invoices).where(eq(invoices.invoiceNumber, invoiceNumber)).limit(1);
       if (!createdInvoice) throw new Error("Không thể tạo đơn hàng");
@@ -4909,8 +4915,18 @@ export const appRouter = router({
         }
       }
 
-      const totalAmount = Math.max(subtotal - discountAmount, 0);
-
+       // Apply tax from taxSettings
+      let taxAmount = 0;
+      let taxRate = 0;
+      try {
+        const { taxSettings } = await import("../drizzle/schema");
+        const [taxSetting] = await drizzleDb.select().from(taxSettings).where(and(eq(taxSettings.userId, owner.id), eq(taxSettings.isEnabled, true))).limit(1);
+        if (taxSetting && taxSetting.isEnabled) {
+          taxRate = Number(taxSetting.taxRate || 0);
+          taxAmount = Math.round((subtotal - discountAmount) * taxRate / 100);
+        }
+      } catch {}
+      const totalAmount = Math.max(subtotal - discountAmount + taxAmount, 0);
       // Find or create customer
       let [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
       if (!customer) {
@@ -4934,18 +4950,16 @@ export const appRouter = router({
         subtotal: String(subtotal),
         discountAmount: String(discountAmount),
         discountCodeId: couponId,
-        taxAmount: "0",
+        taxAmount: String(taxAmount),
         totalAmount: String(totalAmount),
         status: "CREATED",
         paymentMethod: "PAYOS",
         notes: input.notes || null,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       } as any);
-
       const [createdInvoice] = await drizzleDb.select().from(invoices).where(eq(invoices.invoiceNumber, invoiceNumber)).limit(1);
       if (!createdInvoice) throw new Error("Không thể tạo đơn hàng");
-
-      // Record coupon usage with invoiceId
+      // Record coupon usage
       if (couponId && discountAmount > 0) {
         await drizzleDb.insert(couponUsages).values({ couponId, invoiceId: createdInvoice.id, customerEmail: input.email, discountAmount: String(discountAmount) } as any);
       }

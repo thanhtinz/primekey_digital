@@ -1073,25 +1073,25 @@
 - [x] Xóa tạo đơn thủ công trong admin (chỉ xem đơn từ hệ thống)
 
 ### E. Tích Điểm Mở Rộng
-- [ ] Schema: bảng reward_items (name, pointCost, type: gift/spin/game, config)
-- [ ] Trang đổi thưởng: danh sách phần thưởng có thể đổi bằng điểm
-- [ ] Vòng quay may mắn: cấu hình trong admin, quay bằng điểm
-- [ ] Admin: quản lý phần thưởng, cấu hình vòng quay/mini game
+- [x] Schema: bảng loyaltyRewards, loyaltyRedemptions, spinWheelItems, spinWheelConfig đã có
+- [x] Trang đổi thưởng: LoyaltyRewardsPage.tsx với 4 tab (Rewards, Spin Wheel, Mini Game, Referral)
+- [x] Vòng quay may mắn: cấu hình trong admin, quay bằng điểm
+- [x] Admin: quản lý phần thưởng, cấu hình vòng quay/mini game trong LoyaltySettings
 
 ### F. Giới Thiệu Bạn Bè Mở Rộng
-- [ ] Rút thưởng về ATM: form nhập số tài khoản ngân hàng
-- [ ] Rút thưởng về số dư: cộng trực tiếp vào wallet
-- [ ] Admin: duyệt yêu cầu rút thưởng về ATM
+- [x] Rút thưởng về ATM: form nhập số tài khoản ngân hàng trong LoyaltyRewardsPage
+- [x] Rút thưởng về số dư: cộng trực tiếp vào wallet (withdrawType=wallet)
+- [x] Admin: duyệt yêu cầu rút thưởng - ReferralWithdrawalsAdmin.tsx
 
 ### G. Banner Trang Chủ
-- [ ] Schema: bảng banners (title, imageUrl, linkUrl, sortOrder, isActive)
-- [ ] Admin: quản lý banner (CRUD, upload ảnh, sắp xếp)
-- [ ] Landing page: hiển thị banner carousel/slider
+- [x] Schema: bảng banners đã có (title, imageUrl, linkUrl, sortOrder, isActive)
+- [x] Admin: quản lý banner - BannerSettings.tsx (CRUD, upload ảnh, sắp xếp)
+- [x] Landing page: hiển thị banner carousel/slider (đã có trong LandingPage.tsx)
 
 ### H. Thuế (Tax)
-- [ ] Admin: cấu hình thuế suất (%) trong Settings
-- [ ] Tự động tính thuế khi checkout
-- [ ] Hiển thị thuế trong hóa đơn
+- [x] Admin: cấu hình thuế suất (%) trong Settings - TaxSettings.tsx
+- [x] Tự động tính thuế khi checkout (buyNow + cartCheckout đều tính tax từ taxSettings)
+- [x] Hiển thị thuế trong hóa đơn (taxAmount được lưu vào invoice)
 
 ### I. Xuất Hóa Đơn Từ Trang User
 - [x] Trang /my-account tab Đơn Hàng: nút "Xuất PDF" cho từng đơn
