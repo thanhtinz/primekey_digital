@@ -349,16 +349,14 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Sold count badge */}
-          {totalSold > 0 && (
-            <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium px-3 py-1 rounded-full mb-3">
-              <i className="fa-solid fa-fire text-amber-500" /> Đã bán {totalSold}
-            </div>
-          )}
-
-          {/* Product tags from DB */}
-          {(productTagList as any[]).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+          {/* Sold count badge + Product tags - same row */}
+          {(totalSold > 0 || (productTagList as any[]).length > 0) && (
+            <div className="flex flex-wrap items-center gap-1.5 mb-3">
+              {totalSold > 0 && (
+                <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium px-3 py-1 rounded-full">
+                  <i className="fa-solid fa-fire text-amber-500" /> Đã bán {totalSold}
+                </div>
+              )}
               {(productTagList as any[]).map((tag: any) => (
                 <span key={tag.id} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>
                   {tag.icon && (tag.icon.startsWith("fa-") ? <i className={`${tag.icon}`} /> : <span>{tag.icon}</span>)}
