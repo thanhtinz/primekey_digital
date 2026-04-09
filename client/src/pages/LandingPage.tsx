@@ -299,35 +299,23 @@ export default function LandingPage() {
           return (
             <section className="px-4 mb-6">
               <div className="max-w-7xl mx-auto">
-                <div className="relative">
-                    {displayCats.length > 4 && (
-                      <button onClick={() => scrollCats("left")}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-slate-400 hover:text-slate-600 -ml-2 z-10">
-                        <ChevronLeft className="h-4 w-4" />
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth" ref={catScrollRef}
+                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                    {displayCats.map((cat: any) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => navigate(`/catalog?category=${cat.id}`)}
+                        className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-slate-50 transition-all group"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                          {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-lg text-black`} /> : <span className="text-lg">{cat.icon}</span>) : <Package className="h-5 w-5 text-black" />}
+                        </div>
+                        <span className="text-xs font-medium text-slate-700 whitespace-nowrap text-center">{cat.name}</span>
                       </button>
-                    )}
-                    <div ref={catScrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth"
-                      style={{ scrollbarWidth: "none", msOverflowStyle: "none", maxWidth: "calc(100vw - 32px)" }}>
-                      {displayCats.map((cat: any) => (
-                        <button
-                          key={cat.id}
-                          onClick={() => navigate(`/catalog?category=${cat.id}`)}
-                          className="flex-shrink-0 flex flex-row items-center gap-3 px-4 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
-                        >
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span className="text-2xl">{cat.icon}</span>) : <Package className="h-7 w-7 text-slate-400" />}
-                          </div>
-                          <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">{cat.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                    {displayCats.length > 4 && (
-                      <button onClick={() => scrollCats("right")}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-slate-400 hover:text-slate-600 -mr-2">
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    )}
+                    ))}
                   </div>
+                </div>
               </div>
             </section>
           );

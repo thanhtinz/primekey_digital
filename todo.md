@@ -1585,3 +1585,4 @@ todo updated
 - [x] Admin Banner: thêm tính năng upload ảnh lên S3 (thay vì chỉ nhập URL)
 - [x] Đồng bộ card sản phẩm ProductCatalog grid/list với LandingPage (tag style, rating, sold count)
 - [x] Thêm nút trái/phải (ChevronLeft/ChevronRight) cho banner slider trong LandingPage
+- [x] Sửa layout danh mục con: gộp vào một card chung, nhỏ lại, icon màu đen
