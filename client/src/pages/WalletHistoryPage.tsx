@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Gift, Search, X, ChevronLeft } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Gift, Search, X } from "lucide-react";
 
 const formatCurrency = (v: number | string) => {
   const n = typeof v === "string" ? parseFloat(v) : v;
@@ -98,7 +98,7 @@ export default function WalletHistoryPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <ClientHeader />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center pt-16">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Vui lòng đăng nhập để xem lịch sử dòng tiền</p>
             <button onClick={() => navigate("/client-login")} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm">Đăng nhập</button>
@@ -112,7 +112,7 @@ export default function WalletHistoryPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-5">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-20 pb-6 space-y-5">
 
         {/* Header card */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -320,10 +320,6 @@ export default function WalletHistoryPage() {
           </div>
         </div>
 
-        <button onClick={() => navigate("/wallet")}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-          <ChevronLeft className="h-4 w-4" /> Quay lại ví điện tử
-        </button>
       </main>
       <ClientFooter />
     </div>

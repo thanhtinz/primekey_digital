@@ -1,14 +1,57 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Trash2, Minus, Plus, Loader2, Package, ArrowLeft, Tag, Users2, Wallet } from "lucide-react";
+import {
+  ShoppingCart, Trash2, Minus, Plus, Loader2, Package,
+  Tag, Users2, Wallet, CheckCircle, ClipboardList, ChevronDown,
+  RefreshCw, Receipt, CreditCard
+} from "lucide-react";
 import { toast } from "sonner";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 import { trpc } from "@/lib/trpc";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { useLocation } from "wouter";
+
+// Progress steps
+const STEPS = [
+  { label: "GIỎ HÀNG",  icon: ShoppingCart },
+  { label: "XÁC NHẬN",  icon: ClipboardList },
+  { label: "HOÀN TẤT",  icon: CheckCircle },
+];
+
+function ProgressBar({ step }: { step: number }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <div className="flex items-center justify-between">
+        {STEPS.map((s, i) => {
+          const Icon = s.icon;
+          const isActive = i === step;
+          const isDone = i < step;
+          return (
+            <div key={s.label} className="flex items-center flex-1">
+              <div className="flex flex-col items-center">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
+                  isDone ? "bg-teal-500 border-teal-500" :
+                  isActive ? "bg-[#1e3a6e] border-[#1e3a6e]" :
+                  "bg-white border-gray-300"
+                }`}>
+                  <Icon className={`h-5 w-5 ${isDone || isActive ? "text-white" : "text-gray-400"}`} />
+                </div>
+                <p className={`text-[10px] font-bold mt-2 tracking-wide ${
+                  isDone ? "text-teal-500" : isActive ? "text-[#1e3a6e]" : "text-gray-400"
+                }`}>{s.label}</p>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 mb-5 rounded-full ${isDone ? "bg-teal-400" : "bg-gray-200"}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function CartPage() {
   const { customer } = useCustomerAuth();
@@ -21,6 +64,8 @@ export default function CartPage() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [notes, setNotes] = useState("");
   const [payWithWallet, setPayWithWallet] = useState(false);
+  const [showCoupon, setShowCoupon] = useState(false);
+  const [step, setStep] = useState(0); // 0=cart, 1=confirm, 2=done
 
   const { data: cartItems = [], isLoading } = trpc.cart.list.useQuery(
     { email },
@@ -29,7 +74,7 @@ export default function CartPage() {
   const utils = trpc.useUtils();
 
   const { data: walletData } = trpc.wallet.getBalance.useQuery(
-    { token: localStorage.getItem("customerToken") || "" },
+    { token: typeof window !== "undefined" ? localStorage.getItem("customerToken") || "" : "" },
     { enabled: !!customer, staleTime: 30_000 }
   );
   const walletBalance = walletData?.balance || 0;
@@ -49,22 +94,25 @@ export default function CartPage() {
 
   const formatPrice = (price: any) => {
     const num = typeof price === "string" ? parseFloat(price) : (price || 0);
-    return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
+    return new Intl.NumberFormat("vi-VN").format(num) + "đ";
   };
 
   const subtotal = useMemo(() => {
-    return cartItems.reduce((sum: number, item: any) => {
+    return (cartItems as any[]).reduce((sum, item) => {
       const price = item.package ? parseFloat(item.package.price) : 0;
       return sum + price * item.quantity;
     }, 0);
   }, [cartItems]);
 
-  const couponDiscount = appliedCoupon ? (appliedCoupon.discountType === "percentage" ? subtotal * appliedCoupon.discountValue / 100 : appliedCoupon.discountValue) : 0;
+  const couponDiscount = appliedCoupon
+    ? (appliedCoupon.discountType === "percentage"
+        ? subtotal * appliedCoupon.discountValue / 100
+        : appliedCoupon.discountValue)
+    : 0;
   const { data: taxConfig } = trpc.tax.getPublic.useQuery(undefined, { staleTime: 300_000 });
   const taxRate = taxConfig?.isEnabled ? parseFloat(taxConfig.taxRate || "0") : 0;
   const taxName = taxConfig?.taxName || "VAT";
   const afterDiscount = Math.max(0, subtotal - couponDiscount);
-  // No tax when paying with wallet balance
   const taxAmount = payWithWallet ? 0 : Math.round(afterDiscount * taxRate / 100);
   const total = afterDiscount + taxAmount;
 
@@ -90,25 +138,26 @@ export default function CartPage() {
 
   const cartCheckout = trpc.checkout.cartCheckout.useMutation({
     onSuccess: (data) => {
-      // NOTE: Do NOT clear cart after checkout - user may want to reorder
+      setStep(2);
       if (payWithWallet) {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được thanh toán bằng ví!`);
-        navigate(`/track-order?invoice=${data.invoiceNumber}`);
+        setTimeout(() => navigate(`/track-order`), 2000);
       } else if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo! Kiểm tra email để nhận link thanh toán.`);
-        navigate(`/track-order?invoice=${data.invoiceNumber}`);
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
+        setTimeout(() => navigate(`/track-order`), 2000);
       }
     },
-    onError: (err: any) => { toast.error(err.message || "Lỗi khi thanh toán"); setCheckingOut(false); },
+    onError: (err: any) => { toast.error(err.message || "Lỗi khi thanh toán"); setCheckingOut(false); setStep(1); },
   });
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) { toast.error("Giỏ hàng trống"); return; }
     setCheckingOut(true);
+    setStep(1);
     try {
-      const items = cartItems.map((item: any) => ({
+      const items = (cartItems as any[]).map((item) => ({
         productId: item.productId,
         packageId: item.packageId,
         name: (item.product?.name || "SP") + (item.package ? ` - ${item.package.name}` : ""),
@@ -130,148 +179,218 @@ export default function CartPage() {
     } catch (err: any) {
       toast.error(err.message || "Lỗi khi thanh toán");
       setCheckingOut(false);
+      setStep(0);
     }
   };
 
   return (
-    <div className="min-h-screen pt-14 bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <div className="container max-w-5xl mx-auto px-4 py-6">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-4">
+
+        <ProgressBar step={step} />
+
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
         ) : cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <ShoppingCart className="h-16 w-16 mb-4 opacity-30" />
-            <p className="text-lg font-medium">Giỏ hàng trống</p>
-            <p className="text-sm mt-1 mb-4">Hãy thêm sản phẩm vào giỏ hàng</p>
-            <Button onClick={() => navigate("/catalog")} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
-              <ArrowLeft className="h-4 w-4" /> Xem sản phẩm
-            </Button>
+          /* Empty cart */
+          <div className="space-y-4">
+            {/* Cart header */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
+                    <ShoppingCart className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Giỏ hàng</h2>
+                  <p className="text-sm text-gray-500">0 sản phẩm</p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-center h-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                <ShoppingCart className="h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Empty state */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-14 text-center">
+              <div className="relative w-24 h-24 mx-auto mb-5">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
+                  <ShoppingCart className="h-12 w-12 text-white" />
+                </div>
+                <span className="absolute top-0 right-0 text-2xl">🎁</span>
+                <span className="absolute bottom-0 left-0 text-xl">🏷️</span>
+                <span className="absolute top-2 left-0 text-lg">📦</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Giỏ hàng trống</h3>
+              <p className="text-gray-500 text-sm mb-6">Hãy thêm sản phẩm vào giỏ hàng để mua sắm</p>
+              <button
+                onClick={() => navigate("/catalog")}
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl text-white font-semibold text-base bg-gradient-to-r from-[#1e3a6e] to-teal-500 hover:opacity-90 transition-opacity shadow-lg shadow-teal-200"
+              >
+                <ShoppingCart className="h-5 w-5" /> Xem sản phẩm
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Cart items */}
-            <div className="lg:col-span-2 space-y-3">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold text-gray-800">{cartItems.length} sản phẩm</h2>
-                <Button variant="ghost" size="sm" onClick={() => clearCart.mutate({ email })} className="text-red-500 hover:text-red-700 text-xs">
-                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Xóa tất cả
-                </Button>
+          <div className="space-y-4">
+            {/* Cart header */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
+                    <ShoppingCart className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {(cartItems as any[]).length}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Giỏ hàng</h2>
+                  <p className="text-sm text-gray-500">{(cartItems as any[]).length} sản phẩm</p>
+                </div>
               </div>
+            </div>
 
-              {cartItems.map((item: any) => (
-                <Card key={item.id} className="shadow-sm border border-gray-100">
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
+            {/* Product list */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
+                <ClipboardList className="h-4 w-4 text-[#1e3a6e]" /> Danh sách sản phẩm ({(cartItems as any[]).length})
+              </h3>
+              <div className="space-y-4">
+                {(cartItems as any[]).map((item) => (
+                  <div key={item.id} className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex gap-3">
                       {item.product?.imageUrl ? (
-                        <img src={item.product.imageUrl} alt={item.product?.name} className="h-20 w-20 rounded-lg object-cover border border-gray-200 flex-shrink-0" />
+                        <img src={item.product.imageUrl} alt={item.product?.name} className="h-16 w-16 rounded-xl object-cover flex-shrink-0 border border-gray-200" />
                       ) : (
-                        <div className="h-20 w-20 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                          <Package className="h-8 w-8 text-blue-400" />
+                        <div className="h-16 w-16 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <Package className="h-7 w-7 text-blue-400" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate">{item.product?.name || "Sản phẩm"}</h3>
-                        {item.package && (
-                          <p className="text-sm text-blue-600 mt-0.5">Gói: {item.package.name}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h4 className="font-semibold text-gray-900 text-sm">{item.product?.name || "Sản phẩm"}</h4>
+                            {item.package && (
+                              <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                                <Package className="h-3 w-3" /> {item.package.name}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => removeItem.mutate({ id: item.id })}
+                            className="w-7 h-7 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Custom fields */}
+                        {item.customFieldValues && Object.keys(item.customFieldValues).length > 0 && (
+                          <div className="mt-2 bg-white rounded-lg border border-gray-200 p-2.5">
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                              <ClipboardList className="h-3 w-3" /> THÔNG TIN ĐƠN HÀNG
+                            </p>
+                            {Object.entries(item.customFieldValues).map(([k, v]) => (
+                              <div key={k} className="text-xs text-gray-600">
+                                <span className="text-gray-400">{k}:</span> <span className="font-medium">{String(v)}</span>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                        <p className="text-red-500 font-bold mt-1">
-                          {item.package ? formatPrice(item.package.price) : "—"}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end justify-between">
-                        <Button variant="ghost" size="sm" onClick={() => removeItem.mutate({ id: item.id })} className="h-7 w-7 p-0 text-gray-400 hover:text-red-500">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <div className="flex items-center gap-1 border border-gray-200 rounded-lg">
-                          <button
-                            onClick={() => item.quantity > 1 && updateQty.mutate({ id: item.id, quantity: item.quantity - 1 })}
-                            className="h-8 w-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-l-lg disabled:opacity-30"
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQty.mutate({ id: item.id, quantity: item.quantity + 1 })}
-                            className="h-8 w-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-r-lg"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
+
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-red-500 font-bold text-sm">
+                            {item.package ? formatPrice(parseFloat(item.package.price) * item.quantity) : "—"}
+                          </p>
+                          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg">
+                            <button
+                              onClick={() => item.quantity > 1 && updateQty.mutate({ id: item.id, quantity: item.quantity - 1 })}
+                              className="h-7 w-7 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-l-lg disabled:opacity-30"
+                              disabled={item.quantity <= 1}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <span className="w-7 text-center text-sm font-medium">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQty.mutate({ id: item.id, quantity: item.quantity + 1 })}
+                              className="h-7 w-7 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-r-lg"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Order summary */}
-            <div className="space-y-4">
-              <Card className="shadow-sm border border-gray-100 sticky top-20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold">Tóm Tắt Đơn Hàng</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Tạm tính</span>
-                      <span className="font-medium">{formatPrice(subtotal)}</span>
-                    </div>
-                    {appliedCoupon && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Giảm giá ({appliedCoupon.code})</span>
-                        <span>-{formatPrice(couponDiscount)}</span>
-                      </div>
-                    )}
-                    {taxAmount > 0 && (
-                      <div className="flex justify-between text-gray-500">
-                        <span>{taxName} ({taxRate}%)</span>
-                        <span>+{formatPrice(taxAmount)}</span>
-                      </div>
-                    )}
-                    <div className="border-t pt-2 flex justify-between">
-                      <span className="font-semibold text-gray-900">Tổng cộng</span>
-                      <span className="font-bold text-red-500 text-lg">{formatPrice(total)}</span>
-                    </div>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-[#1e3a6e] to-teal-500 px-5 py-4 flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-white" />
+                <h3 className="text-sm font-semibold text-white">Tóm tắt đơn hàng</h3>
+              </div>
+              <div className="p-5 space-y-2 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Tạm tính ({(cartItems as any[]).length} sản phẩm)</span>
+                  <span className="font-medium text-gray-900">{formatPrice(subtotal)}</span>
+                </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Giảm giá ({appliedCoupon.code})</span>
+                    <span>-{formatPrice(couponDiscount)}</span>
                   </div>
-
-                  {/* Coupon */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 flex items-center gap-1 mb-1.5">
-                      <Tag className="h-3 w-3" /> Mã giảm giá
-                    </label>
-                    {appliedCoupon ? (
-                      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                        <span className="text-sm text-green-700 font-medium">{appliedCoupon.code} ✓</span>
-                        <Button variant="ghost" size="sm" className="h-6 text-xs text-red-500 hover:text-red-700 p-0" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>Hủy</Button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-1.5">
-                        <Input
-                          placeholder="Nhập mã"
-                          value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                          className="text-sm"
-                        />
-                        <Button size="sm" onClick={handleApplyCoupon} className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap">Áp dụng</Button>
-                      </div>
-                    )}
+                )}
+                {taxAmount > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>{taxName} ({taxRate}%)</span>
+                    <span>+{formatPrice(taxAmount)}</span>
                   </div>
+                )}
+                <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 flex justify-between items-center mt-2">
+                  <span className="font-bold text-gray-900">Tổng cộng</span>
+                  <span className="font-bold text-red-500 text-lg">{formatPrice(total)}</span>
+                </div>
+              </div>
+            </div>
 
+            {/* Coupon */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <button
+                onClick={() => setShowCoupon(v => !v)}
+                className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors rounded-2xl"
+              >
+                <span className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#1e3a6e]" /> Mã giảm giá</span>
+                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showCoupon ? "rotate-180" : ""}`} />
+              </button>
+              {showCoupon && (
+                <div className="px-5 pb-5 space-y-3 border-t border-gray-100 pt-3">
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                      <span className="text-sm text-green-700 font-medium flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5" /> {appliedCoupon.code} ✓
+                      </span>
+                      <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>Hủy</button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input placeholder="Nhập mã giảm giá" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="text-sm" />
+                      <Button size="sm" onClick={handleApplyCoupon} className="bg-[#1e3a6e] hover:bg-[#162d57] whitespace-nowrap">Áp dụng</Button>
+                    </div>
+                  )}
                   {/* Referral code */}
                   <div>
                     <label className="text-xs font-medium text-gray-500 flex items-center gap-1 mb-1.5">
                       <Users2 className="h-3 w-3" /> Mã giới thiệu
                     </label>
-                    <div className="flex gap-1.5">
-                      <Input
-                        placeholder="Nhập mã giới thiệu"
-                        value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                        className="text-sm"
-                        disabled={appliedReferral}
-                      />
+                    <div className="flex gap-2">
+                      <Input placeholder="Nhập mã giới thiệu" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} className="text-sm" disabled={appliedReferral} />
                       {appliedReferral ? (
                         <Button variant="outline" size="sm" onClick={() => { setAppliedReferral(false); setReferralCode(""); }}>Hủy</Button>
                       ) : (
@@ -281,70 +400,113 @@ export default function CartPage() {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
 
-                  {/* Notes */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 mb-1.5 block">Ghi chú đơn hàng</label>
-                    <textarea
-                      placeholder="Nhập ghi chú (tùy chọn)"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={2}
-                      className="w-full text-sm border border-gray-200 rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+            {/* Payment method */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
+                <CreditCard className="h-4 w-4 text-[#1e3a6e]" /> Phương thức thanh toán
+              </h3>
+              <div className="space-y-3">
+                {/* Wallet option */}
+                <button
+                  onClick={() => setPayWithWallet(true)}
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                    payWithWallet ? "border-[#1e3a6e] bg-blue-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center flex-shrink-0">
+                    <Wallet className="h-5 w-5 text-white" />
                   </div>
-
-                  {/* Payment method selection */}
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setPayWithWallet(false)}
-                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm transition-all ${
-                          !payWithWallet ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
-                      >
-                        <span className="text-base">🏦</span>
-                        <div className="text-left">
-                          <p className="font-semibold text-xs">Banking</p>
-                          <p className="text-[10px] text-gray-400">PayOS / QR</p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => setPayWithWallet(true)}
-                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm transition-all ${
-                          payWithWallet ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
-                      >
-                        <Wallet className="w-4 h-4" />
-                        <div className="text-left">
-                          <p className="font-semibold text-xs">Số dư ví</p>
-                          <p className="text-[10px] text-gray-400">{formatPrice(walletBalance)}</p>
-                        </div>
-                      </button>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-gray-900 text-sm">Số dư tài khoản</p>
+                    <p className="text-sm font-bold text-[#1e3a6e]">{formatPrice(walletBalance)}</p>
+                  </div>
+                  {payWithWallet && (
+                    <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="h-4 w-4 text-white" />
                     </div>
-                    {payWithWallet && walletBalance < total && (
-                      <p className="text-red-500 text-xs mt-1.5">⚠️ Số dư không đủ. Cần thêm {formatPrice(total - walletBalance)}</p>
-                    )}
-                    {payWithWallet && taxRate > 0 && (
-                      <p className="text-xs text-emerald-600 mt-1.5">✅ Miễn {taxName} khi thanh toán bằng số dư</p>
-                    )}
-                  </div>
+                  )}
+                </button>
 
-                  <Button
-                    onClick={handleCheckout}
-                    disabled={checkingOut || cartItems.length === 0 || (payWithWallet && walletBalance < total)}
-                    className={`w-full font-semibold py-5 text-base gap-2 ${payWithWallet ? "bg-blue-600 hover:bg-blue-700" : "bg-red-500 hover:bg-red-600"} text-white`}
-                  >
-                    {checkingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : payWithWallet ? <Wallet className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
-                    {payWithWallet ? `Thanh Toán Bằng Ví (${formatPrice(total)})` : `Thanh Toán (${formatPrice(total)})`}
-                  </Button>
-                </CardContent>
-              </Card>
+                {/* Banking option */}
+                <button
+                  onClick={() => setPayWithWallet(false)}
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                    !payWithWallet ? "border-[#1e3a6e] bg-blue-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-lg">🏦</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-gray-900 text-sm">Banking / QR Code</p>
+                    <p className="text-xs text-gray-500">Thanh toán qua PayOS</p>
+                  </div>
+                  {!payWithWallet && (
+                    <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                </button>
+              </div>
+
+              {payWithWallet && walletBalance < total && (
+                <p className="text-red-500 text-xs mt-2 flex items-center gap-1">⚠️ Số dư không đủ. Cần thêm {formatPrice(total - walletBalance)}</p>
+              )}
+              {payWithWallet && taxRate > 0 && (
+                <p className="text-xs text-teal-600 mt-2">✅ Miễn {taxName} khi thanh toán bằng số dư</p>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <label className="text-xs font-medium text-gray-500 mb-2 block">Ghi chú đơn hàng (tùy chọn)</label>
+              <textarea
+                placeholder="Nhập ghi chú..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 text-gray-800"
+              />
+            </div>
+
+            {/* Checkout button */}
+            <button
+              onClick={handleCheckout}
+              disabled={checkingOut || (payWithWallet && walletBalance < total)}
+              className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 bg-gradient-to-r from-[#1e3a6e] to-teal-500 hover:opacity-90 transition-opacity shadow-lg shadow-teal-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {checkingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <Wallet className="h-5 w-5" />}
+              Thanh toán đơn hàng
+            </button>
+
+            {/* Action buttons */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 space-y-2">
+              <button
+                onClick={() => navigate("/track-order")}
+                className="w-full py-3 rounded-xl text-[#1e3a6e] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors border border-gray-200"
+              >
+                <ClipboardList className="h-4 w-4" /> Xem đơn hàng đã đặt
+              </button>
+              <button
+                onClick={() => utils.cart.list.invalidate({ email })}
+                className="w-full py-3 rounded-xl text-teal-600 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-teal-50 transition-colors border border-teal-200"
+              >
+                <RefreshCw className="h-4 w-4" /> Cập nhật giá
+              </button>
+              <button
+                onClick={() => clearCart.mutate({ email })}
+                className="w-full py-3 rounded-xl text-gray-500 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors border border-gray-200"
+              >
+                <Trash2 className="h-4 w-4" /> Xóa tất cả
+              </button>
             </div>
           </div>
         )}
-      </div>
+      </main>
       <ClientFooter />
     </div>
   );
