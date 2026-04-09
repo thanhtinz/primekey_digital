@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Gift, Search, X } from "@/components/Icon";
+import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Gift, Search, X, CheckCircle, XCircle, Clock } from "@/components/Icon";
 
 const formatCurrency = (v: number | string) => {
   const n = typeof v === "string" ? parseFloat(v) : v;
@@ -25,11 +25,35 @@ const TYPE_LABELS: Record<string, string> = {
   reward: "Thưởng",
 };
 
-const typeIcon = (t: string) => {
-  if (t === "topup") return <ArrowUpCircle className="h-4 w-4 text-green-500" />;
+const typeIcon = (t: string, status?: string) => {
+  if (t === "topup") {
+    if (status === "failed") return <XCircle className="h-4 w-4 text-red-500" />;
+    if (status === "pending") return <Clock className="h-4 w-4 text-yellow-500" />;
+    return <ArrowUpCircle className="h-4 w-4 text-green-500" />;
+  }
   if (t === "spend") return <ArrowDownCircle className="h-4 w-4 text-red-500" />;
   if (t === "refund") return <RefreshCw className="h-4 w-4 text-blue-500" />;
   return <Gift className="h-4 w-4 text-yellow-500" />;
+};
+
+const statusBadge = (tx: any) => {
+  if (tx.type !== "topup") return null;
+  if (tx.status === "completed") return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full">
+      <CheckCircle className="h-2.5 w-2.5" /> Đã nạp
+    </span>
+  );
+  if (tx.status === "pending") return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded-full">
+      <Clock className="h-2.5 w-2.5" /> Chờ xử lý
+    </span>
+  );
+  if (tx.status === "failed") return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">
+      <XCircle className="h-2.5 w-2.5" /> Thất bại
+    </span>
+  );
+  return null;
 };
 
 export default function WalletHistoryPage() {
@@ -243,7 +267,7 @@ export default function WalletHistoryPage() {
                       <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-2">
-                            {typeIcon(tx.type)}
+                            {typeIcon(tx.type, tx.status)}
                             <div>
                               <p className="text-sm text-gray-700">{formatDateTime(tx.createdAt)}</p>
                               <span className="text-[10px] text-gray-400">{TYPE_LABELS[tx.type] || tx.type}</span>
@@ -263,9 +287,7 @@ export default function WalletHistoryPage() {
                         </td>
                         <td className="px-4 py-3.5">
                           <p className="text-sm text-gray-600 line-clamp-2">{tx.description || "—"}</p>
-                          {tx.status === "pending" && (
-                            <span className="text-[10px] text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded-full">Chờ xử lý</span>
-                          )}
+                          {statusBadge(tx)}
                         </td>
                       </tr>
                     );
@@ -295,7 +317,7 @@ export default function WalletHistoryPage() {
                   return (
                     <div key={tx.id} className="px-4 py-3.5 flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        {typeIcon(tx.type)}
+                        {typeIcon(tx.type, tx.status)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-700">{formatDateTime(tx.createdAt)}</p>
@@ -306,9 +328,7 @@ export default function WalletHistoryPage() {
                         <p className={`text-sm font-bold ${isPositive ? "text-green-600" : "text-red-600"}`}>
                           {isPositive ? "+" : "-"}{formatCurrency(amount)}
                         </p>
-                        {tx.status === "pending" && (
-                          <span className="text-[10px] text-yellow-600">Chờ xử lý</span>
-                        )}
+                        {statusBadge(tx)}
                       </div>
                     </div>
                   );

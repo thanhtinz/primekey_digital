@@ -356,17 +356,14 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Quick info badges */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1 text-emerald-600 text-sm font-medium">
-              <Zap className="w-4 h-4" /> Giao ngay
-            </div>
-          </div>
-          {/* Product tags */}
+          {/* Product tags from DB */}
           {(productTagList as any[]).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {(productTagList as any[]).map((tag: any) => (
-                <span key={tag.id} className="text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>{tag.name}</span>
+                <span key={tag.id} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>
+                  {tag.icon && (tag.icon.startsWith("fa-") ? <i className={`${tag.icon}`} /> : <span>{tag.icon}</span>)}
+                  {tag.name}
+                </span>
               ))}
             </div>
           )}
@@ -405,9 +402,6 @@ export default function ProductDetail() {
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 font-medium">
-                            <Zap className="w-3 h-3" /> Giao ngay
-                          </span>
                           {(pkg.warrantyMonths ?? 0) > 0 && (
                             <span className="text-xs text-blue-500 flex items-center gap-0.5">
                               <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths}T

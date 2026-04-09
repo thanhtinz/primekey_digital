@@ -396,7 +396,10 @@ export default function ProductCatalog() {
                       return ptags.length > 0 ? (
                         <div className="absolute bottom-2 left-2 flex gap-1">
                           {ptags.map((m: any) => (
-                            <span key={m.tag.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>{m.tag.name}</span>
+                            <span key={m.tag.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow inline-flex items-center gap-0.5" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>
+                              {m.tag.icon && (m.tag.icon.startsWith("fa-") ? <i className={`${m.tag.icon} text-[8px]`} /> : <span className="text-[8px]">{m.tag.icon}</span>)}
+                              {m.tag.name}
+                            </span>
                           ))}
                         </div>
                       ) : null;

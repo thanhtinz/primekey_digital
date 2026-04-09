@@ -152,7 +152,8 @@ export default function LandingPage() {
                   className="bg-white/90 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium"
                   style={{ color: tag.color || "#3b82f6" }}
                 >
-                  <Tag className="h-2.5 w-2.5" /> {tag.name}
+                  {tag.icon ? (tag.icon.startsWith("fa-") ? <i className={`${tag.icon} text-[10px]`} /> : <span className="text-[10px]">{tag.icon}</span>) : null}
+                  {tag.name}
                 </div>
               ))}
             </div>
@@ -412,10 +413,7 @@ export default function LandingPage() {
           </section>
         )}
 
-        {/* ===== LEADERBOARD MINI SECTION ===== */}
-        {isEnabled("leaderboard") && !selectedParentCat && (
-          <LeaderboardMiniSection navigate={navigate} />
-        )}
+        {/* Leaderboard mini section ẩn khỏi trang chính */}
 
 
 

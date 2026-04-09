@@ -1492,3 +1492,17 @@ todo updated
 - [x] Backend: procedure yêu cầu rút thưởng qua banking (lưu yêu cầu, admin duyệt)
 - [x] Frontend: UI đổi thưởng (chọn rút vào ví hoặc banking)
 - [x] Admin: trang xem và duyệt yêu cầu rút thưởng banking
+
+## Phase: Fix Nút Quy Đổi LoyaltyRewardsPage (Apr 9, 2026 - Session 29)
+- [ ] Fix tab Referral trong LoyaltyRewardsPage: nút "Quy đổi" hiện hiển thị "Tính năng sẽ sớm ra mắt" - cần kết nối với referralWithdrawals.create
+
+## Phase: Fix Tag, BXH, Icon, Quy Đổi (Apr 9, 2026 - Session 30)
+- [ ] Xóa tag hardcode "Giao ngay" trong ProductDetail (chỉ giữ tag từ DB)
+- [ ] Fix tag từ DB không hiện FA icon (icon field lưu FA class nhưng không render đúng)
+- [ ] Ẩn section Bảng Xếp Hạng khỏi trang chính (Home)
+- [ ] Fix nút "Quy đổi" trong tab Giới thiệu trang cá nhân (MyAccount) - mở dialog withdraw thực sự
+
+## Phase: Fix Wallet Status, Icon Tag (Apr 9, 2026 - Session 31)
+- [x] WalletHistoryPage: hiển thị trạng thái nạp tiền (Đã nạp/Chờ xử lý/Thất bại) với icon màu sắc
+- [x] WalletPage: thêm icon cho lịch sử đơn nạp tiền
+- [x] Đồng nhất icon tag sản phẩm giữa trang chính (LandingPage) và trang chi tiết (ProductDetail)

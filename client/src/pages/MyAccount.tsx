@@ -810,6 +810,53 @@ export default function MyAccount() {
     { enabled: !!customer.email && !referralStats?.code, staleTime: 60_000 }
   );
   const referralCode = referralStats?.code || myCodeData?.code || "";
+  const referralBalance = parseFloat(referralStats?.totalRewards?.toString() || "0");
+
+  // Referral withdrawal state
+  const [showReferralWithdraw, setShowReferralWithdraw] = useState(false);
+  const [refWithdrawType, setRefWithdrawType] = useState<"wallet" | "atm">("wallet");
+  const [refWithdrawAmount, setRefWithdrawAmount] = useState("");
+  const [refBankName, setRefBankName] = useState("");
+  const [refBankAccount, setRefBankAccount] = useState("");
+  const [refBankHolder, setRefBankHolder] = useState("");
+
+  const { data: myWithdrawals, refetch: refetchWithdrawals } = trpc.referralWithdrawals.myList.useQuery(
+    { token: token || "" },
+    { enabled: !!token }
+  );
+
+  const referralWithdrawMutation = trpc.referralWithdrawals.create.useMutation({
+    onSuccess: (data: any) => {
+      if (data.status === "completed") {
+        toast.success("Đã chuyển thưởng vào ví thành công!");
+      } else {
+        toast.success("Yêu cầu rút thưởng đã được gửi! Admin sẽ xử lý trong 1-3 ngày làm việc.");
+      }
+      setShowReferralWithdraw(false);
+      setRefWithdrawAmount("");
+      setRefBankName(""); setRefBankAccount(""); setRefBankHolder("");
+      refetchWithdrawals();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const handleReferralWithdraw = () => {
+    const amount = parseFloat(refWithdrawAmount);
+    if (!amount || amount <= 0) { toast.error("Nhập số tiền hợp lệ"); return; }
+    if (amount > referralBalance) { toast.error(`Số dư hoa hồng không đủ. Bạn có ${referralBalance.toLocaleString("vi-VN")}₫`); return; }
+    if (refWithdrawType === "atm" && (!refBankName || !refBankAccount || !refBankHolder)) {
+      toast.error("Vui lòng nhập đầy đủ thông tin ngân hàng"); return;
+    }
+    referralWithdrawMutation.mutate({
+      token: token || "",
+      customerName: customer?.name || customer?.email || "",
+      amount,
+      withdrawType: refWithdrawType,
+      bankName: refWithdrawType === "atm" ? refBankName : undefined,
+      bankAccount: refWithdrawType === "atm" ? refBankAccount : undefined,
+      bankHolder: refWithdrawType === "atm" ? refBankHolder : undefined,
+    });
+  };
 
   const copyReferralCode = () => {
     navigator.clipboard.writeText(referralCode);
@@ -1429,19 +1476,124 @@ export default function MyAccount() {
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-slate-500 mb-1">Số tiền còn lại</p>
-                    <p className="text-lg font-bold text-slate-800">{Number(referralStats?.totalRewards ?? 0).toLocaleString("vi-VN")} đ</p>
+                    <p className="text-lg font-bold text-slate-800">{referralBalance.toLocaleString("vi-VN")} đ</p>
                   </div>
                   <div className="flex items-center">
                     <button
-                      onClick={() => toast.info("Tính năng quy đổi sẽ sớm ra mắt!")}
-                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-lg transition"
+                      onClick={() => setShowReferralWithdraw(true)}
+                      disabled={referralBalance <= 0}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition"
                     >
                       Quy đổi
                     </button>
                   </div>
                 </div>
               </div>
+
+              {/* Dialog rút thưởng */}
+              {showReferralWithdraw && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+                  <div className="bg-white rounded-2xl p-5 w-full max-w-md shadow-xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-slate-800">Quy đổi thưởng</h4>
+                      <button onClick={() => setShowReferralWithdraw(false)} className="text-slate-400 hover:text-slate-600">
+                        <XCircle className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <p className="text-sm text-slate-500 mb-4">Số dư có thể rút: <span className="font-bold text-green-600">{referralBalance.toLocaleString("vi-VN")} đ</span></p>
+
+                    {/* Chọn hình thức */}
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        onClick={() => setRefWithdrawType("wallet")}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition ${
+                          refWithdrawType === "wallet" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        <CreditCard className="h-4 w-4 inline mr-1" /> Vào ví
+                      </button>
+                      <button
+                        onClick={() => setRefWithdrawType("atm")}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition ${
+                          refWithdrawType === "atm" ? "border-purple-500 bg-purple-50 text-purple-700" : "border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        <Download className="h-4 w-4 inline mr-1" /> Chuyển khoản
+                      </button>
+                    </div>
+
+                    {/* Số tiền */}
+                    <div className="mb-3">
+                      <label className="text-xs font-semibold text-slate-600 mb-1 block">Số tiền rút</label>
+                      <input
+                        type="number"
+                        value={refWithdrawAmount}
+                        onChange={e => setRefWithdrawAmount(e.target.value)}
+                        placeholder="Nhập số tiền..."
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      />
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                        {[50000, 100000, 200000, 500000].map(amt => (
+                          <button key={amt} onClick={() => setRefWithdrawAmount(Math.min(amt, referralBalance).toString())}
+                            className="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-medium transition">
+                            {(amt/1000).toFixed(0)}K
+                          </button>
+                        ))}
+                        <button onClick={() => setRefWithdrawAmount(referralBalance.toString())}
+                          className="text-xs px-2.5 py-1 bg-green-100 hover:bg-green-200 rounded-lg text-green-700 font-medium transition">
+                          Tất cả
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Thông tin ngân hàng (nếu chọn ATM) */}
+                    {refWithdrawType === "atm" && (
+                      <div className="space-y-2 mb-3">
+                        <input value={refBankName} onChange={e => setRefBankName(e.target.value)} placeholder="Tên ngân hàng (VD: Vietcombank)" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                        <input value={refBankAccount} onChange={e => setRefBankAccount(e.target.value)} placeholder="Số tài khoản" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                        <input value={refBankHolder} onChange={e => setRefBankHolder(e.target.value)} placeholder="Tên chủ tài khoản" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleReferralWithdraw}
+                      disabled={referralWithdrawMutation.isPending}
+                      className="w-full py-3 bg-green-500 hover:bg-green-600 disabled:bg-slate-300 text-white font-semibold rounded-xl transition text-sm"
+                    >
+                      {referralWithdrawMutation.isPending ? "Đang xử lý..." : "Xác nhận rút thưởng"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Lịch sử rút thưởng */}
+            {(myWithdrawals as any[])?.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h3 className="text-base font-bold text-slate-800 mb-3">Lịch sử rút thưởng</h3>
+                <div className="space-y-2">
+                  {(myWithdrawals as any[]).map((w: any) => (
+                    <div key={w.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">{w.withdrawType === "wallet" ? "Vào ví" : "Chuyển khoản"}</p>
+                        <p className="text-xs text-slate-400">{new Date(w.createdAt).toLocaleDateString("vi-VN")}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-green-600">{Number(w.amount).toLocaleString("vi-VN")} đ</p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          w.status === "completed" ? "bg-green-100 text-green-700" :
+                          w.status === "rejected" ? "bg-red-100 text-red-700" :
+                          w.status === "processing" ? "bg-blue-100 text-blue-700" :
+                          "bg-yellow-100 text-yellow-700"
+                        }`}>
+                          {w.status === "completed" ? "Hoàn thành" : w.status === "rejected" ? "Từ chối" : w.status === "processing" ? "Đang xử lý" : "Chờ xử lý"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Lịch sử giao dịch */}
             <div className="bg-white border border-slate-200 rounded-xl p-5">

@@ -3,7 +3,7 @@
  * White background, clean design theo ảnh mẫu
  */
 import { useState } from "react";
-import { Wallet, ArrowDownLeft, ArrowUpRight, Clock, QrCode, ChevronRight, Info, Loader2, CheckCircle, History, Shield, Zap, TrendingUp } from "@/components/Icon";
+import { Wallet, ArrowDownLeft, ArrowUpRight, Clock, QrCode, ChevronRight, Info, Loader2, CheckCircle, XCircle, History, Shield, Zap, TrendingUp, RefreshCw, Gift } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
@@ -246,11 +246,19 @@ export default function WalletPage() {
                   const isCredit = TYPE_IS_CREDIT(tx.type);
                   return (
                     <div key={tx.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isCredit ? "bg-green-100" : "bg-red-100"}`}>
-                        {isCredit
-                          ? <ArrowDownLeft className="w-5 h-5 text-green-600" />
-                          : <ArrowUpRight className="w-5 h-5 text-red-500" />
-                        }
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        tx.type === "topup" && tx.status === "failed" ? "bg-red-100" :
+                        tx.type === "topup" && tx.status === "pending" ? "bg-yellow-100" :
+                        tx.type === "refund" ? "bg-blue-100" :
+                        tx.type === "reward" ? "bg-purple-100" :
+                        isCredit ? "bg-green-100" : "bg-red-100"
+                      }`}>
+                        {tx.type === "topup" && tx.status === "failed" ? <XCircle className="w-5 h-5 text-red-500" /> :
+                         tx.type === "topup" && tx.status === "pending" ? <Clock className="w-5 h-5 text-yellow-500" /> :
+                         tx.type === "refund" ? <RefreshCw className="w-5 h-5 text-blue-500" /> :
+                         tx.type === "reward" ? <Gift className="w-5 h-5 text-purple-500" /> :
+                         isCredit ? <ArrowDownLeft className="w-5 h-5 text-green-600" /> :
+                         <ArrowUpRight className="w-5 h-5 text-red-500" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{TYPE_LABELS[tx.type] || tx.type}</p>
@@ -264,13 +272,17 @@ export default function WalletPage() {
                         <p className={`text-sm font-bold ${isCredit ? "text-green-600" : "text-red-500"}`}>
                           {isCredit ? "+" : "-"}{parseFloat(tx.amount).toLocaleString("vi-VN")}đ
                         </p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${
-                          tx.status === "completed" ? "bg-green-100 text-green-700"
-                          : tx.status === "pending" ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-600"
-                        }`}>
-                          {tx.status === "completed" ? "Hoàn thành" : tx.status === "pending" ? "Chờ xử lý" : "Thất bại"}
-                        </span>
+                        {tx.type === "topup" && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-flex items-center gap-0.5 ${
+                            tx.status === "completed" ? "bg-green-100 text-green-700" :
+                            tx.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                            "bg-red-100 text-red-600"
+                          }`}>
+                            {tx.status === "completed" ? <><CheckCircle className="h-2.5 w-2.5" /> Đã nạp</> :
+                             tx.status === "pending" ? <><Clock className="h-2.5 w-2.5" /> Chờ xử lý</> :
+                             <><XCircle className="h-2.5 w-2.5" /> Thất bại</>}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
