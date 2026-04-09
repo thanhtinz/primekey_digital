@@ -241,6 +241,27 @@ export const appRouter = router({
           updatedAt: new Date(),
         });
         
+        // Generate per-product review tokens for each item when status is WARRANTY
+        if (input.status === "WARRANTY") {
+          try {
+            const { getDb: getItemsDb } = await import("./db");
+            const { invoiceItems } = await import("../drizzle/schema");
+            const { eq, isNull } = await import("drizzle-orm");
+            const itemsDb = await getItemsDb();
+            if (itemsDb) {
+              const items = await itemsDb.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, input.id));
+              for (const item of items) {
+                if (item.productId && !(item as any).productReviewToken) {
+                  const productReviewToken = crypto.randomBytes(32).toString("hex");
+                  await itemsDb.update(invoiceItems).set({ productReviewToken } as any).where(eq(invoiceItems.id, item.id));
+                }
+              }
+            }
+          } catch (tokenErr) {
+            console.error("[updateStatus] Product review token error:", tokenErr);
+          }
+        }
+        
         // Send email notification if requested OR when reaching WARRANTY (auto-send review link)
         const shouldSendEmail = input.sendEmail || input.status === "WARRANTY";
         if (shouldSendEmail) {
@@ -290,9 +311,38 @@ export const appRouter = router({
           }
         }
         
+        // Send customer notification for status change
+        try {
+          const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+          if (customer?.email) {
+            const { getDb: getNotifDb } = await import("./db");
+            const { customerNotifications } = await import("../drizzle/schema");
+            const notifDb = await getNotifDb();
+            const statusNotifMap: Record<string, { title: string; message: string; type: "info" | "success" | "warning" | "order" | "payment" | "promo" }> = {
+              PAID: { title: "Thanh toán thành công", message: `Đơn hàng ${invoice.invoiceNumber} đã được xác nhận thanh toán.`, type: "payment" },
+              SHIPPING: { title: "Đang giao hàng", message: `Đơn hàng ${invoice.invoiceNumber} đang được giao đến bạn.`, type: "order" },
+              WARRANTY: { title: "Bảo hành kích hoạt", message: `Đơn hàng ${invoice.invoiceNumber} đã hoàn thành và được kích hoạt bảo hành.`, type: "success" },
+              FAILED: { title: "Thanh toán thất bại", message: `Đơn hàng ${invoice.invoiceNumber} thanh toán không thành công.`, type: "warning" },
+              EXPIRED: { title: "Đơn hàng hết hạn", message: `Đơn hàng ${invoice.invoiceNumber} đã hết hạn.`, type: "warning" },
+            };
+            const notifData = statusNotifMap[input.status];
+            if (notifData && notifDb) {
+              await notifDb.insert(customerNotifications).values({
+                userId: ctx.user.id,
+                customerEmail: customer.email,
+                title: notifData.title,
+                message: notifData.message,
+                type: notifData.type,
+                link: `/my-account`,
+              });
+            }
+          }
+        } catch (notifErr) {
+          console.error("[updateStatus] Notification error:", notifErr);
+        }
+        
         return { success: true, reviewToken };
       }),
-
     // Get invoice items
     getItems: protectedProcedure
       .input(z.object({ invoiceId: z.number() }))
@@ -1705,8 +1755,58 @@ export const appRouter = router({
       await drizzleDb.delete(productReviews).where(eq(productReviews.id, input.id));
       return { success: true };
     }),
+    // Public: get product review info by per-product token
+    getByProductToken: publicProcedure.input(z.object({ token: z.string() })).query(async ({ input }) => {
+      const { invoiceItems, invoices, products: productsTable } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const [item] = await drizzleDb.select().from(invoiceItems).where(eq((invoiceItems as any).productReviewToken, input.token)).limit(1);
+      if (!item) return null;
+      const [invoice] = await drizzleDb.select().from(invoices).where(eq(invoices.id, item.invoiceId)).limit(1);
+      const [product] = item.productId ? await drizzleDb.select({ id: productsTable.id, name: productsTable.name, imageUrl: productsTable.imageUrl }).from(productsTable).where(eq(productsTable.id, item.productId)).limit(1) : [null];
+      return {
+        itemId: item.id,
+        productId: item.productId,
+        productName: product?.name || item.name,
+        productImageUrl: (product as any)?.imageUrl || null,
+        invoiceNumber: invoice?.invoiceNumber || "",
+        reviewSubmitted: !!(item as any).productReviewSubmitted,
+      };
+    }),
+    // Public: submit product review by per-product token
+    submitByProductToken: publicProcedure.input(z.object({
+      token: z.string(),
+      rating: z.number().min(1).max(5),
+      comment: z.string().optional(),
+      customerName: z.string().optional(),
+      customerEmail: z.string().email().optional(),
+    })).mutation(async ({ input }) => {
+      const { invoiceItems, invoices, productReviews } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const [item] = await drizzleDb.select().from(invoiceItems).where(eq((invoiceItems as any).productReviewToken, input.token)).limit(1);
+      if (!item) throw new Error("Link đánh giá không hợp lệ");
+      if ((item as any).productReviewSubmitted) throw new Error("Sản phẩm này đã được đánh giá");
+      if (!item.productId) throw new Error("Sản phẩm không tồn tại");
+      const [invoice] = await drizzleDb.select().from(invoices).where(eq(invoices.id, item.invoiceId)).limit(1);
+      const customer = invoice?.customerId ? await db.getCustomerById(invoice.customerId) : null;
+      await drizzleDb.insert(productReviews).values({
+        productId: item.productId,
+        customerEmail: input.customerEmail || customer?.email || "",
+        customerName: input.customerName || customer?.name || "Khách Hàng",
+        rating: input.rating,
+        comment: input.comment || null,
+        invoiceId: item.invoiceId,
+        isApproved: false,
+      });
+      await drizzleDb.update(invoiceItems).set({ productReviewSubmitted: true } as any).where(eq(invoiceItems.id, item.id));
+      return { success: true };
+    }),
   }),
-
   // Taxes
   taxes: router({
     list: protectedProcedure.query(async ({ ctx }) => {
@@ -4219,9 +4319,10 @@ export const appRouter = router({
         const [session] = await drizzleDb.select().from(customerSessions)
           .where(eq(customerSessions.token, input.token)).limit(1);
         if (!session || session.expiresAt < new Date()) return null;
-        // Get walletBalance from customers table
-        const [cust] = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, session.email)).limit(1);
-        return { email: session.email, name: session.name, avatarUrl: (session as any).avatarUrl || null, walletBalance: cust?.walletBalance || "0" };
+        // Get walletBalance AND avatarUrl from customers table (persistent across sessions)
+        const [cust] = await drizzleDb.select({ walletBalance: customers.walletBalance, avatarUrl: (customers as any).avatarUrl }).from(customers).where(eq(customers.email, session.email)).limit(1);
+        const avatarUrl = (session as any).avatarUrl || (cust as any)?.avatarUrl || null;
+        return { email: session.email, name: session.name, avatarUrl, walletBalance: cust?.walletBalance || "0" };
       }),
 
     // Lịch sử đơn hàng của khách (theo email)
@@ -4388,8 +4489,15 @@ export const appRouter = router({
         const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
         const fileKey = `avatars/${session.email.replace(/[^a-zA-Z0-9]/g, "_")}-${Date.now()}.${ext}`;
         const { url } = await storagePut(fileKey, buffer, mimeType);
-        // Save avatar URL to session
+        // Save avatar URL to both session AND customers table for persistence across logins
         await drizzleDb.update(customerSessions).set({ avatarUrl: url } as any).where(eq(customerSessions.token, input.token));
+        const { customers } = await import("../drizzle/schema");
+        const { users } = await import("../drizzle/schema");
+        const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (owner) {
+          await drizzleDb.update(customers).set({ avatarUrl: url, updatedAt: new Date() } as any)
+            .where(eq(customers.email, session.email));
+        }
         return { url };
       }),
     logout: publicProcedure
@@ -4412,6 +4520,7 @@ export const appRouter = router({
         name: z.string().min(1, "Vui lòng nhập tên"),
         phone: z.string().optional(),
         origin: z.string().optional(),
+        referralCode: z.string().optional(), // mã giới thiệu từ ?ref=CODE
       }))
       .mutation(async ({ input }) => {
         const { customers, customerSessions } = await import("../drizzle/schema");
@@ -4465,9 +4574,35 @@ export const appRouter = router({
         const token = crypto.randomBytes(48).toString("hex");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: input.name, token, expiresAt });
+         // Process referral code if provided
+        if (input.referralCode) {
+          try {
+            const { customerReferralCodes } = await import("../drizzle/schema");
+            const { eq } = await import("drizzle-orm");
+            const refDb = await getDb();
+            if (refDb) {
+              const [codeRow] = await refDb.select().from(customerReferralCodes)
+                .where(eq(customerReferralCodes.code, input.referralCode.toUpperCase())).limit(1);
+              if (codeRow && codeRow.email !== input.email) {
+                // Record referral
+                const { referrals } = await import("../drizzle/schema");
+                await refDb.insert(referrals).values({
+                  referrerEmail: codeRow.email,
+                  refereeEmail: input.email,
+                  referralCode: input.referralCode.toUpperCase(),
+                }).catch(() => {}); // ignore duplicate
+                // Update referrer stats
+                await refDb.update(customerReferralCodes)
+                  .set({ totalReferrals: (codeRow.totalReferrals || 0) + 1 } as any)
+                  .where(eq(customerReferralCodes.id, codeRow.id));
+              }
+            }
+          } catch (refErr) {
+            console.error("[register] Referral error:", refErr);
+          }
+        }
         return { token, name: input.name, email: input.email, expiresAt, needsVerification: true };
       }),
-
     // Đăng nhập bằng email + mật khẩu
     loginWithPassword: publicProcedure
       .input(z.object({
@@ -4948,6 +5083,24 @@ export const appRouter = router({
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
       return drizzleDb.select().from(referrals).orderBy(desc(referrals.createdAt)).limit(200);
+    }),
+    // Public: get referrer name by code (to show "Bạn được giới thiệu bởi [tên]")
+    getReferrerByCode: publicProcedure.input(z.object({ code: z.string() })).query(async ({ input }) => {
+      const { customerReferralCodes, customers, users } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return null;
+      const [codeRow] = await drizzleDb.select().from(customerReferralCodes)
+        .where(eq(customerReferralCodes.code, input.code.toUpperCase())).limit(1);
+      if (!codeRow) return null;
+      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner) return null;
+      const [cust] = await drizzleDb.select({ name: customers.name })
+        .from(customers)
+        .where(eq(customers.email, codeRow.email))
+        .limit(1);
+      return { name: cust?.name || codeRow.email.split("@")[0], code: codeRow.code };
     }),
   }),
 

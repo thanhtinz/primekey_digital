@@ -94,6 +94,7 @@ const SupportPage = lazy(() => import("./pages/SupportPage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
+const ProductReviewPage = lazy(() => import("./pages/ProductReviewPage"));
 const PublicFeedbacks = lazy(() => import("./pages/PublicFeedbacks"));
 const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 
@@ -115,7 +116,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
+const ALWAYS_PUBLIC = ["/track-order", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -145,6 +146,7 @@ function Router() {
           {/* Fully public - no login required */}
           <Route path="/feedbacks-public" component={() => <PublicFeedbacks />} />
           <Route path="/review/:token" component={() => <ReviewPage />} />
+          <Route path="/product-review/:token" component={() => <ProductReviewPage />} />
           <Route path="/thank-you" component={() => <ThankYou />} />
           <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
           <Route path="/warranty" component={() => <WarrantyLookup />} />

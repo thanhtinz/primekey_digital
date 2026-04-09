@@ -99,6 +99,20 @@
       "when": 1775704808307,
       "tag": "0013_eager_dragon_lord",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1775729703724,
+      "tag": "0014_faithful_meltdown",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1775730002498,
+      "tag": "0015_broad_satana",
+      "breakpoints": true
     }
   ]
 }

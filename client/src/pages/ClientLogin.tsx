@@ -14,8 +14,9 @@ export default function ClientLogin() {
   const params = new URLSearchParams(search);
   const redirectTo = params.get("redirect");
   const resetToken = params.get("resetToken");
+  const refCode = params.get("ref") || "";
 
-  const [tab, setTab] = useState<Tab>(resetToken ? "reset" : "login");
+  const [tab, setTab] = useState<Tab>(resetToken ? "reset" : refCode ? "register" : "login");
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -29,6 +30,13 @@ export default function ClientLogin() {
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [showRegPwd, setShowRegPwd] = useState(false);
+  const [regReferralCode, setRegReferralCode] = useState(refCode);
+
+  // Fetch referrer name if ref code is provided
+  const { data: referrerInfo } = trpc.referral.getReferrerByCode.useQuery(
+    { code: refCode },
+    { enabled: !!refCode, staleTime: 60_000 }
+  );
 
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState("");
@@ -102,6 +110,7 @@ export default function ClientLogin() {
       name: regName.trim(),
       phone: regPhone.trim() || undefined,
       origin: window.location.origin,
+      referralCode: regReferralCode.trim() || undefined,
     });
   };
 
@@ -235,6 +244,15 @@ export default function ClientLogin() {
           {/* ===== REGISTER FORM ===== */}
           {tab === "register" && (
             <form onSubmit={handleRegister} className="space-y-4">
+              {/* Referrer banner */}
+              {referrerInfo && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-2">
+                  <span className="text-emerald-600 text-lg">🎁</span>
+                  <p className="text-sm text-emerald-700">
+                    Bạn được giới thiệu bởi <strong>{referrerInfo.name}</strong>!
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   <User className="inline h-4 w-4 mr-1" />Họ Tên <span className="text-red-500">*</span>

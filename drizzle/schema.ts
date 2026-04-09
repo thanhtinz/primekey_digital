@@ -42,6 +42,7 @@ export const customers = mysqlTable("customers", {
   lastLoginAt: timestamp("lastLoginAt"), // lần đăng nhập cuối
   totpSecret: varchar("totpSecret", { length: 64 }), // TOTP secret for 2FA
   totpEnabled: boolean("totpEnabled").default(false), // 2FA enabled
+  avatarUrl: text("avatarUrl"), // Avatar URL stored persistently
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -210,10 +211,11 @@ export const invoiceItems = mysqlTable("invoiceItems", {
   discount: decimal("discount", { precision: 15, scale: 2 }).default("0"),
   taxId: int("taxId"),
   taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0"),
-  totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
+   totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
+  productReviewToken: varchar("productReviewToken", { length: 64 }), // per-product review token
+  productReviewSubmitted: boolean("productReviewSubmitted").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
-
 export type InvoiceItem = typeof invoiceItems.$inferSelect;
 export type InsertInvoiceItem = typeof invoiceItems.$inferInsert;
 

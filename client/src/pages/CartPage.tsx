@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import {
   ShoppingCart, Trash2, Minus, Plus, Loader2, Package,
   Tag, Users2, Wallet, CheckCircle, ClipboardList,
-  RefreshCw, Receipt, CreditCard, ArrowRight, ArrowLeft
+  RefreshCw, Receipt, CreditCard, ArrowRight, ArrowLeft, ChevronDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientHeader } from "@/components/ClientHeader";
@@ -65,6 +65,8 @@ export default function CartPage() {
   const [notes, setNotes] = useState("");
   const [payWithWallet, setPayWithWallet] = useState(false);
   const [step, setStep] = useState(0); // 0=cart, 1=confirm, 2=done
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [showReferralInput, setShowReferralInput] = useState(false);
 
   const { data: cartItems = [], isLoading } = trpc.cart.list.useQuery(
     { email },
@@ -273,19 +275,32 @@ export default function CartPage() {
                           </button>
                         </div>
 
-                        {/* Custom fields */}
-                        {item.customFieldValues && Object.keys(item.customFieldValues).length > 0 && (
-                          <div className="mt-2 bg-white rounded-lg border border-gray-200 p-2.5">
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                              <ClipboardList className="h-3 w-3" /> THÔNG TIN ĐƠN HÀNG
-                            </p>
-                            {Object.entries(item.customFieldValues).map(([k, v]) => (
-                              <div key={k} className="text-xs text-gray-600">
-                                <span className="text-gray-400">{k}:</span> <span className="font-medium">{String(v)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        {/* Custom fields - parse JSON string */}
+                        {(() => {
+                          let fields: Array<{fieldName: string; fieldValue: string}> = [];
+                          if (item.customFieldValues) {
+                            try {
+                              const raw = typeof item.customFieldValues === 'string'
+                                ? JSON.parse(item.customFieldValues)
+                                : item.customFieldValues;
+                              fields = Array.isArray(raw)
+                                ? raw
+                                : Object.entries(raw).map(([k, v]) => ({ fieldName: k, fieldValue: String(v) }));
+                            } catch { fields = []; }
+                          }
+                          return fields.length > 0 ? (
+                            <div className="mt-2 bg-white rounded-lg border border-gray-200 p-2.5">
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                                <ClipboardList className="h-3 w-3" /> THÔNG TIN ĐƠN HÀNG
+                              </p>
+                              {fields.map((f, i) => (
+                                <div key={i} className="text-xs text-gray-600">
+                                  <span className="text-gray-400">{f.fieldName}:</span> <span className="font-medium">{f.fieldValue}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null;
+                        })()}
 
                         <div className="flex items-center justify-between mt-2">
                           <p className="text-red-500 font-bold text-sm">
@@ -340,42 +355,50 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Coupon card */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                <Tag className="h-4 w-4 text-orange-500" /> Mã giảm giá
-              </h3>
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                  <span className="text-sm text-green-700 font-medium flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5" /> {appliedCoupon.code} ✓
-                  </span>
-                  <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>Hủy</button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input placeholder="Nhập mã giảm giá" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="text-sm" />
-                  <Button size="sm" onClick={handleApplyCoupon} className="bg-orange-500 hover:bg-orange-600 whitespace-nowrap text-white">Áp dụng</Button>
+            {/* Coupon card - accordion */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <button
+                onClick={() => { if (!appliedCoupon) setShowCouponInput(v => !v); }}
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <Tag className="h-4 w-4 text-orange-500" /> Mã giảm giá
+                  {appliedCoupon && <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{appliedCoupon.code} ✓</span>}
+                </span>
+                {appliedCoupon ? (
+                  <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={(e) => { e.stopPropagation(); setAppliedCoupon(null); setCouponCode(""); setShowCouponInput(false); }}>Hủy</button>
+                ) : (
+                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showCouponInput ? 'rotate-180' : ''}`} />
+                )}
+              </button>
+              {showCouponInput && !appliedCoupon && (
+                <div className="px-5 pb-4 flex gap-2 border-t border-gray-100">
+                  <Input placeholder="Nhập mã giảm giá" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="text-sm mt-3" autoFocus />
+                  <Button size="sm" onClick={handleApplyCoupon} className="bg-orange-500 hover:bg-orange-600 whitespace-nowrap text-white mt-3">Áp dụng</Button>
                 </div>
               )}
             </div>
 
-            {/* Referral card */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                <Users2 className="h-4 w-4 text-purple-500" /> Mã giới thiệu
-              </h3>
-              {appliedReferral ? (
-                <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
-                  <span className="text-sm text-purple-700 font-medium flex items-center gap-1.5">
-                    <Users2 className="h-3.5 w-3.5" /> {referralCode} ✓
-                  </span>
-                  <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={() => { setAppliedReferral(false); setReferralCode(""); }}>Hủy</button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input placeholder="Nhập mã giới thiệu" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} className="text-sm" />
-                  <Button size="sm" onClick={() => { if (referralCode.trim()) applyReferral.mutate({ code: referralCode, refereeEmail: email }); }} disabled={!referralCode.trim() || applyReferral.isPending} className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap text-white">
+            {/* Referral card - accordion */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <button
+                onClick={() => { if (!appliedReferral) setShowReferralInput(v => !v); }}
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <Users2 className="h-4 w-4 text-purple-500" /> Mã giới thiệu
+                  {appliedReferral && <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{referralCode} ✓</span>}
+                </span>
+                {appliedReferral ? (
+                  <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={(e) => { e.stopPropagation(); setAppliedReferral(false); setReferralCode(""); setShowReferralInput(false); }}>Hủy</button>
+                ) : (
+                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showReferralInput ? 'rotate-180' : ''}`} />
+                )}
+              </button>
+              {showReferralInput && !appliedReferral && (
+                <div className="px-5 pb-4 flex gap-2 border-t border-gray-100">
+                  <Input placeholder="Nhập mã giới thiệu" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} className="text-sm mt-3" autoFocus />
+                  <Button size="sm" onClick={() => { if (referralCode.trim()) applyReferral.mutate({ code: referralCode, refereeEmail: email }); }} disabled={!referralCode.trim() || applyReferral.isPending} className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap text-white mt-3">
                     {applyReferral.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Áp dụng"}
                   </Button>
                 </div>
