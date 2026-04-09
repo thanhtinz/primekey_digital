@@ -1362,8 +1362,8 @@ todo updated
 - [x] Reset mật khẩu admin thành tinklh23 (1 row updated)
 
 ## Phase: Admin-Client Navigation (Apr 9, 2026 - Session 14)
-- [ ] Thêm nút "Về trang khách hàng" trong admin sidebar (DashboardLayout)
-- [ ] Nút trong client header dropdown đã có (trỏ /login) - giữ nguyên
+- [x] Thêm nút "Về trang khách hàng" trong admin sidebar (DashboardLayout) - đã có trong footer dropdown
+- [x] Nút trong client header dropdown đã có - điều hướng sang /client-login
 
 ## Phase: Unified Auth (Apr 9, 2026 - Session 15)
 - [x] Hợp nhất auth: 1 login duy nhất (/client-login) cho cả khách và admin
@@ -1373,3 +1373,8 @@ todo updated
 - [x] DashboardLayout: dùng useCustomerAuth thay vì useAuth, check role=admin
 - [x] DashboardLayout: logout → redirect /client-login, "Về trang khách hàng" → /
 - [x] TypeScript: 0 errors, 53/53 tests passed
+
+## Phase: Fix Dashboard Back Button (Apr 9, 2026 - Session 16)
+- [x] Fix nút "Về trang khách hàng": dùng window.open("/", "_blank") → mở tab mới
+- [x] Thêm "/" vào ALWAYS_PUBLIC list trong App.tsx để trang chủ luôn accessible
+- [x] Thêm Route path="/" vào ALWAYS_PUBLIC Switch block

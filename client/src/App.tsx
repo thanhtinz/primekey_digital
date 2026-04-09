@@ -119,7 +119,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/wishlist", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
+const ALWAYS_PUBLIC = ["/", "/track-order", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/wishlist", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -176,6 +176,7 @@ function Router() {
           <Route path="/support" component={() => <SupportPage />} />
           <Route path="/verify-email" component={() => <VerifyEmailPage />} />
           <Route path="/reset-password" component={() => <ResetPasswordPage />} />
+          <Route path="/" component={() => <LandingPage />} />
         </Switch>
       </Suspense>
     );

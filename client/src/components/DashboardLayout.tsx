@@ -237,7 +237,7 @@ function DashboardLayoutContent({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
-                  onClick={() => window.location.href = "/"}
+                  onClick={() => window.open("/", "_blank")}
                   className="cursor-pointer"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
