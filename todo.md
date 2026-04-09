@@ -1356,3 +1356,20 @@ todo updated
 - [x] Xóa link Admin khỏi MyAccount
 - [x] Chỉ giữ link Admin trong dropdown icon user trên header desktop
 - [x] TypeScript: 0 errors
+
+## Phase: Fix Admin Login (Apr 9, 2026 - Session 13)
+- [x] Xác nhận: tài khoản admin đã có email thanhtinz23072003@gmail.com + role admin
+- [x] Reset mật khẩu admin thành tinklh23 (1 row updated)
+
+## Phase: Admin-Client Navigation (Apr 9, 2026 - Session 14)
+- [ ] Thêm nút "Về trang khách hàng" trong admin sidebar (DashboardLayout)
+- [ ] Nút trong client header dropdown đã có (trỏ /login) - giữ nguyên
+
+## Phase: Unified Auth (Apr 9, 2026 - Session 15)
+- [x] Hợp nhất auth: 1 login duy nhất (/client-login) cho cả khách và admin
+- [x] Sau login: nếu role=admin → redirect /dashboard, còn lại → redirect /
+- [x] context.ts: nhận x-customer-token header, nếu isAdminSession=true → set ctx.user
+- [x] main.tsx: tự động gửi x-customer-token header trong mọi request
+- [x] DashboardLayout: dùng useCustomerAuth thay vì useAuth, check role=admin
+- [x] DashboardLayout: logout → redirect /client-login, "Về trang khách hàng" → /
+- [x] TypeScript: 0 errors, 53/53 tests passed

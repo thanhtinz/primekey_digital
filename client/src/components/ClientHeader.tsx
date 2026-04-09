@@ -454,7 +454,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                     {isAdmin && (
                       <div className="border-t border-white/10 py-1">
                         <button
-                          onClick={() => { window.location.href = "/login"; }}
+                          onClick={() => { window.open("/login", "_blank"); }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-amber-400 hover:text-amber-300 hover:bg-amber-500/5 transition-colors text-sm"
                         >
                           <Settings className="h-4 w-4 flex-shrink-0" />

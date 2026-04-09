@@ -1,4 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,7 +19,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink, BookOpen, Megaphone } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -41,7 +40,6 @@ const menuItems = [
   { icon: Bell, label: "Thông báo", path: "/notifications" },
   { icon: Megaphone, label: "Banner & Thông báo", path: "/announcements" },
   { icon: Settings, label: "Cài đặt", path: "/settings" },
-  { icon: ExternalLink, label: "Xem trang khách", path: "/" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -58,36 +56,36 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
+  const { customer, isLoading } = useCustomerAuth();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
-  if (loading) {
+  if (isLoading) {
     return <DashboardLayoutSkeleton />
   }
 
-  if (!user) {
+  if (!customer || customer.role !== "admin") {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-6">
             <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
+              Yêu cầu đăng nhập
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              Bạn cần đăng nhập bằng tài khoản quản trị viên để truy cập trang này.
             </p>
           </div>
           <Button
             onClick={() => {
-              window.location.href = "/";
+              window.location.href = "/client-login";
             }}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"
           >
-            Sign in
+            Đăng nhập
           </Button>
         </div>
       </div>
@@ -118,7 +116,7 @@ function DashboardLayoutContent({
   children,
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
-  const { user, logout } = useAuth();
+  const { customer, logout } = useCustomerAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -163,6 +161,11 @@ function DashboardLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/client-login";
+  };
+
   return (
     <>
       <div className="relative" ref={sidebarRef}>
@@ -183,7 +186,7 @@ function DashboardLayoutContent({
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                    Quản Trị
                   </span>
                 </div>
               ) : null}
@@ -219,29 +222,29 @@ function DashboardLayoutContent({
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {customer?.name?.charAt(0).toUpperCase() || customer?.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
+                      {customer?.name || "-"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.email || "-"}
+                      {customer?.email || "-"}
                     </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
-                  onClick={() => window.open("/", "_blank")}
+                  onClick={() => window.location.href = "/"}
                   className="cursor-pointer"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  <span>Xem trang khách</span>
+                  <span>Về trang khách hàng</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />

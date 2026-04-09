@@ -54,7 +54,11 @@ export default function ClientLogin() {
   const handleSuccess = (data: { token: string; email: string | null; name?: string | null; role?: string | null }) => {
     login(data.token, data.email || "", data.role);
     toast.success(`Chào mừng ${data.name || data.email}!`);
-    navigate(redirectTo ? decodeURIComponent(redirectTo) : "/");
+    if (data.role === "admin") {
+      navigate("/dashboard");
+    } else {
+      navigate(redirectTo ? decodeURIComponent(redirectTo) : "/");
+    }
   };
 
   const loginMutation = trpc.customer.loginWithPassword.useMutation({
