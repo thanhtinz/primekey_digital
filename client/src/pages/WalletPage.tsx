@@ -98,45 +98,14 @@ export default function WalletPage() {
     );
   }
 
-  const balance = walletData?.balance ?? 0;
   const transactions = (txData as any) || [];
   const txList = Array.isArray(transactions) ? transactions : (transactions?.items ?? []);
-
-  const totalTopup = txList.filter((t: any) => t.type === "topup").reduce((s: number, t: any) => s + (parseFloat(t.amount) || 0), 0);
-  const totalSpend = txList.filter((t: any) => ["spend", "purchase", "deduct"].includes(t.type)).reduce((s: number, t: any) => s + (parseFloat(t.amount) || 0), 0);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <main className="flex-1 pt-14">
-        <div className="max-w-3xl mx-auto px-4 py-8">
-
-          {/* Balance Card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-6 mb-6 text-white shadow-lg">
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-32 translate-x-32" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-24 -translate-x-24" />
-            </div>
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3 opacity-80">
-                <Wallet className="w-5 h-5" />
-                <span className="text-sm font-medium">Số dư tài khoản</span>
-              </div>
-              <p className="text-4xl font-bold mb-1">
-                {balance.toLocaleString("vi-VN")}<span className="text-2xl ml-1">đ</span>
-              </p>
-              <div className="flex gap-6 mt-4 pt-4 border-t border-white/20">
-                <div>
-                  <p className="text-xs opacity-60">Tổng nạp</p>
-                  <p className="text-sm font-semibold">+{totalTopup.toLocaleString("vi-VN")}đ</p>
-                </div>
-                <div>
-                  <p className="text-xs opacity-60">Tổng chi</p>
-                  <p className="text-sm font-semibold">-{totalSpend.toLocaleString("vi-VN")}đ</p>
-                </div>
-              </div>
-            </div>
-          </div>
+      <main className="flex-1">
+        <div className="max-w-3xl mx-auto px-4 pt-20 pb-8">
 
           {/* Features row */}
           <div className="grid grid-cols-3 gap-3 mb-6">

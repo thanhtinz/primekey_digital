@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   ShoppingCart, Trash2, Minus, Plus, Loader2, Package,
-  Tag, Users2, Wallet, CheckCircle, ClipboardList, ChevronDown,
-  RefreshCw, Receipt, CreditCard
+  Tag, Users2, Wallet, CheckCircle, ClipboardList,
+  RefreshCw, Receipt, CreditCard, ArrowRight, ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientHeader } from "@/components/ClientHeader";
@@ -64,7 +64,6 @@ export default function CartPage() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [notes, setNotes] = useState("");
   const [payWithWallet, setPayWithWallet] = useState(false);
-  const [showCoupon, setShowCoupon] = useState(false);
   const [step, setStep] = useState(0); // 0=cart, 1=confirm, 2=done
 
   const { data: cartItems = [], isLoading } = trpc.cart.list.useQuery(
@@ -153,9 +152,8 @@ export default function CartPage() {
   });
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) { toast.error("Giỏ hàng trống"); return; }
+    if ((cartItems as any[]).length === 0) { toast.error("Giỏ hàng trống"); return; }
     setCheckingOut(true);
-    setStep(1);
     try {
       const items = (cartItems as any[]).map((item) => ({
         productId: item.productId,
@@ -179,87 +177,74 @@ export default function CartPage() {
     } catch (err: any) {
       toast.error(err.message || "Lỗi khi thanh toán");
       setCheckingOut(false);
-      setStep(0);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-4">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-20 pb-6 space-y-4">
 
         <ProgressBar step={step} />
 
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
-        ) : cartItems.length === 0 ? (
+        ) : (cartItems as any[]).length === 0 ? (
           /* Empty cart */
-          <div className="space-y-4">
-            {/* Cart header */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
-                    <ShoppingCart className="h-7 w-7 text-white" />
-                  </div>
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Giỏ hàng</h2>
-                  <p className="text-sm text-gray-500">0 sản phẩm</p>
-                </div>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 text-center">
+            <div className="relative w-24 h-24 mx-auto mb-5">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
+                <ShoppingCart className="h-12 w-12 text-white" />
               </div>
-              <div className="mt-4 flex items-center justify-center h-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                <ShoppingCart className="h-5 w-5 text-gray-400" />
-              </div>
+              <span className="absolute top-0 right-0 text-2xl">🎁</span>
+              <span className="absolute bottom-0 left-0 text-xl">🏷️</span>
+              <span className="absolute top-2 left-0 text-lg">📦</span>
             </div>
-
-            {/* Empty state */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-14 text-center">
-              <div className="relative w-24 h-24 mx-auto mb-5">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
-                  <ShoppingCart className="h-12 w-12 text-white" />
-                </div>
-                <span className="absolute top-0 right-0 text-2xl">🎁</span>
-                <span className="absolute bottom-0 left-0 text-xl">🏷️</span>
-                <span className="absolute top-2 left-0 text-lg">📦</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Giỏ hàng trống</h3>
-              <p className="text-gray-500 text-sm mb-6">Hãy thêm sản phẩm vào giỏ hàng để mua sắm</p>
-              <button
-                onClick={() => navigate("/catalog")}
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl text-white font-semibold text-base bg-gradient-to-r from-[#1e3a6e] to-teal-500 hover:opacity-90 transition-opacity shadow-lg shadow-teal-200"
-              >
-                <ShoppingCart className="h-5 w-5" /> Xem sản phẩm
-              </button>
-            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Giỏ hàng trống</h3>
+            <p className="text-gray-500 text-sm mb-6">Hãy thêm sản phẩm vào giỏ hàng để mua sắm</p>
+            <button
+              onClick={() => navigate("/catalog")}
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl text-white font-semibold text-base bg-gradient-to-r from-[#1e3a6e] to-teal-500 hover:opacity-90 transition-opacity shadow-lg shadow-teal-200"
+            >
+              <ShoppingCart className="h-5 w-5" /> Xem sản phẩm
+            </button>
           </div>
-        ) : (
+
+        ) : step === 0 ? (
+          /* ========== STEP 0: GIỎ HÀNG ========== */
           <div className="space-y-4">
             {/* Cart header */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
-                    <ShoppingCart className="h-7 w-7 text-white" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1e3a6e] to-teal-500 flex items-center justify-center">
+                      <ShoppingCart className="h-6 w-6 text-white" />
+                    </div>
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {(cartItems as any[]).length}
+                    </span>
                   </div>
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {(cartItems as any[]).length}
-                  </span>
+                  <div>
+                    <h2 className="text-base font-bold text-gray-900">Giỏ hàng</h2>
+                    <p className="text-xs text-gray-500">{(cartItems as any[]).length} sản phẩm</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Giỏ hàng</h2>
-                  <p className="text-sm text-gray-500">{(cartItems as any[]).length} sản phẩm</p>
-                </div>
+                <button
+                  onClick={() => clearCart.mutate({ email })}
+                  className="text-xs text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Xóa tất cả
+                </button>
               </div>
             </div>
 
             {/* Product list */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
-                <ClipboardList className="h-4 w-4 text-[#1e3a6e]" /> Danh sách sản phẩm ({(cartItems as any[]).length})
+                <ClipboardList className="h-4 w-4 text-[#1e3a6e]" /> Danh sách sản phẩm
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {(cartItems as any[]).map((item) => (
                   <div key={item.id} className="bg-gray-50 rounded-xl p-4">
                     <div className="flex gap-3">
@@ -347,61 +332,149 @@ export default function CartPage() {
                     <span>-{formatPrice(couponDiscount)}</span>
                   </div>
                 )}
-                {taxAmount > 0 && (
-                  <div className="flex justify-between text-gray-500">
-                    <span>{taxName} ({taxRate}%)</span>
-                    <span>+{formatPrice(taxAmount)}</span>
-                  </div>
-                )}
                 <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 flex justify-between items-center mt-2">
-                  <span className="font-bold text-gray-900">Tổng cộng</span>
-                  <span className="font-bold text-red-500 text-lg">{formatPrice(total)}</span>
+                  <span className="font-bold text-gray-900">Tạm tính</span>
+                  <span className="font-bold text-[#1e3a6e] text-lg">{formatPrice(afterDiscount)}</span>
                 </div>
+                <p className="text-xs text-gray-400 text-center">Thuế sẽ được tính ở bước tiếp theo</p>
               </div>
             </div>
 
-            {/* Coupon */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
-              <button
-                onClick={() => setShowCoupon(v => !v)}
-                className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors rounded-2xl"
-              >
-                <span className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-[#1e3a6e]" /> Mã giảm giá</span>
-                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showCoupon ? "rotate-180" : ""}`} />
-              </button>
-              {showCoupon && (
-                <div className="px-5 pb-5 space-y-3 border-t border-gray-100 pt-3">
-                  {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
-                      <span className="text-sm text-green-700 font-medium flex items-center gap-1.5">
-                        <Tag className="h-3.5 w-3.5" /> {appliedCoupon.code} ✓
-                      </span>
-                      <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>Hủy</button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Input placeholder="Nhập mã giảm giá" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="text-sm" />
-                      <Button size="sm" onClick={handleApplyCoupon} className="bg-[#1e3a6e] hover:bg-[#162d57] whitespace-nowrap">Áp dụng</Button>
-                    </div>
-                  )}
-                  {/* Referral code */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 flex items-center gap-1 mb-1.5">
-                      <Users2 className="h-3 w-3" /> Mã giới thiệu
-                    </label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Nhập mã giới thiệu" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} className="text-sm" disabled={appliedReferral} />
-                      {appliedReferral ? (
-                        <Button variant="outline" size="sm" onClick={() => { setAppliedReferral(false); setReferralCode(""); }}>Hủy</Button>
-                      ) : (
-                        <Button size="sm" onClick={() => { if (referralCode.trim()) applyReferral.mutate({ code: referralCode, refereeEmail: email }); }} disabled={!referralCode.trim() || applyReferral.isPending} className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap">
-                          {applyReferral.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Áp dụng"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+            {/* Coupon card */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                <Tag className="h-4 w-4 text-orange-500" /> Mã giảm giá
+              </h3>
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                  <span className="text-sm text-green-700 font-medium flex items-center gap-1.5">
+                    <Tag className="h-3.5 w-3.5" /> {appliedCoupon.code} ✓
+                  </span>
+                  <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>Hủy</button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input placeholder="Nhập mã giảm giá" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="text-sm" />
+                  <Button size="sm" onClick={handleApplyCoupon} className="bg-orange-500 hover:bg-orange-600 whitespace-nowrap text-white">Áp dụng</Button>
                 </div>
               )}
+            </div>
+
+            {/* Referral card */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+                <Users2 className="h-4 w-4 text-purple-500" /> Mã giới thiệu
+              </h3>
+              {appliedReferral ? (
+                <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+                  <span className="text-sm text-purple-700 font-medium flex items-center gap-1.5">
+                    <Users2 className="h-3.5 w-3.5" /> {referralCode} ✓
+                  </span>
+                  <button className="text-xs text-red-500 hover:text-red-700 font-medium" onClick={() => { setAppliedReferral(false); setReferralCode(""); }}>Hủy</button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input placeholder="Nhập mã giới thiệu" value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} className="text-sm" />
+                  <Button size="sm" onClick={() => { if (referralCode.trim()) applyReferral.mutate({ code: referralCode, refereeEmail: email }); }} disabled={!referralCode.trim() || applyReferral.isPending} className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap text-white">
+                    {applyReferral.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Áp dụng"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <label className="text-xs font-medium text-gray-500 mb-2 block">Ghi chú đơn hàng (tùy chọn)</label>
+              <textarea
+                placeholder="Nhập ghi chú..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 text-gray-800"
+              />
+            </div>
+
+            {/* Next step button */}
+            <button
+              onClick={() => setStep(1)}
+              className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 bg-gradient-to-r from-[#1e3a6e] to-teal-500 hover:opacity-90 transition-opacity shadow-lg shadow-teal-200"
+            >
+              Tiếp tục xác nhận <ArrowRight className="h-5 w-5" />
+            </button>
+
+            {/* Refresh */}
+            <button
+              onClick={() => utils.cart.list.invalidate({ email })}
+              className="w-full py-3 rounded-xl text-teal-600 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-teal-50 transition-colors border border-teal-200 bg-white"
+            >
+              <RefreshCw className="h-4 w-4" /> Cập nhật giá
+            </button>
+          </div>
+
+        ) : step === 1 ? (
+          /* ========== STEP 1: XÁC NHẬN + PHƯƠNG THỨC THANH TOÁN ========== */
+          <div className="space-y-4">
+            {/* Back button */}
+            <button onClick={() => setStep(0)} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Quay lại giỏ hàng
+            </button>
+
+            {/* Order summary */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-[#1e3a6e] to-teal-500 px-5 py-4 flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-white" />
+                <h3 className="text-sm font-semibold text-white">Xác nhận đơn hàng</h3>
+              </div>
+              <div className="p-5">
+                {/* Items summary */}
+                <div className="space-y-2 mb-4">
+                  {(cartItems as any[]).map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                      {item.product?.imageUrl ? (
+                        <img src={item.product.imageUrl} alt={item.product?.name} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <Package className="h-5 w-5 text-blue-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{item.product?.name}</p>
+                        {item.package && <p className="text-xs text-gray-500">{item.package.name}</p>}
+                      </div>
+                      <p className="text-sm font-bold text-gray-800 flex-shrink-0">
+                        {item.package ? formatPrice(parseFloat(item.package.price) * item.quantity) : "—"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Price breakdown */}
+                <div className="space-y-2 text-sm border-t border-gray-100 pt-3">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Tạm tính</span>
+                    <span className="font-medium">{formatPrice(subtotal)}</span>
+                  </div>
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Giảm giá ({appliedCoupon.code})</span>
+                      <span>-{formatPrice(couponDiscount)}</span>
+                    </div>
+                  )}
+                  {taxAmount > 0 && (
+                    <div className="flex justify-between text-gray-500">
+                      <span>{taxName} ({taxRate}%)</span>
+                      <span>+{formatPrice(taxAmount)}</span>
+                    </div>
+                  )}
+                  {payWithWallet && taxRate > 0 && (
+                    <p className="text-xs text-teal-600">✅ Miễn {taxName} khi thanh toán bằng số dư</p>
+                  )}
+                  <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 flex justify-between items-center mt-1">
+                    <span className="font-bold text-gray-900">Tổng cộng</span>
+                    <span className="font-bold text-red-500 text-lg">{formatPrice(total)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Payment method */}
@@ -443,7 +516,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-gray-900 text-sm">Banking / QR Code</p>
-                    <p className="text-xs text-gray-500">Thanh toán qua PayOS</p>
+                    <p className="text-xs text-gray-500">Thanh toán qua PayOS{taxRate > 0 ? ` (+ ${taxName} ${taxRate}%)` : ""}</p>
                   </div>
                   {!payWithWallet && (
                     <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
@@ -456,21 +529,6 @@ export default function CartPage() {
               {payWithWallet && walletBalance < total && (
                 <p className="text-red-500 text-xs mt-2 flex items-center gap-1">⚠️ Số dư không đủ. Cần thêm {formatPrice(total - walletBalance)}</p>
               )}
-              {payWithWallet && taxRate > 0 && (
-                <p className="text-xs text-teal-600 mt-2">✅ Miễn {taxName} khi thanh toán bằng số dư</p>
-              )}
-            </div>
-
-            {/* Notes */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <label className="text-xs font-medium text-gray-500 mb-2 block">Ghi chú đơn hàng (tùy chọn)</label>
-              <textarea
-                placeholder="Nhập ghi chú..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 text-gray-800"
-              />
             </div>
 
             {/* Checkout button */}
@@ -479,31 +537,25 @@ export default function CartPage() {
               disabled={checkingOut || (payWithWallet && walletBalance < total)}
               className="w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 bg-gradient-to-r from-[#1e3a6e] to-teal-500 hover:opacity-90 transition-opacity shadow-lg shadow-teal-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {checkingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <Wallet className="h-5 w-5" />}
-              Thanh toán đơn hàng
+              {checkingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : payWithWallet ? <Wallet className="h-5 w-5" /> : <span>🏦</span>}
+              {checkingOut ? "Đang xử lý..." : payWithWallet ? `Thanh toán bằng ví (${formatPrice(total)})` : `Thanh toán qua Banking (${formatPrice(total)})`}
             </button>
+          </div>
 
-            {/* Action buttons */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 space-y-2">
-              <button
-                onClick={() => navigate("/track-order")}
-                className="w-full py-3 rounded-xl text-[#1e3a6e] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors border border-gray-200"
-              >
-                <ClipboardList className="h-4 w-4" /> Xem đơn hàng đã đặt
-              </button>
-              <button
-                onClick={() => utils.cart.list.invalidate({ email })}
-                className="w-full py-3 rounded-xl text-teal-600 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-teal-50 transition-colors border border-teal-200"
-              >
-                <RefreshCw className="h-4 w-4" /> Cập nhật giá
-              </button>
-              <button
-                onClick={() => clearCart.mutate({ email })}
-                className="w-full py-3 rounded-xl text-gray-500 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors border border-gray-200"
-              >
-                <Trash2 className="h-4 w-4" /> Xóa tất cả
-              </button>
+        ) : (
+          /* ========== STEP 2: HOÀN TẤT ========== */
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-teal-500 flex items-center justify-center mx-auto mb-5">
+              <CheckCircle className="h-10 w-10 text-white" />
             </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Đặt hàng thành công!</h3>
+            <p className="text-gray-500 text-sm mb-6">Đơn hàng của bạn đang được xử lý</p>
+            <button
+              onClick={() => navigate("/track-order")}
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl text-white font-semibold bg-gradient-to-r from-[#1e3a6e] to-teal-500 hover:opacity-90 transition-opacity"
+            >
+              <ClipboardList className="h-5 w-5" /> Xem đơn hàng
+            </button>
           </div>
         )}
       </main>
