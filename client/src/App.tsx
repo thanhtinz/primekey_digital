@@ -79,6 +79,7 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const ReferralPage = lazy(() => import("./pages/ReferralPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
+const WalletManagement = lazy(() => import("./pages/WalletManagement"));
 import { CustomerGuard } from "./components/CustomerGuard";
 import { SupportWidget } from "./components/SupportWidget";
 // Public pages (no auth required)
@@ -86,6 +87,7 @@ const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const CouponStorePage = lazy(() => import("./pages/CouponStorePage"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
 const PublicFeedbacks = lazy(() => import("./pages/PublicFeedbacks"));
 const PaymentPage = lazy(() => import("./pages/PaymentPage"));
@@ -108,7 +110,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/verify-email"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/verify-email", "/reset-password"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -158,6 +160,7 @@ function Router() {
           <Route path="/coupons" component={() => <CouponStorePage />} />
           <Route path="/support" component={() => <SupportPage />} />
           <Route path="/verify-email" component={() => <VerifyEmailPage />} />
+          <Route path="/reset-password" component={() => <ResetPasswordPage />} />
         </Switch>
       </Suspense>
     );
@@ -238,6 +241,7 @@ function Router() {
         <Route path="/admin/referral-withdrawals" component={() => isAdmin ? <ReferralWithdrawalsAdmin /> : <ForbiddenPage />} />
         <Route path="/settings/banners" component={() => isAdmin ? <BannerSettings /> : <ForbiddenPage />} />
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
+        <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

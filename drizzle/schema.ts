@@ -172,7 +172,7 @@ export const invoices = mysqlTable("invoices", {
   discountCodeId: int("discountCodeId"),
   taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0"),
   totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
-  status: mysqlEnum("status", ["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]).default("CREATED"),
+  status: mysqlEnum("status", ["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED", "REFUNDED"]).default("CREATED"),
   reviewToken: varchar("reviewToken", { length: 64 }),
   reviewSubmitted: boolean("reviewSubmitted").default(false),
   paymentMethod: mysqlEnum("paymentMethod", ["PAYOS", "PAYPAL", "BANK_TRANSFER", "CASH"]),

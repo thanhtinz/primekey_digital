@@ -350,7 +350,7 @@ export const appRouter = router({
     manualTransition: protectedProcedure
       .input(z.object({
         id: z.number(),
-        newStatus: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]),
+        newStatus: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED", "REFUNDED"]),
         note: z.string().optional(),
         regeneratePaymentLink: z.boolean().optional(), // true = tạo lại QR PayOS
         origin: z.string().optional(), // window.location.origin từ frontend
@@ -459,6 +459,48 @@ export const appRouter = router({
         let emailSentOk = false;
         let emailError: string | undefined;
         let paymentLinkRegenOk = !!(paymentUrl && (input.regeneratePaymentLink || input.newStatus === "CREATED"));
+        // Auto-refund to wallet when status changes to REFUNDED
+        if (input.newStatus === "REFUNDED" && invoice.paidAt) {
+          try {
+            const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+            if (customer) {
+              const { getDb: getRefundDb } = await import("./db");
+              const { eq: eqR } = await import("drizzle-orm");
+              const { walletTransactions, customers: customersTable, customerNotifications } = await import("../drizzle/schema");
+              const refundDb = await getRefundDb();
+              const refundAmount = Number(invoice.totalAmount) || 0;
+              if (refundAmount > 0 && customer.email && refundDb) {
+                const currentBalance = Number(customer.walletBalance || 0);
+                const newBalance = currentBalance + refundAmount;
+                // Add wallet transaction for refund
+                await refundDb.insert(walletTransactions).values({
+                  customerEmail: customer.email,
+                  type: "refund",
+                  amount: String(refundAmount),
+                  balanceBefore: String(currentBalance),
+                  balanceAfter: String(newBalance),
+                  description: `Hoàn tiền đơn hàng ${invoice.invoiceNumber}`,
+                  invoiceId: invoice.id,
+                  status: "completed",
+                });
+                // Update customer wallet balance
+                await refundDb.update(customersTable).set({ walletBalance: String(newBalance) }).where(eqR(customersTable.id, customer.id));
+                // Create notification for customer
+                try {
+                  await refundDb.insert(customerNotifications).values({
+                    userId: ctx.user.id,
+                    customerEmail: customer.email!,
+                    title: "Hoàn tiền thành công",
+                    message: `Đơn hàng ${invoice.invoiceNumber} đã được hoàn tiền ${refundAmount.toLocaleString("vi-VN")} đ vào ví của bạn.`,
+                    type: "success",
+                  });
+                } catch {}
+              }
+            }
+          } catch (refundErr: any) {
+            console.error("[autoRefund] Error:", refundErr);
+          }
+        }
         const autoEmailStatuses = ["PAID", "SHIPPING", "WARRANTY", "CREATED"];
         if (autoEmailStatuses.includes(input.newStatus)) {
           try {
@@ -529,6 +571,36 @@ export const appRouter = router({
             emailError = emailErr?.message || "Gửi email thất bại";
             // Continue without failing - status change still succeeds
           }
+        }
+
+        // Auto-create customer notification for order status change
+        try {
+          const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+          if (customer?.email) {
+            const { getDb: getNotifDb } = await import("./db");
+            const { customerNotifications } = await import("../drizzle/schema");
+            const notifDb = await getNotifDb();
+            const statusNotifMap: Record<string, { title: string; message: string; type: "info" | "success" | "warning" | "order" | "payment" | "promo" }> = {
+              PAID: { title: "Thanh toán thành công", message: `Đơn hàng ${invoice.invoiceNumber} đã được xác nhận thanh toán.`, type: "payment" },
+              SHIPPING: { title: "Đang giao hàng", message: `Đơn hàng ${invoice.invoiceNumber} đang được giao đến bạn.`, type: "order" },
+              WARRANTY: { title: "Bảo hành kích hoạt", message: `Đơn hàng ${invoice.invoiceNumber} đã được kích hoạt bảo hành.`, type: "success" },
+              FAILED: { title: "Thanh toán thất bại", message: `Đơn hàng ${invoice.invoiceNumber} thanh toán không thành công.`, type: "warning" },
+              REFUNDED: { title: "Hoàn tiền thành công", message: `Đơn hàng ${invoice.invoiceNumber} đã được hoàn tiền.`, type: "success" },
+            };
+            const notifData = statusNotifMap[input.newStatus];
+            if (notifData && notifDb) {
+              await notifDb.insert(customerNotifications).values({
+                userId: ctx.user.id,
+                customerEmail: customer.email,
+                title: notifData.title,
+                message: notifData.message,
+                type: notifData.type,
+                link: `/my-account`,
+              });
+            }
+          }
+        } catch (notifErr) {
+          console.error("[manualTransition] Notification error:", notifErr);
         }
 
         // Log activity
@@ -5237,7 +5309,7 @@ export const appRouter = router({
         if (!gatewayConfig || !gatewayConfig.payosApiKey) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "PayOS chưa được cấu hình" });
         }
-        const orderCode = Date.now();
+        const orderCode = Date.now() % 9007199254740991; // unique numeric order code
         const paymentResult = await createPayOSPaymentLink(
           {
             apiKey: gatewayConfig.payosApiKey || "",
@@ -5247,7 +5319,7 @@ export const appRouter = router({
           {
             orderCode,
             amount: Math.round(input.amount),
-            description: `NAP VI ${session[0].email.split("@")[0].substring(0, 10)}`,
+            description: `NAP VI ${session[0].email.split("@")[0].substring(0, 10)}`.slice(0, 25),
             buyerName: session[0].name || session[0].email.split("@")[0],
             buyerEmail: session[0].email,
             buyerPhone: "",
@@ -5295,6 +5367,22 @@ export const appRouter = router({
           status: "completed",
         });
         return { success: true, newBalance };
+      }),
+
+    adminList: protectedProcedure
+      .input(z.object({ limit: z.number().default(100), offset: z.number().default(0), email: z.string().optional() }))
+      .query(async ({ input, ctx }) => {
+        const { getDb } = await import("./db");
+        const { desc, like, and } = await import("drizzle-orm");
+        const { walletTransactions } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const conditions = input.email ? [like(walletTransactions.customerEmail, `%${input.email}%`)] : [];
+        return drizzleDb.select().from(walletTransactions)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(desc(walletTransactions.createdAt))
+          .limit(input.limit)
+          .offset(input.offset);
       }),
   }),
 

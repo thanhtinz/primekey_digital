@@ -89,6 +89,24 @@ router.post("/payos", async (req, res) => {
             .where(eq(walletTransactions.payosOrderCode, parseInt(orderCode)));
 
           console.log(`[PayOS Webhook] Wallet updated: ${customerEmail} ${currentBalance} -> ${newBalance}`);
+
+          // Create customer notification for successful topup
+          try {
+            const { customerNotifications, users } = await import("../drizzle/schema");
+            const owner = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+            if (owner[0]) {
+              await drizzleDb.insert(customerNotifications).values({
+                userId: owner[0].id,
+                customerEmail,
+                title: "Nạp tiền thành công",
+                message: `Số dư ví của bạn đã được cộng ${amount.toLocaleString("vi-VN")}đ. Số dư hiện tại: ${newBalance.toLocaleString("vi-VN")}đ.`,
+                type: "payment",
+                link: "/wallet",
+              });
+            }
+          } catch (notifErr) {
+            console.error("[PayOS Webhook] Notification error:", notifErr);
+          }
         } else if (isFailed) {
           await drizzleDb
             .update(walletTransactions)

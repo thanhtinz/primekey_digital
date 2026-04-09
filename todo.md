@@ -1107,68 +1107,68 @@
 - [ ] Hoàn tiền tự động về số dư khi đơn lỗi hoặc admin chuyển trạng thái
 
 ### B. Header & Mobile Menu (theo ảnh tham khảo)
-- [ ] Header mobile: logo trái, search + gift + bell + avatar + hamburger phải
-- [ ] Dropdown search khi click icon search
-- [ ] Dropdown thông báo khi click bell (có badge số chưa đọc)
-- [ ] Dropdown user menu: avatar, tên, email, số dư, links (trang cá nhân, nạp tiền, đăng xuất)
-- [ ] Mobile drawer menu: avatar + số dư + danh mục sản phẩm + links
-- [ ] Header PC: logo + nav links + search bar + icons
-- [ ] Admin user thấy link "Vào Admin" trong user menu
+- [x] Header mobile: logo trái, search + gift + bell + avatar + hamburger phải
+- [x] Dropdown search khi click icon search
+- [x] Dropdown thông báo khi click bell (có badge số chưa đọc)
+- [x] Dropdown user menu: avatar, tên, email, số dư, links (trang cá nhân, nạp tiền, đăng xuất)
+- [x] Mobile drawer menu: avatar + số dư + danh mục sản phẩm + links
+- [x] Header PC: logo + nav links + search bar + icons
+- [x] Admin user thấy link "Vào Admin" trong user menu
 
 ### C. Footer Client (theo ảnh tham khảo)
-- [ ] Footer dark theme: logo + mô tả công ty
-- [ ] Section "Liên hệ": email, phone, địa chỉ (lấy từ settings)
-- [ ] Section "Liên kết": FAQ, Liên hệ, Tài liệu API
-- [ ] Copyright: "© 2026 All Rights Reserved by [TÊN] | Software By CMSNT.CO"
-- [ ] Nút scroll to top
+- [x] Footer dark theme: logo + mô tả công ty
+- [x] Section "Liên hệ": email, phone, địa chỉ (lấy từ settings)
+- [x] Section "Liên kết": FAQ, Liên hệ, Tài liệu API
+- [x] Copyright: "© 2026 All Rights Reserved by [TÊN] | Software By CMSNT.CO"
+- [x] Nút scroll to top
 
 ### D. ProductDetail Redesign
-- [ ] Layout PC: 2 cột cân đối (ảnh + thông tin trái, form mua + chi tiết phải)
-- [ ] Gom "Thông tin đặt hàng" (custom fields) vào form mua hàng (không tách card riêng)
-- [ ] Sửa lỗi: trường tùy chỉnh là thông tin đặt hàng, ghi chú là khác (đang bị lộn)
-- [ ] Tags sản phẩm: hiển thị tags thay vì bảo hành trong card sản phẩm
-- [ ] Giao diện feedback mới: rating overview (5.0 + bar chart) + danh sách reviews có avatar
-- [ ] Chọn phương thức thanh toán ngay trong trang sản phẩm (số dư / banking)
-- [ ] Nếu banking: tính thuế; nếu số dư: không tính thuế
+- [x] Layout PC: 2 cột cân đối (ảnh + thông tin trái, form mua + chi tiết phải)
+- [x] Gom "Thông tin đặt hàng" (custom fields) vào form mua hàng (không tách card riêng)
+- [x] Sửa lỗi: trường tùy chỉnh là thông tin đặt hàng, ghi chú là khác (đang bị lộn)
+- [x] Tags sản phẩm: hiển thị tags thay vì bảo hành trong card sản phẩm
+- [x] Giao diện feedback mới: rating overview (5.0 + bar chart) + danh sách reviews có avatar
+- [x] Chọn phương thức thanh toán ngay trong trang sản phẩm (số dư / banking)
+- [x] Nếu banking: tính thuế; nếu số dư: không tính thuế
 
 ### E. Hệ thống Thông báo
-- [ ] Schema: bảng customer_notifications (customerId, title, content, type, isRead, createdAt)
-- [ ] Procedures: getMyNotifications, markAsRead, markAllRead
-- [ ] Header bell icon với badge số chưa đọc
-- [ ] Dropdown thông báo (như ảnh 4)
+- [x] Schema: bảng customer_notifications (customerId, title, content, type, isRead, createdAt)
+- [x] Procedures: getMyNotifications, markAsRead, markAllRead
+- [x] Header bell icon với badge số chưa đọc
+- [x] Dropdown thông báo (như ảnh 4)
 - [ ] Tự động tạo thông báo khi: đặt hàng, thanh toán, nạp tiền, đơn hoàn thành
 
 ### F. Trang Kho Mã Giảm Giá
-- [ ] Trang /coupons: hiển thị các mã giảm giá đang active (như ảnh 8)
-- [ ] Card mã giảm giá: tên, mô tả, % giảm, hạn sử dụng, nút copy
-- [ ] Route + nav link trong header
+- [x] Trang /coupons: hiển thị các mã giảm giá đang active (như ảnh 8)
+- [x] Card mã giảm giá: tên, mô tả, % giảm, hạn sử dụng, nút copy
+- [x] Route + nav link trong header
 
 ### G. Hệ thống Ticket Hỗ trợ
-- [ ] Schema: bảng support_tickets (customerId, subject, status, priority, createdAt)
-- [ ] Schema: bảng ticket_messages (ticketId, senderId, senderType, content, createdAt)
-- [ ] Trang /support: tạo ticket, xem danh sách ticket của mình
-- [ ] Admin: xem và trả lời tickets
-- [ ] Widget hỗ trợ khách hàng (floating button góc phải)
+- [x] Schema: bảng support_tickets (customerId, subject, status, priority, createdAt)
+- [x] Schema: bảng ticket_messages (ticketId, senderId, senderType, content, createdAt)
+- [x] Trang /support: tạo ticket, xem danh sách ticket của mình
+- [x] Admin: xem và trả lời tickets
+- [x] Widget hỗ trợ khách hàng (floating button góc phải)
 
 ### H. Wallet & Dòng Tiền
-- [ ] Hiển thị số dư trong header user menu
+- [x] Hiển thị số dư trong header user menu
 - [ ] Trang /wallet: quản lý dòng tiền (lịch sử nạp, lịch sử chi tiêu)
-- [ ] Nạp tiền tự động: PayOS webhook → cộng số dư
-- [ ] Thanh toán số dư không tính thuế
-- [ ] CartPage: 2 hình thức (số dư / banking), banking tính thuế
-- [ ] ProductDetail: 2 hình thức thanh toán, banking tính thuế
+- [x] Nạp tiền tự động: PayOS webhook → cộng số dư
+- [x] Thanh toán số dư không tính thuế
+- [x] CartPage: 2 hình thức (số dư / banking), banking tính thuế
+- [x] ProductDetail: 2 hình thức thanh toán, banking tính thuế
 
 ### I. Tags Sản phẩm
-- [ ] Schema: bảng product_tags (id, name, slug, color)
-- [ ] Schema: bảng product_tag_relations (productId, tagId)
-- [ ] Admin: quản lý tags (tạo, sửa, xóa)
-- [ ] ProductDetail: hiển thị tags
+- [x] Schema: bảng product_tags (id, name, slug, color)
+- [x] Schema: bảng product_tag_relations (productId, tagId)
+- [x] Admin: quản lý tags (tạo, sửa, xóa)
+- [x] ProductDetail: hiển thị tags
 - [ ] ProductCatalog: filter theo tag
 
 ### J. Email & Auth
-- [ ] Email xác minh khi đăng ký (gửi link xác minh qua SMTP)
-- [ ] Trang /verify-email?token=xxx: xác minh email
-- [ ] Quên mật khẩu: gửi email reset (link /reset-password?token=xxx)
+- [x] Email xác minh khi đăng ký (gửi link xác minh qua SMTP)
+- [x] Trang /verify-email?token=xxx: xác minh email
+- [x] Quên mật khẩu: gửi email reset (link /reset-password?token=xxx)
 - [ ] Trang /reset-password: nhập mật khẩu mới
 
 ### K. Giới thiệu bạn bè cải tiến
@@ -1177,14 +1177,14 @@
 - [ ] Các đơn sau: khách nhập mã của ai thì người đó được thưởng
 
 ### L. Quản lý Đơn hàng User
-- [ ] Đổi tên "Tra cứu đơn hàng" thành "Quản lý đơn hàng"
-- [ ] Thiết kế lại UI: không hiện email lookup, hiện trực tiếp đơn hàng của user đã đăng nhập
+- [x] Đổi tên "Tra cứu đơn hàng" thành "Quản lý đơn hàng"
+- [x] Thiết kế lại UI: không hiện email lookup, hiện trực tiếp đơn hàng của user đã đăng nhập
 - [ ] Hiển thị trạng thái, chi tiết, nút xuất PDF
 
 ### M. Dọn dẹp Admin
-- [ ] Xóa trang tạo hóa đơn thủ công (đã làm)
+- [x] Xóa trang tạo hóa đơn thủ công (đã làm)
 - [ ] Xóa trang tạo bảo hành thủ công
-- [ ] Xóa trang hoàn tiền (chỉ cần chuyển trạng thái đơn)
+- [x] Xóa trang hoàn tiền (chỉ cần chuyển trạng thái đơn)
 - [ ] Hoàn tiền tự động về số dư khi admin chuyển trạng thái đơn sang "refunded"
 
 ## Phase: UI/UX Improvements (Apr 2026)
@@ -1239,3 +1239,22 @@
 - [x] Remove RefundPage from App.tsx
 - [x] Update DashboardLayout with proper admin menu items
 - [x] Add announcement router to appRouter
+
+## Phase: Auto-refund, Wallet, Notifications (Apr 8, 2026)
+- [x] Add REFUNDED to invoice status enum in schema.ts
+- [x] Run migration to apply REFUNDED status to DB
+- [x] Auto-refund logic in manualTransition: when status=REFUNDED, create walletTransaction + update customer balance
+- [x] Auto-create customer notification when order status changes (PAID/SHIPPING/WARRANTY/FAILED/REFUNDED)
+- [x] Auto-create customer notification when wallet topup succeeds (in PayOS webhook)
+- [x] WalletPage redesign with ClientHeader/ClientFooter, dark theme, stats, quick amounts
+- [x] wallet.adminList procedure for admin to view all wallet transactions
+- [x] WalletManagement admin page (/wallet-management) with search, credit form, stats
+- [x] Add /wallet-management route to App.tsx
+- [x] Tag filter in ProductCatalog (filter by tag buttons)
+- [x] productTags.list query for all tags
+- [x] Fix PayOS description max 25 chars for wallet topup
+- [x] Fix wallet topup orderCode to use modulo for uniqueness
+- [x] ResetPasswordPage (/reset-password?token=xxx) added to routes
+- [x] Add /reset-password route to App.tsx and ALWAYS_PUBLIC
+- [x] wallet.adminList added to wallet router
+todo updated

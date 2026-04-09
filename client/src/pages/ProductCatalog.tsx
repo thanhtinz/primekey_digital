@@ -31,7 +31,9 @@ export default function ProductCatalog() {
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filtersApplied, setFiltersApplied] = useState(false);
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const { data: productsRaw = [], isLoading } = trpc.products.listPublic.useQuery(undefined);
+  const { data: allTags = [] } = trpc.productTags.list.useQuery(undefined, { staleTime: 60_000 });
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
   const productIds = useMemo(() => (Array.isArray(productsRaw) ? productsRaw : []).map((p: any) => p.id), [productsRaw]);
   const { data: tagMappings = [] } = trpc.productTags.getForProducts.useQuery(
@@ -120,6 +122,14 @@ export default function ProductCatalog() {
       }
     }
 
+    // Tag filter
+    if (selectedTagId) {
+      const taggedProductIds = new Set(
+        (tagMappings as any[]).filter((m: any) => m.tag?.id === selectedTagId).map((m: any) => m.productId)
+      );
+      list = list.filter(p => taggedProductIds.has(p.id));
+    }
+
     // Sort
     switch (sortBy) {
       case "price_asc": list.sort((a, b) => getMinPrice(a) - getMinPrice(b)); break;
@@ -128,7 +138,7 @@ export default function ProductCatalog() {
       case "name_az": list.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
     return list;
-  }, [products, selectedParentCat, selectedChildCat, search, priceFrom, priceTo, sortBy, filtersApplied]);
+  }, [products, selectedParentCat, selectedChildCat, search, priceFrom, priceTo, sortBy, filtersApplied, selectedTagId, tagMappings]);
 
   const sortLabels: Record<SortOption, string> = {
     default: "Mặc định",
@@ -147,6 +157,7 @@ export default function ProductCatalog() {
     setPriceTo("");
     setSortBy("default");
     setSearch("");
+    setSelectedTagId(null);
     setFiltersApplied(false);
   };
 
@@ -254,7 +265,43 @@ export default function ProductCatalog() {
             </div>
           </div>
 
-          {/* Row 3: Actions */}
+          {/* Row 3: Tag Filter */}
+          {(allTags as any[]).length > 0 && (
+            <div className="mb-2">
+              <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Thẻ tag</label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setSelectedTagId(null)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    selectedTagId === null
+                      ? "bg-slate-700 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  Tất cả
+                </button>
+                {(allTags as any[]).map((tag: any) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => setSelectedTagId(selectedTagId === tag.id ? null : tag.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      selectedTagId === tag.id
+                        ? "text-white"
+                        : "text-gray-700 hover:opacity-80"
+                    }`}
+                    style={selectedTagId === tag.id
+                      ? { backgroundColor: tag.color || "#3b82f6" }
+                      : { backgroundColor: (tag.color || "#3b82f6") + "20", color: tag.color || "#3b82f6" }
+                    }
+                  >
+                    {tag.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Row 4: Actions */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleApplyFilter}
