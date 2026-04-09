@@ -299,8 +299,9 @@ export default function LandingPage() {
           return (
             <section className="px-4 mb-6">
               <div className="max-w-7xl mx-auto">
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth" ref={catScrollRef}
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth" ref={catScrollRef}
+                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                   {displayCats.map((cat: any) => (
                     <button
                       key={cat.id}
@@ -313,6 +314,7 @@ export default function LandingPage() {
                       <span className="text-sm font-semibold text-slate-800 whitespace-nowrap text-center">{cat.name}</span>
                     </button>
                   ))}
+                  </div>
                 </div>
               </div>
             </section>
