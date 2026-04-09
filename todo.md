@@ -1579,3 +1579,4 @@ todo updated
 - [x] Fix card danh mục con: icon lớn (w-14 h-14) + text bên dưới dạng card vuông (90px), không full-width
 - [x] Fix ProductDetail: card "Chi tiết gói" chỉ hiển thị notes (product.notes) dạng dropdown accordion
 - [x] Fix thông báo popup (AnnouncementBanner) hiện trên tất cả trang bằng cách đưa vào App.tsx
+- [x] Fix card danh mục con: layout ngang (icon trái + text phải), không còn dạng dọc cao

@@ -294,13 +294,12 @@ export default function LandingPage() {
                         <button
                           key={cat.id}
                           onClick={() => navigate(`/catalog?category=${cat.id}`)}
-                          className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
-                          style={{ width: "90px" }}
+                          className="flex-shrink-0 flex flex-row items-center gap-3 px-4 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
                         >
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center group-hover:scale-105 transition-transform">
-                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span className="text-3xl">{cat.icon}</span>) : <Package className="h-8 w-8 text-slate-400" />}
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span className="text-2xl">{cat.icon}</span>) : <Package className="h-7 w-7 text-slate-400" />}
                           </div>
-                          <span className="text-xs font-semibold text-slate-700 text-center line-clamp-2 leading-tight w-full">{cat.name}</span>
+                          <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">{cat.name}</span>
                         </button>
                       ))}
                     </div>
