@@ -12,6 +12,7 @@ import {
   Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
 
 // Helper to render category icon (emoji or FontAwesome)
@@ -66,6 +67,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   );
   // Check admin role from Manus OAuth session (users table, not customers table)
   const { data: adminUser } = trpc.auth.me.useQuery(undefined, { staleTime: 60_000, retry: false });
+  const { isEnabled } = useFeatureFlags();
 
   const walletBalance = walletData?.balance ?? 0;
   const unreadCount = notifData?.unreadCount ?? 0;
@@ -245,9 +247,9 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
 
             {/* Other nav links */}
             {[
-              { label: "Blog", href: "/blog", icon: BookOpen },
+              isEnabled("blog") ? { label: "Blog", href: "/blog", icon: BookOpen } : null,
               { label: "Hỗ trợ", href: "/support", icon: MessageSquare },
-            ].map(item => (
+            ].filter((item): item is { label: string; href: string; icon: any } => item !== null).map(item => (
               <button
                 key={item.href}
                 onClick={() => go(item.href)}
@@ -289,6 +291,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
             </button>
 
             {/* Gift / Coupons */}
+            {isEnabled("coupons") && (
             <button
               onClick={() => go("/coupons")}
               className="p-2.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
@@ -296,6 +299,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
             >
               <Gift className="h-5 w-5" />
             </button>
+            )}
 
             {/* Cart Icon */}
             {isLoggedIn && (
@@ -575,10 +579,10 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 { icon: Home, label: "Trang chủ", href: "/" },
                 { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
                 { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" },
-                { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" },
-                { icon: BookOpen, label: "Blog", href: "/blog" },
+                isEnabled("coupons") ? { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" } : null,
+                isEnabled("blog") ? { icon: BookOpen, label: "Blog", href: "/blog" } : null,
                 { icon: HelpCircle, label: "Hỗ trợ", href: "/support" },
-              ].map(link => (
+              ].filter((link): link is { icon: any; label: string; href: string } => link !== null).map(link => (
                 <button
                   key={link.href}
                   onClick={() => go(link.href)}

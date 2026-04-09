@@ -25,6 +25,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const PayOSSettings = lazy(() => import("./pages/PayOSSettings"));
 const PayPalSettings = lazy(() => import("./pages/PayPalSettings"));
 const SmtpSettings = lazy(() => import("./pages/SmtpSettings"));
+const FeatureSettings = lazy(() => import("./pages/FeatureSettings"));
 const FeedbacksAdmin = lazy(() => import("./pages/FeedbacksAdmin"));
 const EmailTemplateEditor = lazy(() => import("./pages/EmailTemplateEditor"));
 
@@ -221,6 +222,7 @@ function Router() {
         <Route path="/settings/payos" component={() => isAdmin ? <PayOSSettings /> : <ForbiddenPage />} />
         <Route path="/settings/paypal" component={() => isAdmin ? <PayPalSettings /> : <ForbiddenPage />} />
         <Route path="/settings/smtp" component={() => isAdmin ? <SmtpSettings /> : <ForbiddenPage />} />
+        <Route path="/settings/features" component={() => isAdmin ? <FeatureSettings /> : <ForbiddenPage />} />
         <Route path="/settings/email-templates" component={() => isAdmin ? <EmailTemplateEditor /> : <ForbiddenPage />} />
         <Route path="/settings/warranty" component={() => isAdmin ? <WarrantySettingsPage /> : <ForbiddenPage />} />
         <Route path="/settings/flash-sale" component={() => isAdmin ? <FlashSaleSettings /> : <ForbiddenPage />} />

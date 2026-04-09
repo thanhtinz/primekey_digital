@@ -90,6 +90,7 @@ const adminNavGroups = [
       { label: "Lịch Sử HT", href: "/activity-log", icon: History },
       { label: "Sao Lưu", href: "/backup", icon: Database },
       { label: "Cài Đặt", href: "/settings", icon: Settings },
+      { label: "Tính Năng", href: "/settings/features", icon: Zap },
       { label: "SMTP", href: "/settings/smtp", icon: Mail },
       { label: "Mẫu Email", href: "/settings/email-templates", icon: MessageSquare },
       { label: "Telegram", href: "/settings/telegram", icon: Send },

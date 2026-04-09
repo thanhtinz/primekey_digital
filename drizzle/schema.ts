@@ -909,3 +909,15 @@ export const blogPosts = mysqlTable("blog_posts", {
   updatedAt: timestamp("updatedAt_bp").defaultNow().onUpdateNow().notNull(),
 });
 export type BlogPost = typeof blogPosts.$inferSelect;
+
+// ─── Feature Flags - bật/tắt tính năng client ────────────────────────────────
+export const featureFlags = mysqlTable("feature_flags", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  label: varchar("label", { length: 200 }).notNull(),
+  description: text("description"),
+  enabled: boolean("enabled").default(true).notNull(),
+  category: varchar("category", { length: 100 }).default("general"),
+  updatedAt: timestamp("updatedAt_ff").defaultNow().onUpdateNow().notNull(),
+});
+export type FeatureFlag = typeof featureFlags.$inferSelect;

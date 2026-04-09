@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 // TwoFASection component
 function TwoFASection({ token }: { token: string }) {
@@ -415,12 +416,13 @@ export default function MyAccount() {
   };
   const isAdmin = (customer as any)?.role === "admin";
 
+  const { isEnabled: isFeatureEnabled } = useFeatureFlags();
   const tabs: { id: TabType; label: string; icon: any; badge?: number }[] = [
     { id: "overview", label: "Tổng quan", icon: BarChart3 },
     { id: "orders", label: "Đơn hàng", icon: Package, badge: pendingOrders > 0 ? pendingOrders : undefined },
-    { id: "points", label: "Điểm", icon: Star },
-    { id: "warranty", label: "Bảo hành", icon: Shield },
-    { id: "referral", label: "Giới thiệu", icon: Users2 },
+    ...(isFeatureEnabled("loyalty_points") ? [{ id: "points" as TabType, label: "Điểm", icon: Star }] : []),
+    ...(isFeatureEnabled("warranty") ? [{ id: "warranty" as TabType, label: "Bảo hành", icon: Shield }] : []),
+    ...(isFeatureEnabled("referral") ? [{ id: "referral" as TabType, label: "Giới thiệu", icon: Users2 }] : []),
     { id: "profile", label: "Hồ sơ", icon: User },
   ];
 
@@ -582,30 +584,6 @@ export default function MyAccount() {
                 </button>
               </div>
             )}
-
-            {/* Referral card */}
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                  <Gift className="h-4.5 w-4.5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-purple-800">Giới thiệu bạn bè</p>
-                  <p className="text-xs text-purple-600">Nhận thưởng khi bạn bè đăng ký</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-white border border-purple-200 rounded-lg px-3 py-2 font-mono text-sm font-bold text-purple-700 tracking-wider">
-                  {referralCode}
-                </div>
-                <button
-                  onClick={copyReferralCode}
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-                >
-                  <Copy className="h-3.5 w-3.5" /> Sao chép
-                </button>
-              </div>
-            </div>
 
             {/* Recent orders */}
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">

@@ -2416,6 +2416,61 @@ export const appRouter = router({
       }),
   }),
 
+  // Feature Flags - bật/tắt tính năng client
+  featureFlags: router({
+    // Public: client lấy danh sách feature flags
+    getAll: publicProcedure.query(async () => {
+      const { featureFlags } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      // Seed default flags if empty
+      const existing = await drizzleDb.select().from(featureFlags);
+      if (existing.length === 0) {
+        const defaults = [
+          { key: "points", label: "Điểm thưởng", description: "Hệ thống tích điểm và đổi thưởng cho khách hàng", enabled: true, category: "loyalty" },
+          { key: "warranty", label: "Bảo hành", description: "Tính năng bảo hành sản phẩm và yêu cầu bảo hành", enabled: true, category: "service" },
+          { key: "referral", label: "Giới thiệu bạn bè", description: "Chương trình giới thiệu bạn bè và hoa hồng", enabled: true, category: "marketing" },
+          { key: "flash_sale", label: "Flash Sale", description: "Tính năng flash sale và đếm ngược khuyến mãi", enabled: true, category: "marketing" },
+          { key: "wishlist", label: "Yêu thích", description: "Danh sách sản phẩm yêu thích của khách hàng", enabled: true, category: "ux" },
+          { key: "leaderboard", label: "Bảng xếp hạng", description: "Bảng xếp hạng khách hàng mua nhiều nhất", enabled: true, category: "gamification" },
+          { key: "blog", label: "Blog / Tin tức", description: "Trang blog và bài viết tin tức", enabled: true, category: "content" },
+          { key: "coupon", label: "Mã giảm giá", description: "Kho mã giảm giá và voucher", enabled: true, category: "marketing" },
+          { key: "wallet", label: "Ví điện tử", description: "Ví điện tử và nạp tiền", enabled: true, category: "payment" },
+          { key: "review", label: "Đánh giá sản phẩm", description: "Hệ thống đánh giá và nhận xét sản phẩm", enabled: true, category: "ux" },
+        ];
+        await drizzleDb.insert(featureFlags).values(defaults);
+        return drizzleDb.select().from(featureFlags);
+      }
+      return existing;
+    }),
+    // Admin: cập nhật trạng thái bật/tắt
+    update: protectedProcedure
+      .input(z.object({ key: z.string(), enabled: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const { featureFlags } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB not available");
+        await drizzleDb.update(featureFlags).set({ enabled: input.enabled }).where(eq(featureFlags.key, input.key));
+        return { success: true };
+      }),
+    // Admin: bulk update
+    bulkUpdate: protectedProcedure
+      .input(z.array(z.object({ key: z.string(), enabled: z.boolean() })))
+      .mutation(async ({ input }) => {
+        const { featureFlags } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB not available");
+        for (const item of input) {
+          await drizzleDb.update(featureFlags).set({ enabled: item.enabled }).where(eq(featureFlags.key, item.key));
+        }
+        return { success: true };
+      }),
+  }),
   // PDF Export
   pdf: router({
     exportInvoice: protectedProcedure
