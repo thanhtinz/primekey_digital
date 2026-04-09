@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   ArrowLeft, Package, CheckCircle, Truck, Shield, Clock, XCircle,
   RefreshCw, CreditCard, FileText, Download, Copy, Check,
@@ -244,8 +244,8 @@ export default function OrderDetailPage() {
                 const isActive = stepNum === currentStep;
                 const isDone = stepNum < currentStep;
                 return (
-                  <>
-                    <div key={s.key} className="flex flex-col items-center flex-shrink-0">
+                  <React.Fragment key={s.key}>
+                    <div className="flex flex-col items-center flex-shrink-0">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
                         isDone ? "bg-teal-500 border-teal-500" :
                         isActive ? "bg-[#1e3a6e] border-[#1e3a6e]" :
@@ -260,7 +260,7 @@ export default function OrderDetailPage() {
                     {i < STEPS.length - 1 && (
                       <div className={`flex-1 h-0.5 mx-2 rounded-full self-start mt-5 ${isDone ? "bg-teal-400" : "bg-gray-200"}`} />
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </div>
