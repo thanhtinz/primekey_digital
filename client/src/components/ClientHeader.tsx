@@ -454,7 +454,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                     {isAdmin && (
                       <div className="border-t border-white/10 py-1">
                         <button
-                          onClick={() => go("/dashboard")}
+                          onClick={() => { window.location.href = "/login"; }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-amber-400 hover:text-amber-300 hover:bg-amber-500/5 transition-colors text-sm"
                         >
                           <Settings className="h-4 w-4 flex-shrink-0" />
@@ -655,7 +655,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                     <p className="text-xs font-semibold text-amber-500/50 uppercase tracking-wider">Quản trị</p>
                   </div>
                   <button
-                    onClick={() => go("/dashboard")}
+                    onClick={() => { window.location.href = "/login"; }}
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-amber-500/8 transition-all text-sm"
                   >
                     <Settings className="h-5 w-5" />

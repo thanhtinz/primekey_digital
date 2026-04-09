@@ -1346,3 +1346,7 @@ todo updated
 - [x] Gộp tab Bảo mật vào tab Hồ sơ trong MyAccount - redesign 3 sections đẹp (Hồ sơ, Bảo mật, Tài khoản)
 - [x] Bỏ breadcrumb "Trang chủ > Sản phẩm" trong trang ProductCatalog
 - [x] TypeScript: 0 errors, 53/53 tests passed
+
+## Phase: Fix Admin Link Router (Apr 9, 2026 - Session 11)
+- [x] Fix dropdown icon user: link Admin trỏ đúng về /login (admin panel) - dùng window.location.href
+- [x] Cả 2 chỗ (desktop dropdown + hamburger menu) đều được sửa
