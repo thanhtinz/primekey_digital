@@ -238,9 +238,9 @@ export default function ProductDetail() {
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
 
-        <div className="max-w-6xl mx-auto px-4 pt-4 pb-6">
+        <div className="max-w-6xl mx-auto px-4 pt-3 pb-4">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-white/70 mb-4 flex-wrap">
+          <nav className="flex items-center gap-1.5 text-xs text-white/70 mb-3 flex-wrap">
             <button onClick={() => setLocation("/")} className="hover:text-white transition-colors">Trang chủ</button>
             <ChevronRight className="w-3 h-3" />
             <button onClick={() => setLocation("/catalog")} className="hover:text-white transition-colors">Sản phẩm</button>
@@ -274,26 +274,28 @@ export default function ProductDetail() {
       </div>
 
       {/* ===== PRODUCT INFO SECTION ===== */}
-      <div className="max-w-6xl mx-auto px-4 -mt-2 relative z-10 pb-28">
+      <div className="max-w-6xl mx-auto px-4 -mt-2 relative z-10 pb-8">
         {/* Responsive layout: flex on desktop, block on mobile */}
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* LEFT: Product image (desktop only) */}
-          <div className="hidden md:flex flex-shrink-0 w-[420px] bg-white rounded-2xl shadow-xl overflow-hidden aspect-square items-center justify-center p-4 border border-gray-100 sticky top-20">
-            {(product as any).imageUrl ? (
-              <img
-                src={(product as any).imageUrl}
-                alt={product.name}
-                className="w-full h-full object-contain rounded-xl"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center">
-                <Package className="w-24 h-24 text-gray-300" />
-              </div>
-            )}
+          <div className="hidden md:block flex-shrink-0 w-[320px] sticky top-24">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center justify-center">
+              {(product as any).imageUrl ? (
+                <img
+                  src={(product as any).imageUrl}
+                  alt={product.name}
+                  className="w-full object-contain rounded-xl max-h-[300px]"
+                />
+              ) : (
+                <div className="w-full h-[260px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center">
+                  <Package className="w-24 h-24 text-gray-300" />
+                </div>
+              )}
+            </div>
           </div>
           {/* RIGHT: All product info, order form, reviews */}
           <div className="flex-1 min-w-0 space-y-3">
-        <div className="bg-white rounded-t-3xl shadow-sm border border-gray-100 px-5 pt-5 pb-4">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 pt-5 pb-4">
           {/* Product name + action buttons */}
           <div className="flex items-start justify-between gap-3 mb-3">
             <h1 className="text-xl font-bold text-gray-900 leading-tight flex-1">{product.name}</h1>
@@ -365,7 +367,7 @@ export default function ProductDetail() {
               ))}
             </div>
           )}
-        </div>
+            </div>
 
         {/* ===== PACKAGE LIST - Card style matching reference ===== */}
         {packages.length > 0 && (
