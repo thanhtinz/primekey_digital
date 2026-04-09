@@ -82,6 +82,7 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const ReferralPage = lazy(() => import("./pages/ReferralPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
+const WalletHistoryPage = lazy(() => import("./pages/WalletHistoryPage"));
 const WalletManagement = lazy(() => import("./pages/WalletManagement"));
 import { CustomerGuard } from "./components/CustomerGuard";
 import { SupportWidget } from "./components/SupportWidget";
@@ -113,7 +114,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/verify-email", "/reset-password"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -162,6 +163,7 @@ function Router() {
           <Route path="/cart" component={() => <CustomerGuard><CartPage /></CustomerGuard>} />
           <Route path="/referral" component={() => <CustomerGuard><ReferralPage /></CustomerGuard>} />
           <Route path="/wallet" component={() => <CustomerGuard><WalletPage /></CustomerGuard>} />
+          <Route path="/wallet-history" component={() => <CustomerGuard><WalletHistoryPage /></CustomerGuard>} />
           <Route path="/coupons" component={() => <CouponStorePage />} />
           <Route path="/support" component={() => <SupportPage />} />
           <Route path="/verify-email" component={() => <VerifyEmailPage />} />

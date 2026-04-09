@@ -474,37 +474,7 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Custom Fields - User Input Required */}
-        {(customFields as any[]).length > 0 && (
-          <div className="bg-white rounded-2xl p-4 mt-3 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <Info className="w-4 h-4 text-blue-600" />
-              Thông tin cần điền
-            </h3>
-            <p className="text-xs text-gray-400 mb-3">Vui lòng điền đầy đủ thông tin trước khi đặt hàng</p>
-            <div className="space-y-3">
-              {(customFields as any[]).map((f: any) => (
-                <div key={f.id}>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">
-                    {f.fieldName} <span className="text-red-500">*</span>
-                  </label>
-                  {f.fieldValue ? (
-                    <p className="text-xs text-gray-400 mb-1 italic">Gợi ý: {f.fieldValue}</p>
-                  ) : null}
-                  <Input
-                    placeholder={`Nhập ${f.fieldName.toLowerCase()}...`}
-                    value={customFieldInputs[f.fieldName] || ""}
-                    onChange={(e) => setCustomFieldInputs(prev => ({ ...prev, [f.fieldName]: e.target.value }))}
-                    className={`text-sm ${showCustomFieldError && !customFieldInputs[f.fieldName] ? "border-red-400 ring-1 ring-red-200" : ""}`}
-                  />
-                  {showCustomFieldError && !customFieldInputs[f.fieldName] && (
-                    <p className="text-xs text-red-500 mt-0.5">Vui lòng nhập {f.fieldName.toLowerCase()}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Custom Fields moved into right-column order info card */}
 
         {/* Contact info */}
         {((publicInfo as any)?.companyPhone || (publicInfo as any)?.companyEmail) && (
@@ -728,10 +698,38 @@ export default function ProductDetail() {
               </div>
             </div>
           )}
-          {/* Coupon + Notes section */}
+          {/* Order Info: custom fields + coupon + payment + notes */}
           {isLoggedIn && (
             <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-gray-700">Thông tin đặt hàng</h4>
+            <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <Info className="w-4 h-4 text-blue-600" />
+              Thông tin đặt hàng
+            </h4>
+            {/* Custom Fields - merged here */}
+            {(customFields as any[]).length > 0 && (
+              <div className="space-y-3 pb-3 border-b border-gray-100">
+                <p className="text-xs text-gray-400">Vui lòng điền đầy đủ thông tin đặt hàng bên dưới</p>
+                {(customFields as any[]).map((f: any) => (
+                  <div key={f.id}>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      {f.fieldName} <span className="text-red-500">*</span>
+                    </label>
+                    {f.fieldValue ? (
+                      <p className="text-xs text-gray-400 mb-1 italic">Gợi ý: {f.fieldValue}</p>
+                    ) : null}
+                    <Input
+                      placeholder={`Nhập ${f.fieldName.toLowerCase()}...`}
+                      value={customFieldInputs[f.fieldName] || ""}
+                      onChange={(e) => setCustomFieldInputs(prev => ({ ...prev, [f.fieldName]: e.target.value }))}
+                      className={`text-sm ${showCustomFieldError && !customFieldInputs[f.fieldName] ? "border-red-400 ring-1 ring-red-200" : ""}`}
+                    />
+                    {showCustomFieldError && !customFieldInputs[f.fieldName] && (
+                      <p className="text-xs text-red-500 mt-0.5">Vui lòng nhập {f.fieldName.toLowerCase()}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
             {/* Coupon */}
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Mã giảm giá</label>

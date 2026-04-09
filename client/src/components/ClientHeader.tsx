@@ -12,6 +12,14 @@ import {
   Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
+
+// Helper to render category icon (emoji or FontAwesome)
+function CatIcon({ icon, className = "" }: { icon?: string | null; className?: string }) {
+  if (!icon) return null;
+  if (isFontAwesomeIcon(icon)) return <FontAwesomeIcon iconClass={icon} className={className} />;
+  return <span className="text-base leading-none">{icon}</span>;
+}
 
 interface ClientHeaderProps {
   maxWidth?: string;
@@ -183,7 +191,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                           className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors ${hoveredParent === cat.id ? "bg-white/8 text-white" : "text-white/70 hover:text-white hover:bg-white/5"}`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            {cat.icon && <span className="text-base flex-shrink-0">{cat.icon}</span>}
+                            <CatIcon icon={cat.icon} className="text-base flex-shrink-0" />
                             <span className="truncate">{cat.name}</span>
                           </div>
                           {children.length > 0 && <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 opacity-40" />}
@@ -213,7 +221,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                           onClick={() => go(`/catalog?category=${child.id}`)}
                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
                         >
-                          {child.icon && <span className="text-sm">{child.icon}</span>}
+                          <CatIcon icon={child.icon} className="text-sm" />
                           <span>{child.name}</span>
                         </button>
                       ))}
@@ -402,7 +410,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                         { icon: User, label: "Trang cá nhân", href: "/my-account" },
                         { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
                         { icon: ShoppingCart, label: "Đơn hàng", href: "/my-account?tab=orders" },
-                        { icon: Wallet, label: "Lịch sử dòng tiền", href: "/my-account?tab=wallet" },
+                        { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" },
                       ].map(item => (
                         <button
                           key={item.href}
@@ -538,6 +546,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
               {[
                 { icon: Home, label: "Trang chủ", href: "/" },
                 { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
+                { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" },
                 { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" },
                 { icon: BookOpen, label: "Blog", href: "/blog" },
                 { icon: HelpCircle, label: "Hỗ trợ", href: "/support" },
@@ -574,7 +583,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                           }}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/8 transition-all text-sm"
                         >
-                          {cat.icon && <span className="text-base">{cat.icon}</span>}
+                          <CatIcon icon={cat.icon} className="text-base" />
                           <span className="flex-1 text-left">{cat.name}</span>
                           {children.length > 0 ? (
                             <ChevronDown className={`h-4 w-4 opacity-40 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
@@ -598,7 +607,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                                 onClick={() => go(`/catalog?category=${child.id}`)}
                                 className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-all text-sm"
                               >
-                                {child.icon && <span className="text-sm">{child.icon}</span>}
+                                <CatIcon icon={child.icon} className="text-sm" />
                                 <span>{child.name}</span>
                               </button>
                             ))}

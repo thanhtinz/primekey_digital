@@ -103,14 +103,14 @@ export default function SupportPage() {
       <ClientHeader />
       <div className="flex-1 pt-14">
         {/* Hero */}
-        <div className="bg-gradient-to-b from-[#111] to-[#0a0a0a] border-b border-gray-100 py-10 px-4">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 border-b border-blue-800 py-10 px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-4">
-              <Headphones className="h-4 w-4 text-blue-400" />
-              <span className="text-sm text-blue-400 font-medium">Hỗ trợ 24/7</span>
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-4">
+              <Headphones className="h-4 w-4 text-white" />
+              <span className="text-sm text-white font-medium">Hỗ trợ 24/7</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">Trung Tâm Hỗ Trợ</h1>
-            <p className="text-gray-500 text-base max-w-xl mx-auto">
+            <h1 className="text-3xl md:text-4xl font-bold mb-3 text-white">Trung Tâm Hỗ Trợ</h1>
+            <p className="text-blue-100 text-base max-w-xl mx-auto">
               Chúng tôi luôn sẵn sàng hỗ trợ bạn. Tìm câu trả lời hoặc gửi yêu cầu hỗ trợ.
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function SupportPage() {
                   <ch.icon className={`h-5 w-5 ${ch.color}`} />
                 </div>
                 <div>
-                  <p className="font-semibold text-white text-sm">{ch.label}</p>
+                  <p className="font-semibold text-gray-900 text-sm">{ch.label}</p>
                   <p className="text-xs text-gray-400">{ch.desc}</p>
                 </div>
               </div>
@@ -179,7 +179,7 @@ export default function SupportPage() {
                           onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                           placeholder="email@example.com"
                           required
-                          className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                         />
                       </div>
                       <div>
@@ -189,7 +189,7 @@ export default function SupportPage() {
                           value={form.name}
                           onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                           placeholder="Tên của bạn"
-                          className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                         />
                       </div>
                     </div>
@@ -207,7 +207,7 @@ export default function SupportPage() {
                       onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
                       placeholder="Mô tả ngắn gọn vấn đề của bạn"
                       required
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                     />
                   </div>
                   <div>
@@ -230,7 +230,7 @@ export default function SupportPage() {
                       placeholder="Mô tả chi tiết vấn đề của bạn..."
                       required
                       rows={4}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors resize-none"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                     />
                   </div>
                   <button

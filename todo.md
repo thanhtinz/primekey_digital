@@ -1260,24 +1260,24 @@
 todo updated
 
 ## Phase: UX/UI Overhaul (Apr 9, 2026)
-- [ ] ClientHeader: dropdown danh mục lớn → danh mục nhỏ khi hover/click
-- [ ] ClientHeader: nút đăng xuất trong menu khi đã login
-- [ ] ClientHeader: bỏ "Bảng điều khiển" khỏi avatar dropdown
-- [ ] ClientHeader: hiệu ứng bounce/pulse cho icon thông báo và giỏ hàng
-- [ ] ClientHeader: sửa router cho tất cả menu items (không nhảy về trang chính)
-- [ ] Background trắng cho tất cả trang client (SupportPage, CouponStorePage)
-- [ ] ProductDetail: form đánh giá màu trắng
-- [ ] WalletPage: redesign theo ảnh mẫu (trắng, clean, QR nạp tiền)
-- [ ] WalletPage: dùng ClientHeader + ClientFooter chung
-- [ ] DashboardLayout sidebar: fix scroll trên mobile để xem đầy đủ menu
-- [ ] MyAccount: hiển thị số dư ví
-- [ ] MyAccount: lịch sử đăng nhập (login history)
-- [ ] MyAccount: bảo mật 2FA qua Google Authenticator (QR code setup)
-- [ ] MyAccount: OTP qua Email toggle
-- [ ] MyAccount: thông báo đăng nhập toggle
-- [ ] Backend: customer login history table + router
-- [ ] Backend: 2FA TOTP setup/verify procedures
-- [ ] Backend: wallet transaction history router cho user
-- [ ] FAQPage → BlogPage: danh mục bài viết, editor bài viết, hiển thị blog chuyên nghiệp
-- [ ] Blog: admin tạo/sửa/xóa bài viết với danh mục
-- [ ] Blog: trang public /blog với danh mục, tìm kiếm
+- [x] ClientHeader: dropdown danh mục lớn → danh mục nhỏ khi hover/click
+- [x] ClientHeader: nút đăng xuất trong menu khi đã login
+- [x] ClientHeader: bỏ "Bảng điều khiển" khỏi avatar dropdown
+- [x] ClientHeader: hiệu ứng bounce/pulse cho icon thông báo và giỏ hàng
+- [x] ClientHeader: sửa router cho tất cả menu items (không nhảy về trang chính)
+- [x] Background trắng cho tất cả trang client (SupportPage, CouponStorePage)
+- [x] ProductDetail: form đánh giá màu trắng
+- [x] WalletPage: redesign theo ảnh mẫu (trắng, clean, QR nạp tiền)
+- [x] WalletPage: dùng ClientHeader + ClientFooter chung
+- [x] DashboardLayout sidebar: fix scroll trên mobile để xem đầy đủ menu
+- [x] MyAccount: hiển thị số dư ví
+- [x] MyAccount: lịch sử đăng nhập (login history)
+- [x] MyAccount: bảo mật 2FA qua Google Authenticator (QR code setup)
+- [x] MyAccount: OTP qua Email toggle
+- [x] MyAccount: thông báo đăng nhập toggle
+- [x] Backend: customer login history table + router
+- [x] Backend: 2FA TOTP setup/verify procedures
+- [x] Backend: wallet transaction history router cho user
+- [x] FAQPage → BlogPage: danh mục bài viết, editor bài viết, hiển thị blog chuyên nghiệp
+- [x] Blog: admin tạo/sửa/xóa bài viết với danh mục
+- [x] Blog: trang public /blog với danh mục, tìm kiếm

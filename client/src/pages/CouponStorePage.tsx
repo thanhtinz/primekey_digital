@@ -150,20 +150,20 @@ export default function CouponStorePage() {
       <ClientHeader />
       <div className="flex-1 pt-14">
         {/* Hero */}
-        <div className="bg-gradient-to-b from-[#111] to-[#0a0a0a] border-b border-gray-100 py-10 px-4">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 border-b border-blue-800 py-10 px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-4">
-              <Gift className="h-4 w-4 text-blue-400" />
-              <span className="text-sm text-blue-400 font-medium">Ưu đãi đặc biệt</span>
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-4">
+              <Gift className="h-4 w-4 text-white" />
+              <span className="text-sm text-white font-medium">Ưu đãi đặc biệt</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">Kho Mã Giảm Giá</h1>
-            <p className="text-gray-500 text-base max-w-xl mx-auto">
+            <h1 className="text-3xl md:text-4xl font-bold mb-3 text-white">Kho Mã Giảm Giá</h1>
+            <p className="text-blue-100 text-base max-w-xl mx-auto">
               Sao chép mã và áp dụng khi thanh toán để nhận ưu đãi hấp dẫn
             </p>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-              <span className="text-gray-400">Đang có</span>
-              <span className="text-blue-400 font-bold text-lg">{activeCoupons.length}</span>
-              <span className="text-gray-400">mã đang hoạt động</span>
+              <span className="text-blue-100">Đang có</span>
+              <span className="text-white font-bold text-lg">{activeCoupons.length}</span>
+              <span className="text-blue-100">mã đang hoạt động</span>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function CouponStorePage() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm mã giảm giá..."
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             {/* Type filter */}
@@ -192,7 +192,7 @@ export default function CouponStorePage() {
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key as any)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${filter === f.key ? "bg-blue-600 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-white"}`}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${filter === f.key ? "bg-blue-600 text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}
                 >
                   {f.label}
                 </button>

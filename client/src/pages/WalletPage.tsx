@@ -111,15 +111,6 @@ export default function WalletPage() {
       <main className="flex-1 pt-14">
         <div className="max-w-3xl mx-auto px-4 py-8">
 
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-            <Link href="/" className="hover:text-gray-700 transition-colors">Trang chủ</Link>
-            <span>/</span>
-            <Link href="/my-account" className="hover:text-gray-700 transition-colors">Tài khoản</Link>
-            <span>/</span>
-            <span className="text-gray-700 font-medium">Ví điện tử</span>
-          </div>
-
           {/* Balance Card */}
           <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-6 mb-6 text-white shadow-lg">
             <div className="absolute inset-0 opacity-10">
