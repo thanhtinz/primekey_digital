@@ -1581,3 +1581,4 @@ todo updated
 - [x] Fix thông báo popup (AnnouncementBanner) hiện trên tất cả trang bằng cách đưa vào App.tsx
 - [x] Fix card danh mục con: layout ngang (icon trái + text phải), không còn dạng dọc cao
 - [x] Fix AnnouncementInline banner không hiện trên mobile: sửa class trùng lặp mx-4 và mx-auto
+- [x] Fix AnnouncementInline và AnnouncementBanner popup: banner inline reset mỗi ngày (không lưu mãi mãi), popup snooze 2h theo session

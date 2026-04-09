@@ -2,16 +2,25 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { X, Bell } from "@/components/Icon";
 
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10); // "2026-04-09"
+}
+
 function useAnnouncements() {
   const { data: announcements = [] } = trpc.announcement.listPublic.useQuery(undefined, {
     staleTime: 60_000,
   });
 
+  // Banner inline: dismissed per day (reset every new day)
   const [dismissed, setDismissed] = useState<number[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem("dismissed_announcements") || "[]");
+      const stored = JSON.parse(localStorage.getItem("dismissed_announcements_v2") || "{}");
+      const todayKey = getTodayKey();
+      return stored[todayKey] || [];
     } catch { return []; }
   });
+
+  // Popup: dismissed per session (snooze 2h)
   const [popupDismissed, setPopupDismissed] = useState<number[]>(() => {
     try {
       return JSON.parse(sessionStorage.getItem("dismissed_popups") || "[]");
@@ -28,7 +37,15 @@ function useAnnouncements() {
   const dismissBanner = (id: number) => {
     const updated = [...dismissed, id];
     setDismissed(updated);
-    localStorage.setItem("dismissed_announcements", JSON.stringify(updated));
+    try {
+      const stored = JSON.parse(localStorage.getItem("dismissed_announcements_v2") || "{}");
+      stored[getTodayKey()] = updated;
+      // Clean up old keys (keep only last 3 days)
+      const keys = Object.keys(stored).sort().slice(-3);
+      const cleaned: Record<string, number[]> = {};
+      keys.forEach(k => { cleaned[k] = stored[k]; });
+      localStorage.setItem("dismissed_announcements_v2", JSON.stringify(cleaned));
+    } catch {}
   };
 
   const dismissPopup = (id: number) => {
