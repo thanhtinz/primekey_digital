@@ -5360,6 +5360,7 @@ export const appRouter = router({
       return { success: true, referrerEmail: codeRow.email };
     }),
     adminList: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Không có quyền truy cập" });
       const { referrals } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { desc } = await import("drizzle-orm");
@@ -5978,7 +5979,8 @@ export const appRouter = router({
 
     adminCredit: protectedProcedure
       .input(z.object({ customerEmail: z.string().email(), amount: z.number(), description: z.string().optional() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Không có quyền truy cập" });
         const { getDb } = await import("./db");
         const { eq } = await import("drizzle-orm");
         const { customers, walletTransactions } = await import("../drizzle/schema");
@@ -6004,6 +6006,7 @@ export const appRouter = router({
     adminList: protectedProcedure
       .input(z.object({ limit: z.number().default(100), offset: z.number().default(0), email: z.string().optional() }))
       .query(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Không có quyền truy cập" });
         const { getDb } = await import("./db");
         const { desc, like, and } = await import("drizzle-orm");
         const { walletTransactions } = await import("../drizzle/schema");

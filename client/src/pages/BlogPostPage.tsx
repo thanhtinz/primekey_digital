@@ -1,5 +1,6 @@
 import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
+import DOMPurify from "dompurify";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 import { BookOpen, Clock, Eye, ArrowLeft, Tag } from "@/components/Icon";
@@ -110,7 +111,7 @@ export default function BlogPostPage() {
             prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded
             prose-pre:bg-gray-900 prose-pre:text-gray-100
             prose-blockquote:border-blue-400 prose-blockquote:bg-blue-50 prose-blockquote:rounded-r-xl"
-          dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, "<br/>") }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content.replace(/\n/g, "<br/>")) }}
         />
 
         {/* Footer */}

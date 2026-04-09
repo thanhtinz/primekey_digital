@@ -3,6 +3,8 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 // import { registerOAuthRoutes } from "./oauth"; // Disabled: using email/password auth instead
 import { registerAuthRoutes } from "./authRoutes";
 import { appRouter } from "../routers";
@@ -32,9 +34,41 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // ── Security Headers (helmet) ──
+  app.use(helmet({
+    contentSecurityPolicy: false, // Disabled to allow inline scripts/styles in SPA
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  // ── Rate Limiting ──
+  // General API rate limit: 200 req/min per IP
+  const generalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Quá nhiều yêu cầu, vui lòng thử lại sau" },
+    skip: (req) => req.path.startsWith("/api/webhooks"), // Webhooks bypass rate limit
+  });
+
+  // Strict rate limit for auth endpoints: 20 req/min per IP
+  const strictLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Quá nhiều yêu cầu xác thực, vui lòng thử lại sau" },
+  });
+
+  app.use("/api/trpc", generalLimiter);
+  app.use("/api/auth", strictLimiter);
+
+  // ── Body Parser (reduced from 50MB to prevent DoS) ──
+  // Allow up to 10MB for file uploads (base64 images)
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
   // Auth routes (login, logout, register)
   registerAuthRoutes(app);
   // OAuth callback disabled: using email/password auth instead

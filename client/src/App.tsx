@@ -92,6 +92,12 @@ import { CustomerGuard } from "./components/CustomerGuard";
 import { FeatureGuard } from "./components/FeatureGuard";
 import { SupportWidget } from "./components/SupportWidget";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
+const RefundPage = lazy(() => import("./pages/RefundPage"));
+const QueuePage = lazy(() => import("./pages/QueuePage"));
+const SpinWheelPage = lazy(() => import("./pages/SpinWheelPage"));
+const SpinWheelAdmin = lazy(() => import("./pages/SpinWheelAdmin"));
+const LoyaltyRewardsAdmin = lazy(() => import("./pages/LoyaltyRewardsAdmin"));
+const LoyaltyRewardsPage = lazy(() => import("./pages/LoyaltyRewardsPage"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
@@ -123,7 +129,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/", "/track-order", "/payment-cancel", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/wishlist", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
+const ALWAYS_PUBLIC = ["/", "/track-order", "/payment-cancel", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/wishlist", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password", "/spin-wheel", "/loyalty-rewards"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -158,6 +164,8 @@ function Router() {
           <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
           <Route path="/warranty" component={() => <WarrantyLookup />} />
           <Route path="/leaderboard" component={() => <FeatureGuard featureKey="leaderboard"><LeaderboardPage /></FeatureGuard>} />
+          <Route path="/spin-wheel" component={() => <FeatureGuard featureKey="spin_wheel"><CustomerGuard><SpinWheelPage /></CustomerGuard></FeatureGuard>} />
+          <Route path="/loyalty-rewards" component={() => <FeatureGuard featureKey="loyalty"><CustomerGuard><LoyaltyRewardsPage /></CustomerGuard></FeatureGuard>} />
           <Route path="/wishlist" component={() => <FeatureGuard featureKey="wishlist"><CustomerGuard><WishlistPage /></CustomerGuard></FeatureGuard>} />
           <Route path="/flash-sale" component={() => <FeatureGuard featureKey="flash_sale"><FlashSalePage /></FeatureGuard>} />
           <Route path="/catalog" component={() => <ProductCatalog />} />
@@ -265,11 +273,15 @@ function Router() {
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
         <Route path="/admin/blog" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
-        <Route path="/blog-management" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
+        {/* Removed duplicate /blog-management route - use /admin/blog instead */}
         <Route path="/admin/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
-        <Route path="/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
+        {/* Removed duplicate /announcements route - use /admin/announcements instead */}
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
         <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />
+        <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
+        <Route path="/queue" component={() => isAdmin ? <QueuePage /> : <ForbiddenPage />} />
+        <Route path="/admin/spin-wheel" component={() => isAdmin ? <SpinWheelAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/loyalty-rewards" component={() => isAdmin ? <LoyaltyRewardsAdmin /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

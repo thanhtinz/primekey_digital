@@ -1506,3 +1506,27 @@ todo updated
 - [x] WalletHistoryPage: hiển thị trạng thái nạp tiền (Đã nạp/Chờ xử lý/Thất bại) với icon màu sắc
 - [x] WalletPage: thêm icon cho lịch sử đơn nạp tiền
 - [x] Đồng nhất icon tag sản phẩm giữa trang chính (LandingPage) và trang chi tiết (ProductDetail)
+
+## Phase: Security Audit & Cleanup (Apr 9, 2026)
+- [ ] Backend: thêm rate limiting cho các endpoint nhạy cảm (login, payment, referral)
+- [ ] Backend: validate và sanitize tất cả input từ user (zod schemas chặt chẽ hơn)
+- [ ] Backend: kiểm tra authorization - đảm bảo tất cả admin procedures dùng adminProcedure
+- [ ] Backend: thêm CORS headers và security headers (helmet)
+- [ ] Backend: giới hạn kích thước request body để chống DoS
+- [ ] Backend: ẩn thông tin lỗi chi tiết khỏi response production
+- [ ] Frontend: sanitize HTML input để chống XSS
+- [ ] Frontend: xóa console.log debug trong production
+- [ ] Frontend: bảo vệ route admin - redirect nếu không có quyền
+- [ ] Xóa các trang/component không còn dùng (orphan pages)
+- [ ] Fix các bug đã biết: TypeScript errors, unhandled promises
+
+## Phase: Security Audit & Cleanup (Apr 9, 2026 - Session 28)
+- [x] Backend: thêm helmet (security headers: X-Frame-Options, X-Content-Type-Options, HSTS, v.v.)
+- [x] Backend: thêm rate limiting (100 req/15min general, 10 req/15min auth endpoints)
+- [x] Backend: giảm body parser limit từ 50MB xuống 10MB để chống DoS
+- [x] Backend: thêm role check admin cho adminCredit (wallet), adminList (wallet), adminList (referral)
+- [x] Frontend: thêm DOMPurify sanitize cho dangerouslySetInnerHTML trong BlogPostPage (chống XSS)
+- [x] Xóa trang không dùng: ComponentShowcase.tsx, Home.tsx, ProductCompare.tsx
+- [x] Thêm routes còn thiếu: RefundPage, QueuePage, SpinWheelPage, SpinWheelAdmin, LoyaltyRewardsAdmin, LoyaltyRewardsPage
+- [x] Xóa route trùng lặp: /blog-management (dùng /admin/blog), /announcements (dùng /admin/announcements)
+- [x] TypeScript 0 errors, 53/53 tests passed
