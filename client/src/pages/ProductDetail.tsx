@@ -438,68 +438,29 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Chi tiết gói - dropdown accordion giống card mô tả */}
-        {packages.length > 0 && (
+        {/* Chi tiết gói - dropdown accordion, chỉ hiển thị notes */}
+        {(product as any).notes && (
           <div className="bg-white rounded-2xl overflow-hidden mt-3 shadow-sm border border-gray-100">
             <button
               onClick={() => setShowPackageDetails(!showPackageDetails)}
               className="w-full flex items-center justify-between p-4"
             >
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <Package className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-left">
-                  <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wide">Thông tin</p>
+                  <p className="text-xs text-violet-600 font-semibold uppercase tracking-wide">Chi tiết</p>
                   <p className="text-sm font-semibold text-gray-800">Chi tiết gói</p>
                 </div>
               </div>
-              {showPackageDetails ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+              {showPackageDetails ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
             </button>
             {showPackageDetails && (
-              <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
-                {packages.map((pkg: any) => (
-                  <div key={pkg.id} className="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0 mt-1.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">{pkg.name}</p>
-                      {pkg.description && (
-                        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{pkg.description}</p>
-                      )}
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <span className="text-sm font-bold text-red-500">{formatVND(pkg.price)}</span>
-                        {pkg.originalPrice && parseFloat(pkg.originalPrice) > parseFloat(pkg.price) && (
-                          <span className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</span>
-                        )}
-                        {(pkg.warrantyMonths ?? 0) > 0 && (
-                          <span className="text-xs text-blue-500 flex items-center gap-0.5">
-                            <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths} tháng
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {(product as any).notes && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-amber-700 text-xs leading-relaxed whitespace-pre-wrap">{(product as any).notes}</p>
-                  </div>
-                )}
+              <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{(product as any).notes}</p>
               </div>
             )}
-          </div>
-        )}
-        {/* Notes / Lưu ý - chỉ hiển thị nếu không có packages */}
-        {(product as any).notes && packages.length === 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-3">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-amber-800 text-sm mb-1">Lưu ý quan trọng</h4>
-                <p className="text-amber-700 text-sm leading-relaxed whitespace-pre-wrap">{(product as any).notes}</p>
-              </div>
-            </div>
           </div>
         )}
 

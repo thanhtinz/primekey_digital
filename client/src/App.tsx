@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Loader2, ShieldAlert } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 // Lazy load all pages for code splitting
 const Login = lazy(() => import("./pages/Login"));
@@ -319,6 +320,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <GlobalBrandApplier />
+          <AnnouncementBanner />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

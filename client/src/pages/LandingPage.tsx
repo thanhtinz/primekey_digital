@@ -5,7 +5,7 @@ import { Star, Shield, Package, ChevronRight, ChevronLeft, Flame, ArrowRight, Sp
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import { AnnouncementInline, AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { AnnouncementInline } from "@/components/AnnouncementBanner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 function formatPrice(amount: number | string, currency = "VND") {
@@ -191,8 +191,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gray-50 text-slate-800 flex flex-col">
       {/* ===== HEADER ===== */}
       <ClientHeader />
-      {/* ===== ANNOUNCEMENT POPUP ===== */}
-      <AnnouncementBanner />
+      {/* AnnouncementBanner is rendered globally in App.tsx */}
       <div className="pt-16 flex-1">
         {/* ===== IMAGE BANNER CAROUSEL ===== */}
         {(bannersData as any[]).length > 0 && (
@@ -282,37 +281,36 @@ export default function LandingPage() {
           return (
             <section className="px-4 mb-6">
               <div className="max-w-7xl mx-auto">
-                <div className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm inline-flex">
-                  <div className="relative">
-                    {displayCats.length > 5 && (
+                <div className="relative">
+                    {displayCats.length > 4 && (
                       <button onClick={() => scrollCats("left")}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-slate-400 hover:text-slate-600 -ml-2">
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-slate-400 hover:text-slate-600 -ml-2 z-10">
                         <ChevronLeft className="h-4 w-4" />
                       </button>
                     )}
-                    <div ref={catScrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-1"
-                      style={{ scrollbarWidth: "none", msOverflowStyle: "none", maxWidth: "calc(100vw - 80px)" }}>
+                    <div ref={catScrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth"
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none", maxWidth: "calc(100vw - 32px)" }}>
                       {displayCats.map((cat: any) => (
                         <button
                           key={cat.id}
                           onClick={() => navigate(`/catalog?category=${cat.id}`)}
-                          className="flex-shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-xl hover:bg-blue-50 transition-all w-[56px] group"
+                          className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
+                          style={{ width: "90px" }}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center group-hover:border-blue-300 group-hover:shadow-sm transition-all">
-                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-sm text-blue-500`} /> : <span className="text-sm">{cat.icon}</span>) : <Package className="h-4 w-4 text-slate-400" />}
+                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span className="text-3xl">{cat.icon}</span>) : <Package className="h-8 w-8 text-slate-400" />}
                           </div>
-                          <span className="text-[9px] font-medium text-slate-700 text-center line-clamp-2 leading-tight w-full">{cat.name}</span>
+                          <span className="text-xs font-semibold text-slate-700 text-center line-clamp-2 leading-tight w-full">{cat.name}</span>
                         </button>
                       ))}
                     </div>
-                    {displayCats.length > 5 && (
+                    {displayCats.length > 4 && (
                       <button onClick={() => scrollCats("right")}
                         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-slate-400 hover:text-slate-600 -mr-2">
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     )}
                   </div>
-                </div>
               </div>
             </section>
           );

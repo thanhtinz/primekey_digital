@@ -1574,3 +1574,8 @@ todo updated
 - [x] Đồng bộ card sản phẩm ProductCatalog grid/list với LandingPage ProductCard (tag style bg-white/90)
 - [x] Fix FlashSalePage thiếu footer ClientFooter
 - [x] ProductDetail: đổi card "Lưu ý" thành "Chi tiết gói" dạng dropdown accordion giống card mô tả
+
+## Phase: UI/UX Fixes Batch 4 (Apr 9, 2026)
+- [x] Fix card danh mục con: icon lớn (w-14 h-14) + text bên dưới dạng card vuông (90px), không full-width
+- [x] Fix ProductDetail: card "Chi tiết gói" chỉ hiển thị notes (product.notes) dạng dropdown accordion
+- [x] Fix thông báo popup (AnnouncementBanner) hiện trên tất cả trang bằng cách đưa vào App.tsx
