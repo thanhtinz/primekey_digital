@@ -188,24 +188,7 @@ export default function LandingPage() {
       <ClientHeader />
 
       <div className="pt-20 flex-1">
-        {/* ===== WELCOME BANNER (dismissable) ===== */}
-        {!bannerDismissed && (
-          <div className="mx-4 mt-4 mb-2">
-            <div className="max-w-7xl mx-auto bg-gradient-to-r from-teal-500 to-blue-500 rounded-2xl px-5 py-4 flex items-start gap-3 text-white relative">
-              <div className="flex-shrink-0 mt-0.5">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium leading-relaxed">
-                  {description || `Chào mừng bạn đến với ${companyName}! Khám phá sản phẩm chất lượng cao với giá tốt nhất.`}
-                </p>
-              </div>
-              <button onClick={dismissBanner} className="flex-shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Welcome banner removed - using AnnouncementBanner in ClientHeader instead */}
 
         {/* ===== IMAGE BANNER CAROUSEL ===== */}
         {(bannersData as any[]).length > 0 && (

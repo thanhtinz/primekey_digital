@@ -157,10 +157,10 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
 
   return (
     <>
-      {/* Announcement banners - shown above header */}
-      <AnnouncementBanner />
       {/* Main Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a] border-b border-white/10">
+        {/* Announcement banners - inside fixed header so they're always visible */}
+        <AnnouncementBanner />
         <div className={`${maxWidth} mx-auto px-4 h-14 flex items-center gap-3`}>
           {/* Logo */}
           <button onClick={() => go("/")} className="flex items-center gap-2 flex-shrink-0 mr-2">
