@@ -1580,3 +1580,4 @@ todo updated
 - [x] Fix ProductDetail: card "Chi tiết gói" chỉ hiển thị notes (product.notes) dạng dropdown accordion
 - [x] Fix thông báo popup (AnnouncementBanner) hiện trên tất cả trang bằng cách đưa vào App.tsx
 - [x] Fix card danh mục con: layout ngang (icon trái + text phải), không còn dạng dọc cao
+- [x] Fix AnnouncementInline banner không hiện trên mobile: sửa class trùng lặp mx-4 và mx-auto

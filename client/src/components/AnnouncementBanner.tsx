@@ -108,7 +108,7 @@ export function AnnouncementInline() {
   if (bannerItems.length === 0) return null;
 
   return (
-    <div className="mx-4 mt-3 mb-1 max-w-7xl mx-auto space-y-2">
+    <div className="px-4 mt-3 mb-1 space-y-2">
       {bannerItems.map((a: any) => (
         <div
           key={a.id}
