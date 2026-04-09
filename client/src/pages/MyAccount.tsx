@@ -424,12 +424,17 @@ export default function MyAccount() {
     { id: "profile", label: "Hồ sơ", icon: User },
   ];
 
+  // Always fetch referral stats so code is consistent across all tabs
   const { data: referralStats, isLoading: referralLoading } = trpc.referral.getStats.useQuery(
     { email: customer.email },
-    { enabled: !!customer.email && activeTab === "referral", staleTime: 30_000 }
+    { enabled: !!customer.email, staleTime: 60_000 }
   );
-
-  const referralCode = referralStats?.code || customer.email.split("@")[0].toUpperCase().slice(0, 8);
+  // Also call getMyCode to ensure code is created in DB if not exists yet
+  const { data: myCodeData } = trpc.referral.getMyCode.useQuery(
+    { email: customer.email },
+    { enabled: !!customer.email && !referralStats?.code, staleTime: 60_000 }
+  );
+  const referralCode = referralStats?.code || myCodeData?.code || "";
 
   const copyReferralCode = () => {
     navigator.clipboard.writeText(referralCode);
@@ -986,89 +991,125 @@ export default function MyAccount() {
         {/* ===== Tab: Referral ===== */}
         {activeTab === "referral" && (
           <div className="space-y-4">
-            {/* Referral hero */}
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl p-5 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <Gift className="h-5 w-5" />
-                  <h3 className="font-bold">Giới thiệu bạn bè</h3>
-                </div>
-                <p className="text-purple-200 text-sm mb-4">Chia sẻ mã giới thiệu và nhận phần thưởng khi bạn bè đăng ký thành công!</p>
-                <div className="bg-white/15 backdrop-blur-sm rounded-lg p-3 mb-3">
-                  <p className="text-[10px] text-purple-200 uppercase tracking-wider mb-1">Mã giới thiệu của bạn</p>
+            {/* Header */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <h2 className="text-lg font-bold text-slate-800 mb-1">Giới thiệu bạn bè</h2>
+              <p className="text-sm text-slate-500">Chia sẻ sản phẩm từ shop với bạn bè để hưởng hoa hồng.</p>
+            </div>
+
+            {/* Thông tin chương trình */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <h3 className="text-base font-bold text-slate-800 mb-3">Thông tin</h3>
+              <p className="text-sm text-slate-600 mb-1">
+                Khi khách hàng truy cập <strong>link giới thiệu</strong> này để tạo tài khoản mới hoặc sử dụng mã giới thiệu của bạn khi thanh toán đơn hàng đầu tiên, shop sẽ ghi nhận hoa hồng cho bạn.
+              </p>
+              <p className="text-sm text-slate-600 mb-4">Thông tin chi tiết chương trình xem tại đây</p>
+
+              {/* 2 referral links */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1.5">Liên kết giới thiệu 1 (theo mã)</p>
                   <div className="flex items-center gap-2">
-                    <span className="flex-1 font-mono text-lg font-bold tracking-widest">{referralLoading ? "..." : referralCode}</span>
-                    <button onClick={copyReferralCode} className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                      <Copy className="h-3 w-3" /> Sao chép
+                    <div className="flex-1 border-2 border-red-400 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white truncate font-mono">
+                      {referralCode ? `${window.location.origin}/?ref=${referralCode}` : "..."}
+                    </div>
+                    <button
+                      onClick={() => { if (!referralCode) return; navigator.clipboard.writeText(`${window.location.origin}/?ref=${referralCode}`); toast.success("Đã sao chép link 1!"); }}
+                      className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex-shrink-0"
+                      title="Sao chép"
+                    >
+                      <Copy className="h-4 w-4 text-slate-600" />
                     </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => { const url = `${window.location.origin}/?ref=${referralCode}`; navigator.clipboard.writeText(url); toast.success("Đã sao chép link giới thiệu!"); }}
-                  className="w-full py-2.5 bg-white text-purple-700 rounded-lg text-sm font-semibold hover:bg-purple-50 transition flex items-center justify-center gap-2"
-                >
-                  <Share2 className="h-4 w-4" /> Chia sẻ link giới thiệu
-                </button>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1.5">Liên kết giới thiệu 2 (theo ID)</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 border-2 border-red-400 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white truncate font-mono">
+                      {myCodeData?.id ? `${window.location.origin}/?ri=${myCodeData.id}` : referralStats ? `${window.location.origin}/?ri=...` : "..."}
+                    </div>
+                    <button
+                      onClick={() => { const id = myCodeData?.id; if (!id) return; navigator.clipboard.writeText(`${window.location.origin}/?ri=${id}`); toast.success("Đã sao chép link 2!"); }}
+                      className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex-shrink-0"
+                      title="Sao chép"
+                    >
+                      <Copy className="h-4 w-4 text-slate-600" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-purple-600">{referralStats?.totalReferrals ?? 0}</p>
-                <p className="text-xs text-slate-500 mt-1">Người đã giới thiệu</p>
-              </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-green-600">{Number(referralStats?.totalRewards ?? 0).toLocaleString("vi-VN")}đ</p>
-                <p className="text-xs text-slate-500 mt-1">Tổng hoa hồng</p>
+            {/* Quy đổi / Stats */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <h3 className="text-base font-bold text-slate-800 mb-4">Quy đổi</h3>
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                {/* Tổng tiền nhận được */}
+                <div className="flex-1 bg-blue-600 rounded-xl p-4 text-white text-center">
+                  <p className="text-xs opacity-80 mb-1">Tổng tiền nhận được</p>
+                  <p className="text-xl font-bold">{Number(referralStats?.totalRewards ?? 0).toLocaleString("vi-VN")} đ</p>
+                </div>
+                {/* Stats row */}
+                <div className="flex gap-4 sm:gap-6 justify-around sm:justify-start">
+                  <div className="text-center">
+                    <p className="text-xs text-slate-500 mb-1">Tổng số người giới thiệu</p>
+                    <p className="text-lg font-bold text-slate-800">{referralStats?.totalReferrals ?? 0} người</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-slate-500 mb-1">Số tiền còn lại</p>
+                    <p className="text-lg font-bold text-slate-800">{Number(referralStats?.totalRewards ?? 0).toLocaleString("vi-VN")} đ</p>
+                  </div>
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => toast.info("Tính năng quy đổi sẽ sớm ra mắt!")}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-lg transition"
+                    >
+                      Quy đổi
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* History */}
-            {referralStats?.history && referralStats.history.length > 0 ? (
-              <div className="bg-white border border-slate-200 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-purple-500" /> Lịch sử giới thiệu
-                </h3>
-                <div className="space-y-2">
-                  {(referralStats.history as any[]).map((h: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">{h.refereeEmail}</p>
-                        <p className="text-xs text-slate-400">{new Date(h.createdAt).toLocaleDateString("vi-VN")}</p>
-                      </div>
-                      {h.rewardAmount && Number(h.rewardAmount) > 0 ? (
-                        <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+{Number(h.rewardAmount).toLocaleString("vi-VN")}đ</span>
-                      ) : (
-                        <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Chờ xác nhận</span>
-                      )}
-                    </div>
-                  ))}
+            {/* Lịch sử giao dịch */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <h3 className="text-base font-bold text-slate-800 mb-4">Lịch sử giao dịch</h3>
+              {referralStats?.history && referralStats.history.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-2 text-xs font-semibold text-slate-500">Thời gian</th>
+                        <th className="text-left py-2 text-xs font-semibold text-slate-500">Mô tả</th>
+                        <th className="text-right py-2 text-xs font-semibold text-slate-500">Số tiền</th>
+                        <th className="text-right py-2 text-xs font-semibold text-slate-500">Số dư</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(referralStats.history as any[]).map((h: any, idx: number) => (
+                        <tr key={idx} className="border-b border-slate-100 last:border-0">
+                          <td className="py-2.5 text-xs text-slate-500 whitespace-nowrap">{new Date(h.createdAt).toLocaleDateString("vi-VN")}</td>
+                          <td className="py-2.5 text-sm text-slate-700">{h.refereeEmail}</td>
+                          <td className="py-2.5 text-right">
+                            {h.rewardAmount && Number(h.rewardAmount) > 0 ? (
+                              <span className="text-xs font-semibold text-green-600">+{Number(h.rewardAmount).toLocaleString("vi-VN")}đ</span>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 text-right text-xs text-slate-500">—</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white border border-slate-200 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-slate-800 mb-3">Cách thức hoạt động</h3>
-                <div className="space-y-3">
-                  {[
-                    { title: "Chia sẻ mã", desc: "Gửi mã giới thiệu cho bạn bè", icon: Share2, color: "bg-blue-50 text-blue-600" },
-                    { title: "Bạn bè đăng ký", desc: "Bạn bè nhập mã khi tạo tài khoản", icon: Users2, color: "bg-green-50 text-green-600" },
-                    { title: "Nhận thưởng", desc: "Cả hai cùng nhận phần thưởng hấp dẫn", icon: Gift, color: "bg-purple-50 text-purple-600" },
-                  ].map((item) => (
-                    <div key={item.title} className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}>
-                        <item.icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">{item.title}</p>
-                        <p className="text-xs text-slate-400">{item.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+              ) : (
+                <div className="text-center py-8 text-slate-400">
+                  <Users2 className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Chưa có lịch sử giao dịch</p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
