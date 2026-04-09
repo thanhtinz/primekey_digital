@@ -74,27 +74,20 @@ export function AnnouncementBanner() {
               <Bell className="w-5 h-5 text-white" />
               <h3 className="text-white font-bold text-lg">Thông báo</h3>
             </div>
-            <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
+            <div className="px-6 pt-4 pb-2 space-y-3 max-h-96 overflow-y-auto">
               {popupItems.map((a: any) => {
                 const style = TYPE_STYLES[a.type as keyof typeof TYPE_STYLES] || TYPE_STYLES.info;
                 return (
-                  <div key={a.id} className={`rounded-xl p-4 border-l-4 ${
-                    a.type === 'info' ? 'border-blue-500 bg-blue-50' :
-                    a.type === 'success' ? 'border-emerald-500 bg-emerald-50' :
-                    a.type === 'warning' ? 'border-amber-500 bg-amber-50' :
-                    'border-red-500 bg-red-50'
-                  }`}>
-                    <div className="flex items-start gap-2">
-                      <span className={`mt-0.5 ${
-                        a.type === 'info' ? 'text-blue-600' :
-                        a.type === 'success' ? 'text-emerald-600' :
-                        a.type === 'warning' ? 'text-amber-600' :
-                        'text-red-600'
-                      }`}>{style.icon}</span>
-                      <div>
-                        <p className="font-semibold text-gray-900 mb-1">{a.title}</p>
-                        <p className="text-sm text-gray-600 leading-relaxed">{a.content}</p>
-                      </div>
+                  <div key={a.id} className="flex items-start gap-3">
+                    <span className={`mt-0.5 flex-shrink-0 ${
+                      a.type === 'info' ? 'text-blue-600' :
+                      a.type === 'success' ? 'text-emerald-600' :
+                      a.type === 'warning' ? 'text-amber-600' :
+                      'text-red-600'
+                    }`}>{style.icon}</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">{a.title}</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">{a.content}</p>
                     </div>
                   </div>
                 );
