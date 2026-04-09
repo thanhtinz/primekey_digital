@@ -137,14 +137,15 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   };
 
   const notifTypeIcon = (type: string) => {
-    switch (type) {
-      case "order": return "🛒";
-      case "payment": return "💳";
-      case "success": return "✅";
-      case "warning": return "⚠️";
-      case "promo": return "🎁";
-      default: return "🔔";
-    }
+    const iconMap: Record<string, { cls: string; color: string }> = {
+      order: { cls: "fa-solid fa-cart-shopping", color: "text-blue-400" },
+      payment: { cls: "fa-solid fa-credit-card", color: "text-green-400" },
+      success: { cls: "fa-solid fa-circle-check", color: "text-emerald-400" },
+      warning: { cls: "fa-solid fa-triangle-exclamation", color: "text-yellow-400" },
+      promo: { cls: "fa-solid fa-gift", color: "text-pink-400" },
+    };
+    const icon = iconMap[type] || { cls: "fa-solid fa-bell", color: "text-white/60" };
+    return <i className={`${icon.cls} ${icon.color} text-base`} />;
   };
 
   const handleLogout = () => {

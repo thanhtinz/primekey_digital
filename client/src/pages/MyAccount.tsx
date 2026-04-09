@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { User, Package, Star, LogOut, ShoppingBag, Shield, Gift, Clock, CheckCircle, XCircle, AlertCircle, Wrench, Phone, Mail, ChevronRight, TrendingUp, Award, Heart, ShoppingCart, Users2, Camera, Loader2, Copy, Share2, Trophy, Search, CreditCard, BarChart3, ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck, ExternalLink, Truck, RefreshCw } from "@/components/Icon";
+import { User, Package, Star, LogOut, ShoppingBag, Shield, Gift, Clock, CheckCircle, XCircle, AlertCircle, Wrench, Phone, Mail, ChevronRight, ChevronLeft, TrendingUp, Award, Heart, ShoppingCart, Users2, Camera, Loader2, Copy, Share2, Trophy, Search, CreditCard, BarChart3, ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck, ExternalLink, Truck, RefreshCw, Download } from "@/components/Icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
@@ -267,7 +267,7 @@ function ExportPDFButton({ orderId, invoiceNumber, token }: { orderId: number; i
       disabled={exportMutation.isPending}
       className="text-slate-500 hover:text-slate-700 text-xs font-medium flex items-center gap-1 disabled:opacity-50"
     >
-      {exportMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+      {exportMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <i className="fa-solid fa-file-arrow-down h-3.5 w-3.5" />}
       Xuất PDF
     </button>
   );
@@ -305,7 +305,7 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
       {/* Header */}
       <div className="flex items-center gap-3 px-1">
         <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-slate-100 transition">
-          <svg className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          <i className="fa-solid fa-chevron-left h-5 w-5 text-slate-600" />
         </button>
         <div>
           <h2 className="text-base font-bold text-slate-800">Bảo mật tài khoản</h2>

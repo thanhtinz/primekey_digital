@@ -5,15 +5,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Tag, Plus, Trash2, Pencil, Check, X } from "@/components/Icon";
+import FontAwesomeIconPicker, { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
 
 const PRESET_COLORS = [
   "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
   "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
 ];
 
-const PRESET_ICONS = [
-  "🔥", "⭐", "🆕", "💥", "🎁", "🏷️", "✅", "🚀", "💎", "🎯",
-  "🛒", "❤️", "⚡", "🌟", "🏆", "🎉", "💯", "🔑", "🌈", "🎀",
+// FA icon presets thay thế emoji
+const PRESET_FA_ICONS = [
+  { class: "fa-solid fa-fire", label: "Hot" },
+  { class: "fa-solid fa-star", label: "Nổi bật" },
+  { class: "fa-solid fa-certificate", label: "Mới" },
+  { class: "fa-solid fa-bolt", label: "Flash" },
+  { class: "fa-solid fa-gift", label: "Quà tặng" },
+  { class: "fa-solid fa-tag", label: "Sale" },
+  { class: "fa-solid fa-circle-check", label: "Chính hãng" },
+  { class: "fa-solid fa-rocket", label: "Nhanh" },
+  { class: "fa-solid fa-gem", label: "Cao cấp" },
+  { class: "fa-solid fa-bullseye", label: "Nổi bật" },
+  { class: "fa-solid fa-cart-shopping", label: "Bán chạy" },
+  { class: "fa-solid fa-heart", label: "Yêu thích" },
+  { class: "fa-solid fa-trophy", label: "Top" },
+  { class: "fa-solid fa-percent", label: "Giảm giá" },
+  { class: "fa-solid fa-crown", label: "VIP" },
+  { class: "fa-solid fa-thumbs-up", label: "Tốt" },
+  { class: "fa-solid fa-shield-halved", label: "Bảo hành" },
+  { class: "fa-solid fa-truck-fast", label: "Giao nhanh" },
+  { class: "fa-solid fa-box-open", label: "Hàng mới" },
+  { class: "fa-solid fa-key", label: "Key" },
 ];
 
 export default function TagSettings() {
@@ -74,6 +94,13 @@ export default function TagSettings() {
     updateTag.mutate({ id: editingId, name: editName.trim(), color: editColor, icon: editIcon || null });
   };
 
+  // Helper render icon (FA hoặc emoji cũ)
+  function TagIcon({ icon, className = "" }: { icon?: string | null; className?: string }) {
+    if (!icon) return null;
+    if (isFontAwesomeIcon(icon)) return <FontAwesomeIcon iconClass={icon} className={className} />;
+    return <span>{icon}</span>;
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto py-6 px-4">
@@ -113,28 +140,29 @@ export default function TagSettings() {
 
           {/* Icon picker */}
           <div className="mb-3">
-            <p className="text-xs text-gray-500 mb-2">Icon (emoji) — tùy chọn:</p>
+            <p className="text-xs text-gray-500 mb-2">Icon — tùy chọn:</p>
+            {/* Preset FA icons */}
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {PRESET_ICONS.map(emoji => (
+              {PRESET_FA_ICONS.map(icon => (
                 <button
-                  key={emoji}
-                  onClick={() => setNewIcon(newIcon === emoji ? "" : emoji)}
-                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all hover:scale-110 border-2 ${
-                    newIcon === emoji
+                  key={icon.class}
+                  type="button"
+                  onClick={() => setNewIcon(newIcon === icon.class ? "" : icon.class)}
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-110 border-2 ${
+                    newIcon === icon.class
                       ? "border-blue-500 bg-blue-50 scale-110"
                       : "border-transparent bg-gray-50 hover:bg-gray-100"
                   }`}
-                  title={emoji}
+                  title={icon.label}
                 >
-                  {emoji}
+                  <i className={`${icon.class} text-base ${newIcon === icon.class ? "text-blue-600" : "text-gray-600"}`} />
                 </button>
               ))}
-              <Input
-                placeholder="Nhập emoji..."
-                value={newIcon && !PRESET_ICONS.includes(newIcon) ? newIcon : ""}
-                onChange={e => setNewIcon(e.target.value)}
-                className="w-28 h-9 text-sm"
-              />
+            </div>
+            {/* Full picker */}
+            <div className="mt-2">
+              <p className="text-xs text-gray-400 mb-1.5">Hoặc chọn từ thư viện icon:</p>
+              <FontAwesomeIconPicker value={newIcon} onChange={setNewIcon} />
             </div>
           </div>
 
@@ -159,7 +187,7 @@ export default function TagSettings() {
                 className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white"
                 style={{ backgroundColor: newColor }}
               >
-                {newIcon && <span>{newIcon}</span>}
+                {newIcon && <TagIcon icon={newIcon} className="text-xs text-white" />}
                 {newName}
               </span>
             </div>
@@ -200,13 +228,9 @@ export default function TagSettings() {
                         onChange={e => setEditColor(e.target.value)}
                         className="w-8 h-8 rounded cursor-pointer border border-gray-200 p-0.5"
                       />
-                      <Input
-                        value={editIcon}
-                        onChange={e => setEditIcon(e.target.value)}
-                        className="w-16 h-8 text-sm text-center"
-                        placeholder="Icon"
-                        maxLength={4}
-                      />
+                      <div className="w-40">
+                        <FontAwesomeIconPicker value={editIcon} onChange={setEditIcon} />
+                      </div>
                       <button onClick={handleUpdate} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg">
                         <Check className="w-4 h-4" />
                       </button>
@@ -220,7 +244,7 @@ export default function TagSettings() {
                         className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white"
                         style={{ backgroundColor: tag.color || '#3b82f6' }}
                       >
-                        {tag.icon && <span>{tag.icon}</span>}
+                        {tag.icon && <TagIcon icon={tag.icon} className="text-xs text-white" />}
                         {tag.name}
                       </span>
                       <span className="text-xs text-gray-400 font-mono">{tag.color}</span>

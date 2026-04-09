@@ -118,9 +118,7 @@ export default function WalletHistoryPage() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-[#1e3a6e] flex items-center justify-center flex-shrink-0">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
+              <i className="fa-solid fa-arrow-right-arrow-left w-8 h-8 text-white text-2xl" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Biến động số dư</h1>

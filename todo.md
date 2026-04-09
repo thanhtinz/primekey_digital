@@ -1479,3 +1479,9 @@ todo updated
 - [x] Frontend: trang /payment/cancel gọi handleCancel và hiển thị thông báo phù hợp
 - [x] Frontend: trang /wallet/cancel gọi handleCancel và hiển thị thông báo phù hợp
 - [x] Đảm bảo cancelUrl trong createPaymentLink trỏ đúng trang cancel tương ứng
+
+## Phase: Fix Remaining lucide-react Icons (Apr 9, 2026 - Session 27)
+- [x] Quét và thay thế tất cả import lucide-react còn sót trong codebase
+- [x] Fix icon trong nội dung thông báo dropdown header (ClientHeader notification dropdown)
+- [x] Thay emoji picker trong TagSettings.tsx bằng FA icon picker
+- [x] Thay emoji trong notifTypeIcon (ClientHeader) bằng FA icon
