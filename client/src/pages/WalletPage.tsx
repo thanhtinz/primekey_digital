@@ -43,12 +43,11 @@ export default function WalletPage() {
   const topupMutation = trpc.wallet.topup.useMutation({
     onSuccess: (data: any) => {
       setIsLoading(false);
-      if (data?.paymentUrl) {
-        setPaymentUrl(data.paymentUrl);
-        window.open(data.paymentUrl, "_blank");
-      } else if (data?.checkoutUrl) {
-        setPaymentUrl(data.checkoutUrl);
-        window.open(data.checkoutUrl, "_blank");
+      const url = data?.paymentUrl || data?.checkoutUrl;
+      if (url) {
+        setPaymentUrl(url);
+        // Navigate directly to avoid popup blocker issues
+        window.location.href = url;
       } else {
         toast.success("Yêu cầu nạp tiền đã được ghi nhận.");
       }

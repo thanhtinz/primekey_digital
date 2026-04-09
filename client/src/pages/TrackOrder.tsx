@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, ShoppingBag, CreditCard, ChevronDown, ExternalLink, FileText, RefreshCw, XCircle } from "lucide-react";
 import { useLocation } from "wouter";
@@ -16,7 +16,7 @@ const STATUS_CONFIG: Record<string, {
   tabColor: string;
 }> = {
   CREATED:  { label: "Chờ xử lý",    color: "text-amber-600",  bgColor: "bg-amber-50",  borderColor: "border-amber-200",  icon: Clock,         step: 1, tabColor: "text-amber-600"  },
-  PAID:     { label: "Hoàn thành",   color: "text-green-600",  bgColor: "bg-green-50",  borderColor: "border-green-200",  icon: CheckCircle,   step: 2, tabColor: "text-green-600"  },
+  PAID:     { label: "Đã thanh toán", color: "text-blue-700",   bgColor: "bg-blue-50",   borderColor: "border-blue-200",   icon: CheckCircle,   step: 2, tabColor: "text-blue-700"   },
   SHIPPING: { label: "Đang xử lý",   color: "text-blue-600",   bgColor: "bg-blue-50",   borderColor: "border-blue-200",   icon: Truck,         step: 3, tabColor: "text-blue-600"   },
   WARRANTY: { label: "Bảo hành",     color: "text-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200", icon: Shield,        step: 4, tabColor: "text-purple-600" },
   FAILED:   { label: "Thất bại",     color: "text-red-500",    bgColor: "bg-red-50",    borderColor: "border-red-200",    icon: XCircle,       step: 0, tabColor: "text-red-500"    },
@@ -137,7 +137,7 @@ function OrderDetail({ order, onBack }: { order: any; onBack: () => void }) {
           <CreditCard className="h-4 w-4 text-green-600" /> Thông tin thanh toán
         </h3>
         <div className="space-y-2 text-sm">
-          {order.subtotal && <div className="flex justify-between text-gray-600"><span>Giá gốc</span><span>{formatCurrency(order.subtotal)}</span></div>}
+          {order.subtotal && parseFloat(String(order.subtotal)) > 0 && <div className="flex justify-between text-gray-600"><span>Giá gốc</span><span>{formatCurrency(order.subtotal)}</span></div>}
           {order.discountAmount && parseFloat(order.discountAmount) > 0 && (
             <div className="flex justify-between text-green-600"><span>Giảm giá</span><span>-{formatCurrency(order.discountAmount)}</span></div>
           )}
@@ -229,7 +229,7 @@ const STATUS_TABS = [
   { key: "all",      label: "Tất cả" },
   { key: "CREATED",  label: "Chờ xử lý" },
   { key: "SHIPPING", label: "Đang xử lý" },
-  { key: "PAID",     label: "Hoàn thành" },
+  { key: "PAID",     label: "Đã thanh toán" },
   { key: "FAILED",   label: "Thất bại" },
 ];
 
@@ -238,7 +238,6 @@ export default function TrackOrder() {
   const { customer, isLoggedIn, isLoading: authLoading } = useCustomerAuth();
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) setLocation("/client-login");
@@ -264,18 +263,6 @@ export default function TrackOrder() {
       : (orders as any[]).filter(o => o.status === tab.key).length;
     return acc;
   }, {} as Record<string, number>);
-
-  if (selectedOrder) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <ClientHeader />
-        <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-20 pb-6">
-          <OrderDetail order={selectedOrder} onBack={() => setSelectedOrder(null)} />
-        </main>
-        <ClientFooter />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -371,7 +358,7 @@ export default function TrackOrder() {
         ) : (
           <div className="space-y-3">
             {filtered.map((order: any) => (
-              <OrderCard key={order.id} order={order} onView={() => setSelectedOrder(order)} />
+              <OrderCard key={order.id} order={order} onView={() => setLocation(`/order/${order.invoiceNumber}`)} />
             ))}
           </div>
         )}

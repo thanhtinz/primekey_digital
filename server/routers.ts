@@ -4585,6 +4585,21 @@ export const appRouter = router({
         }
         return { url };
       }),
+    // Select avatar from gallery
+    selectAvatar: publicProcedure
+      .input(z.object({ token: z.string(), avatarUrl: z.string().url() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Session expired");
+        await drizzleDb.update(customerSessions).set({ avatarUrl: input.avatarUrl } as any).where(eq(customerSessions.token, input.token));
+        await drizzleDb.update(customers).set({ avatarUrl: input.avatarUrl, updatedAt: new Date() } as any).where(eq(customers.email, session.email));
+        return { url: input.avatarUrl };
+      }),
     logout: publicProcedure
       .input(z.object({ token: z.string() }))
       .mutation(async ({ input }) => {
@@ -6830,6 +6845,129 @@ export const appRouter = router({
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new Error("DB unavailable");
         await drizzleDb.delete(blogCategories).where(eq(blogCategories.id, input.id));
+        return { success: true };
+      }),
+  }),
+  // ─── Avatar Images Router ──────────────────────────────────────────────────
+  avatarImages: router({
+    // Public: get all active avatars
+    getAll: publicProcedure.query(async () => {
+      const { avatarImages } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(avatarImages)
+        .where(eq(avatarImages.isActive, true))
+        .orderBy(asc(avatarImages.sortOrder), asc(avatarImages.id));
+    }),
+    // Admin: get all avatars (including inactive)
+    adminGetAll: protectedProcedure.query(async ({ ctx }) => {
+      const { avatarImages } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(avatarImages)
+        .where(eq(avatarImages.userId, ctx.user.id))
+        .orderBy(asc(avatarImages.sortOrder), asc(avatarImages.id));
+    }),
+    // Admin: upload image to gallery (base64)
+    uploadToGallery: protectedProcedure
+      .input(z.object({
+        dataUrl: z.string(),
+        label: z.string().optional(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { avatarImages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { storagePut } = await import("./storage");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const matches = input.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) throw new Error("Invalid data URL format");
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, "base64");
+        const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const fileKey = `avatar-gallery/${ctx.user.id}-${Date.now()}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, mimeType);
+        const [row] = await drizzleDb.insert(avatarImages).values({
+          userId: ctx.user.id,
+          url,
+          fileKey,
+          label: input.label || null,
+          category: input.category || "default",
+          sortOrder: 0,
+          isActive: true,
+        }).$returningId();
+        return { id: row.id, url };
+      }),
+    // Admin: add avatar
+    add: protectedProcedure
+      .input(z.object({
+        url: z.string().url(),
+        fileKey: z.string(),
+        label: z.string().optional(),
+        category: z.string().optional(),
+        sortOrder: z.number().default(0),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { avatarImages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [row] = await drizzleDb.insert(avatarImages).values({
+          userId: ctx.user.id,
+          url: input.url,
+          fileKey: input.fileKey,
+          label: input.label || null,
+          category: input.category || "default",
+          sortOrder: input.sortOrder,
+          isActive: true,
+        }).$returningId();
+        return { id: row.id };
+      }),
+    // Admin: toggle active
+    toggleActive: protectedProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const { avatarImages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.update(avatarImages).set({ isActive: input.isActive }).where(eq(avatarImages.id, input.id));
+        return { success: true };
+      }),
+    // Admin: delete avatar
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { avatarImages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(avatarImages).where(eq(avatarImages.id, input.id));
+        return { success: true };
+      }),
+    // Customer: update avatar (choose from library or upload)
+    updateCustomerAvatar: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        avatarUrl: z.string().url(),
+      }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
+        await drizzleDb.update(customers).set({ avatarUrl: input.avatarUrl } as any).where(eq(customers.email, session.email));
         return { success: true };
       }),
   }),

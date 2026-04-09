@@ -89,7 +89,9 @@ const WalletPage = lazy(() => import("./pages/WalletPage"));
 const WalletHistoryPage = lazy(() => import("./pages/WalletHistoryPage"));
 const WalletManagement = lazy(() => import("./pages/WalletManagement"));
 import { CustomerGuard } from "./components/CustomerGuard";
+import { FeatureGuard } from "./components/FeatureGuard";
 import { SupportWidget } from "./components/SupportWidget";
+const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
@@ -154,26 +156,26 @@ function Router() {
           <Route path="/thank-you" component={() => <ThankYou />} />
           <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
           <Route path="/warranty" component={() => <WarrantyLookup />} />
-          <Route path="/leaderboard" component={() => <LeaderboardPage />} />
-          <Route path="/wishlist" component={() => <CustomerGuard><WishlistPage /></CustomerGuard>} />
-          <Route path="/flash-sale" component={() => <FlashSalePage />} />
+          <Route path="/leaderboard" component={() => <FeatureGuard featureKey="leaderboard"><LeaderboardPage /></FeatureGuard>} />
+          <Route path="/wishlist" component={() => <FeatureGuard featureKey="wishlist"><CustomerGuard><WishlistPage /></CustomerGuard></FeatureGuard>} />
+          <Route path="/flash-sale" component={() => <FeatureGuard featureKey="flash_sale"><FlashSalePage /></FeatureGuard>} />
           <Route path="/catalog" component={() => <ProductCatalog />} />
-          <Route path="/faq" component={() => <FAQPage />} />
-          <Route path="/blog" component={() => <BlogPage />} />
-          <Route path="/blog/:slug" component={() => <BlogPostPage />} />
+          <Route path="/faq" component={() => <FeatureGuard featureKey="faq"><FAQPage /></FeatureGuard>} />
+          <Route path="/blog" component={() => <FeatureGuard featureKey="blog"><BlogPage /></FeatureGuard>} />
+          <Route path="/blog/:slug" component={() => <FeatureGuard featureKey="blog"><BlogPostPage /></FeatureGuard>} />
           <Route path="/client-login" component={() => <ClientLogin />} />
           <Route path="/product/:id" component={() => <ProductDetail />} />
           {/* Customer-only - requires customer login */}
           <Route path="/track-order" component={() => <CustomerGuard><TrackOrder /></CustomerGuard>} />
           <Route path="/order/:invoiceNumber" component={() => <CustomerGuard><OrderDetailPage /></CustomerGuard>} />
-          <Route path="/loyalty" component={() => <CustomerGuard><LoyaltyPage /></CustomerGuard>} />
-          <Route path="/warranty-request" component={() => <CustomerGuard><WarrantyRequestPage /></CustomerGuard>} />
+          <Route path="/loyalty" component={() => <FeatureGuard featureKey="points"><CustomerGuard><LoyaltyPage /></CustomerGuard></FeatureGuard>} />
+          <Route path="/warranty-request" component={() => <FeatureGuard featureKey="warranty"><CustomerGuard><WarrantyRequestPage /></CustomerGuard></FeatureGuard>} />
           <Route path="/my-account" component={() => <CustomerGuard><MyAccount /></CustomerGuard>} />
           <Route path="/cart" component={() => <CustomerGuard><CartPage /></CustomerGuard>} />
-          <Route path="/referral" component={() => <CustomerGuard><ReferralPage /></CustomerGuard>} />
-          <Route path="/wallet" component={() => <CustomerGuard><WalletPage /></CustomerGuard>} />
-          <Route path="/wallet-history" component={() => <CustomerGuard><WalletHistoryPage /></CustomerGuard>} />
-          <Route path="/coupons" component={() => <CouponStorePage />} />
+          <Route path="/referral" component={() => <FeatureGuard featureKey="referral"><CustomerGuard><ReferralPage /></CustomerGuard></FeatureGuard>} />
+          <Route path="/wallet" component={() => <FeatureGuard featureKey="wallet"><CustomerGuard><WalletPage /></CustomerGuard></FeatureGuard>} />
+          <Route path="/wallet-history" component={() => <FeatureGuard featureKey="wallet"><CustomerGuard><WalletHistoryPage /></CustomerGuard></FeatureGuard>} />
+          <Route path="/coupons" component={() => <FeatureGuard featureKey="coupon"><CouponStorePage /></FeatureGuard>} />
           <Route path="/support" component={() => <SupportPage />} />
           <Route path="/verify-email" component={() => <VerifyEmailPage />} />
           <Route path="/reset-password" component={() => <ResetPasswordPage />} />
@@ -263,6 +265,7 @@ function Router() {
         <Route path="/blog-management" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
         <Route path="/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
+        <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

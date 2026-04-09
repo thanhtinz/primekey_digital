@@ -935,3 +935,17 @@ export const loginHistory = mysqlTable("login_history", {
   createdAt: timestamp("createdAt_lh").defaultNow().notNull(),
 });
 export type LoginHistory = typeof loginHistory.$inferSelect;
+
+// ─── Avatar Images - Kho ảnh avatar ──────────────────────────────────────────
+export const avatarImages = mysqlTable("avatar_images", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // admin owner
+  url: varchar("url", { length: 500 }).notNull(),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(),
+  label: varchar("label", { length: 100 }),
+  category: varchar("category", { length: 50 }).default("default"),
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt_ai").defaultNow().notNull(),
+});
+export type AvatarImage = typeof avatarImages.$inferSelect;

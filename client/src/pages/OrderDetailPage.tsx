@@ -20,7 +20,7 @@ const STATUS_CONFIG: Record<string, {
   step: number;
 }> = {
   CREATED:  { label: "Chờ xử lý",    color: "text-amber-600",  bgColor: "bg-amber-50",  borderColor: "border-amber-200",  icon: Clock,       step: 1 },
-  PAID:     { label: "Hoàn thành",   color: "text-green-600",  bgColor: "bg-green-50",  borderColor: "border-green-200",  icon: CheckCircle, step: 2 },
+  PAID:     { label: "Đã thanh toán", color: "text-green-600",  bgColor: "bg-green-50",  borderColor: "border-green-200",  icon: CheckCircle, step: 2 },
   SHIPPING: { label: "Đang xử lý",   color: "text-blue-600",   bgColor: "bg-blue-50",   borderColor: "border-blue-200",   icon: Truck,       step: 3 },
   WARRANTY: { label: "Bảo hành",     color: "text-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200", icon: Shield,      step: 4 },
   FAILED:   { label: "Thất bại",     color: "text-red-500",    bgColor: "bg-red-50",    borderColor: "border-red-200",    icon: XCircle,     step: 0 },
@@ -358,7 +358,7 @@ export default function OrderDetailPage() {
             <CreditCard className="h-4 w-4 text-green-600" /> Thông tin thanh toán
           </h3>
           <div className="space-y-2 text-sm">
-            {order.subtotal && (
+            {order.subtotal && parseFloat(String(order.subtotal)) > 0 && (
               <div className="flex justify-between text-gray-600">
                 <span>Giá gốc</span>
                 <span>{formatCurrency(order.subtotal)}</span>

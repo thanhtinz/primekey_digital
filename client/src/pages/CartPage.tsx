@@ -38,12 +38,14 @@ function ProgressBar({ step }: { step: number }) {
                 }`}>
                   <Icon className={`h-5 w-5 ${isDone || isActive ? "text-white" : "text-gray-400"}`} />
                 </div>
-                <p className={`text-[10px] font-bold mt-2 tracking-wide ${
+                <p className={`text-[10px] font-bold mt-2 tracking-wide text-center ${
                   isDone ? "text-teal-500" : isActive ? "text-[#1e3a6e]" : "text-gray-400"
                 }`}>{s.label}</p>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 mb-5 rounded-full ${isDone ? "bg-teal-400" : "bg-gray-200"}`} />
+                <div className={`flex-1 h-0.5 mx-3 mb-5 rounded-full transition-all ${
+                  isDone ? "bg-teal-400" : "bg-gray-200"
+                }`} />
               )}
             </div>
           );
@@ -137,16 +139,19 @@ export default function CartPage() {
     onError: (err) => toast.error(err.message),
   });
 
+  const clearCartMutation = trpc.cart.clear.useMutation();
   const cartCheckout = trpc.checkout.cartCheckout.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setStep(2);
-      // Xóa giỏ hàng sau khi đặt hàng thành công
+      // Xóa giỏ hàng sau khi đặt hàng thành công - xóa khỏi DB
+      try { await clearCartMutation.mutateAsync({ email }); } catch (_) {}
       utils.cart.list.invalidate({ email });
       utils.cart.count.invalidate({ email });
       if (payWithWallet) {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được thanh toán bằng ví!`);
         setTimeout(() => navigate(`/track-order`), 2000);
       } else if (data.paymentUrl) {
+        // Điều hướng đến trang thanh toán (giỏ hàng đã được xóa rồi)
         window.location.href = data.paymentUrl;
       } else {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);

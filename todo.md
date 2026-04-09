@@ -1387,12 +1387,12 @@ todo updated
 - [x] TypeScript: 0 errors, 53/53 tests passed
 
 ## Phase: Major UI Fixes (Apr 9, 2026 - Session 18)
-- [ ] Sticky cart/mua nhanh trên mobile trong trang chi tiết sản phẩm
-- [ ] Hiệu ứng giỏ hàng realtime (optimistic update, không cần reload)
-- [ ] Xóa giỏ hàng sau khi tạo đơn thành công
-- [ ] Redesign tab đơn hàng trong MyAccount (fix NaN đ, layout đẹp hơn)
-- [ ] Hệ thống thông báo: icon bell header hoạt động, gửi thông báo khi đặt hàng
-- [ ] Redesign header dashboard và thêm link cấu hình thông báo
+- [x] Sticky cart/mua nhanh trên mobile trong trang chi tiết sản phẩm
+- [x] Hiệu ứng giỏ hàng realtime (optimistic update, không cần reload)
+- [x] Xóa giỏ hàng sau khi tạo đơn thành công
+- [x] Redesign tab đơn hàng trong MyAccount (fix NaN đ, layout đẹp hơn)
+- [x] Hệ thống thông báo: icon bell header hoạt động, gửi thông báo khi đặt hàng
+- [x] Redesign header dashboard và thêm link cấu hình thông báo
 
 ## Phase: Major UI Fixes (Apr 9, 2026 - Session 18)
 - [x] Fix sticky cart mobile: chỉ hiện trên mobile (md:hidden), thêm padding bottom cho content
@@ -1405,4 +1405,29 @@ todo updated
 - [x] Thêm broadcast procedure để gửi thông báo đến tất cả khách hàng
 - [x] Redesign header dashboard: top bar cố định, SidebarTrigger trên cả desktop/mobile
 - [x] Thêm link "Gửi thông báo" vào sidebar admin
+- [x] TypeScript: 0 errors, 53/53 tests passed
+
+## Phase: Major Improvements (Apr 9, 2026 - Session 19)
+- [ ] Fix số 0 dư trong trang đơn hàng (OrderDetailPage - coupon section)
+- [ ] Fix nút nạp tiền PayOS: giữ paymentUrl sau khi tạo, không mất link khi loading
+- [ ] Feature flags block route hoàn toàn: khi tắt tính năng, route trả về 404/redirect
+- [ ] Xóa links tính năng bị tắt khỏi MyAccount (wishlist, leaderboard, warranty, referral)
+- [ ] Kho ảnh avatar: admin upload/quản lý avatar library
+- [ ] Client chọn avatar từ kho hoặc upload ảnh riêng
+- [ ] Redesign toàn bộ admin dashboard: sidebar gọn gàng, gộp trang liên quan
+- [ ] Cải thiện admin layout: thống nhất design system, chuyên nghiệp hơn
+- [ ] Fix tag trạng thái PAID hiển thị "Hoàn thành" → đổi thành "Đang xử lý"
+- [ ] Fix progress bar mất cân bằng trong CartPage (đường kẻ không đều)
+- [ ] Track order: nút "Xem chi tiết" dùng route /order/:invoiceNumber
+
+## Phase: Feature Flags & Avatar Gallery (Apr 9, 2026 - Session 20)
+- [x] Tạo FeatureGuard component: block route hoàn toàn khi feature bị tắt (redirect về /)
+- [x] App.tsx: áp dụng FeatureGuard cho wishlist, flash_sale, leaderboard, blog, faq, loyalty (points), warranty-request, referral, wallet, wallet-history, coupons
+- [x] App.tsx: thêm route /admin/avatar-gallery → AvatarGalleryAdmin
+- [x] MyAccount: ẩn wallet balance section khi feature wallet bị tắt
+- [x] MyAccount: ẩn quick action buttons (wishlist, leaderboard) khi feature bị tắt
+- [x] MyAccount: ẩn feature links trong overview tab (points, warranty, referral, leaderboard)
+- [x] MyAccount: thêm nút "Chọn từ kho" mở modal gallery avatar
+- [x] MyAccount: modal gallery avatar với grid ảnh, chọn avatar từ kho admin
+- [x] routers.ts: thêm customer.selectAvatar procedure để lưu avatar từ gallery
 - [x] TypeScript: 0 errors, 53/53 tests passed

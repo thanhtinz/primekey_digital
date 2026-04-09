@@ -639,6 +639,7 @@ export default function MyAccount() {
   const [orderFilter, setOrderFilter] = useState<"all" | "CREATED" | "PAID" | "COMPLETED" | "CANCELLED">("all");
   const { customer, token, logout, isLoading: authLoading } = useCustomerAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showAvatarGallery, setShowAvatarGallery] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -659,6 +660,22 @@ export default function MyAccount() {
       toast.success("Ảnh đại diện đã được cập nhật!");
     },
     onError: () => toast.error("Đã xảy ra lỗi khi upload ảnh"),
+  });
+
+  // Avatar gallery from admin
+  const { data: galleryAvatars = [] } = trpc.avatarImages.getAll.useQuery(
+    undefined,
+    { enabled: showAvatarGallery, staleTime: 60_000 }
+  );
+
+  const selectAvatarMutation = trpc.customer.selectAvatar.useMutation({
+    onSuccess: (data: any) => {
+      setAvatarUrl(data.url);
+      utils.customer.me.invalidate({ token: token! });
+      setShowAvatarGallery(false);
+      toast.success("Đã cập nhật ảnh đại diện!");
+    },
+    onError: (err: any) => toast.error(err.message),
   });
 
   const updateProfileMutation = trpc.customer.updateProfile.useMutation({
@@ -780,7 +797,7 @@ export default function MyAccount() {
   const tabs: { id: TabType; label: string; icon: any; badge?: number }[] = [
     { id: "overview", label: "Tổng quan", icon: BarChart3 },
     { id: "orders", label: "Đơn hàng", icon: Package, badge: pendingOrders > 0 ? pendingOrders : undefined },
-    ...(isFeatureEnabled("loyalty_points") ? [{ id: "points" as TabType, label: "Điểm", icon: Star }] : []),
+    ...(isFeatureEnabled("points") ? [{ id: "points" as TabType, label: "Điểm", icon: Star }] : []),
     ...(isFeatureEnabled("warranty") ? [{ id: "warranty" as TabType, label: "Bảo hành", icon: Shield }] : []),
     ...(isFeatureEnabled("referral") ? [{ id: "referral" as TabType, label: "Giới thiệu", icon: Users2 }] : []),
     { id: "profile", label: "Hồ sơ & Bảo mật", icon: User },
@@ -828,18 +845,20 @@ export default function MyAccount() {
             </div>
           </div>
           {/* Wallet balance */}
-          <div className="relative mt-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-blue-200" />
-              <span className="text-sm text-blue-100">Số dư ví</span>
+          {isFeatureEnabled("wallet") && (
+            <div className="relative mt-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-blue-200" />
+                <span className="text-sm text-blue-100">Số dư ví</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-lg font-bold text-emerald-300">{formatBalance(walletBalance)}</span>
+                <button onClick={() => navigate("/wallet")} className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition">
+                  Nạp tiền
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-lg font-bold text-emerald-300">{formatBalance(walletBalance)}</span>
-              <button onClick={() => navigate("/wallet")} className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition">
-                Nạp tiền
-              </button>
-            </div>
-          </div>
+          )}
           {/* Quick stats row */}
           <div className="relative grid grid-cols-4 gap-2 mt-3">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 text-center">
@@ -870,24 +889,28 @@ export default function MyAccount() {
             </div>
             <span className="text-[11px] font-medium text-slate-600 group-hover:text-blue-700">Giỏ hàng</span>
           </button>
-          <button onClick={() => navigate("/wishlist")} className="flex flex-col items-center gap-1.5 bg-white border border-slate-200 hover:border-red-300 hover:bg-red-50 rounded-xl p-3 transition group">
-            <div className="w-9 h-9 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition">
-              <Heart className="h-4.5 w-4.5 text-red-500" />
-            </div>
-            <span className="text-[11px] font-medium text-slate-600 group-hover:text-red-600">Yêu thích</span>
-          </button>
+          {isFeatureEnabled("wishlist") && (
+            <button onClick={() => navigate("/wishlist")} className="flex flex-col items-center gap-1.5 bg-white border border-slate-200 hover:border-red-300 hover:bg-red-50 rounded-xl p-3 transition group">
+              <div className="w-9 h-9 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition">
+                <Heart className="h-4.5 w-4.5 text-red-500" />
+              </div>
+              <span className="text-[11px] font-medium text-slate-600 group-hover:text-red-600">Yêu thích</span>
+            </button>
+          )}
           <button onClick={() => navigate("/track-order")} className="flex flex-col items-center gap-1.5 bg-white border border-slate-200 hover:border-green-300 hover:bg-green-50 rounded-xl p-3 transition group">
             <div className="w-9 h-9 rounded-lg bg-green-50 group-hover:bg-green-100 flex items-center justify-center transition">
               <Search className="h-4.5 w-4.5 text-green-600" />
             </div>
             <span className="text-[11px] font-medium text-slate-600 group-hover:text-green-700">Tra cứu đơn</span>
           </button>
-          <button onClick={() => navigate("/leaderboard")} className="flex flex-col items-center gap-1.5 bg-white border border-slate-200 hover:border-amber-300 hover:bg-amber-50 rounded-xl p-3 transition group">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center transition">
-              <Trophy className="h-4.5 w-4.5 text-amber-600" />
-            </div>
-            <span className="text-[11px] font-medium text-slate-600 group-hover:text-amber-700">BXH</span>
-          </button>
+          {isFeatureEnabled("leaderboard") && (
+            <button onClick={() => navigate("/leaderboard")} className="flex flex-col items-center gap-1.5 bg-white border border-slate-200 hover:border-amber-300 hover:bg-amber-50 rounded-xl p-3 transition group">
+              <div className="w-9 h-9 rounded-lg bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center transition">
+                <Trophy className="h-4.5 w-4.5 text-amber-600" />
+              </div>
+              <span className="text-[11px] font-medium text-slate-600 group-hover:text-amber-700">BXH</span>
+            </button>
+          )}
         </div>
 
         {/* ===== Tabs ===== */}
@@ -977,48 +1000,56 @@ export default function MyAccount() {
 
             {/* Feature links */}
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-              <button onClick={() => setActiveTab("points")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
-                <div className="w-9 h-9 rounded-lg bg-yellow-50 flex items-center justify-center flex-shrink-0">
-                  <Star className="h-4.5 w-4.5 text-yellow-500" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-slate-700">Điểm thưởng</p>
-                  <p className="text-xs text-slate-400">Tích lũy điểm khi mua hàng</p>
-                </div>
-                <span className="text-sm font-bold text-yellow-500 mr-1">{totalPoints}</span>
-                <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
-              </button>
-              <button onClick={() => setActiveTab("warranty")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
-                <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                  <Shield className="h-4.5 w-4.5 text-purple-600" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-slate-700">Bảo hành</p>
-                  <p className="text-xs text-slate-400">Quản lý yêu cầu bảo hành</p>
-                </div>
-                <span className="text-sm font-bold text-purple-600 mr-1">{(warranties as any[]).length}</span>
-                <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
-              </button>
-              <button onClick={() => setActiveTab("referral")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
-                <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                  <Users2 className="h-4.5 w-4.5 text-indigo-600" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-slate-700">Giới thiệu bạn bè</p>
-                  <p className="text-xs text-slate-400">Chia sẻ và nhận thưởng</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
-              </button>
-              <button onClick={() => navigate("/leaderboard")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
-                <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
-                  <Trophy className="h-4.5 w-4.5 text-amber-600" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-slate-700">Bảng xếp hạng chi tiêu</p>
-                  <p className="text-xs text-slate-400">Xem vị trí của bạn</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
-              </button>
+              {isFeatureEnabled("points") && (
+                <button onClick={() => setActiveTab("points")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
+                  <div className="w-9 h-9 rounded-lg bg-yellow-50 flex items-center justify-center flex-shrink-0">
+                    <Star className="h-4.5 w-4.5 text-yellow-500" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-slate-700">Điểm thưởng</p>
+                    <p className="text-xs text-slate-400">Tích lũy điểm khi mua hàng</p>
+                  </div>
+                  <span className="text-sm font-bold text-yellow-500 mr-1">{totalPoints}</span>
+                  <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
+                </button>
+              )}
+              {isFeatureEnabled("warranty") && (
+                <button onClick={() => setActiveTab("warranty")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
+                  <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                    <Shield className="h-4.5 w-4.5 text-purple-600" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-slate-700">Bảo hành</p>
+                    <p className="text-xs text-slate-400">Quản lý yêu cầu bảo hành</p>
+                  </div>
+                  <span className="text-sm font-bold text-purple-600 mr-1">{(warranties as any[]).length}</span>
+                  <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
+                </button>
+              )}
+              {isFeatureEnabled("referral") && (
+                <button onClick={() => setActiveTab("referral")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                    <Users2 className="h-4.5 w-4.5 text-indigo-600" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-slate-700">Giới thiệu bạn bè</p>
+                    <p className="text-xs text-slate-400">Chia sẻ và nhận thưởng</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
+                </button>
+              )}
+              {isFeatureEnabled("leaderboard") && (
+                <button onClick={() => navigate("/leaderboard")} className="w-full flex items-center gap-3 p-3.5 hover:bg-slate-50 transition">
+                  <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                    <Trophy className="h-4.5 w-4.5 text-amber-600" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-slate-700">Bảng xếp hạng chi tiêu</p>
+                    <p className="text-xs text-slate-400">Xem vị trí của bạn</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-300 flex-shrink-0" />
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1485,7 +1516,7 @@ export default function MyAccount() {
                     className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition disabled:opacity-50 border-2 border-white"
                     onClick={handleAvatarUpload}
                     disabled={uploadAvatarMutation.isPending}
-                    title="Đổi ảnh đại diện"
+                    title="Upload ảnh từ máy"
                   >
                     {uploadAvatarMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
                   </button>
@@ -1493,9 +1524,64 @@ export default function MyAccount() {
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-slate-800">{customerName}</p>
                   <p className="text-xs text-slate-500 truncate">{customer.email}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">JPG/PNG • tối đa 2MB</p>
+                  <div className="flex gap-2 mt-1.5">
+                    <button
+                      onClick={() => setShowAvatarGallery(true)}
+                      className="text-[10px] text-blue-600 hover:text-blue-700 font-medium px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 transition flex items-center gap-1"
+                    >
+                      <span>🏞️</span> Chọn từ kho
+                    </button>
+                    <span className="text-[10px] text-slate-400">hoặc upload ảnh</span>
+                  </div>
                 </div>
               </div>
+              {/* Avatar Gallery Modal */}
+              {showAvatarGallery && (
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setShowAvatarGallery(false)}>
+                  <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                      <h3 className="font-bold text-slate-800">🏞️ Kho ảnh avatar</h3>
+                      <button onClick={() => setShowAvatarGallery(false)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+                    </div>
+                    <div className="overflow-y-auto p-4 flex-1">
+                      {(galleryAvatars as any[]).length === 0 ? (
+                        <div className="text-center py-8 text-slate-400">
+                          <p className="text-sm">Kho ảnh trống</p>
+                          <p className="text-xs mt-1">Admin chưa thêm ảnh avatar nào</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-3">
+                          {(galleryAvatars as any[]).map((av: any) => (
+                            <button
+                              key={av.id}
+                              onClick={() => token && selectAvatarMutation.mutate({ token, avatarUrl: av.url })}
+                              disabled={selectAvatarMutation.isPending}
+                              className={`relative rounded-xl overflow-hidden aspect-square border-2 transition-all hover:border-blue-400 hover:shadow-md ${
+                                avatarUrl === av.url ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200"
+                              }`}
+                            >
+                              <img src={av.url} alt={av.label || "Avatar"} className="w-full h-full object-cover" />
+                              {avatarUrl === av.url && (
+                                <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                                  <CheckCircle className="h-5 w-5 text-blue-600" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-5 py-3 border-t border-slate-100">
+                      <button
+                        onClick={handleAvatarUpload}
+                        className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition flex items-center justify-center gap-2"
+                      >
+                        <Camera className="h-4 w-4" /> Upload ảnh từ máy tính
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Personal info fields */}
               <div className="px-5 py-4">

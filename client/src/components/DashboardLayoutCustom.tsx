@@ -50,6 +50,7 @@ const adminNavGroups = [
       { label: "Yêu Cầu Rút Thưởng", href: "/admin/referral-withdrawals", icon: Banknote },
       { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
       { label: "Banner Trang Chủ", href: "/settings/banners", icon: Image },
+      { label: "Kho Ảnh Avatar", href: "/settings/avatars", icon: User },
       { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
       { label: "ĐK Flash Sale", href: "/settings/flash-sale-subscribers", icon: MailCheck },
     ],
