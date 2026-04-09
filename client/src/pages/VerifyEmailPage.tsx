@@ -37,7 +37,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <ClientHeader />
-      <div className="pt-14 pb-16 flex items-center justify-center min-h-[70vh]">
+      <div className="pt-16 pb-16 flex items-center justify-center min-h-[70vh]">
         <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full mx-4 text-center">
           {status === "loading" && (
             <>

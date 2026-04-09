@@ -173,7 +173,7 @@ export default function ProductDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-14 bg-gray-50">
+      <div className="min-h-screen pt-16 bg-gray-50">
         <ClientHeader />
         <div className="max-w-2xl mx-auto px-4 py-8 space-y-4 animate-pulse">
           <div className="h-64 bg-gray-200 rounded-2xl" />
@@ -187,7 +187,7 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="min-h-screen pt-14 bg-gray-50">
+      <div className="min-h-screen pt-16 bg-gray-50">
         <ClientHeader />
         <div className="text-center py-20">
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -229,7 +229,7 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="min-h-screen pt-14 bg-gray-50">
+    <div className="min-h-screen pt-16 bg-gray-50">
       <ClientHeader />
 
       {/* ===== HERO SECTION - Gradient background with product image ===== */}

@@ -193,8 +193,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                         <button
                           key={cat.id}
                           onMouseEnter={() => setHoveredParent(cat.id)}
-                          onClick={() => { go(`/catalog?category=${cat.id}`); }}
-                          className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors ${hoveredParent === cat.id ? "bg-white/8 text-white" : "text-white/70 hover:text-white hover:bg-white/5"}`}
+                          onClick={() => { if (childrenOf(cat.id).length === 0) go(`/catalog?category=${cat.id}`); }}
+                          className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors ${hoveredParent === cat.id ? "bg-white/8 text-white" : "text-white/70 hover:text-white hover:bg-white/5"} ${childrenOf(cat.id).length > 0 ? "cursor-default" : ""}`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <CatIcon icon={cat.icon} className="text-base flex-shrink-0" />

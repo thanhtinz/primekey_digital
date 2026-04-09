@@ -99,24 +99,26 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col pt-16">
       <ClientHeader />
-      <div className="flex-1 pt-14">
-        {/* Hero */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 border-b border-blue-800 py-10 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-4">
-              <Headphones className="h-4 w-4 text-white" />
-              <span className="text-sm text-white font-medium">Hỗ trợ 24/7</span>
+      <div className="flex-1">
+        {/* Hero Banner */}
+        <div className="mx-4 mt-4 mb-4">
+          <div className="max-w-4xl mx-auto bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl px-5 py-5 text-white flex items-center gap-4">
+            <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+              <Headphones className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3 text-white">Trung Tâm Hỗ Trợ</h1>
-            <p className="text-blue-100 text-base max-w-xl mx-auto">
-              Chúng tôi luôn sẵn sàng hỗ trợ bạn. Tìm câu trả lời hoặc gửi yêu cầu hỗ trợ.
-            </p>
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-black">Trung Tâm Hỗ Trợ 🎟️</h1>
+              <p className="text-white/80 text-sm">Hỗ trợ 24/7 — Chúng tôi luôn sẵn sàng giúp bạn</p>
+            </div>
+            <div className="flex-shrink-0 bg-white/20 rounded-xl px-3 py-1.5 text-center">
+              <p className="text-white font-black text-xl">24/7</p>
+              <p className="text-white/80 text-[10px]">hỗ trợ</p>
+            </div>
           </div>
         </div>
-
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 pb-8">
           {/* Contact channels */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
             {[

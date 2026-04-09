@@ -1535,3 +1535,36 @@ todo updated
 - [ ] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar
 - [ ] Fix sticky bottom bar ProductDetail mobile: dùng position:fixed thay vì bị cuộn theo trang
 - [ ] ProductDetail: xóa sticky bottom bar mobile, gộp nút Giỏ hàng/Mua ngay vào card thông tin đặt hàng
+
+## Phase: UI/UX Fixes (Apr 9, 2026 - Session 32)
+- [x] ProductCatalog grid view: xóa hardcode "Giao ngay" + số gói → hiển thị tag sản phẩm từ DB
+- [x] ProductCatalog list view: xóa hardcode "Giao ngay" + tên gói → hiển thị tag sản phẩm từ DB
+- [x] Fix khoảng cách header/thân trang: thêm pt-14 vào LoyaltyRewardsPage, SpinWheelPage, ResetPasswordPage, LeaderboardPage
+- [x] Fix AnnouncementBanner popup không hiện: thêm AnnouncementBanner vào LandingPage để popup hoạt động
+
+## Phase: UI/UX Nâng Cấp Toàn Diện (Apr 9, 2026 - Session 33)
+- [x] Thêm rating (sao) và số lượng đã bán vào card sản phẩm (LandingPage grid + ProductCatalog grid/list)
+- [x] Backend: thêm procedure lấy rating trung bình + số review + số đã bán cho sản phẩm
+- [x] Fix tag trùng lặp trong ProductCatalog: grid view hiện 2 tag (danh mục + tag DB), list view thiếu tag danh mục
+- [x] Fix card danh mục con mobile (ảnh 4): card quá to, cần làm gọn lại
+- [x] Thiết kế lại FlashSalePage đồng bộ với trang chính
+- [x] Thiết kế lại LeaderboardPage đồng bộ với trang chính
+- [x] Thiết kế lại BlogPage đồng bộ với trang chính
+- [x] Thiết kế lại SupportPage đồng bộ với trang chính
+- [x] Thiết kế lại CouponStorePage đồng bộ với trang chính
+- [x] Fix khoảng cách header/thân trang: pt-14 → pt-16 trên tất cả trang client
+- [ ] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar
+
+## Session Apr 9, 2026 - UI/UX Improvements Batch 2
+
+- [x] Thêm rating (sao) và số đã bán vào card sản phẩm (LandingPage + ProductCatalog grid/list)
+- [x] Backend: thêm avgRating, reviewCount, soldCount vào products.listPublic
+- [x] Fix tag trùng lặp trong ProductCatalog grid view (dùng product.tags thay vì tagMappings)
+- [x] Fix card danh mục con mobile - icon nhỏ hơn, card gọn hơn (w-[56px])
+- [x] Thiết kế lại FlashSalePage hero banner đồng bộ
+- [x] Thiết kế lại LeaderboardPage hero banner đồng bộ
+- [x] Thiết kế lại BlogPage hero banner đồng bộ
+- [x] Thiết kế lại SupportPage hero banner đồng bộ
+- [x] Thiết kế lại CouponStorePage hero banner đồng bộ
+- [x] Fix khoảng cách header/thân trang: pt-14 → pt-16 trên tất cả trang client
+- [x] Desktop dropdown danh mục: parent có children thì không navigate khi click (bỏ "Tất cả Giải trí")

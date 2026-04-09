@@ -146,30 +146,27 @@ export default function CouponStorePage() {
   const activeCoupons = coupons;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col pt-16">
       <ClientHeader />
-      <div className="flex-1 pt-14">
-        {/* Hero */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 border-b border-blue-800 py-10 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-4">
-              <Gift className="h-4 w-4 text-white" />
-              <span className="text-sm text-white font-medium">Ưu đãi đặc biệt</span>
+      <div className="flex-1">
+        {/* Hero Banner */}
+        <div className="mx-4 mt-4 mb-4">
+          <div className="max-w-4xl mx-auto bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-2xl px-5 py-5 text-white flex items-center gap-4">
+            <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+              <Gift className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3 text-white">Kho Mã Giảm Giá</h1>
-            <p className="text-blue-100 text-base max-w-xl mx-auto">
-              Sao chép mã và áp dụng khi thanh toán để nhận ưu đãi hấp dẫn
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-              <span className="text-blue-100">Đang có</span>
-              <span className="text-white font-bold text-lg">{activeCoupons.length}</span>
-              <span className="text-blue-100">mã đang hoạt động</span>
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-black">Kho Mã Giảm Giá 🎁</h1>
+              <p className="text-white/80 text-sm">Sao chép mã và áp dụng khi thanh toán</p>
+            </div>
+            <div className="flex-shrink-0 bg-white/20 rounded-xl px-3 py-1.5 text-center">
+              <p className="text-white font-black text-xl">{activeCoupons.length}</p>
+              <p className="text-white/80 text-[10px]">mã ưu đãi</p>
             </div>
           </div>
         </div>
-
         {/* Filters */}
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-4xl mx-auto px-4 pb-6">
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             {/* Search */}
             <div className="relative flex-1">

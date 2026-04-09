@@ -41,28 +41,26 @@ export default function LeaderboardPage() {
   const { data: leaderboard = [], isLoading } = trpc.leaderboard.getTop.useQuery({ period }, { staleTime: 30_000 });
 
   return (
-    <div className="min-h-screen flex flex-col bg-white pt-14">
+    <div className="min-h-screen flex flex-col bg-gray-50 pt-16">
       <ClientHeader />
       <main className="flex-1 pb-16">
         {/* Hero Banner */}
-        <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 py-10 px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-4 py-1.5 text-xs text-white/90 font-medium mb-4">
-              <Flame className="h-3.5 w-3.5 text-orange-300" />
-              Bảng xếp hạng khách hàng VIP
+        <div className="mx-4 mt-4 mb-4">
+          <div className="max-w-3xl mx-auto bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 rounded-2xl px-5 py-5 text-white flex items-center gap-4">
+            <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+              <Trophy className="h-7 w-7 text-yellow-200" />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
-              Top{" "}
-              <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                Khách Hàng
-              </span>{" "}
-              Chi Tiêu
-            </h1>
-            <p className="text-white/70 text-sm">Những khách hàng thân thiết chi tiêu nhiều nhất</p>
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-black">Bảng Xếp Hạng 🏆</h1>
+              <p className="text-white/80 text-sm">Top khách hàng chi tiêu nhiều nhất</p>
+            </div>
+            <div className="flex-shrink-0 bg-white/20 rounded-xl px-3 py-1.5 text-center">
+              <p className="text-white font-black text-xl">{leaderboard.length}</p>
+              <p className="text-white/80 text-[10px]">thành viên</p>
+            </div>
           </div>
         </div>
-
-        <div className="max-w-3xl mx-auto px-4 mt-6">
+        <div className="max-w-3xl mx-auto px-4">
           {/* Period Tabs */}
           <div className="flex items-center border-b border-gray-200 mb-8">
             {(Object.entries(PERIOD_LABELS) as [Period, string][]).map(([key, label]) => (

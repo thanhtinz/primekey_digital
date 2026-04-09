@@ -172,12 +172,16 @@ export default function LandingPage() {
               <div className="text-sm font-bold text-red-500">{formatPrice(product.price)}</div>
             ) : null}
           </div>
-          {avgRating > 0 && (
-            <div className="flex items-center gap-1 text-xs text-amber-500">
+          <div className="flex items-center gap-2 text-xs mt-1">
+            <div className="flex items-center gap-0.5 text-amber-500">
               <Star className="h-3 w-3 fill-current" />
-              <span>{avgRating.toFixed(1)}</span>
+              <span className="font-medium">{avgRating > 0 ? avgRating.toFixed(1) : "5.0"}</span>
+              {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
             </div>
-          )}
+            {product.soldCount > 0 && (
+              <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -189,7 +193,7 @@ export default function LandingPage() {
       <ClientHeader />
       {/* ===== ANNOUNCEMENT POPUP ===== */}
       <AnnouncementBanner />
-      <div className="pt-14 flex-1">
+      <div className="pt-16 flex-1">
         {/* ===== IMAGE BANNER CAROUSEL ===== */}
         {(bannersData as any[]).length > 0 && (
           <div className="mx-4 mt-3 mb-2 relative overflow-hidden rounded-2xl" style={{maxWidth: "100%"}}>
@@ -292,12 +296,12 @@ export default function LandingPage() {
                         <button
                           key={cat.id}
                           onClick={() => navigate(`/catalog?category=${cat.id}`)}
-                          className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-blue-50 transition-all min-w-[80px] group"
+                          className="flex-shrink-0 flex flex-col items-center gap-1 p-1.5 rounded-xl hover:bg-blue-50 transition-all w-[56px] group"
                         >
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center text-2xl group-hover:border-blue-300 group-hover:shadow-sm transition-all">
-                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-blue-500`} /> : <span>{cat.icon}</span>) : <Package className="h-6 w-6 text-slate-400" />}
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 flex items-center justify-center group-hover:border-blue-300 group-hover:shadow-sm transition-all">
+                            {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-sm text-blue-500`} /> : <span className="text-sm">{cat.icon}</span>) : <Package className="h-4 w-4 text-slate-400" />}
                           </div>
-                          <span className="text-xs font-medium text-slate-700 text-center line-clamp-1 max-w-[80px]">{cat.name}</span>
+                          <span className="text-[9px] font-medium text-slate-700 text-center line-clamp-2 leading-tight w-full">{cat.name}</span>
                         </button>
                       ))}
                     </div>

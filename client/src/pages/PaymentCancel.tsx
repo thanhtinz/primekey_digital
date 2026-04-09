@@ -57,7 +57,7 @@ export default function PaymentCancel() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <main className="flex-1 flex items-center justify-center px-4 pt-14 pb-10">
+      <main className="flex-1 flex items-center justify-center px-4 pt-16 pb-10">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
           {isLoading ? (
             <div className="flex flex-col items-center gap-4">

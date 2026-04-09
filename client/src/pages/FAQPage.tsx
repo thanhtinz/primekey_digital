@@ -29,7 +29,7 @@ export default function FAQPage() {
   }, {});
 
   return (
-    <div className="min-h-screen pt-14 bg-slate-50 text-slate-800">
+    <div className="min-h-screen pt-16 bg-slate-50 text-slate-800">
       <ClientHeader />
 
       <div className="max-w-3xl mx-auto px-4 py-10">

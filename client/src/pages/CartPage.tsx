@@ -194,7 +194,7 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-14 pb-6 space-y-4">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-16 pb-6 space-y-4">
 
         <ProgressBar step={step} />
 

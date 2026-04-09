@@ -1339,8 +1339,8 @@ export const appRouter = router({
         const { getDb } = await import("./db");
         const drizzleDb = await getDb();
         if (!drizzleDb) return [];
-        const { products: productsTable, productPackages, productCategories, users, productTags, productTagMappings } = await import("../drizzle/schema");
-        const { eq, and, inArray } = await import("drizzle-orm");
+        const { products: productsTable, productPackages, productCategories, users, productTags, productTagMappings, productReviews, invoiceItems, invoices } = await import("../drizzle/schema");
+        const { eq, and, inArray, avg, count, sum, sql } = await import("drizzle-orm");
         const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
         if (!owner) return [];
         const conditions: any[] = [eq(productsTable.userId, owner.id)];
@@ -1365,6 +1365,44 @@ export const appRouter = router({
             allTagsList = await drizzleDb.select().from(productTags).where(inArray(productTags.id, tagIds));
           }
         }
+        // Get sold count per product from PAID/COMPLETED invoices
+        let soldStats: { productId: number; soldCount: number }[] = [];
+        if (productIds.length > 0) {
+          const soldRows = await drizzleDb
+            .select({
+              productId: invoiceItems.productId,
+              soldCount: count(invoiceItems.id),
+            })
+            .from(invoiceItems)
+            .innerJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+            .where(and(
+              inArray(invoiceItems.productId, productIds),
+              sql`${invoices.status} IN ('PAID','SHIPPING','COMPLETED','WARRANTY')`
+            ))
+            .groupBy(invoiceItems.productId);
+          soldStats = soldRows.map((r: any) => ({
+            productId: r.productId,
+            soldCount: Number(r.soldCount || 0),
+          }));
+        }
+        // Get review stats per product
+        let reviewStats: { productId: number; avgRating: number; reviewCount: number }[] = [];
+        if (productIds.length > 0) {
+          const rows = await drizzleDb
+            .select({
+              productId: productReviews.productId,
+              avgRating: avg(productReviews.rating),
+              reviewCount: count(productReviews.id),
+            })
+            .from(productReviews)
+            .where(and(inArray(productReviews.productId, productIds), eq(productReviews.isApproved, true)))
+            .groupBy(productReviews.productId);
+          reviewStats = rows.map((r: any) => ({
+            productId: r.productId,
+            avgRating: parseFloat(r.avgRating || "0"),
+            reviewCount: Number(r.reviewCount || 0),
+          }));
+        }
         return productRows.map(p => ({
           ...p,
           packages: allPackages.filter(pkg => pkg.productId === p.id),
@@ -1375,6 +1413,9 @@ export const appRouter = router({
             return allCategories.find(c => c.id === cat.parentId)?.name || null;
           })(),
           tags: allTagMappings.filter((m: any) => m.productId === p.id).map((m: any) => allTagsList.find((t: any) => t.id === m.tagId)).filter(Boolean),
+          avgRating: reviewStats.find(r => r.productId === p.id)?.avgRating || 0,
+          reviewCount: reviewStats.find(r => r.productId === p.id)?.reviewCount || 0,
+          soldCount: soldStats.find((s: any) => s.productId === p.id)?.soldCount || 0,
         }));
       }),
     // Public: lấy 1 sản phẩm kèm packages theo id

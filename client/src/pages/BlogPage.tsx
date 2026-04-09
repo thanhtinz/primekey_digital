@@ -31,35 +31,38 @@ export default function BlogPage() {
   const rest = filtered.slice(1);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <ClientHeader />
-
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 pt-14 pb-14">
-        <div className="max-w-5xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full mb-4">
-            <BookOpen className="h-3.5 w-3.5" />
-            Blog hướng dẫn & tin tức
+      {/* Hero Banner */}
+      <div className="mx-4 mt-4 mb-4">
+        <div className="max-w-5xl mx-auto bg-gradient-to-r from-slate-700 via-blue-700 to-indigo-700 rounded-2xl px-5 py-5 text-white flex items-center gap-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+            <BookOpen className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Kiến thức & Hướng dẫn</h1>
-          <p className="text-white/60 text-sm md:text-base max-w-xl mx-auto mb-6">
-            Các bài viết hướng dẫn sử dụng, tin tức sản phẩm và mẹo hay dành cho bạn.
-          </p>
-          {/* Search */}
-          <div className="relative max-w-md mx-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Tìm kiếm bài viết..."
-              className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 text-sm focus:outline-none focus:border-white/40 focus:bg-white/15 transition"
-            />
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-black">Blog & Hướng Dẫn 📚</h1>
+            <p className="text-white/80 text-sm">Kiến thức, tin tức và mẹo hay dành cho bạn</p>
           </div>
+          {posts.length > 0 && (
+            <div className="flex-shrink-0 bg-white/20 rounded-xl px-3 py-1.5 text-center">
+              <p className="text-white font-black text-xl">{posts.length}</p>
+              <p className="text-white/80 text-[10px]">bài viết</p>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="max-w-5xl mx-auto px-4 py-10">
+      <div className="max-w-5xl mx-auto px-4 pb-10">
+        {/* Search */}
+        <div className="relative mb-5">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Tìm kiếm bài viết..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+          />
+        </div>
         {/* Category filter */}
         <div className="flex flex-wrap gap-2 mb-8">
           <button

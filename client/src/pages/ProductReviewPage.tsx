@@ -58,7 +58,7 @@ export default function ProductReviewPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <ClientHeader />
-        <div className="pt-14 flex items-center justify-center min-h-screen">
+        <div className="pt-16 flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function ProductReviewPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <ClientHeader />
-        <div className="pt-14 flex items-center justify-center min-h-screen px-4">
+        <div className="pt-16 flex items-center justify-center min-h-screen px-4">
           <div className="text-center max-w-sm">
             <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-slate-800 mb-2">Link Không Hợp Lệ</h2>
@@ -88,7 +88,7 @@ export default function ProductReviewPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <ClientHeader />
-        <div className="pt-14 flex items-center justify-center min-h-screen px-4">
+        <div className="pt-16 flex items-center justify-center min-h-screen px-4">
           <div className="text-center max-w-md">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="h-10 w-10 text-green-600" />
@@ -117,7 +117,7 @@ export default function ProductReviewPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <ClientHeader />
-      <div className="pt-14 pb-10 px-4">
+      <div className="pt-16 pb-10 px-4">
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <div className="text-center mb-8">

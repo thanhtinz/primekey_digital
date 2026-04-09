@@ -161,7 +161,7 @@ export default function ProductCatalog() {
   const childCats = selectedParentCat ? getChildCats(selectedParentCat) : [];
 
   return (
-    <div className="min-h-screen pt-14 bg-gray-50">
+    <div className="min-h-screen pt-16 bg-gray-50">
       <ClientHeader />
 
       {/* ===== HEADER GRADIENT ===== */}
@@ -385,24 +385,22 @@ export default function ProductCatalog() {
                     {discount > 0 && (
                       <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">-{discount}%</div>
                     )}
-                    {product.categoryName && (
-                      <div className="absolute top-2 right-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
-                        {product.categoryName}
-                      </div>
-                    )}
-                    {/* Product tags */}
+                    {/* Product tags - hiển thị tối đa 1 tag ở góc trên phải (thay cho categoryName) */}
                     {(() => {
-                      const ptags = (tagMappings as any[]).filter((m: any) => m.productId === product.id).slice(0, 2);
-                      return ptags.length > 0 ? (
-                        <div className="absolute bottom-2 left-2 flex gap-1">
-                          {ptags.map((m: any) => (
-                            <span key={m.tag.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow inline-flex items-center gap-0.5" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>
-                              {m.tag.icon && (m.tag.icon.startsWith("fa-") ? <i className={`${m.tag.icon} text-[8px]`} /> : <span className="text-[8px]">{m.tag.icon}</span>)}
-                              {m.tag.name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null;
+                      const ptags = (product.tags || []) as any[];
+                      if (ptags.length > 0) {
+                        return (
+                          <div className="absolute bottom-2 left-2 flex gap-1">
+                            {ptags.slice(0, 1).map((tag: any) => (
+                              <span key={tag.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow inline-flex items-center gap-0.5" style={{ backgroundColor: tag.color || '#3b82f6' }}>
+                                {tag.icon && (tag.icon.startsWith("fa-") ? <i className={`${tag.icon} text-[8px]`} /> : <span className="text-[8px]">{tag.icon}</span>)}
+                                {tag.name}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
                     })()}
                   </div>
                   <div className="p-3">
@@ -412,19 +410,16 @@ export default function ProductCatalog() {
                         {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
                       </span>
                     </div>
-                    {(() => {
-                      const ptags2 = (tagMappings as any[]).filter((m: any) => m.productId === product.id).slice(0, 3);
-                      return ptags2.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {ptags2.map((m: any) => (
-                            <span key={m.tag.id} className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-0.5" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>
-                              {m.tag.icon && (m.tag.icon.startsWith("fa-") ? <i className={`${m.tag.icon} text-[9px]`} /> : <span className="text-[9px]">{m.tag.icon}</span>)}
-                              {m.tag.name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null;
-                    })()}
+                    <div className="flex items-center gap-2 text-xs mt-1">
+                      <div className="flex items-center gap-0.5 text-amber-500">
+                        <Star className="h-3 w-3 fill-current" />
+                        <span className="font-medium">{product.avgRating > 0 ? Number(product.avgRating).toFixed(1) : "5.0"}</span>
+                        {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
+                      </div>
+                      {product.soldCount > 0 && (
+                        <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
+                      )}
+                    </div>
 
                   </div>
                 </div>
@@ -463,19 +458,26 @@ export default function ProductCatalog() {
                         {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
                       </span>
                     </div>
-                    {(() => {
-                      const ptags3 = (tagMappings as any[]).filter((m: any) => m.productId === product.id).slice(0, 3);
-                      return ptags3.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {ptags3.map((m: any) => (
-                            <span key={m.tag.id} className="text-xs font-semibold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-1" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>
-                              {m.tag.icon && (m.tag.icon.startsWith("fa-") ? <i className={`${m.tag.icon} text-[10px]`} /> : <span className="text-[10px]">{m.tag.icon}</span>)}
-                              {m.tag.name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null;
-                    })()}
+                    <div className="flex items-center gap-2 text-xs mt-1.5">
+                      <div className="flex items-center gap-0.5 text-amber-500">
+                        <Star className="h-3 w-3 fill-current" />
+                        <span className="font-medium">{product.avgRating > 0 ? Number(product.avgRating).toFixed(1) : "5.0"}</span>
+                        {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
+                      </div>
+                      {product.soldCount > 0 && (
+                        <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
+                      )}
+                    </div>
+                    {(product.tags || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {(product.tags as any[]).slice(0, 2).map((tag: any) => (
+                          <span key={tag.id} className="text-xs font-semibold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-1" style={{ backgroundColor: tag.color || '#3b82f6' }}>
+                            {tag.icon && (tag.icon.startsWith("fa-") ? <i className={`${tag.icon} text-[10px]`} /> : <span className="text-[10px]">{tag.icon}</span>)}
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

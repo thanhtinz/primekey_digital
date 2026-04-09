@@ -70,30 +70,27 @@ export default function FlashSalePage() {
   const soldOutSales = sales.filter(s => s.maxQuantity && s.maxQuantity > 0 && (s.soldQuantity || 0) >= s.maxQuantity);
 
   return (
-    <div className="min-h-screen pt-14 bg-slate-50">
+    <div className="min-h-screen pt-16 bg-gray-50">
       <ClientHeader />
-
-      <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
-        {/* Hero */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-500/20 to-orange-500/10 rounded-3xl mb-4 border border-red-500/20 relative">
-            <Zap className="h-10 w-10 text-red-500" />
-            <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center animate-bounce">
-              <Flame className="h-3.5 w-3.5 text-white" />
-            </div>
+      {/* Hero banner */}
+      <div className="mx-4 mb-4">
+        <div className="max-w-5xl mx-auto bg-gradient-to-r from-red-600 via-orange-500 to-pink-500 rounded-2xl px-5 py-5 text-white flex items-center gap-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+            <Zap className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mb-2">
-            <span className="text-red-500">Flash</span> Sale <span className="text-orange-500">🔥</span>
-          </h1>
-          <p className="text-slate-500 text-base">Ưu đãi có thời hạn — Nhanh tay kẻo lỡ!</p>
-
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-black">Flash Sale 🔥</h1>
+            <p className="text-white/80 text-sm">Ưu đãi có thời hạn — Nhanh tay kẻo lỡ!</p>
+          </div>
           {sales.length > 0 && (
-            <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-red-50 border border-red-200 rounded-full">
-              <Zap className="h-4 w-4 text-red-500" />
-              <span className="text-red-700 text-sm font-medium">{activeSales.length} ưu đãi đang diễn ra</span>
+            <div className="flex-shrink-0 bg-white/20 rounded-xl px-3 py-1.5 text-center">
+              <p className="text-white font-black text-xl">{activeSales.length}</p>
+              <p className="text-white/80 text-[10px]">ưu đãi</p>
             </div>
           )}
         </div>
+      </div>
+      <div className="max-w-5xl mx-auto px-4 pb-8">
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
@@ -249,7 +246,6 @@ export default function FlashSalePage() {
           </div>
         )}
       </div>
-
       <footer className="py-6 text-center text-xs text-slate-500 border-t border-slate-200">
         © {new Date().getFullYear()} {brandName}. Giá và số lượng có thể thay đổi.
       </footer>

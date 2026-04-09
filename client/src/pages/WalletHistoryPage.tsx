@@ -136,7 +136,7 @@ export default function WalletHistoryPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-14 pb-6 space-y-5">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-16 pb-6 space-y-5">
 
         {/* Header card */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
