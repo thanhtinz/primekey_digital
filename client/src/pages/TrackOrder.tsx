@@ -1,9 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, User, Phone, ShoppingBag, CreditCard, ChevronDown, ChevronUp, ExternalLink, Mail, FileText, Receipt } from "lucide-react";
+import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, ShoppingBag, CreditCard, ChevronDown, ExternalLink, FileText, RefreshCw, XCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
@@ -16,363 +13,369 @@ const STATUS_CONFIG: Record<string, {
   borderColor: string;
   icon: React.ComponentType<{ className?: string }>;
   step: number;
+  tabColor: string;
 }> = {
-  CREATED: { label: "Tạo Đơn", color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", icon: Package, step: 1 },
-  PAID: { label: "Đã Thanh Toán", color: "text-green-600", bgColor: "bg-green-50", borderColor: "border-green-200", icon: CheckCircle, step: 2 },
-  SHIPPING: { label: "Đang Giao Hàng", color: "text-orange-500", bgColor: "bg-orange-50", borderColor: "border-orange-200", icon: Truck, step: 3 },
-  WARRANTY: { label: "Bảo Hành", color: "text-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200", icon: Shield, step: 4 },
-  FAILED: { label: "Thất Bại", color: "text-red-500", bgColor: "bg-red-50", borderColor: "border-red-200", icon: AlertCircle, step: 0 },
-  EXPIRED: { label: "Hết Hạn", color: "text-slate-500", bgColor: "bg-slate-100", borderColor: "border-slate-200", icon: Clock, step: 0 },
+  CREATED:  { label: "Chờ xử lý",    color: "text-amber-600",  bgColor: "bg-amber-50",  borderColor: "border-amber-200",  icon: Clock,         step: 1, tabColor: "text-amber-600"  },
+  PAID:     { label: "Hoàn thành",   color: "text-green-600",  bgColor: "bg-green-50",  borderColor: "border-green-200",  icon: CheckCircle,   step: 2, tabColor: "text-green-600"  },
+  SHIPPING: { label: "Đang xử lý",   color: "text-blue-600",   bgColor: "bg-blue-50",   borderColor: "border-blue-200",   icon: Truck,         step: 3, tabColor: "text-blue-600"   },
+  WARRANTY: { label: "Bảo hành",     color: "text-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200", icon: Shield,        step: 4, tabColor: "text-purple-600" },
+  FAILED:   { label: "Thất bại",     color: "text-red-500",    bgColor: "bg-red-50",    borderColor: "border-red-200",    icon: XCircle,       step: 0, tabColor: "text-red-500"    },
+  EXPIRED:  { label: "Hết hạn",      color: "text-gray-500",   bgColor: "bg-gray-100",  borderColor: "border-gray-200",   icon: Clock,         step: 0, tabColor: "text-gray-500"   },
+  REFUNDED: { label: "Đã hoàn tiền", color: "text-teal-600",   bgColor: "bg-teal-50",   borderColor: "border-teal-200",   icon: RefreshCw,     step: 0, tabColor: "text-teal-600"   },
 };
 
 const STEPS = [
-  { key: "CREATED", label: "Tạo Đơn", icon: Package },
-  { key: "PAID", label: "Thanh Toán", icon: CheckCircle },
-  { key: "SHIPPING", label: "Giao Hàng", icon: Truck },
-  { key: "WARRANTY", label: "Bảo Hành", icon: Shield },
+  { key: "CREATED",  label: "Tạo đơn",   icon: Package },
+  { key: "PAID",     label: "Thanh toán", icon: CheckCircle },
+  { key: "SHIPPING", label: "Giao hàng",  icon: Truck },
+  { key: "WARRANTY", label: "Bảo hành",   icon: Shield },
 ];
 
-function formatCurrency(amount: string | number | null | undefined, currency = "VND") {
+function formatCurrency(amount: string | number | null | undefined) {
   const num = typeof amount === "string" ? parseFloat(amount) : (amount || 0);
-  if (currency === "USD") return `$${num.toFixed(2)}`;
-  return `${num.toLocaleString("vi-VN")} ₫`;
+  return `${num.toLocaleString("vi-VN")}đ`;
 }
 
 function formatDate(date: Date | string | null | undefined) {
   if (!date) return "—";
-  return new Date(date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(date).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-function formatDateShort(date: Date | string | null | undefined) {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-// Expandable order card
-function OrderCard({ order }: { order: any }) {
-  const [expanded, setExpanded] = useState(false);
+// Detail view for a single order
+function OrderDetail({ order, onBack }: { order: any; onBack: () => void }) {
   const statusCfg = STATUS_CONFIG[order.status || "CREATED"] || STATUS_CONFIG.CREATED;
   const StatusIcon = statusCfg.icon;
   const currentStep = statusCfg.step;
-  const currency = order.currency || "VND";
-
-  const toggleExpand = useCallback(() => setExpanded(prev => !prev), []);
 
   return (
-    <Card className="bg-white border-slate-200 overflow-hidden transition-all hover:bg-slate-50">
-      <CardContent className="p-0">
-        {/* Order Header - always visible */}
-        <button
-          onClick={toggleExpand}
-          className="w-full text-left p-5 flex items-start justify-between gap-4 transition-colors"
-        >
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <h3 className="font-bold text-slate-800 text-base font-mono">{order.invoiceNumber}</h3>
-              <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusCfg.bgColor} ${statusCfg.color} border ${statusCfg.borderColor}`}>
+    <div className="space-y-4">
+      {/* Back */}
+      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+        <ChevronDown className="h-4 w-4 rotate-90" /> Quay lại danh sách
+      </button>
+
+      {/* Order header */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg font-bold text-[#1e3a6e]">Chi tiết đơn hàng #{order.invoiceNumber}</h2>
+              <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusCfg.bgColor} ${statusCfg.color} border ${statusCfg.borderColor}`}>
                 <StatusIcon className="h-3 w-3" />
                 {statusCfg.label}
               </div>
             </div>
-            {order.customerName && (
-              <p className="text-slate-600 text-sm flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
-                {order.customerName}
-                {order.customerPhone && (
-                  <span className="text-slate-500 ml-2 flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    {order.customerPhone}
-                  </span>
-                )}
-              </p>
-            )}
-            <p className="text-slate-500 text-xs mt-1 flex items-center gap-1">
-              <Clock className="h-3 w-3" />
+            <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
               {formatDate(order.createdAt)}
             </p>
           </div>
-          <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
-            <p className="font-black text-slate-800 text-xl">
-              {formatCurrency(order.totalAmount, currency)}
-            </p>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-transform ${expanded ? "rotate-180" : ""} bg-slate-100`}>
-              <ChevronDown className="h-4 w-4 text-slate-500" />
-            </div>
-          </div>
-        </button>
+          {order.status === "CREATED" && order.paymentUrl && (
+            <a href={order.paymentUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-[#1e3a6e] hover:bg-[#162d57] text-white text-sm font-semibold rounded-xl transition-colors">
+              <ExternalLink className="h-4 w-4" /> Thanh toán ngay
+            </a>
+          )}
+        </div>
 
-        {/* Expanded content */}
-        {expanded && (
-          <div className="border-t border-slate-200">
-            {/* Progress Steps */}
-            {currentStep > 0 && (
-              <div className="px-5 py-5 border-b border-slate-100 bg-slate-50">
-                <div className="flex items-center justify-between relative">
-                  <div className="absolute top-4 left-0 right-0 h-0.5 bg-slate-200 z-0" />
-                  <div
-                    className="absolute top-4 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-400 z-0 transition-all duration-700"
-                    style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
-                  />
-                  {STEPS.map((step, i) => {
-                    const StepIcon = step.icon;
-                    const isCompleted = i + 1 < currentStep;
-                    const isCurrent = i + 1 === currentStep;
-                    return (
-                      <div key={step.key} className="flex flex-col items-center z-10 flex-1">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all ${
-                          isCompleted ? "bg-blue-600 border-blue-600 shadow-lg shadow-blue-500/30" : isCurrent ? "bg-blue-100 border-blue-500 shadow-lg shadow-blue-500/20" : "bg-slate-100 border-slate-300"
-                        }`}>
-                          <StepIcon className={`h-4 w-4 ${isCompleted ? "text-white" : isCurrent ? "text-blue-600" : "text-slate-400"}`} />
-                        </div>
-                        <p className={`text-xs mt-2 font-medium ${isCompleted || isCurrent ? "text-slate-800" : "text-slate-400"}`}>
-                          {step.label}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Items list */}
-            {order.items && order.items.length > 0 && (
-              <div className="px-5 py-4 border-b border-slate-100">
-                <h4 className="text-xs font-semibold text-slate-500 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                  <ShoppingBag className="h-4 w-4 text-blue-600" />
-                  Chi Tiết Sản Phẩm ({order.items.length})
-                </h4>
-                <div className="space-y-2">
-                  {order.items.map((item: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-slate-800 text-sm font-medium truncate">{item.name}</p>
-                        <p className="text-slate-500 text-xs mt-0.5">
-                          {formatCurrency(item.unitPrice, currency)} × {parseFloat(item.quantity)}
-                        </p>
-                      </div>
-                      <p className="text-slate-800 text-sm font-bold ml-3">
-                        {formatCurrency(item.totalAmount, currency)}
-                      </p>
+        {/* Progress steps */}
+        {currentStep > 0 && (
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <div className="flex items-center justify-between relative">
+              <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200 z-0" />
+              <div className="absolute top-4 left-0 h-0.5 bg-[#1e3a6e] z-0 transition-all duration-700"
+                style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }} />
+              {STEPS.map((step, i) => {
+                const StepIcon = step.icon;
+                const isCompleted = i + 1 < currentStep;
+                const isCurrent = i + 1 === currentStep;
+                return (
+                  <div key={step.key} className="flex flex-col items-center z-10 flex-1">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all ${
+                      isCompleted ? "bg-[#1e3a6e] border-[#1e3a6e]" : isCurrent ? "bg-blue-50 border-[#1e3a6e]" : "bg-white border-gray-300"
+                    }`}>
+                      <StepIcon className={`h-4 w-4 ${isCompleted ? "text-white" : isCurrent ? "text-[#1e3a6e]" : "text-gray-400"}`} />
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Payment summary */}
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h4 className="text-xs font-semibold text-slate-500 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                <CreditCard className="h-4 w-4 text-green-600" />
-                Tổng Kết Thanh Toán
-              </h4>
-              <div className="space-y-2 text-sm bg-slate-50 border border-slate-200 rounded-xl p-4">
-                {order.subtotal && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Tạm tính</span>
-                    <span>{formatCurrency(order.subtotal, currency)}</span>
+                    <p className={`text-xs mt-2 font-medium ${isCompleted || isCurrent ? "text-gray-800" : "text-gray-400"}`}>{step.label}</p>
                   </div>
-                )}
-                {order.discountAmount && parseFloat(order.discountAmount) > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Giảm giá</span>
-                    <span>-{formatCurrency(order.discountAmount, currency)}</span>
-                  </div>
-                )}
-                {order.taxAmount && parseFloat(order.taxAmount) > 0 && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Thuế</span>
-                    <span>{formatCurrency(order.taxAmount, currency)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-slate-800 font-bold pt-2 border-t border-slate-200">
-                  <span>Tổng cộng</span>
-                  <span className="text-xl">{formatCurrency(order.totalAmount, currency)}</span>
-                </div>
-                {order.paidAt && (
-                  <div className="flex justify-between text-green-600 text-xs pt-1">
-                    <span>Đã thanh toán lúc</span>
-                    <span>{formatDate(order.paidAt)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Warranty info */}
-            {order.warrantyMonths && order.warrantyMonths > 0 && (
-              <div className="px-5 py-4 border-b border-slate-100">
-                <h4 className="text-xs font-semibold text-slate-500 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                  <Shield className="h-4 w-4 text-purple-600" />
-                  Thông Tin Bảo Hành
-                </h4>
-                <div className="text-sm space-y-2 bg-purple-50 border border-purple-200 rounded-xl p-4">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Thời hạn</span>
-                    <span className="text-slate-800 font-medium">{order.warrantyMonths} tháng</span>
-                  </div>
-                  {order.warrantyStartDate && (
-                    <div className="flex justify-between text-slate-600">
-                      <span>Bắt đầu</span>
-                      <span className="text-slate-800">{formatDateShort(order.warrantyStartDate)}</span>
-                    </div>
-                  )}
-                  {order.warrantyExpiryDate && (
-                    <div className="flex justify-between text-slate-600">
-                      <span>Hết hạn</span>
-                      <span className={`font-semibold ${new Date(order.warrantyExpiryDate) > new Date() ? "text-green-600" : "text-red-500"}`}>
-                        {formatDateShort(order.warrantyExpiryDate)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Notes */}
-            {(order.publicNote || order.notes) && (
-              <div className="px-5 py-4 border-b border-slate-100">
-                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm">
-                  <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                  <div>
-                    <p className="text-blue-600 font-semibold text-xs mb-0.5">Ghi chú</p>
-                    <p className="text-blue-900/80">{order.publicNote || order.notes}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Payment link */}
-            {order.status === "CREATED" && order.paymentUrl && (
-              <div className="px-5 py-4 border-b border-slate-100">
-                <a
-                  href={order.paymentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/20"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Thanh Toán Ngay
-                </a>
-              </div>
-            )}
-
-            {/* Last updated */}
-            <div className="px-5 py-3 bg-slate-50">
-              <p className="text-slate-500 text-xs flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                Cập nhật lần cuối: {formatDate(order.updatedAt)}
-              </p>
+                );
+              })}
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Product info */}
+      {order.items && order.items.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <ShoppingBag className="h-4 w-4 text-[#1e3a6e]" /> Thông tin sản phẩm
+          </h3>
+          <div className="space-y-3">
+            {order.items.map((item: any, idx: number) => (
+              <div key={idx} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                {item.imageUrl && (
+                  <img src={item.imageUrl} alt={item.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
+                  {item.variantName && (
+                    <span className="inline-block mt-0.5 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{item.variantName}</span>
+                  )}
+                  <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(item.unitPrice)} × {parseFloat(item.quantity)}</p>
+                </div>
+                <p className="text-sm font-bold text-gray-800 flex-shrink-0">{formatCurrency(item.totalAmount)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Payment summary */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+          <CreditCard className="h-4 w-4 text-green-600" /> Thông tin thanh toán
+        </h3>
+        <div className="space-y-2 text-sm">
+          {order.subtotal && <div className="flex justify-between text-gray-600"><span>Giá gốc</span><span>{formatCurrency(order.subtotal)}</span></div>}
+          {order.discountAmount && parseFloat(order.discountAmount) > 0 && (
+            <div className="flex justify-between text-green-600"><span>Giảm giá</span><span>-{formatCurrency(order.discountAmount)}</span></div>
+          )}
+          {order.taxAmount && parseFloat(order.taxAmount) > 0 && (
+            <div className="flex justify-between text-gray-600"><span>Thuế</span><span>{formatCurrency(order.taxAmount)}</span></div>
+          )}
+          <div className="flex justify-between text-gray-900 font-bold text-base pt-2 border-t border-gray-100">
+            <span>Tổng thanh toán</span>
+            <span className="text-[#1e3a6e]">{formatCurrency(order.totalAmount)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Order info (custom fields) */}
+      {order.customFields && Object.keys(order.customFields).length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <FileText className="h-4 w-4 text-blue-600" /> Thông tin đơn hàng
+          </h3>
+          <div className="space-y-2">
+            {Object.entries(order.customFields).map(([k, v]) => (
+              <div key={k} className="bg-gray-50 rounded-xl px-4 py-3">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{k}</p>
+                <p className="text-sm text-gray-800 mt-0.5">{String(v)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Notes */}
+      {(order.publicNote || order.notes) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex gap-3">
+          <FileText className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-semibold text-blue-600 mb-0.5">Ghi chú</p>
+            <p className="text-sm text-blue-900/80">{order.publicNote || order.notes}</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
+
+// Order list card
+function OrderCard({ order, onView }: { order: any; onView: () => void }) {
+  const statusCfg = STATUS_CONFIG[order.status || "CREATED"] || STATUS_CONFIG.CREATED;
+  const StatusIcon = statusCfg.icon;
+  const firstItem = order.items?.[0];
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div>
+          <p className="text-sm font-bold text-[#1e3a6e]">#{order.invoiceNumber}</p>
+          <p className="text-sm font-semibold text-gray-800 mt-0.5 line-clamp-1">
+            {firstItem?.name || "Đơn hàng"}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatDate(order.createdAt)}
+          </p>
+        </div>
+        <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${statusCfg.bgColor} ${statusCfg.color} border ${statusCfg.borderColor}`}>
+          <StatusIcon className="h-3 w-3" />
+          {statusCfg.label}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <div className="flex items-center gap-2">
+          {firstItem?.imageUrl && (
+            <img src={firstItem.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+          )}
+          <p className="text-sm text-gray-600">
+            Tổng tiền: <span className="font-bold text-[#1e3a6e]">{formatCurrency(order.totalAmount)}</span>
+          </p>
+        </div>
+        <button onClick={onView}
+          className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors">
+          Xem chi tiết
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const STATUS_TABS = [
+  { key: "all",      label: "Tất cả" },
+  { key: "CREATED",  label: "Chờ xử lý" },
+  { key: "SHIPPING", label: "Đang xử lý" },
+  { key: "PAID",     label: "Hoàn thành" },
+  { key: "FAILED",   label: "Thất bại" },
+];
 
 export default function TrackOrder() {
   const [, setLocation] = useLocation();
   const { customer, isLoggedIn, isLoading: authLoading } = useCustomerAuth();
-  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const [searchText, setSearchText] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
-  // Redirect nếu chưa login
   useEffect(() => {
-    if (!authLoading && !isLoggedIn) {
-      setLocation("/client-login");
-    }
+    if (!authLoading && !isLoggedIn) setLocation("/client-login");
   }, [authLoading, isLoggedIn, setLocation]);
 
-  const searchEmail = customer?.email || "";
-
-  const { data: orders, isLoading, error } = trpc.invoices.getByEmail.useQuery(
-    { email: searchEmail },
-    {
-      enabled: !!searchEmail,
-      refetchInterval: 30000,
-      refetchIntervalInBackground: false,
-    }
+  const { data: orders = [], isLoading, error } = trpc.invoices.getByEmail.useQuery(
+    { email: customer?.email || "" },
+    { enabled: !!customer?.email, refetchInterval: 30000 }
   );
 
-  const brandName = publicInfo?.companyName || "Invoice Prime";
+  const filtered = (orders as any[]).filter(o => {
+    const matchTab = activeTab === "all" || o.status === activeTab;
+    const q = searchText.toLowerCase().trim();
+    const matchSearch = !q ||
+      (o.invoiceNumber || "").toLowerCase().includes(q) ||
+      (o.items || []).some((i: any) => (i.name || "").toLowerCase().includes(q));
+    return matchTab && matchSearch;
+  });
 
-  // Stats
-  const totalOrders = orders?.length || 0;
-  const paidOrders = orders?.filter(o => ["PAID", "SHIPPING", "WARRANTY"].includes(o.status || "")).length || 0;
-  const totalSpent = orders?.reduce((s, o) => s + (typeof o.totalAmount === "string" ? parseFloat(o.totalAmount) : (o.totalAmount || 0)), 0) || 0;
+  const tabCounts = STATUS_TABS.reduce((acc, tab) => {
+    acc[tab.key] = tab.key === "all"
+      ? (orders as any[]).length
+      : (orders as any[]).filter(o => o.status === tab.key).length;
+    return acc;
+  }, {} as Record<string, number>);
+
+  if (selectedOrder) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <ClientHeader />
+        <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6">
+          <OrderDetail order={selectedOrder} onBack={() => setSelectedOrder(null)} />
+        </main>
+        <ClientFooter />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen pt-14 bg-slate-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6 space-y-4">
 
-      <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
-         {/* Hero */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <ShoppingBag className="h-5 w-5 text-white" />
+        {/* Header card */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#1e3a6e] flex items-center justify-center flex-shrink-0">
+              <ShoppingBag className="h-7 w-7 text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
-                Quản Lý <span className="text-blue-600">Đơn Hàng</span>
-              </h1>
-              {customer && <p className="text-slate-500 text-sm">{customer.email}</p>}
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900">Đơn hàng của tôi</h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Tổng cộng {(orders as any[]).length} đơn hàng
+              </p>
             </div>
+          </div>
+
+          {/* Search */}
+          <div className="flex gap-2 mt-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                placeholder="Tìm mã đơn hàng, tên sản phẩm.."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+              />
+            </div>
+            <button
+              onClick={() => {}}
+              className="px-5 py-2.5 bg-[#1e3a6e] hover:bg-[#162d57] text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              Tìm kiếm
+            </button>
           </div>
         </div>
 
-        {/* Results */}
+        {/* Status tabs */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-1.5">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            {STATUS_TABS.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${
+                  activeTab === tab.key
+                    ? "bg-[#1e3a6e] text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {tab.label}
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                  activeTab === tab.key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
+                }`}>
+                  {tabCounts[tab.key] || 0}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Error */}
         {error && (
-          <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-600 rounded-xl px-5 py-4 mb-6">
+          <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold">Có lỗi xảy ra</p>
-              <p className="text-sm text-red-500/70 mt-0.5">Vui lòng thử lại sau.</p>
-            </div>
+            <p className="text-sm">Có lỗi xảy ra. Vui lòng thử lại sau.</p>
           </div>
         )}
 
-        {searchEmail && !isLoading && orders !== undefined && (
-          <>
-            {orders.length === 0 ? (
-              <div className="text-center py-16">
-                <Package className="h-20 w-20 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-800 mb-2">Không tìm thấy đơn hàng</h3>
-                <p className="text-slate-600">Không có đơn hàng nào với email <strong className="text-slate-800">{searchEmail}</strong></p>
+        {/* Orders list */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-200 p-4 animate-pulse">
+                <div className="h-4 bg-gray-100 rounded w-1/3 mb-2" />
+                <div className="h-3 bg-gray-100 rounded w-2/3 mb-3" />
+                <div className="h-3 bg-gray-100 rounded w-1/4" />
               </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 text-center shadow-sm">
-                    <Receipt className="h-5 w-5 text-blue-600 mx-auto mb-1" />
-                    <p className="text-slate-800 font-bold text-xl">{totalOrders}</p>
-                    <p className="text-slate-500 text-xs">Tổng đơn</p>
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 text-center shadow-sm">
-                    <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                    <p className="text-slate-800 font-bold text-xl">{paidOrders}</p>
-                    <p className="text-slate-500 text-xs">Đã thanh toán</p>
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 text-center shadow-sm">
-                    <CreditCard className="h-5 w-5 text-yellow-500 mx-auto mb-1" />
-                    <p className="text-slate-800 font-bold text-sm sm:text-base truncate">{formatCurrency(totalSpent)}</p>
-                    <p className="text-slate-500 text-xs">Tổng chi tiêu</p>
-                  </div>
-                </div>
-
-                <p className="text-slate-600 text-sm">
-                  Tìm thấy <strong className="text-slate-800">{orders.length}</strong> đơn hàng cho <strong className="text-slate-800">{searchEmail}</strong>
-                  <span className="text-slate-500 ml-2">(Nhấn vào đơn hàng để xem chi tiết)</span>
-                </p>
-                {orders.map((order) => (
-                  <OrderCard key={order.id} order={order} />
-                ))}
-              </div>
-            )}
-          </>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 text-center">
+            <Package className="h-16 w-16 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-600 font-semibold">Không tìm thấy đơn hàng</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {activeTab !== "all" ? "Không có đơn hàng nào trong trạng thái này" : "Bạn chưa có đơn hàng nào"}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((order: any) => (
+              <OrderCard key={order.id} order={order} onView={() => setSelectedOrder(order)} />
+            ))}
+          </div>
         )}
-      </div>
-
-
+      </main>
       <ClientFooter />
     </div>
   );

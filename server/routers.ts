@@ -5363,17 +5363,33 @@ export const appRouter = router({
       }),
 
     getTransactions: publicProcedure
-      .input(z.object({ token: z.string(), limit: z.number().default(20) }))
+      .input(z.object({
+        token: z.string(),
+        limit: z.number().default(50),
+        type: z.enum(["all", "topup", "spend", "refund", "reward"]).default("all"),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        search: z.string().optional(),
+      }))
       .query(async ({ input }) => {
         const { getDb } = await import("./db");
-        const { eq, desc } = await import("drizzle-orm");
+        const { eq, desc, and, gte, lte, like } = await import("drizzle-orm");
         const { customerSessions, walletTransactions } = await import("../drizzle/schema");
         const drizzleDb = await getDb();
         if (!drizzleDb) return [];
         const session = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
         if (!session[0]) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const conditions: any[] = [eq(walletTransactions.customerEmail, session[0].email)];
+        if (input.type && input.type !== "all") conditions.push(eq(walletTransactions.type, input.type as any));
+        if (input.dateFrom) conditions.push(gte(walletTransactions.createdAt, new Date(input.dateFrom)));
+        if (input.dateTo) {
+          const end = new Date(input.dateTo);
+          end.setHours(23, 59, 59, 999);
+          conditions.push(lte(walletTransactions.createdAt, end));
+        }
+        if (input.search) conditions.push(like(walletTransactions.description, `%${input.search}%`));
         return drizzleDb.select().from(walletTransactions)
-          .where(eq(walletTransactions.customerEmail, session[0].email))
+          .where(and(...conditions))
           .orderBy(desc(walletTransactions.createdAt))
           .limit(input.limit);
       }),

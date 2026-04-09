@@ -44,7 +44,7 @@ function FAQItem({ item }: { item: { q: string; a: string } }) {
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center justify-between px-4 py-4 text-left hover:bg-gray-50 transition-colors"
       >
-        <span className="font-medium text-white/90 text-sm pr-4">{item.q}</span>
+        <span className="font-medium text-gray-800 text-sm pr-4">{item.q}</span>
         {open ? <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />}
       </button>
       {open && (
