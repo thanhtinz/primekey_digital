@@ -1,15 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
+// Use a very large user ID to avoid collision with real users in production DB
+const TEST_USER_ID = 999999;
+
 function createAuthContext(): { ctx: TrpcContext } {
   const user: AuthenticatedUser = {
-    id: 1,
-    openId: "test-user",
-    email: "test@example.com",
-    name: "Test User",
+    id: TEST_USER_ID,
+    openId: "test-user-999999",
+    email: "test-999999@example.com",
+    name: "Test User (Isolated)",
     loginMethod: "manus",
     role: "user",
     createdAt: new Date(),
@@ -30,6 +33,26 @@ function createAuthContext(): { ctx: TrpcContext } {
 
   return { ctx };
 }
+
+// Cleanup test data after each test to avoid polluting production DB
+afterEach(async () => {
+  try {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    // Delete all categories created by test user
+    const list = await caller.categories.listProtected();
+    for (const cat of list) {
+      try { await caller.categories.delete({ id: cat.id }); } catch {}
+    }
+    // Delete all products created by test user
+    const products = await caller.products.list();
+    for (const p of products) {
+      try { await caller.products.delete({ id: p.id }); } catch {}
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
+});
 
 describe("categories router", () => {
   it("categories.create accepts name, icon, parentId, sortOrder", async () => {

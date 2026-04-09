@@ -3923,13 +3923,15 @@ export const appRouter = router({
   // ─── Product Categories ───────────────────────────────────────────────────
   categories: router({
     list: publicProcedure.query(async () => {
-      const { productCategories } = await import("../drizzle/schema");
+      const { productCategories, users } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
-      const { asc, isNotNull } = await import("drizzle-orm");
+      const { asc, eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
-      // Only return categories that have userId (belong to a shop owner)
-      return drizzleDb.select().from(productCategories).where(isNotNull(productCategories.userId)).orderBy(asc(productCategories.sortOrder), asc(productCategories.name));
+      // Only return categories belonging to the admin/owner user
+      const [owner] = await drizzleDb.select({ id: users.id }).from(users).where(eq(users.role, "admin")).limit(1);
+      if (!owner) return [];
+      return drizzleDb.select().from(productCategories).where(eq(productCategories.userId, owner.id)).orderBy(asc(productCategories.sortOrder), asc(productCategories.name));
     }),
     listProtected: protectedProcedure.query(async ({ ctx }) => {
       const { productCategories } = await import("../drizzle/schema");

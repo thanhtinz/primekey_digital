@@ -1291,3 +1291,11 @@ todo updated
 - [x] LandingPage: thêm link/section Wishlist ẩn/hiện theo flag wishlist
 - [x] ClientHeader: admin link hiển thị cho user có role admin (đã kiểm tra OK)
 - [x] Footer: lấy companyName từ getPublicInfo (đã có)
+
+## Phase: Test Isolation Fix (Apr 9, 2026 - Session 5)
+- [x] Phát hiện: tests dùng user ID=1 trùng với production DB, tạo dữ liệu test vào DB thật
+- [x] Fix categories.list: lọc theo admin user (role=admin) thay vì first user
+- [x] Fix test file: đổi test user ID sang 999999 (không trùng production)
+- [x] Fix test file: thêm afterEach cleanup để xóa dữ liệu test sau mỗi test
+- [x] Xóa 6 test categories và 10 test products khỏi production DB
+- [x] Xác nhận: 53/53 tests pass, categories.list = 0 sau khi chạy tests
