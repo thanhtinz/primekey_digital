@@ -1,0 +1,1 @@
+ALTER TABLE `wallet_transactions` MODIFY COLUMN `payosOrderCode` bigint;

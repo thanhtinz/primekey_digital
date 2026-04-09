@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Star, Shield, Package, ChevronRight, ChevronLeft,
-  Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy, Heart
+  Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
@@ -413,26 +413,7 @@ export default function LandingPage() {
           <LeaderboardMiniSection navigate={navigate} />
         )}
 
-        {/* ===== WISHLIST CTA ===== */}
-        {isEnabled("wishlist") && !selectedParentCat && (
-          <section className="px-4 mb-6">
-            <div className="max-w-7xl mx-auto">
-              <button
-                onClick={() => navigate("/wishlist")}
-                className="w-full bg-gradient-to-r from-pink-50 to-red-50 border border-pink-200 rounded-2xl px-5 py-4 flex items-center gap-4 hover:shadow-md hover:border-pink-300 transition-all group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition-colors">
-                  <Heart className="h-5 w-5 text-red-500 fill-red-500" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-slate-800 text-sm">Sản phẩm yêu thích của bạn</p>
-                  <p className="text-slate-500 text-xs mt-0.5">Lưu sản phẩm để mua sau</p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-500 transition-colors" />
-              </button>
-            </div>
-          </section>
-        )}
+
 
         {/* ===== VIEW ALL CTA (when featured shown) ===== */}
         {!selectedParentCat && featuredProducts.length > 0 && products.length > featuredProducts.length && (

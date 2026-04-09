@@ -1,4 +1,4 @@
-import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, mediumtext } from "drizzle-orm/mysql-core";
+import { decimal, int, bigint, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, mediumtext } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -695,7 +695,7 @@ export const walletTransactions = mysqlTable("wallet_transactions", {
   balanceAfter: decimal("balanceAfter", { precision: 15, scale: 2 }).default("0"),
   description: varchar("description", { length: 500 }),
   invoiceId: int("invoiceId"), // liên kết đơn hàng nếu có
-  payosOrderCode: int("payosOrderCode"), // mã đơn PayOS nạp tiền
+  payosOrderCode: bigint("payosOrderCode", { mode: "number" }), // mã đơn PayOS nạp tiền
   status: mysqlEnum("wt_status", ["pending", "completed", "failed"]).default("completed"),
   createdAt: timestamp("createdAt_wt").defaultNow().notNull(),
 });

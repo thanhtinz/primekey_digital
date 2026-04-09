@@ -1299,3 +1299,10 @@ todo updated
 - [x] Fix test file: thêm afterEach cleanup để xóa dữ liệu test sau mỗi test
 - [x] Xóa 6 test categories và 10 test products khỏi production DB
 - [x] Xác nhận: 53/53 tests pass, categories.list = 0 sau khi chạy tests
+
+## Phase: Bug Fixes (Apr 9, 2026 - Session 6)
+- [x] LandingPage: xóa wishlist link/section khỏi trang chủ
+- [x] LeaderboardPage: redesign nền trắng sạch, chuyên nghiệp (theo yêu cầu user)
+- [x] ClientHeader: admin link đã có trong cả desktop dropdown và mobile menu (hiện khi isAdmin=true)
+- [x] ClientHeader: đổi tên "Tài khoản của tôi" → "Trang cá nhân"
+- [x] Fix lỗi wallet_transactions insert: payosOrderCode INT overflow → BIGINT, db:push done
