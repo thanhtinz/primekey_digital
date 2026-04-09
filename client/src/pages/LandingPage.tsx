@@ -2,14 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
-  Menu, X, Search, Star, Shield, Zap,
-  Package, ChevronRight, ChevronLeft,
-  Mail, Phone, MapPin,
-  Trophy, Flame, Gift, HelpCircle,
-  ArrowRight, Sparkles, CheckCircle, User,
-  ShoppingCart, Heart, ListOrdered, BarChart3
+  Star, Shield, Package, ChevronRight, ChevronLeft,
+  Flame, ArrowRight, Sparkles, X, CheckCircle
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ClientHeader } from "@/components/ClientHeader";
+import { ClientFooter } from "@/components/ClientFooter";
 
 function formatPrice(amount: number | string, currency = "VND") {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -19,13 +17,10 @@ function formatPrice(amount: number | string, currency = "VND") {
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [selectedParentCat, setSelectedParentCat] = useState<number | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     try { return sessionStorage.getItem("bannerDismissed") === "1"; } catch { return false; }
   });
-  const menuRef = useRef<HTMLDivElement>(null);
   const catScrollRef = useRef<HTMLDivElement>(null);
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
@@ -35,47 +30,13 @@ export default function LandingPage() {
   const { data: bannersData = [] } = trpc.banner.getPublic.useQuery(undefined, { staleTime: 60_000 });
   const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
 
-  const phone = publicInfo?.companyPhone;
-  const email = publicInfo?.companyEmail;
-  const address = publicInfo?.companyAddress;
   const description = (publicInfo as any)?.description || (publicInfo as any)?.companyDescription;
+  const companyName = publicInfo?.companyName || "ShopKey";
 
   const products: any[] = Array.isArray(productsRaw) ? productsRaw : (productsRaw as any)?.items ?? [];
   const categories: any[] = (categoriesData as any) ?? [];
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    if (menuOpen) document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
-
-  const navigate = (href: string) => { setMenuOpen(false); setLocation(href); };
-
-  const navLinks = [
-    { label: "Flash Sale", href: "/flash-sale", icon: Flame },
-    { label: "Sản Phẩm", href: "/catalog", icon: Package },
-    { label: "FAQ", href: "/faq", icon: HelpCircle },
-  ];
-
-  const moreLinks: { label: string; href: string; icon: any }[] = [];
-
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
-    };
-    if (moreOpen) document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [moreOpen]);
+  const navigate = (href: string) => { setLocation(href); };
 
   // Category tree
   const parentCats = categories.filter((c: any) => !c.parentId);
@@ -93,8 +54,6 @@ export default function LandingPage() {
     : products;
 
   const saleMap = new Map(activeSales.map((s: any) => [s.productId, s]));
-  const companyName = publicInfo?.companyName || "Invoice Prime";
-  const logoUrl = publicInfo?.logoUrl || publicInfo?.companyLogo;
 
   const dismissBanner = () => {
     setBannerDismissed(true);
@@ -106,6 +65,15 @@ export default function LandingPage() {
       catScrollRef.current.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
     }
   };
+
+  // Auto-advance banner
+  useEffect(() => {
+    if ((bannersData as any[]).length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentBannerIdx(prev => (prev + 1) % (bannersData as any[]).length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [(bannersData as any[]).length]);
 
   // Product card component
   const ProductCard = ({ product }: { product: any }) => {
@@ -168,94 +136,11 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-800">
+    <div className="min-h-screen bg-gray-50 text-slate-800 flex flex-col">
       {/* ===== HEADER ===== */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200" : "bg-white/80 backdrop-blur-sm"}`}>
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 flex-shrink-0">
-            {logoUrl ? (
-              <img src={logoUrl} alt={companyName} className="h-8 w-auto max-w-[140px] object-contain" />
-            ) : (
-              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">{companyName}</span>
-            )}
-          </button>
+      <ClientHeader />
 
-          <nav className="hidden lg:flex items-center gap-0.5">
-            {navLinks.map(link => (
-              <button key={link.href} onClick={() => navigate(link.href)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all whitespace-nowrap">
-                <link.icon className="h-3.5 w-3.5 flex-shrink-0" />{link.label}
-              </button>
-            ))}
-            <div ref={moreRef} className="relative">
-              <button onClick={() => setMoreOpen(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                <Menu className="h-3.5 w-3.5" /> Thêm <ChevronRight className={`h-3 w-3 transition-transform ${moreOpen ? "rotate-90" : ""}`} />
-              </button>
-              {moreOpen && (
-                <div className="absolute top-full right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
-                  {moreLinks.map(link => (
-                    <button key={link.href} onClick={() => { setMoreOpen(false); navigate(link.href); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all text-left">
-                      <link.icon className="h-4 w-4 text-blue-500 flex-shrink-0" />{link.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate("/cart")} className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors">
-              <ShoppingCart className="h-5 w-5" />
-            </button>
-            {typeof window !== "undefined" && localStorage.getItem("customerToken") ? (
-              <button onClick={() => navigate("/my-account")}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-medium transition-colors border border-blue-200">
-                <User className="h-4 w-4" /> Tài Khoản
-              </button>
-            ) : (
-              <button onClick={() => navigate("/client-login")}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
-                <User className="h-4 w-4" /> Đăng Nhập
-              </button>
-            )}
-            <button onClick={() => setMenuOpen(v => !v)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600" aria-label="Menu">
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div ref={menuRef}
-          className={`lg:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-lg transition-all duration-300 overflow-hidden ${menuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}`}>
-          <div className="p-4 space-y-1">
-            {[...navLinks, ...moreLinks].map(link => (
-              <button key={link.href} onClick={() => navigate(link.href)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all text-left">
-                <link.icon className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">{link.label}</span>
-                <ChevronRight className="h-4 w-4 ml-auto opacity-40" />
-              </button>
-            ))}
-            <div className="pt-2 border-t border-slate-100">
-              {typeof window !== "undefined" && localStorage.getItem("customerToken") ? (
-                <button onClick={() => navigate("/my-account")}
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors flex items-center justify-center gap-2">
-                  <User className="h-4 w-4" /> Tài Khoản Của Tôi
-                </button>
-              ) : (
-                <button onClick={() => navigate("/client-login")}
-                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors flex items-center justify-center gap-2">
-                  <User className="h-4 w-4" /> Đăng Nhập
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="pt-14">
+      <div className="pt-14 flex-1">
         {/* ===== WELCOME BANNER (dismissable) ===== */}
         {!bannerDismissed && (
           <div className="mx-4 mt-4 mb-2">
@@ -276,11 +161,11 @@ export default function LandingPage() {
         )}
 
         {/* ===== IMAGE BANNER CAROUSEL ===== */}
-        {bannersData.length > 0 && (
+        {(bannersData as any[]).length > 0 && (
           <div className="mx-4 mt-3 mb-2 relative overflow-hidden rounded-2xl" style={{maxWidth: "100%"}}>
             <div className="max-w-7xl mx-auto">
               <div className="relative rounded-2xl overflow-hidden" style={{height: "180px"}}>
-                {bannersData.map((banner: any, idx: number) => (
+                {(bannersData as any[]).map((banner: any, idx: number) => (
                   <a
                     key={banner.id}
                     href={banner.linkUrl || undefined}
@@ -295,9 +180,9 @@ export default function LandingPage() {
                     )}
                   </a>
                 ))}
-                {bannersData.length > 1 && (
+                {(bannersData as any[]).length > 1 && (
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {bannersData.map((_: any, idx: number) => (
+                    {(bannersData as any[]).map((_: any, idx: number) => (
                       <button key={idx} onClick={() => setCurrentBannerIdx(idx)}
                         className={"w-2 h-2 rounded-full transition-all " + (idx === currentBannerIdx ? "bg-white w-4" : "bg-white/50")} />
                     ))}
@@ -307,13 +192,14 @@ export default function LandingPage() {
             </div>
           </div>
         )}
+
         {/* ===== FLASH SALE BANNER ===== */}
-        {activeSales.length > 0 && (
+        {(activeSales as any[]).length > 0 && (
           <div className="mx-4 mt-2 mb-2">
             <button onClick={() => navigate("/flash-sale")}
               className="w-full max-w-7xl mx-auto block bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-2xl py-3 px-5 flex items-center justify-center gap-3 hover:opacity-90 transition-opacity text-white">
               <Flame className="h-5 w-5 animate-bounce text-yellow-200" />
-              <span className="font-bold text-sm">FLASH SALE — {activeSales.length} sản phẩm giảm giá!</span>
+              <span className="font-bold text-sm">FLASH SALE — {(activeSales as any[]).length} sản phẩm giảm giá!</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -353,12 +239,8 @@ export default function LandingPage() {
 
         {/* ===== CHILD CATEGORIES ICON SCROLL ===== */}
         {(() => {
-          // "Tất cả" → hiển thị tất cả danh mục con (có parentId)
-          // Chọn danh mục lớn → chỉ hiển thị danh mục con của nó
           const allChildCats = categories.filter((c: any) => !!c.parentId);
-          const displayCats = selectedParentCat
-            ? getChildCats(selectedParentCat)
-            : allChildCats;
+          const displayCats = selectedParentCat ? getChildCats(selectedParentCat) : allChildCats;
           if (displayCats.length === 0) return null;
           return (
             <section className="px-4 mb-6">
@@ -423,7 +305,7 @@ export default function LandingPage() {
           </section>
         )}
 
-        {/* ===== FILTERED BY CATEGORY or ALL PRODUCTS ===== */}
+        {/* ===== FILTERED BY CATEGORY ===== */}
         {selectedParentCat && (
           <section className="px-4 mb-8">
             <div className="max-w-7xl mx-auto">
@@ -454,7 +336,7 @@ export default function LandingPage() {
           </section>
         )}
 
-        {/* ===== ALL PRODUCTS (when no filter) ===== */}
+        {/* ===== ALL PRODUCTS (when no filter, no featured) ===== */}
         {!selectedParentCat && featuredProducts.length === 0 && (
           <section className="px-4 mb-8">
             <div className="max-w-7xl mx-auto">
@@ -497,78 +379,7 @@ export default function LandingPage() {
       </div>
 
       {/* ===== FOOTER ===== */}
-      <footer className="border-t border-slate-200 bg-white px-4 py-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-            <div>
-              {logoUrl ? (
-                <img src={logoUrl} alt={companyName} className="h-8 w-auto max-w-[140px] object-contain mb-3" />
-              ) : (
-                <span className="text-lg font-bold text-slate-800 mb-3 block">{companyName}</span>
-              )}
-              <p className="text-slate-500 text-sm leading-relaxed">
-                {description || "Nền tảng mua sắm & quản lý đơn hàng chuyên nghiệp"}
-              </p>
-              <div className="flex gap-3 mt-4">
-                {email && <a href={`mailto:${email}`} className="text-slate-400 hover:text-blue-500 transition-colors"><Mail className="h-4 w-4" /></a>}
-                {phone && <a href={`tel:${phone}`} className="text-slate-400 hover:text-blue-500 transition-colors"><Phone className="h-4 w-4" /></a>}
-              </div>
-            </div>
-            <div>
-              <h4 className="text-slate-800 font-semibold mb-3 text-sm">Mua Sắm</h4>
-              <ul className="space-y-2">
-                {[
-                  { label: "Tất Cả Sản Phẩm", href: "/catalog" },
-                  { label: "Flash Sale", href: "/flash-sale" },
-                ].map(l => (
-                  <li key={l.href}><button onClick={() => navigate(l.href)} className="text-slate-500 hover:text-blue-600 text-sm transition-colors">{l.label}</button></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-slate-800 font-semibold mb-3 text-sm">Hỗ Trợ</h4>
-              <ul className="space-y-2">
-                {[
-                  { label: "Tra Cứu Đơn Hàng", href: "/track-order" },
-                  { label: "Tra Cứu Bảo Hành", href: "/warranty" },
-                  { label: "Yêu Cầu Bảo Hành", href: "/warranty-request" },
-                  { label: "Hỏi Đáp (FAQ)", href: "/faq" },
-                ].map(l => (
-                  <li key={l.href}><button onClick={() => navigate(l.href)} className="text-slate-500 hover:text-blue-600 text-sm transition-colors">{l.label}</button></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-slate-800 font-semibold mb-3 text-sm">Thành Viên</h4>
-              <ul className="space-y-2">
-                {[
-                  { label: "Tích Điểm Thành Viên", href: "/loyalty" },
-                  { label: "BXH Chi Tiêu", href: "/leaderboard" },
-                  { label: "Giới Thiệu Bạn Bè", href: "/referral" },
-                  { label: "Đăng Nhập Dashboard", href: "/login" },
-                ].map(l => (
-                  <li key={l.href}><button onClick={() => navigate(l.href)} className="text-slate-500 hover:text-blue-600 text-sm transition-colors">{l.label}</button></li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {(address || phone || email) && (
-            <div className="flex flex-wrap gap-4 py-4 border-t border-slate-100 mb-4">
-              {address && <div className="flex items-center gap-2 text-slate-500 text-xs"><MapPin className="h-3.5 w-3.5" />{address}</div>}
-              {phone && <div className="flex items-center gap-2 text-slate-500 text-xs"><Phone className="h-3.5 w-3.5" />{phone}</div>}
-              {email && <div className="flex items-center gap-2 text-slate-500 text-xs"><Mail className="h-3.5 w-3.5" />{email}</div>}
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-4 border-t border-slate-100">
-            <p className="text-slate-400 text-xs">&copy; {new Date().getFullYear()} {companyName}. All rights reserved.</p>
-            <div className="flex items-center gap-1 text-slate-400 text-xs">
-              <CheckCircle className="h-3 w-3 text-green-500" /> Thanh toán an toàn 256-bit SSL
-            </div>
-          </div>
-        </div>
-      </footer>
+      <ClientFooter />
     </div>
   );
 }

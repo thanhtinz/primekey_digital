@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { HelpCircle, ChevronDown, ChevronUp, Search, MessageCircle } from "lucide-react";
 import { ClientHeader } from "@/components/ClientHeader";
+import { ClientFooter } from "@/components/ClientFooter";
 
 export default function FAQPage() {
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
@@ -96,6 +97,7 @@ export default function FAQPage() {
           </Link>
         </div>
       </div>
+      <ClientFooter />
     </div>
   );
 }

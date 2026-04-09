@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
+import { ClientFooter } from "@/components/ClientFooter";
 import {
   Search, Package, Grid3X3, List, Shield, Star,
   Home, ChevronRight, ShoppingBag, Filter, RotateCcw, Zap
@@ -428,6 +429,7 @@ export default function ProductCatalog() {
           </div>
         )}
       </div>
+      <ClientFooter />
     </div>
   );
 }

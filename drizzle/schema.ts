@@ -178,6 +178,7 @@ export const invoices = mysqlTable("invoices", {
   paymentUrl: text("paymentUrl"),
   qrCode: text("qrCode"),
   paymentTransactionId: varchar("paymentTransactionId", { length: 100 }),
+  payosOrderCode: varchar("payosOrderCode", { length: 50 }), // PayOS numeric orderCode for webhook matching
   paidAt: timestamp("paidAt"),
   expiresAt: timestamp("expiresAt"),
   notes: text("notes"),
@@ -692,6 +693,38 @@ export const walletTransactions = mysqlTable("wallet_transactions", {
   createdAt: timestamp("createdAt_wt").defaultNow().notNull(),
 });
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
+
+// ─── Customer Notifications ─────────────────────────────────────────────────
+export const customerNotifications = mysqlTable("customer_notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // owner (admin)
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: mysqlEnum("cn_type", ["info", "success", "warning", "order", "payment", "promo"]).default("info"),
+  isRead: boolean("isRead").default(false),
+  link: varchar("link", { length: 500 }), // optional deep link
+  createdAt: timestamp("cn_createdAt").defaultNow().notNull(),
+});
+export type CustomerNotification = typeof customerNotifications.$inferSelect;
+
+// ─── Support Tickets ─────────────────────────────────────────────────────────
+export const supportTickets = mysqlTable("support_tickets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // owner (admin)
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerName: varchar("customerName", { length: 255 }),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  message: text("message").notNull(),
+  status: mysqlEnum("ticket_status", ["open", "in_progress", "resolved", "closed"]).default("open"),
+  priority: mysqlEnum("ticket_priority", ["low", "medium", "high"]).default("medium"),
+  adminReply: text("adminReply"),
+  repliedAt: timestamp("repliedAt"),
+  invoiceId: int("invoiceId"), // optional related invoice
+  createdAt: timestamp("ticket_createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("ticket_updatedAt").defaultNow().notNull(),
+});
+export type SupportTicket = typeof supportTickets.$inferSelect;
 
 // ─── Banners - banner trang chủ ─────────────────────────────────────────────
 export const banners = mysqlTable("banners", {

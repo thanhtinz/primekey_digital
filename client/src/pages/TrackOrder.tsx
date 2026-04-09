@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, User, Phone, ShoppingBag, CreditCard, ChevronDown, ChevronUp, ExternalLink, Mail, FileText, Receipt } from "lucide-react";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
+import { ClientFooter } from "@/components/ClientFooter";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 const STATUS_CONFIG: Record<string, {
@@ -304,14 +305,11 @@ export default function TrackOrder() {
 
       <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
         {/* Hero */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-50 rounded-3xl mb-4 border border-blue-200">
-            <Search className="h-10 w-10 text-blue-600" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-800 mb-2">
-            Tra Cứu <span className="text-blue-600">Đơn Hàng</span>
+        <div className="mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-1">
+            Quản Lý <span className="text-blue-600">Đơn Hàng</span>
           </h1>
-          <p className="text-slate-600 text-base">Xem trạng thái và chi tiết tất cả đơn hàng của bạn</p>
+          <p className="text-slate-500 text-sm">Xem trạng thái và chi tiết tất cả đơn hàng của bạn</p>
         </div>
 
         {/* User info badge */}
@@ -377,9 +375,8 @@ export default function TrackOrder() {
         )}
       </div>
 
-      <footer className="py-6 text-center text-xs text-slate-500 border-t border-slate-200">
-        © {new Date().getFullYear()} {brandName}
-      </footer>
+
+      <ClientFooter />
     </div>
   );
 }

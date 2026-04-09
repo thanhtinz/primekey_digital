@@ -3549,6 +3549,35 @@ export const appRouter = router({
         perCoupon,
       };
     }),
+    // Public: list active coupons for coupon store page
+    listPublic: publicProcedure.query(async () => {
+      const { coupons } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { and, eq, or, isNull, gte } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const now = new Date();
+      const allCoupons = await drizzleDb.select().from(coupons).where(eq(coupons.isActive, true));
+      return allCoupons
+        .filter(c => {
+          if (c.startsAt && now < c.startsAt) return false;
+          if (c.expiresAt && now > c.expiresAt) return false;
+          if (c.maxUses && c.maxUses > 0 && (c.usedCount || 0) >= c.maxUses) return false;
+          return true;
+        })
+        .map(c => ({
+          id: c.id,
+          code: c.code,
+          description: c.description,
+          discountType: c.discountType,
+          discountValue: Number(c.discountValue),
+          minOrderAmount: Number(c.minOrderAmount || 0),
+          maxDiscountAmount: Number(c.maxDiscountAmount || 0),
+          maxUses: c.maxUses,
+          usedCount: c.usedCount || 0,
+          expiresAt: c.expiresAt,
+        }));
+    }),
     // Public: validate coupon code
     validate: publicProcedure.input(z.object({
       code: z.string().min(1),
@@ -4752,19 +4781,18 @@ export const appRouter = router({
         taxAmount: String(buyNowTaxAmount),
         totalAmount: String(totalAmount),
         status: "CREATED",
-        paymentMethod: "PAYOS",
+          paymentMethod: "PAYOS",
+        payosOrderCode: String(orderCode),
         notes: input.notes || (input.customFieldValues ? JSON.stringify(input.customFieldValues) : null),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
       } as any);
       // Get created invoice
       const [createdInvoice] = await drizzleDb.select().from(invoices).where(eq(invoices.invoiceNumber, invoiceNumber)).limit(1);
       if (!createdInvoice) throw new Error("Không thể tạo đơn hàng");
-
       // Record coupon usage with invoiceId
       if (couponId && discountAmount > 0) {
         await drizzleDb.insert(couponUsages).values({ couponId, invoiceId: createdInvoice.id, customerEmail: input.email, discountAmount: String(discountAmount) } as any);
       }
-
       // Create invoice item
       await drizzleDb.insert(invoiceItems).values({
         invoiceId: createdInvoice.id,
@@ -4954,6 +4982,7 @@ export const appRouter = router({
         totalAmount: String(totalAmount),
         status: "CREATED",
         paymentMethod: "PAYOS",
+        payosOrderCode: String(orderCode),
         notes: input.notes || null,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       } as any);
@@ -5598,6 +5627,126 @@ export const appRouter = router({
         await drizzleDb.update(referralWithdrawals).set({ status: input.status, adminNote: input.adminNote }).where(and(eq(referralWithdrawals.id, input.id), eq(referralWithdrawals.userId, ctx.user.id)));
         return { success: true };
       }),
+  }),
+  // ─── Customer Notifications ──────────────────────────────────────────────────
+  customerNotif: router({
+    list: publicProcedure.input(z.object({ token: z.string() })).query(async ({ input }) => {
+      const { customerSessions, customerNotifications } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { items: [], unreadCount: 0 };
+      const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+      if (!session || session.expiresAt < new Date()) return { items: [], unreadCount: 0 };
+      const items = await drizzleDb.select().from(customerNotifications)
+        .where(eq(customerNotifications.customerEmail, session.email))
+        .orderBy(desc(customerNotifications.createdAt)).limit(30);
+      const unreadCount = items.filter(n => !n.isRead).length;
+      return { items, unreadCount };
+    }),
+    markAllRead: publicProcedure.input(z.object({ token: z.string() })).mutation(async ({ input }) => {
+      const { customerSessions, customerNotifications } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { success: false };
+      const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+      if (!session || session.expiresAt < new Date()) return { success: false };
+      await drizzleDb.update(customerNotifications).set({ isRead: true }).where(eq(customerNotifications.customerEmail, session.email));
+      return { success: true };
+    }),
+    markRead: publicProcedure.input(z.object({ token: z.string(), id: z.number() })).mutation(async ({ input }) => {
+      const { customerNotifications } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { success: false };
+      await drizzleDb.update(customerNotifications).set({ isRead: true }).where(eq(customerNotifications.id, input.id));
+      return { success: true };
+    }),
+    // Admin: create notification for a customer
+    create: protectedProcedure.input(z.object({
+      customerEmail: z.string().email(),
+      title: z.string().min(1),
+      message: z.string().min(1),
+      type: z.enum(["info", "success", "warning", "order", "payment", "promo"]).optional(),
+      link: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { customerNotifications } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await drizzleDb.insert(customerNotifications).values({
+        userId: ctx.user.id,
+        customerEmail: input.customerEmail,
+        title: input.title,
+        message: input.message,
+        type: input.type || "info",
+        link: input.link || null,
+      });
+      return { success: true };
+    }),
+  }),
+  // ─── Support Tickets ─────────────────────────────────────────────────────────
+  support: router({
+    createTicket: publicProcedure.input(z.object({
+      token: z.string().optional(),
+      customerEmail: z.string().email(),
+      customerName: z.string().optional(),
+      subject: z.string().min(1).max(200),
+      message: z.string().min(1),
+      priority: z.enum(["low", "medium", "high"]).optional(),
+    })).mutation(async ({ input }) => {
+      const { supportTickets } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [result] = await drizzleDb.insert(supportTickets).values({
+        userId: 1,
+        customerEmail: input.customerEmail,
+        customerName: input.customerName || null,
+        subject: input.subject,
+        message: input.message,
+        priority: (input.priority || "medium") as any,
+        status: "open" as any,
+      });
+      return { success: true, ticketId: (result as any).insertId };
+    }),
+    listMyTickets: publicProcedure.input(z.object({ token: z.string() })).query(async ({ input }) => {
+      const { customerSessions, supportTickets } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+      if (!session || session.expiresAt < new Date()) return [];
+      return drizzleDb.select().from(supportTickets).where(eq(supportTickets.customerEmail, session.email)).orderBy(desc(supportTickets.createdAt)).limit(20);
+    }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { supportTickets } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(supportTickets).where(eq(supportTickets.userId, ctx.user.id)).orderBy(desc(supportTickets.createdAt));
+    }),
+    updateStatus: protectedProcedure.input(z.object({
+      id: z.number(),
+      status: z.enum(["open", "in_progress", "resolved", "closed"]),
+      adminReply: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { supportTickets } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await drizzleDb.update(supportTickets).set({
+        status: input.status as any,
+        adminReply: input.adminReply || null,
+        repliedAt: input.adminReply ? new Date() : undefined,
+      }).where(and(eq(supportTickets.id, input.id), eq(supportTickets.userId, ctx.user.id)));
+      return { success: true };
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;

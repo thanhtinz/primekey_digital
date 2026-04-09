@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ShoppingCart, Trash2, Minus, Plus, Loader2, Package, ArrowLeft, Tag, Users2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { ClientHeader } from "@/components/ClientHeader";
+import { ClientFooter } from "@/components/ClientFooter";
 import { trpc } from "@/lib/trpc";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { useLocation } from "wouter";
@@ -328,6 +329,7 @@ export default function CartPage() {
           </div>
         )}
       </div>
+      <ClientFooter />
     </div>
   );
 }

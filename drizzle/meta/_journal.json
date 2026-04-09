@@ -50,6 +50,20 @@
       "when": 1775693052261,
       "tag": "0006_wet_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1775695196977,
+      "tag": "0007_fine_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1775697944183,
+      "tag": "0008_bent_boom_boom",
+      "breakpoints": true
     }
   ]
 }

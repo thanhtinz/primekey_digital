@@ -1,0 +1,1 @@
+ALTER TABLE `invoices` ADD `payosOrderCode` varchar(50);

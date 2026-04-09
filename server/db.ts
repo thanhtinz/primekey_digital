@@ -86,8 +86,12 @@ export async function getInvoiceByOrderCode(orderCode: string) {
   const db = await getDb();
   if (!db) return undefined;
   
-  const result = await db.select().from(invoices).where(eq(invoices.paymentTransactionId, orderCode)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  // First try to find by payosOrderCode (numeric orderCode from PayOS webhook)
+  const result = await db.select().from(invoices).where(eq((invoices as any).payosOrderCode, orderCode)).limit(1);
+  if (result.length > 0) return result[0];
+  // Fallback: try paymentTransactionId (old behavior)
+  const result2 = await db.select().from(invoices).where(eq(invoices.paymentTransactionId, orderCode)).limit(1);
+  return result2.length > 0 ? result2[0] : undefined;
 }
 
 // Invoice Items queries

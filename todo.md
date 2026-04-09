@@ -1097,3 +1097,109 @@
 - [x] Trang /my-account tab Đơn Hàng: nút "Xuất PDF" cho từng đơn
 - [x] Tự động xuất hóa đơn PDF khi click (ExportPDFButton dùng pdf.exportMyInvoice)
 - [x] Hỗ trợ VAT trong hóa đơn PDF
+
+## Phase 23 - UI/UX Overhaul & New Features
+
+### A. PayOS Fix (Khẩn cấp)
+- [ ] Debug PayOS lỗi trên production: kiểm tra API key, checksum key, webhook URL
+- [ ] Nếu lỗi: fallback sang PayOS payment link trực tiếp (checkout URL), redirect về trang cảm ơn
+- [ ] Nạp số dư tự động qua PayOS webhook (walletTopup)
+- [ ] Hoàn tiền tự động về số dư khi đơn lỗi hoặc admin chuyển trạng thái
+
+### B. Header & Mobile Menu (theo ảnh tham khảo)
+- [ ] Header mobile: logo trái, search + gift + bell + avatar + hamburger phải
+- [ ] Dropdown search khi click icon search
+- [ ] Dropdown thông báo khi click bell (có badge số chưa đọc)
+- [ ] Dropdown user menu: avatar, tên, email, số dư, links (trang cá nhân, nạp tiền, đăng xuất)
+- [ ] Mobile drawer menu: avatar + số dư + danh mục sản phẩm + links
+- [ ] Header PC: logo + nav links + search bar + icons
+- [ ] Admin user thấy link "Vào Admin" trong user menu
+
+### C. Footer Client (theo ảnh tham khảo)
+- [ ] Footer dark theme: logo + mô tả công ty
+- [ ] Section "Liên hệ": email, phone, địa chỉ (lấy từ settings)
+- [ ] Section "Liên kết": FAQ, Liên hệ, Tài liệu API
+- [ ] Copyright: "© 2026 All Rights Reserved by [TÊN] | Software By CMSNT.CO"
+- [ ] Nút scroll to top
+
+### D. ProductDetail Redesign
+- [ ] Layout PC: 2 cột cân đối (ảnh + thông tin trái, form mua + chi tiết phải)
+- [ ] Gom "Thông tin đặt hàng" (custom fields) vào form mua hàng (không tách card riêng)
+- [ ] Sửa lỗi: trường tùy chỉnh là thông tin đặt hàng, ghi chú là khác (đang bị lộn)
+- [ ] Tags sản phẩm: hiển thị tags thay vì bảo hành trong card sản phẩm
+- [ ] Giao diện feedback mới: rating overview (5.0 + bar chart) + danh sách reviews có avatar
+- [ ] Chọn phương thức thanh toán ngay trong trang sản phẩm (số dư / banking)
+- [ ] Nếu banking: tính thuế; nếu số dư: không tính thuế
+
+### E. Hệ thống Thông báo
+- [ ] Schema: bảng customer_notifications (customerId, title, content, type, isRead, createdAt)
+- [ ] Procedures: getMyNotifications, markAsRead, markAllRead
+- [ ] Header bell icon với badge số chưa đọc
+- [ ] Dropdown thông báo (như ảnh 4)
+- [ ] Tự động tạo thông báo khi: đặt hàng, thanh toán, nạp tiền, đơn hoàn thành
+
+### F. Trang Kho Mã Giảm Giá
+- [ ] Trang /coupons: hiển thị các mã giảm giá đang active (như ảnh 8)
+- [ ] Card mã giảm giá: tên, mô tả, % giảm, hạn sử dụng, nút copy
+- [ ] Route + nav link trong header
+
+### G. Hệ thống Ticket Hỗ trợ
+- [ ] Schema: bảng support_tickets (customerId, subject, status, priority, createdAt)
+- [ ] Schema: bảng ticket_messages (ticketId, senderId, senderType, content, createdAt)
+- [ ] Trang /support: tạo ticket, xem danh sách ticket của mình
+- [ ] Admin: xem và trả lời tickets
+- [ ] Widget hỗ trợ khách hàng (floating button góc phải)
+
+### H. Wallet & Dòng Tiền
+- [ ] Hiển thị số dư trong header user menu
+- [ ] Trang /wallet: quản lý dòng tiền (lịch sử nạp, lịch sử chi tiêu)
+- [ ] Nạp tiền tự động: PayOS webhook → cộng số dư
+- [ ] Thanh toán số dư không tính thuế
+- [ ] CartPage: 2 hình thức (số dư / banking), banking tính thuế
+- [ ] ProductDetail: 2 hình thức thanh toán, banking tính thuế
+
+### I. Tags Sản phẩm
+- [ ] Schema: bảng product_tags (id, name, slug, color)
+- [ ] Schema: bảng product_tag_relations (productId, tagId)
+- [ ] Admin: quản lý tags (tạo, sửa, xóa)
+- [ ] ProductDetail: hiển thị tags
+- [ ] ProductCatalog: filter theo tag
+
+### J. Email & Auth
+- [ ] Email xác minh khi đăng ký (gửi link xác minh qua SMTP)
+- [ ] Trang /verify-email?token=xxx: xác minh email
+- [ ] Quên mật khẩu: gửi email reset (link /reset-password?token=xxx)
+- [ ] Trang /reset-password: nhập mật khẩu mới
+
+### K. Giới thiệu bạn bè cải tiến
+- [ ] Khi user đăng ký qua link giới thiệu: ghi nhận referrerId
+- [ ] Khi người được giới thiệu nạp/mua lần đầu: tự động thưởng % cho người giới thiệu
+- [ ] Các đơn sau: khách nhập mã của ai thì người đó được thưởng
+
+### L. Quản lý Đơn hàng User
+- [ ] Đổi tên "Tra cứu đơn hàng" thành "Quản lý đơn hàng"
+- [ ] Thiết kế lại UI: không hiện email lookup, hiện trực tiếp đơn hàng của user đã đăng nhập
+- [ ] Hiển thị trạng thái, chi tiết, nút xuất PDF
+
+### M. Dọn dẹp Admin
+- [ ] Xóa trang tạo hóa đơn thủ công (đã làm)
+- [ ] Xóa trang tạo bảo hành thủ công
+- [ ] Xóa trang hoàn tiền (chỉ cần chuyển trạng thái đơn)
+- [ ] Hoàn tiền tự động về số dư khi admin chuyển trạng thái đơn sang "refunded"
+
+## Phase: UI/UX Improvements (Apr 2026)
+- [x] Viết lại ClientHeader - dark theme, bell notifications, avatar dropdown, admin link
+- [x] Viết lại ClientFooter - dark navy, contact info, links, copyright
+- [x] Cập nhật LandingPage dùng ClientHeader + ClientFooter chung
+- [x] Thêm ClientFooter vào ProductDetail, ProductCatalog, CartPage, MyAccount, TrackOrder, FAQPage
+- [x] Trang Kho Mã Giảm Giá (/coupons) - hiển thị mã đang hoạt động
+- [x] Trang Hỗ Trợ (/support) - ticket system + widget nổi
+- [x] SupportWidget floating button cho tất cả trang client
+- [x] Cải thiện UI feedback/reviews trong ProductDetail
+- [x] Đổi tên TrackOrder → Quản Lý Đơn Hàng
+- [x] Hiển thị số dư ví trong MyAccount hero section
+- [x] Admin link trong MyAccount và ClientHeader avatar dropdown
+- [x] Backend: customerNotif router (list, markAllRead)
+- [x] Backend: support ticket router (create, list, updateStatus)
+- [x] Backend: coupon.listPublic procedure cho trang public
+- [x] Thêm /coupons, /support, /wallet vào ALWAYS_PUBLIC routes

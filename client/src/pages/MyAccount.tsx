@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ClientHeader } from "@/components/ClientHeader";
+import { ClientFooter } from "@/components/ClientFooter";
 
 // ChangePasswordForm component
 function ChangePasswordForm({ token }: { token: string }) {
@@ -258,6 +259,17 @@ export default function MyAccount() {
   const totalOrders = (orders as any[]).length;
   const completedOrders = (orders as any[]).filter((o: any) => o.status === "COMPLETED").length;
   const pendingOrders = (orders as any[]).filter((o: any) => o.status === "CREATED" || o.status === "PAID").length;
+  const { data: walletData } = trpc.wallet.getBalance.useQuery(
+    { token: token! },
+    { enabled: !!token, staleTime: 60_000 }
+  );
+  const walletBalance = walletData?.balance ?? 0;
+  const formatBalance = (v: number) => {
+    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M₫`;
+    if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K₫`;
+    return `${v.toLocaleString("vi-VN")}₫`;
+  };
+  const isAdmin = (customer as any)?.role === "admin";
 
   const tabs: { id: TabType; label: string; icon: any; badge?: number }[] = [
     { id: "overview", label: "Tổng quan", icon: BarChart3 },
@@ -300,8 +312,21 @@ export default function MyAccount() {
               <p className="text-blue-200 text-sm truncate">{customer.email}</p>
             </div>
           </div>
+          {/* Wallet balance */}
+          <div className="relative mt-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-blue-200" />
+              <span className="text-sm text-blue-100">Số dư ví</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-bold text-emerald-300">{formatBalance(walletBalance)}</span>
+              <button onClick={() => navigate("/wallet")} className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition">
+                Nạp tiền
+              </button>
+            </div>
+          </div>
           {/* Quick stats row */}
-          <div className="relative grid grid-cols-4 gap-2 mt-4">
+          <div className="relative grid grid-cols-4 gap-2 mt-3">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 text-center">
               <p className="text-xl font-bold">{totalOrders}</p>
               <p className="text-[10px] text-blue-200 mt-0.5">Đơn hàng</p>
@@ -319,6 +344,18 @@ export default function MyAccount() {
               <p className="text-[10px] text-blue-200 mt-0.5">Bảo hành</p>
             </div>
           </div>
+          {/* Admin link */}
+          {isAdmin && (
+            <div className="relative mt-3">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="w-full flex items-center justify-center gap-2 bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/30 text-amber-300 text-sm font-semibold rounded-xl py-2.5 transition"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                Vào trang Quản Trị
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ===== Quick Actions Grid ===== */}
@@ -963,6 +1000,7 @@ export default function MyAccount() {
           </div>
         )}
       </div>
+      <ClientFooter />
     </div>
   );
 }
