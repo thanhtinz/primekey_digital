@@ -51,6 +51,7 @@ const WarrantySettingsPage = lazy(() => import("./pages/WarrantySettingsPage"));
 const WarrantyManagement = lazy(() => import("./pages/WarrantyManagement"));
 const FlashSaleSettings = lazy(() => import("./pages/FlashSaleSettings"));
 const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
+const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 const FlashSalePage = lazy(() => import("./pages/FlashSalePage"));
 const CouponSettings = lazy(() => import("./pages/CouponSettings"));
 
@@ -117,7 +118,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
+const ALWAYS_PUBLIC = ["/track-order", "/order", "/feedbacks-public", "/review", "/product-review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/wishlist", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/wallet-history", "/verify-email", "/reset-password"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -152,6 +153,7 @@ function Router() {
           <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
           <Route path="/warranty" component={() => <WarrantyLookup />} />
           <Route path="/leaderboard" component={() => <LeaderboardPage />} />
+          <Route path="/wishlist" component={() => <CustomerGuard><WishlistPage /></CustomerGuard>} />
           <Route path="/flash-sale" component={() => <FlashSalePage />} />
           <Route path="/catalog" component={() => <ProductCatalog />} />
           <Route path="/faq" component={() => <FAQPage />} />

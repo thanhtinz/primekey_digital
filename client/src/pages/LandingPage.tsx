@@ -3,16 +3,57 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Star, Shield, Package, ChevronRight, ChevronLeft,
-  Flame, ArrowRight, Sparkles, X, CheckCircle
+  Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy, Heart
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 function formatPrice(amount: number | string, currency = "VND") {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   if (currency === "USD") return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
   return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
+}
+
+function LeaderboardMiniSection({ navigate }: { navigate: (href: string) => void }) {
+  const { data: leaderboard = [] } = trpc.leaderboard.getTop.useQuery({ period: "month" }, { staleTime: 60_000 });
+  const top3 = (leaderboard as any[]).slice(0, 3);
+  if (top3.length === 0) return null;
+  const rankColors = [
+    { bg: "bg-yellow-100", text: "text-yellow-700", badge: "bg-yellow-400", icon: "🥇" },
+    { bg: "bg-slate-100", text: "text-slate-600", badge: "bg-slate-400", icon: "🥈" },
+    { bg: "bg-orange-100", text: "text-orange-700", badge: "bg-orange-400", icon: "🥉" },
+  ];
+  return (
+    <section className="px-4 mb-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-500" />
+              <h3 className="font-bold text-slate-800 text-sm">Khách hàng VIP tháng này</h3>
+            </div>
+            <button onClick={() => navigate("/leaderboard")} className="text-blue-600 text-xs font-medium hover:text-blue-700 flex items-center gap-1">
+              Xem tất cả <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="flex gap-2">
+            {top3.map((entry: any, idx: number) => {
+              const color = rankColors[idx];
+              return (
+                <div key={entry.rank} className={`flex-1 ${color.bg} rounded-xl p-3 text-center`}>
+                  <div className="text-lg mb-1">{color.icon}</div>
+                  <p className={`font-semibold text-xs ${color.text} truncate`}>{entry.name}</p>
+                  <p className="text-slate-500 text-[10px] mt-0.5">{entry.orderCount} đơn</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export default function LandingPage() {
@@ -29,6 +70,7 @@ export default function LandingPage() {
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
   const { data: bannersData = [] } = trpc.banner.getPublic.useQuery(undefined, { staleTime: 60_000 });
   const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
+  const { isEnabled } = useFeatureFlags();
 
   const description = (publicInfo as any)?.description || (publicInfo as any)?.companyDescription;
   const companyName = publicInfo?.companyName || "ShopKey";
@@ -194,7 +236,7 @@ export default function LandingPage() {
         )}
 
         {/* ===== FLASH SALE BANNER ===== */}
-        {(activeSales as any[]).length > 0 && (
+        {isEnabled("flash_sale") && (activeSales as any[]).length > 0 && (
           <div className="mx-4 mt-2 mb-2">
             <button onClick={() => navigate("/flash-sale")}
               className="w-full max-w-7xl mx-auto block bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-2xl py-3 px-5 flex items-center justify-center gap-3 hover:opacity-90 transition-opacity text-white">
@@ -362,6 +404,32 @@ export default function LandingPage() {
                   </Button>
                 </div>
               )}
+            </div>
+          </section>
+        )}
+
+        {/* ===== LEADERBOARD MINI SECTION ===== */}
+        {isEnabled("leaderboard") && !selectedParentCat && (
+          <LeaderboardMiniSection navigate={navigate} />
+        )}
+
+        {/* ===== WISHLIST CTA ===== */}
+        {isEnabled("wishlist") && !selectedParentCat && (
+          <section className="px-4 mb-6">
+            <div className="max-w-7xl mx-auto">
+              <button
+                onClick={() => navigate("/wishlist")}
+                className="w-full bg-gradient-to-r from-pink-50 to-red-50 border border-pink-200 rounded-2xl px-5 py-4 flex items-center gap-4 hover:shadow-md hover:border-pink-300 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 group-hover:bg-red-200 transition-colors">
+                  <Heart className="h-5 w-5 text-red-500 fill-red-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-slate-800 text-sm">Sản phẩm yêu thích của bạn</p>
+                  <p className="text-slate-500 text-xs mt-0.5">Lưu sản phẩm để mua sau</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-red-500 transition-colors" />
+              </button>
             </div>
           </section>
         )}

@@ -1281,3 +1281,13 @@ todo updated
 - [x] FAQPage → BlogPage: danh mục bài viết, editor bài viết, hiển thị blog chuyên nghiệp
 - [x] Blog: admin tạo/sửa/xóa bài viết với danh mục
 - [x] Blog: trang public /blog với danh mục, tìm kiếm
+
+## Phase: Feature Flags & UI Completion (Apr 9, 2026 - Session 4)
+- [x] LeaderboardPage: kiểm tra - đã có thiết kế tốt với podium top 3, dark theme
+- [x] WishlistPage: kiểm tra - đã có thiết kế tốt với grid sản phẩm, xóa, thêm giỏ hàng
+- [x] App.tsx: route /leaderboard và /wishlist đã có
+- [x] LandingPage: tích hợp useFeatureFlags - ẩn Flash Sale banner khi flag flash_sale=false
+- [x] LandingPage: thêm section Leaderboard mini (top 3 khách hàng) ẩn/hiện theo flag leaderboard
+- [x] LandingPage: thêm link/section Wishlist ẩn/hiện theo flag wishlist
+- [x] ClientHeader: admin link hiển thị cho user có role admin (đã kiểm tra OK)
+- [x] Footer: lấy companyName từ getPublicInfo (đã có)
