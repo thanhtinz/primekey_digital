@@ -7,7 +7,7 @@ import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Star, Shield, Zap, Package, ChevronRight, AlertTriangle, ShoppingCart, Heart, MessageSquare, Check, ChevronDown, ChevronUp, Share2, CheckCircle, Phone, Mail, Loader2, Info } from "@/components/Icon";
+import { Star, Shield, Zap, Package, ChevronRight, AlertTriangle, ShoppingCart, Heart, MessageSquare, Check, ChevronDown, ChevronUp, Share2, CheckCircle, Phone, Mail, Loader2, Info, Pencil } from "@/components/Icon";
 import { toast } from "sonner";
 
 const formatVND = (val: string | number | null | undefined) => {
@@ -770,7 +770,7 @@ export default function ProductDetail() {
                   onClick={() => setShowReviewForm(!showReviewForm)}
                   className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-red-400 text-red-500 font-semibold text-sm hover:bg-red-50 transition-colors"
                 >
-                  ✏️ Viết đánh giá
+                  <Pencil className="w-4 h-4" /> Viết đánh giá
                 </button>
               ) : (
                 <div className="mt-4 text-center py-2">
