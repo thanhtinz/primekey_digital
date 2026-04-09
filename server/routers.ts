@@ -449,7 +449,6 @@ export const appRouter = router({
                   buyerAddress: customer?.address || "",
                   returnUrl: `${origin}/track-order`,
                   cancelUrl: `${origin}/track-order`,
-                  webhookUrl: `${origin}/api/webhooks/payos`,
                 }
               );
               paymentUrl = payosResult.checkoutUrl;
@@ -784,7 +783,6 @@ export const appRouter = router({
             buyerAddress: customer?.address || "",
             returnUrl: `${origin}/track-order`,
             cancelUrl: `${origin}/track-order`,
-            webhookUrl: `${origin}/api/webhooks/payos`,
           }
         );
         const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
@@ -5494,7 +5492,6 @@ export const appRouter = router({
               buyerAddress: customer.address || "",
               returnUrl: `${input.origin}/track-order`,
               cancelUrl: `${input.origin}/product/${input.productId}`,
-              webhookUrl: `${input.origin}/api/webhooks/payos`,
             }
           );
           paymentUrl = payosResult.checkoutUrl;
@@ -5553,7 +5550,21 @@ export const appRouter = router({
 
       // Send Telegram notification
       void sendTelegramNotification(owner.id, `🛒 <b>Đơn hàng mới (Mua ngay)</b>\nMã: ${invoiceNumber}\nKhách: ${input.email}\nSP: ${product.name} - ${pkg.name}\nTổng: ${totalAmount.toLocaleString("vi-VN")}đ`);
-
+      // Create customer notification
+      try {
+        const { customerNotifications } = await import("../drizzle/schema");
+        const drizzleDb2 = await getDb();
+        if (drizzleDb2) {
+          await drizzleDb2.insert(customerNotifications).values({
+            userId: owner.id,
+            customerEmail: input.email,
+            title: `Đặt hàng thành công - ${invoiceNumber}`,
+            message: `Bạn đã đặt hàng ${product.name} - ${pkg.name} với tổng tiền ${totalAmount.toLocaleString("vi-VN")}đ. Mã đơn: ${invoiceNumber}`,
+            type: "order" as any,
+            link: `/order/${invoiceNumber}`,
+          });
+        }
+      } catch (_) {}
       return { success: true, invoiceId: createdInvoice.id, invoiceNumber, paymentUrl, qrCode };
     }),
 
@@ -5724,7 +5735,6 @@ export const appRouter = router({
                 buyerAddress: customer.address || "",
                 returnUrl: `${input.origin}/track-order`,
                 cancelUrl: `${input.origin}/cart`,
-                webhookUrl: `${input.origin}/api/webhooks/payos`,
               }
             );
             paymentUrl = payosResult.checkoutUrl;
@@ -5785,7 +5795,22 @@ export const appRouter = router({
       // Send Telegram notification
       const itemNames = input.items.map(i => `${i.name} x${i.quantity}`).join(", ");
       void sendTelegramNotification(owner.id, `🛒 <b>Đơn hàng mới (Giỏ hàng)</b>\nMã: ${invoiceNumber}\nKhách: ${input.email}\nSP: ${itemNames}\nTổng: ${totalAmount.toLocaleString("vi-VN")}đ`);
-
+      // Create customer notification
+      try {
+        const { customerNotifications } = await import("../drizzle/schema");
+        const drizzleDb2 = await getDb();
+        if (drizzleDb2) {
+          const itemCount = input.items.reduce((s, i) => s + i.quantity, 0);
+          await drizzleDb2.insert(customerNotifications).values({
+            userId: owner.id,
+            customerEmail: input.email,
+            title: `Đặt hàng thành công - ${invoiceNumber}`,
+            message: `Bạn đã đặt ${itemCount} sản phẩm với tổng tiền ${totalAmount.toLocaleString("vi-VN")}đ. Mã đơn: ${invoiceNumber}`,
+            type: "order" as any,
+            link: `/order/${invoiceNumber}`,
+          });
+        }
+      } catch (_) {}
       return { success: true, invoiceId: createdInvoice.id, invoiceNumber, paymentUrl, qrCode };
     }),
   }),
@@ -6364,20 +6389,27 @@ export const appRouter = router({
       await drizzleDb.update(customerNotifications).set({ isRead: true }).where(eq(customerNotifications.id, input.id));
       return { success: true };
     }),
-    // Admin: create notification for a customer
-    create: protectedProcedure.input(z.object({
+    // Admin: create notification for a customer (uses customer token for admin session)
+    create: publicProcedure.input(z.object({
+      token: z.string(),
       customerEmail: z.string().email(),
       title: z.string().min(1),
       message: z.string().min(1),
       type: z.enum(["info", "success", "warning", "order", "payment", "promo"]).optional(),
       link: z.string().optional(),
-    })).mutation(async ({ input, ctx }) => {
-      const { customerNotifications } = await import("../drizzle/schema");
+    })).mutation(async ({ input }) => {
+      const { customerNotifications, customerSessions, users } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      // Verify admin session
+      const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+      if (!session || !session.isAdminSession) throw new TRPCError({ code: "UNAUTHORIZED" });
+      const [owner] = await drizzleDb.select().from(users).limit(1);
+      if (!owner) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await drizzleDb.insert(customerNotifications).values({
-        userId: ctx.user.id,
+        userId: owner.id,
         customerEmail: input.customerEmail,
         title: input.title,
         message: input.message,
@@ -6385,6 +6417,37 @@ export const appRouter = router({
         link: input.link || null,
       });
       return { success: true };
+    }),
+    // Admin: broadcast notification to all customers
+    broadcast: publicProcedure.input(z.object({
+      token: z.string(),
+      title: z.string().min(1),
+      message: z.string().min(1),
+      type: z.enum(["info", "success", "warning", "order", "payment", "promo"]).optional(),
+      link: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      const { customerNotifications, customerSessions, users, customers } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+      if (!session || !session.isAdminSession) throw new TRPCError({ code: "UNAUTHORIZED" });
+      const [owner] = await drizzleDb.select().from(users).limit(1);
+      if (!owner) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const allCustomers = await drizzleDb.select({ email: customers.email }).from(customers);
+      if (allCustomers.length === 0) return { success: true, count: 0 };
+      await drizzleDb.insert(customerNotifications).values(
+        allCustomers.filter(c => c.email != null).map(c => ({
+          userId: owner.id,
+          customerEmail: c.email as string,
+          title: input.title,
+          message: input.message,
+          type: input.type || "info",
+          link: input.link || null,
+        }))
+      );
+      return { success: true, count: allCustomers.length };
     }),
   }),
   // ─── Support Tickets ─────────────────────────────────────────────────────────

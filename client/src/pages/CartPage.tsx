@@ -140,6 +140,9 @@ export default function CartPage() {
   const cartCheckout = trpc.checkout.cartCheckout.useMutation({
     onSuccess: (data) => {
       setStep(2);
+      // Xóa giỏ hàng sau khi đặt hàng thành công
+      utils.cart.list.invalidate({ email });
+      utils.cart.count.invalidate({ email });
       if (payWithWallet) {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được thanh toán bằng ví!`);
         setTimeout(() => navigate(`/track-order`), 2000);

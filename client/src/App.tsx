@@ -77,6 +77,7 @@ const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const BlogManagement = lazy(() => import("./pages/BlogManagement"));
 const AnnouncementManagement = lazy(() => import("./pages/AnnouncementManagement"));
+const AdminNotifications = lazy(() => import("./pages/AdminNotifications"));
 
 // Client Portal
 const ClientLogin = lazy(() => import("./pages/ClientLogin"));
@@ -261,6 +262,7 @@ function Router() {
         <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
         <Route path="/blog-management" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
         <Route path="/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
+        <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

@@ -37,7 +37,7 @@ const menuItems = [
   { icon: Tag, label: "Tags sản phẩm", path: "/settings/tags" },
   { icon: Gift, label: "Mã giảm giá", path: "/settings/coupons" },
   { icon: Ticket, label: "Hỗ trợ (Tickets)", path: "/admin-support" },
-  { icon: Bell, label: "Thông báo", path: "/notifications" },
+  { icon: Bell, label: "Gửi thông báo", path: "/admin/notifications" },
   { icon: Megaphone, label: "Banner & Thông báo", path: "/announcements" },
   { icon: Settings, label: "Cài đặt", path: "/settings" },
 ];
@@ -265,20 +265,51 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset>
-        {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="tracking-tight text-foreground">
-                    {activeMenuItem?.label ?? "Menu"}
-                  </span>
-                </div>
+        {/* Persistent top header bar - shown on all dashboard pages */}
+        <div className="flex border-b h-14 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="h-9 w-9 rounded-lg" />
+            <div className="hidden sm:block w-px h-5 bg-border" />
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm text-foreground leading-tight">
+                {activeMenuItem?.label ?? "Dashboard"}
+              </span>
+              <span className="text-[11px] text-muted-foreground leading-tight hidden sm:block">
+                Quản lý hệ thống
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-xs hidden sm:flex"
+              onClick={() => window.open("/", "_blank")}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Xem shop
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 sm:hidden"
+              onClick={() => window.open("/", "_blank")}
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-2 pl-2 border-l border-border">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
+                  {customer?.name?.charAt(0)?.toUpperCase() ?? customer?.email?.charAt(0)?.toUpperCase() ?? "A"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden md:flex flex-col">
+                <span className="text-xs font-medium text-foreground leading-tight">{customer?.name || "Admin"}</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">{customer?.email}</span>
               </div>
             </div>
           </div>
-        )}
+        </div>
         <main className="flex-1 p-4">{children}</main>
       </SidebarInset>
     </>

@@ -16,7 +16,6 @@ interface PaymentData {
   buyerAddress?: string;
   returnUrl: string;
   cancelUrl: string;
-  webhookUrl?: string;
   items?: Array<{ name: string; quantity: number; price: number }>;
 }
 
@@ -44,7 +43,6 @@ export async function createPayOSPaymentLink(
   if (data.buyerEmail) body.buyerEmail = data.buyerEmail;
   if (data.buyerPhone) body.buyerPhone = data.buyerPhone;
   if (data.buyerAddress) body.buyerAddress = data.buyerAddress;
-  if (data.webhookUrl) body.webhookUrl = data.webhookUrl;
   if (data.items && data.items.length > 0) body.items = data.items;
 
   try {

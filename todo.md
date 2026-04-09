@@ -1385,3 +1385,24 @@ todo updated
 - [x] products.create trả về id để gán tags ngay sau khi tạo
 - [x] handleEdit load tags hiện có của sản phẩm vào selectedTagIds
 - [x] TypeScript: 0 errors, 53/53 tests passed
+
+## Phase: Major UI Fixes (Apr 9, 2026 - Session 18)
+- [ ] Sticky cart/mua nhanh trên mobile trong trang chi tiết sản phẩm
+- [ ] Hiệu ứng giỏ hàng realtime (optimistic update, không cần reload)
+- [ ] Xóa giỏ hàng sau khi tạo đơn thành công
+- [ ] Redesign tab đơn hàng trong MyAccount (fix NaN đ, layout đẹp hơn)
+- [ ] Hệ thống thông báo: icon bell header hoạt động, gửi thông báo khi đặt hàng
+- [ ] Redesign header dashboard và thêm link cấu hình thông báo
+
+## Phase: Major UI Fixes (Apr 9, 2026 - Session 18)
+- [x] Fix sticky cart mobile: chỉ hiện trên mobile (md:hidden), thêm padding bottom cho content
+- [x] Fix hiệu ứng giỏ hàng realtime: invalidate cart.list thay vì cart.count
+- [x] Fix xóa giỏ hàng sau đặt hàng: gọi clearCart.mutate trong cartCheckout.onSuccess
+- [x] Fix NaN đ trong tab đơn hàng: dùng item.unitPrice thay vì item.price
+- [x] Redesign tab đơn hàng: thêm filter trạng thái (Tất cả, Chờ, Đã thanh toán, Hoàn thành, Hủy)
+- [x] Hệ thống thông báo: gửi notification khi đặt hàng (buyNow + cartCheckout)
+- [x] Tạo trang AdminNotifications (/admin/notifications) để admin gửi thông báo
+- [x] Thêm broadcast procedure để gửi thông báo đến tất cả khách hàng
+- [x] Redesign header dashboard: top bar cố định, SidebarTrigger trên cả desktop/mobile
+- [x] Thêm link "Gửi thông báo" vào sidebar admin
+- [x] TypeScript: 0 errors, 53/53 tests passed

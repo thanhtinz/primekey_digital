@@ -636,6 +636,7 @@ type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "pro
 export default function MyAccount() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [orderFilter, setOrderFilter] = useState<"all" | "CREATED" | "PAID" | "COMPLETED" | "CANCELLED">("all");
   const { customer, token, logout, isLoading: authLoading } = useCustomerAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -1025,18 +1026,27 @@ export default function MyAccount() {
         {/* ===== Tab: Orders ===== */}
         {activeTab === "orders" && (
           <div className="space-y-3">
-            {/* Link to full order management page */}
-            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-blue-800">Xem đầy đủ lịch sử đơn hàng</p>
-                <p className="text-xs text-blue-600 mt-0.5">Tìm kiếm, lọc và xem chi tiết tất cả đơn hàng</p>
+            {/* Header with stats + filter */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-1 flex-1">
+                {["all", "CREATED", "PAID", "COMPLETED", "CANCELLED"].map((s) => {
+                  const labels: Record<string, string> = { all: "Tất cả", CREATED: "Chờ xử lý", PAID: "Đã thanh toán", COMPLETED: "Hoàn thành", CANCELLED: "Đã hủy" };
+                  const cnt = s === "all" ? orders.length : (orders as any[]).filter((o: any) => o.status === s).length;
+                  const isActive = (orderFilter ?? "all") === s;
+                  return (
+                    <button key={s} onClick={() => setOrderFilter(s as any)}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                        isActive ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                      }`}>
+                      {labels[s]} {cnt > 0 && <span className={`ml-1 ${ isActive ? "opacity-80" : "text-slate-400"}`}>({cnt})</span>}
+                    </button>
+                  );
+                })}
               </div>
-              <button
-                onClick={() => navigate("/track-order")}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
-              >
+              <button onClick={() => navigate("/track-order")}
+                className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors">
                 <ExternalLink className="h-3.5 w-3.5" />
-                Quản lý đơn hàng
+                Xem tất cả
               </button>
             </div>
             {ordersLoading ? (
@@ -1044,7 +1054,9 @@ export default function MyAccount() {
                 <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
                 Đang tải đơn hàng...
               </div>
-            ) : orders.length === 0 ? (
+            ) : (() => {
+              const filteredOrders = orderFilter === "all" ? (orders as any[]) : (orders as any[]).filter((o: any) => o.status === orderFilter);
+              return filteredOrders.length === 0 ? (
               <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl">
                 <ShoppingBag className="h-14 w-14 text-slate-200 mx-auto mb-3" />
                 <p className="text-slate-600 font-semibold">Chưa có đơn hàng nào</p>
@@ -1054,7 +1066,8 @@ export default function MyAccount() {
                 </button>
               </div>
             ) : (
-              orders.map((order: any) => {
+              <div className="space-y-3">
+              {filteredOrders.map((order: any) => {
                 const st = orderStatusMap[order.status] || { label: order.status, color: "text-slate-500 bg-slate-100 border-slate-200", icon: AlertCircle };
                 const StatusIcon = st.icon;
                 return (
@@ -1087,7 +1100,7 @@ export default function MyAccount() {
                                 <p className="text-slate-700 font-medium truncate text-xs">{item.name}</p>
                                 <p className="text-slate-400 text-[10px]">SL: {item.quantity}</p>
                               </div>
-                              <p className="text-slate-600 font-medium text-xs">{formatCurrency(item.price)}</p>
+                              <p className="text-slate-600 font-medium text-xs">{formatCurrency(Number(item.unitPrice ?? item.price ?? 0))}</p>
                             </div>
                           ))}
                           {order.items.length > 2 && (
@@ -1097,7 +1110,7 @@ export default function MyAccount() {
                       )}
                     </div>
                     <div className="bg-slate-50 border-t border-slate-100 px-4 py-2 flex justify-between items-center gap-2">
-      <ExportPDFButton orderId={order.id} invoiceNumber={order.invoiceNumber} token={token || ""} />
+                      <ExportPDFButton orderId={order.id} invoiceNumber={order.invoiceNumber} token={token || ""} />
                       {(order.status === 'CREATED' || order.status === 'sent') && order.paymentLink && (
                         <a href={order.paymentLink} target="_blank" rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-700 text-xs font-medium flex items-center gap-1">
@@ -1111,8 +1124,10 @@ export default function MyAccount() {
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
+              </div>
+            );
+            })()}
           </div>
         )}
 

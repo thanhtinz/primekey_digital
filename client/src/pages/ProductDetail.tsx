@@ -93,7 +93,11 @@ export default function ProductDetail() {
     onError: (err) => toast.error(err.message),
   });
   const addToCart = trpc.cart.add.useMutation({
-    onSuccess: () => { utils.cart.count.invalidate({ email }); toast.success("Đã thêm vào giỏ hàng!"); },
+    onSuccess: () => {
+      utils.cart.list.invalidate({ email });
+      utils.cart.count.invalidate({ email });
+      toast.success("Đã thêm vào giỏ hàng!");
+    },
     onError: (err) => toast.error(err.message),
   });
   const submitReview = trpc.products.submitReview.useMutation({
@@ -611,8 +615,8 @@ export default function ProductDetail() {
           )}
         </div>{/* end reviews outer */}
 
-      {/* Sticky CTA bottom - fixed, outside content flow */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-50">
+      {/* Sticky CTA bottom - fixed, mobile only */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-50">
         <div className="max-w-6xl mx-auto flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-500 leading-none mb-0.5 truncate">
