@@ -65,8 +65,6 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
 
    // Use context customer data (already fetched by CustomerAuthProvider)
   const sessionData = ctxCustomer;
-  // Check admin role from Manus OAuth session (users table, not customers table)
-  const { data: adminUser } = trpc.auth.me.useQuery(undefined, { staleTime: 60_000, retry: false });
   const { isEnabled } = useFeatureFlags();
   const walletBalance = walletData?.balance ?? 0;
   const unreadCount = notifData?.unreadCount ?? 0;
@@ -74,10 +72,12 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const avatarUrl = ctxCustomer?.avatarUrl;
   const displayName = ctxCustomer?.name || ctxCustomer?.email?.split("@")[0] || "Tài Khoản";
   const email = ctxCustomer?.email || "";
-  // isAdmin = true if:
-  // 1. Logged in via Manus OAuth (admin dashboard) with role admin, OR
-  // 2. Logged in via client loginWithPassword with admin credentials (isAdminSession)
-  const isAdmin = (adminUser as any)?.role === "admin" || ctxCustomer?.role === "admin";
+  // Check admin role via dedicated procedure (works for both isAdminSession and email-match)
+  const { data: adminCheckData } = trpc.customer.checkIsAdmin.useQuery(
+    { token },
+    { enabled: isLoggedIn && !!token, staleTime: 60_000, retry: false }
+  );
+  const isAdmin = adminCheckData?.isAdmin === true;
 
   const { data: allCategories } = trpc.categories.list.useQuery(undefined, { staleTime: 300_000 });
 
@@ -482,17 +482,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 <User className="h-5 w-5" />
               </button>
             )}
-            {/* Admin shortcut - visible when Manus OAuth admin is logged in */}
-            {(adminUser as any)?.role === "admin" && !isAdmin && (
-              <button
-                onClick={() => go("/dashboard")}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold border border-amber-500/20"
-                title="Quản trị Admin"
-              >
-                <Settings className="h-3.5 w-3.5" />
-                <span>Admin</span>
-              </button>
-            )}
+
             {/* Hamburger - mobile */}
             <button
               onClick={() => setMenuOpen(v => !v)}

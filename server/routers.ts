@@ -4380,12 +4380,23 @@ export const appRouter = router({
         const [cust] = await drizzleDb.select({ walletBalance: customers.walletBalance, avatarUrl: (customers as any).avatarUrl }).from(customers).where(eq(customers.email, session.email)).limit(1);
         const avatarUrl = (session as any).avatarUrl || (cust as any)?.avatarUrl || null;
         // If this is an admin session, also return role from users table
-        const isAdminSession = (session as any).isAdminSession === true || (session as any).isAdminSession === 1;
-        let role: string | undefined;
+        // MySQL boolean can return true/false, 1/0, or Buffer - handle all cases
+        const rawAdminFlag = (session as any).isAdminSession;
+        const isAdminSession = rawAdminFlag === true || rawAdminFlag === 1 || rawAdminFlag === '1' ||
+          (Buffer.isBuffer(rawAdminFlag) && rawAdminFlag[0] === 1);
+        let role: string | null = null;
         if (isAdminSession) {
           const { users } = await import("../drizzle/schema");
           const [adminUser] = await drizzleDb.select({ role: users.role }).from(users).where(eq(users.email, session.email)).limit(1);
-          role = adminUser?.role;
+          role = adminUser?.role || null;
+        }
+        // Fallback: if email matches admin user directly, also return role
+        if (!role) {
+          const { users } = await import("../drizzle/schema");
+          const [adminUser] = await drizzleDb.select({ role: users.role }).from(users).where(eq(users.email, session.email)).limit(1);
+          if (adminUser?.role === 'admin') {
+            role = 'admin';
+          }
         }
         return { email: session.email, name: session.name, avatarUrl, walletBalance: cust?.walletBalance || "0", role };
       }),
@@ -5054,6 +5065,28 @@ export const appRouter = router({
         if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
         await drizzleDb.delete(customerSessions).where(and(eq(customerSessions.email, session.email), ne(customerSessions.token, input.token)));
         return { success: true };
+      }),
+    // Check if the current customer session belongs to an admin user
+    checkIsAdmin: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions, users } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, or } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { isAdmin: false };
+        const [session] = await drizzleDb.select().from(customerSessions)
+          .where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return { isAdmin: false };
+        // Check if session email matches any admin user
+        const [adminUser] = await drizzleDb.select({ role: users.role }).from(users)
+          .where(eq(users.email, session.email)).limit(1);
+        if (adminUser?.role === 'admin') return { isAdmin: true };
+        // Also check isAdminSession flag
+        const rawAdminFlag = (session as any).isAdminSession;
+        const isAdminSession = rawAdminFlag === true || rawAdminFlag === 1 || rawAdminFlag === '1' ||
+          (Buffer.isBuffer(rawAdminFlag) && rawAdminFlag[0] === 1);
+        return { isAdmin: isAdminSession };
       }),
   }),
   // ─── Cartt ──────────────────────────────────────────────────────────────────

@@ -479,7 +479,159 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
   );
 }
 
-type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile" | "security";
+// SecurityInlineSection: lịch sử đăng nhập + phiên đang hoạt động (inline, không cần tab riêng)
+function SecurityInlineSection({ token }: { token: string }) {
+  const [expanded, setExpanded] = useState<"history" | "sessions" | null>(null);
+
+  const { data: loginHistory, isLoading: historyLoading } = trpc.customer.getLoginHistory.useQuery(
+    { token, limit: 10 },
+    { enabled: !!token && expanded === "history", staleTime: 30_000 }
+  );
+
+  const { data: activeSessions, isLoading: sessionsLoading, refetch: refetchSessions } = trpc.customer.getActiveSessions.useQuery(
+    { token },
+    { enabled: !!token && expanded === "sessions", staleTime: 10_000 }
+  );
+
+  const revokeSession = trpc.customer.revokeSession.useMutation({
+    onSuccess: () => { toast.success("Phên đăng nhập đã bị thu hồi"); refetchSessions(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const revokeAll = trpc.customer.revokeAllOtherSessions.useMutation({
+    onSuccess: () => { toast.success("Đã đăng xuất khỏi tất cả thiết bị khác"); refetchSessions(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const formatDateTime = (d: string | Date) =>
+    new Date(d).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="divide-y divide-slate-100">
+      {/* Lịch sử đăng nhập */}
+      <div>
+        <button
+          onClick={() => setExpanded(expanded === "history" ? null : "history")}
+          className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition text-left"
+        >
+          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <Clock className="h-4 w-4 text-slate-500" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-slate-700">Lịch sử đăng nhập</p>
+            <p className="text-xs text-slate-400">Xem các lần đăng nhập gần đây</p>
+          </div>
+          <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${expanded === "history" ? "rotate-90" : ""}`} />
+        </button>
+        {expanded === "history" && (
+          <div className="px-5 pb-4">
+            {historyLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
+            ) : !loginHistory || loginHistory.length === 0 ? (
+              <div className="text-center py-6 text-slate-400">
+                <Clock className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Chưa có lịch sử</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {loginHistory.map((entry: any) => (
+                  <div key={entry.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+                    <div className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      entry.status === "success" ? "bg-green-100" : "bg-red-100"
+                    }`}>
+                      {entry.status === "success"
+                        ? <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                        : <XCircle className="h-3.5 w-3.5 text-red-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-xs font-semibold ${
+                          entry.status === "success" ? "text-green-700" : "text-red-600"
+                        }`}>
+                          {entry.status === "success" ? "Đăng nhập thành công" : "Đăng nhập thất bại"}
+                        </span>
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap">{formatDateTime(entry.createdAt)}</span>
+                      </div>
+                      {entry.deviceInfo && <p className="text-xs text-slate-500 mt-0.5">{entry.deviceInfo}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Thiết bị đang đăng nhập */}
+      <div>
+        <button
+          onClick={() => setExpanded(expanded === "sessions" ? null : "sessions")}
+          className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition text-left"
+        >
+          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <Shield className="h-4 w-4 text-slate-500" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-slate-700">Thiết bị đang đăng nhập</p>
+            <p className="text-xs text-slate-400">Quản lý và thu hồi phiên trên thiết bị khác</p>
+          </div>
+          <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${expanded === "sessions" ? "rotate-90" : ""}`} />
+        </button>
+        {expanded === "sessions" && (
+          <div className="px-5 pb-4">
+            {sessionsLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
+            ) : (
+              <div className="space-y-2">
+                {(activeSessions?.length || 0) > 1 && (
+                  <button
+                    onClick={() => revokeAll.mutate({ token })}
+                    disabled={revokeAll.isPending}
+                    className="w-full text-xs text-red-600 hover:text-red-700 font-semibold flex items-center justify-center gap-1.5 py-2 rounded-xl border border-red-200 hover:bg-red-50 transition disabled:opacity-50"
+                  >
+                    {revokeAll.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                    Đăng xuất tất cả thiết bị khác
+                  </button>
+                )}
+                {(activeSessions || []).map((s: any) => (
+                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      s.isCurrent ? "bg-blue-100" : "bg-slate-100"
+                    }`}>
+                      <Shield className={`h-4 w-4 ${s.isCurrent ? "text-blue-600" : "text-slate-400"}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-semibold text-slate-700 truncate">
+                          {s.isAdminSession ? "Phên Admin" : "Phên khách hàng"}
+                        </p>
+                        {s.isCurrent && (
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold">Hiện tại</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400">{formatDateTime(s.createdAt)}</p>
+                    </div>
+                    {!s.isCurrent && (
+                      <button
+                        onClick={() => revokeSession.mutate({ token, sessionId: s.id })}
+                        disabled={revokeSession.isPending}
+                        className="text-xs text-red-500 hover:text-red-700 font-semibold disabled:opacity-50 flex-shrink-0 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                      >
+                        Thu hồi
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile";
 
 export default function MyAccount() {
   const [, navigate] = useLocation();
@@ -616,7 +768,12 @@ export default function MyAccount() {
     if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K₫`;
     return `${v.toLocaleString("vi-VN")}₫`;
   };
-  const isAdmin = (customer as any)?.role === "admin";
+  // Check admin via dedicated procedure
+  const { data: adminCheckData } = trpc.customer.checkIsAdmin.useQuery(
+    { token: token! },
+    { enabled: !!token, staleTime: 60_000, retry: false }
+  );
+  const isAdmin = adminCheckData?.isAdmin === true;
 
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
   const tabs: { id: TabType; label: string; icon: any; badge?: number }[] = [
@@ -625,8 +782,7 @@ export default function MyAccount() {
     ...(isFeatureEnabled("loyalty_points") ? [{ id: "points" as TabType, label: "Điểm", icon: Star }] : []),
     ...(isFeatureEnabled("warranty") ? [{ id: "warranty" as TabType, label: "Bảo hành", icon: Shield }] : []),
     ...(isFeatureEnabled("referral") ? [{ id: "referral" as TabType, label: "Giới thiệu", icon: Users2 }] : []),
-    { id: "profile", label: "Hồ sơ", icon: User },
-    { id: "security", label: "Bảo mật", icon: ShieldCheck },
+    { id: "profile", label: "Hồ sơ & Bảo mật", icon: User },
   ];
 
   // Always fetch referral stats so code is consistent across all tabs
@@ -1294,121 +1450,154 @@ export default function MyAccount() {
           </div>
         )}
 
-        {/* ===== Tab: Profile ===== */}
+        {/* ===== Tab: Hồ sơ & Bảo mật ===== */}
         {activeTab === "profile" && (
-          <div className="space-y-4">
-            {/* Avatar section */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-slate-800 mb-4">Ảnh đại diện</h3>
-              <div className="flex items-center gap-4">
-                <div className="relative">
+          <div className="space-y-5">
+
+            {/* ── Section 1: Hồ sơ cá nhân ── */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+              {/* Section header */}
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">Hồ sơ cá nhân</h3>
+                  <p className="text-[11px] text-slate-500">Thông tin tài khoản và ảnh đại diện</p>
+                </div>
+              </div>
+
+              {/* Avatar + name row */}
+              <div className="px-5 py-4 flex items-center gap-4 border-b border-slate-100">
+                <div className="relative flex-shrink-0">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-xl object-cover shadow-lg" />
+                    <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-2xl object-cover ring-2 ring-blue-100 shadow-md" />
                   ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-md">
                       {customerName.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <button
-                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-md hover:bg-blue-700 transition disabled:opacity-50"
+                    className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition disabled:opacity-50 border-2 border-white"
                     onClick={handleAvatarUpload}
                     disabled={uploadAvatarMutation.isPending}
+                    title="Đổi ảnh đại diện"
                   >
-                    {uploadAvatarMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                    {uploadAvatarMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
                   </button>
                 </div>
-                <div>
-                  <p className="font-semibold text-slate-800 text-sm">{customerName}</p>
-                  <p className="text-xs text-slate-400">{customer.email}</p>
-                  <p className="text-[10px] text-slate-300 mt-1">Nhấn camera để thay đổi (định dạng JPG/PNG, tối đa 2MB)</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-800">{customerName}</p>
+                  <p className="text-xs text-slate-500 truncate">{customer.email}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">JPG/PNG • tối đa 2MB</p>
                 </div>
               </div>
-            </div>
 
-            {/* Personal info */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-slate-800">Thông tin cá nhân</h3>
-                {!isEditingProfile ? (
-                  <button className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1" onClick={() => { setEditName(customer.name || ""); setEditPhone(""); setIsEditingProfile(true); }}>
-                    <Wrench className="h-3 w-3" /> Chỉnh sửa
-                  </button>
-                ) : (
-                  <div className="flex gap-2">
-                    <button className="text-xs text-slate-500 hover:text-slate-700 font-medium" onClick={() => setIsEditingProfile(false)}>Hủy</button>
-                    <button className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 disabled:opacity-50" onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
-                      {updateProfileMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />} Lưu
+              {/* Personal info fields */}
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Thông tin</p>
+                  {!isEditingProfile ? (
+                    <button className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition" onClick={() => { setEditName(customer.name || ""); setEditPhone(""); setIsEditingProfile(true); }}>
+                      <Wrench className="h-3 w-3" /> Chỉnh sửa
                     </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button className="text-xs text-slate-500 hover:text-slate-700 font-medium px-2.5 py-1 rounded-lg hover:bg-slate-100 transition" onClick={() => setIsEditingProfile(false)}>Hủy</button>
+                      <button className="text-xs text-white bg-blue-600 hover:bg-blue-700 font-semibold flex items-center gap-1 px-2.5 py-1 rounded-lg transition disabled:opacity-50" onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
+                        {updateProfileMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />} Lưu
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {isEditingProfile ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Họ và tên</label>
+                      <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nhập họ tên" className="h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Email</label>
+                      <Input value={customer.email} disabled className="h-9 text-sm bg-slate-50" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Số điện thoại</label>
+                      <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Nhập số điện thoại" className="h-9 text-sm" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {[
+                      { label: "Họ và tên", value: customer.name || "Chưa cập nhật", icon: User },
+                      { label: "Email", value: customer.email, icon: Mail },
+                      { label: "Số điện thoại", value: "Chưa cập nhật", icon: Phone },
+                    ].map((field) => (
+                      <div key={field.label} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+                          <field.icon className="h-3.5 w-3.5 text-slate-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">{field.label}</p>
+                          <p className="text-sm font-semibold text-slate-700 truncate">{field.value}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-              {isEditingProfile ? (
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">Họ và tên</label>
-                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nhập họ tên" className="h-9 text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">Email</label>
-                    <Input value={customer.email} disabled className="h-9 text-sm bg-slate-50" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-400 uppercase tracking-wider">Số điện thoại</label>
-                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Nhập số điện thoại" className="h-9 text-sm" />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {[
-                    { label: "Họ và tên", value: customer.name || "Chưa cập nhật", icon: User },
-                    { label: "Email", value: customer.email, icon: Mail },
-                    { label: "Số điện thoại", value: "Chưa cập nhật", icon: Phone },
-                  ].map((field) => (
-                    <div key={field.label} className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50">
-                      <field.icon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{field.label}</p>
-                        <p className="text-sm font-medium text-slate-700 truncate">{field.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Change password */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <Lock className="h-4 w-4 text-slate-500" />
-                Đổi Mật Khẩu
-              </h3>
-              <ChangePasswordForm token={token!} />
-            </div>
-
-            {/* 2FA Section */}
-            <TwoFASection token={token!} />
-
-            {/* Account security */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-slate-100">
-                <h3 className="text-sm font-semibold text-slate-800">Tài khoản</h3>
+            {/* ── Section 2: Bảo mật ── */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center">
+                  <ShieldCheck className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">Bảo mật</h3>
+                  <p className="text-[11px] text-slate-500">Mật khẩu, xác thực 2 bước và thiết bị</p>
+                </div>
               </div>
-              <button onClick={() => setActiveTab("security")} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition text-left">
-                <ShieldCheck className="h-5 w-5 text-slate-500" />
-                <span className="text-sm font-medium text-slate-700">Bảo mật tài khoản</span>
-                <ChevronRight className="h-4 w-4 text-slate-400 ml-auto" />
-              </button>
-              <button onClick={handleLogout} disabled={logoutMutation.isPending} className="w-full flex items-center gap-3 p-4 hover:bg-red-50 transition text-left">
-                <LogOut className="h-5 w-5 text-red-500" />
-                <span className="text-sm font-medium text-red-600">Đăng xuất</span>
+
+              {/* Change password */}
+              <div className="px-5 py-4 border-b border-slate-100">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Đổi mật khẩu</p>
+                <ChangePasswordForm token={token!} />
+              </div>
+
+              {/* 2FA */}
+              <div className="px-5 py-4 border-b border-slate-100">
+                <TwoFASection token={token!} />
+              </div>
+
+              {/* Security links: history + sessions inline */}
+              <SecurityInlineSection token={token!} />
+            </div>
+
+            {/* ── Section 3: Tài khoản ── */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-red-50 to-rose-50">
+                <div className="w-8 h-8 rounded-xl bg-red-500 flex items-center justify-center">
+                  <LogOut className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">Tài khoản</h3>
+                  <p className="text-[11px] text-slate-500">Quản lý phiên đăng nhập</p>
+                </div>
+              </div>
+              <button onClick={handleLogout} disabled={logoutMutation.isPending} className="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-50 transition text-left">
+                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <LogOut className="h-4 w-4 text-red-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-red-600">Đăng xuất</p>
+                  <p className="text-xs text-slate-400">Thoát khỏi tài khoản trên thiết bị này</p>
+                </div>
+                {logoutMutation.isPending && <Loader2 className="h-4 w-4 animate-spin text-red-400" />}
               </button>
             </div>
-          </div>
-        )}
 
-        {/* ===== Tab: Security ===== */}
-        {activeTab === "security" && token && (
-          <SecurityTab token={token} onBack={() => setActiveTab("profile")} />
+          </div>
         )}
       </div>
       <ClientFooter />

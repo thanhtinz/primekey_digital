@@ -5,7 +5,7 @@ import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 import {
   Search, Package, Grid3X3, List, Shield, Star,
-  Home, ChevronRight, ShoppingBag, Filter, RotateCcw, Zap
+  ShoppingBag, Filter, RotateCcw, Zap
 } from "lucide-react";
 
 const formatVND = (val: string | number | null | undefined) => {
@@ -166,17 +166,6 @@ export default function ProductCatalog() {
   return (
     <div className="min-h-screen pt-20 bg-gray-50">
       <ClientHeader />
-
-      {/* ===== BREADCRUMB ===== */}
-      <div className="max-w-6xl mx-auto px-4 pt-4 pb-2">
-        <nav className="flex items-center gap-1.5 text-sm">
-          <button onClick={() => setLocation("/")} className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors">
-            <Home className="h-3.5 w-3.5" /> Trang chủ
-          </button>
-          <ChevronRight className="h-3 w-3 text-gray-400" />
-          <span className="text-gray-800 font-semibold">Sản phẩm</span>
-        </nav>
-      </div>
 
       {/* ===== HEADER GRADIENT ===== */}
       <div className="mx-4 mb-4">

@@ -1340,3 +1340,9 @@ todo updated
 - [x] AnnouncementManagement: route /announcements + sidebar link đã tích hợp đầy đủ
 - [x] Lưu tài liệu AUTH_ARCHITECTURE.md giải thích 2 luồng auth
 - [x] TypeScript: 0 errors, 53/53 tests passed
+
+## Phase: UI Fixes (Apr 9, 2026 - Session 10)
+- [x] Fix link Admin: thêm checkIsAdmin procedure (lookup email trong bảng users), ClientHeader dùng procedure này
+- [x] Gộp tab Bảo mật vào tab Hồ sơ trong MyAccount - redesign 3 sections đẹp (Hồ sơ, Bảo mật, Tài khoản)
+- [x] Bỏ breadcrumb "Trang chủ > Sản phẩm" trong trang ProductCatalog
+- [x] TypeScript: 0 errors, 53/53 tests passed
