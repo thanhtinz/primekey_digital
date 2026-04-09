@@ -5,6 +5,7 @@ import { Star, Shield, Package, ChevronRight, ChevronLeft, Flame, ArrowRight, Sp
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
+import { AnnouncementInline } from "@/components/AnnouncementBanner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 function formatPrice(amount: number | string, currency = "VND") {
@@ -188,8 +189,6 @@ export default function LandingPage() {
       <ClientHeader />
 
       <div className="pt-20 flex-1">
-        {/* Welcome banner removed - using AnnouncementBanner in ClientHeader instead */}
-
         {/* ===== IMAGE BANNER CAROUSEL ===== */}
         {(bannersData as any[]).length > 0 && (
           <div className="mx-4 mt-3 mb-2 relative overflow-hidden rounded-2xl" style={{maxWidth: "100%"}}>
@@ -222,6 +221,9 @@ export default function LandingPage() {
             </div>
           </div>
         )}
+
+        {/* ===== ANNOUNCEMENT INLINE CARDS ===== */}
+        <AnnouncementInline />
 
         {/* ===== FLASH SALE BANNER ===== */}
         {isEnabled("flash_sale") && (activeSales as any[]).length > 0 && (

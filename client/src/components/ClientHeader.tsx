@@ -4,7 +4,6 @@
  * Dropdown danh mục 2 cấp (danh mục lớn → danh mục nhỏ)
  */
 import { useState, useEffect, useRef, useCallback } from "react";
-import { AnnouncementBanner } from "./AnnouncementBanner";
 import { useLocation } from "wouter";
 import { Menu, X, Search, Bell, Gift, User, Home, Package, CreditCard, BookOpen, ChevronRight, ChevronDown, Settings, LogOut, Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare, Trophy } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
@@ -159,8 +158,6 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
     <>
       {/* Main Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a] border-b border-white/10">
-        {/* Announcement banners - inside fixed header so they're always visible */}
-        <AnnouncementBanner />
         <div className={`${maxWidth} mx-auto px-4 h-14 flex items-center gap-3`}>
           {/* Logo */}
           <button onClick={() => go("/")} className="flex items-center gap-2 flex-shrink-0 mr-2">
