@@ -1532,7 +1532,7 @@ todo updated
 - [x] TypeScript 0 errors, 53/53 tests passed
 
 ## Phase: Fix Popup Config & Sticky Bar (Apr 9, 2026)
-- [ ] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar
+- [x] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar (Banner Trang Chủ, Thông Báo Website, Thông Báo Hệ Thống đã có sẵn)
 - [ ] Fix sticky bottom bar ProductDetail mobile: dùng position:fixed thay vì bị cuộn theo trang
 - [ ] ProductDetail: xóa sticky bottom bar mobile, gộp nút Giỏ hàng/Mua ngay vào card thông tin đặt hàng
 
@@ -1553,7 +1553,7 @@ todo updated
 - [x] Thiết kế lại SupportPage đồng bộ với trang chính
 - [x] Thiết kế lại CouponStorePage đồng bộ với trang chính
 - [x] Fix khoảng cách header/thân trang: pt-14 → pt-16 trên tất cả trang client
-- [ ] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar
+- [x] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar (Banner Trang Chủ, Thông Báo Website, Thông Báo Hệ Thống đã có sẵn)
 
 ## Session Apr 9, 2026 - UI/UX Improvements Batch 2
 
@@ -1568,3 +1568,9 @@ todo updated
 - [x] Thiết kế lại CouponStorePage hero banner đồng bộ
 - [x] Fix khoảng cách header/thân trang: pt-14 → pt-16 trên tất cả trang client
 - [x] Desktop dropdown danh mục: parent có children thì không navigate khi click (bỏ "Tất cả Giải trí")
+
+## Phase: UI/UX Fixes Batch 3 (Apr 9, 2026)
+- [x] Fix card danh mục con: giảm kích thước card container (inline-flex, không full-width)
+- [x] Đồng bộ card sản phẩm ProductCatalog grid/list với LandingPage ProductCard (tag style bg-white/90)
+- [x] Fix FlashSalePage thiếu footer ClientFooter
+- [x] ProductDetail: đổi card "Lưu ý" thành "Chi tiết gói" dạng dropdown accordion giống card mô tả

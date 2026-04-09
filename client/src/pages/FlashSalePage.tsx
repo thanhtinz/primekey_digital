@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Zap, Clock, Tag, Loader2, ShoppingBag, Flame, TrendingDown, AlertTriangle } from "@/components/Icon";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
+import { ClientFooter } from "@/components/ClientFooter";
 
 function formatCurrency(amount: string | number | null | undefined) {
   const num = typeof amount === "string" ? parseFloat(amount) : (amount || 0);
@@ -246,9 +247,7 @@ export default function FlashSalePage() {
           </div>
         )}
       </div>
-      <footer className="py-6 text-center text-xs text-slate-500 border-t border-slate-200">
-        © {new Date().getFullYear()} {brandName}. Giá và số lượng có thể thay đổi.
-      </footer>
+      <ClientFooter />
     </div>
   );
 }

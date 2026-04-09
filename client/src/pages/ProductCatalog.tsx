@@ -385,23 +385,21 @@ export default function ProductCatalog() {
                     {discount > 0 && (
                       <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">-{discount}%</div>
                     )}
-                    {/* Product tags - hiển thị tối đa 1 tag ở góc trên phải (thay cho categoryName) */}
-                    {(() => {
-                      const ptags = (product.tags || []) as any[];
-                      if (ptags.length > 0) {
-                        return (
-                          <div className="absolute bottom-2 left-2 flex gap-1">
-                            {ptags.slice(0, 1).map((tag: any) => (
-                              <span key={tag.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow inline-flex items-center gap-0.5" style={{ backgroundColor: tag.color || '#3b82f6' }}>
-                                {tag.icon && (tag.icon.startsWith("fa-") ? <i className={`${tag.icon} text-[8px]`} /> : <span className="text-[8px]">{tag.icon}</span>)}
-                                {tag.name}
-                              </span>
-                            ))}
+                    {/* Product tags - đồng bộ với LandingPage */}
+                    {(product.tags || []).length > 0 && (
+                      <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
+                        {((product.tags || []) as any[]).slice(0, 2).map((tag: any) => (
+                          <div
+                            key={tag.id}
+                            className="bg-white/90 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium"
+                            style={{ color: tag.color || '#3b82f6' }}
+                          >
+                            {tag.icon ? (tag.icon.startsWith("fa-") ? <i className={`${tag.icon} text-[10px]`} /> : <span className="text-[10px]">{tag.icon}</span>) : null}
+                            {tag.name}
                           </div>
-                        );
-                      }
-                      return null;
-                    })()}
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-gray-800 mb-1.5 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">{product.name}</h3>

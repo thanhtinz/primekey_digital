@@ -282,7 +282,7 @@ export default function LandingPage() {
           return (
             <section className="px-4 mb-6">
               <div className="max-w-7xl mx-auto">
-                <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm inline-flex">
                   <div className="relative">
                     {displayCats.length > 5 && (
                       <button onClick={() => scrollCats("left")}
@@ -291,7 +291,7 @@ export default function LandingPage() {
                       </button>
                     )}
                     <div ref={catScrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-1"
-                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none", maxWidth: "calc(100vw - 80px)" }}>
                       {displayCats.map((cat: any) => (
                         <button
                           key={cat.id}
