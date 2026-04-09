@@ -6142,8 +6142,21 @@ export const appRouter = router({
         await drizzleDb.delete(banners).where(and(eq(banners.id, input.id), eq(banners.userId, ctx.user.id)));
         return { success: true };
       }),
+    uploadImage: protectedProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.string().default("image/jpeg"),
+        fileName: z.string().default("banner.jpg"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { storagePut } = await import("./storage");
+        const buffer = Buffer.from(input.base64, "base64");
+        const ext = input.mimeType.split("/")[1] || "jpg";
+        const fileKey = `banners/${ctx.user.id}-${Date.now()}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        return { url };
+      }),
   }),
-
   // ─── Tax Router ────────────────────────────────────────────────────────────
   tax: router({
     getSettings: protectedProcedure.query(async ({ ctx }) => {

@@ -214,6 +214,24 @@ export default function LandingPage() {
                   </a>
                 ))}
                 {(bannersData as any[]).length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setCurrentBannerIdx((currentBannerIdx - 1 + (bannersData as any[]).length) % (bannersData as any[]).length)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 transition-all shadow-md"
+                      title="Banner trước"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentBannerIdx((currentBannerIdx + 1) % (bannersData as any[]).length)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 transition-all shadow-md"
+                      title="Banner tiếp theo"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+                {(bannersData as any[]).length > 1 && (
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {(bannersData as any[]).map((_: any, idx: number) => (
                       <button key={idx} onClick={() => setCurrentBannerIdx(idx)}

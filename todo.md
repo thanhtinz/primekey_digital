@@ -1582,3 +1582,6 @@ todo updated
 - [x] Fix card danh mục con: layout ngang (icon trái + text phải), không còn dạng dọc cao
 - [x] Fix AnnouncementInline banner không hiện trên mobile: sửa class trùng lặp mx-4 và mx-auto
 - [x] Fix AnnouncementInline và AnnouncementBanner popup: banner inline reset mỗi ngày (không lưu mãi mãi), popup snooze 2h theo session
+- [x] Admin Banner: thêm tính năng upload ảnh lên S3 (thay vì chỉ nhập URL)
+- [x] Đồng bộ card sản phẩm ProductCatalog grid/list với LandingPage (tag style, rating, sold count)
+- [x] Thêm nút trái/phải (ChevronLeft/ChevronRight) cho banner slider trong LandingPage
