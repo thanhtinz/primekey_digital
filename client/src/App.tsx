@@ -49,7 +49,6 @@ const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
 const WarrantySettingsPage = lazy(() => import("./pages/WarrantySettingsPage"));
 const WarrantyManagement = lazy(() => import("./pages/WarrantyManagement"));
 const FlashSaleSettings = lazy(() => import("./pages/FlashSaleSettings"));
-const QueuePage = lazy(() => import("./pages/QueuePage"));
 const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const FlashSalePage = lazy(() => import("./pages/FlashSalePage"));
 const CouponSettings = lazy(() => import("./pages/CouponSettings"));
@@ -105,7 +104,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/queue", "/leaderboard", "/flash-sale", "/catalog", "/compare", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/wishlist", "/referral"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/referral"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -138,7 +137,6 @@ function Router() {
           <Route path="/thank-you" component={() => <ThankYou />} />
           <Route path="/pay/:invoiceId" component={() => <PaymentPage />} />
           <Route path="/warranty" component={() => <WarrantyLookup />} />
-          <Route path="/queue" component={() => <QueuePage />} />
           <Route path="/leaderboard" component={() => <LeaderboardPage />} />
           <Route path="/flash-sale" component={() => <FlashSalePage />} />
           <Route path="/catalog" component={() => <ProductCatalog />} />
@@ -188,7 +186,6 @@ function Router() {
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path="/dashboard" component={() => <Dashboard />} />
-        <Route path="/create-invoice" component={() => <CreateInvoice />} />
         <Route path="/edit-invoice/:id" component={() => <EditInvoice />} />
         <Route path="/invoices/:id" component={() => <InvoiceDetail />} />
         <Route path="/invoices" component={() => <InvoiceHistory />} />

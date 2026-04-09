@@ -30,8 +30,6 @@ export default function ProductCatalog() {
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filtersApplied, setFiltersApplied] = useState(false);
-  const [compareIds, setCompareIds] = useState<number[]>([]);
-
   const { data: productsRaw = [], isLoading } = trpc.products.listPublic.useQuery(undefined);
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
 
@@ -296,14 +294,7 @@ export default function ProductCatalog() {
             </button>
           </div>
         </div>
-        {compareIds.length > 0 && (
-          <button
-            onClick={() => setLocation(`/compare?ids=${compareIds.join(",")}`)} 
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            So sánh ({compareIds.length})
-          </button>
-        )}
+
 
         {/* ===== PRODUCTS GRID ===== */}
         {isLoading ? (
@@ -381,22 +372,7 @@ export default function ProductCatalog() {
                         <span className="text-gray-400">{(product.packages || []).length} gói</span>
                       )}
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCompareIds(prev => prev.includes(product.id)
-                          ? prev.filter(id => id !== product.id)
-                          : prev.length < 3 ? [...prev, product.id] : prev
-                        );
-                      }}
-                      className={`w-full py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                        compareIds.includes(product.id)
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      {compareIds.includes(product.id) ? "✓ Đã chọn" : "So sánh"}
-                    </button>
+
                   </div>
                 </div>
               );

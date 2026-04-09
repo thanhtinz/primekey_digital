@@ -172,15 +172,7 @@ export default function Dashboard() {
               <RefreshCw className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Làm mới</span>
             </Button>
-            <Button
-              size="sm"
-              onClick={() => setLocation("/create-invoice")}
-              className="gap-1.5 h-8 px-2.5 text-xs bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span className="sm:hidden">Tạo Đơn</span>
-              <span className="hidden sm:inline">Tạo Hóa Đơn</span>
-            </Button>
+
           </div>
         </div>
 
@@ -475,10 +467,7 @@ export default function Dashboard() {
                 <FileText className="h-12 w-12 mb-3 opacity-30" />
                 <p className="text-sm font-medium">Chưa có hóa đơn nào</p>
                 <p className="text-xs mt-1 mb-4">Tạo hóa đơn đầu tiên để bắt đầu</p>
-                <Button size="sm" onClick={() => setLocation("/create-invoice")} className="gap-2 bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4" />
-                  Tạo Hóa Đơn
-                </Button>
+
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -520,14 +509,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* FAB - Mobile only: Floating Action Button tạo đơn nhanh */}
-      <button
-        onClick={() => setLocation("/create-invoice")}
-        className="sm:hidden fixed bottom-6 right-5 z-50 flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full shadow-lg shadow-blue-500/40 transition-all duration-200 active:scale-95"
-        aria-label="Tạo hóa đơn mới"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
+
     </DashboardLayout>
   );
 }

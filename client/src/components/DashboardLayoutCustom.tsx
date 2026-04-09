@@ -107,8 +107,7 @@ const staffNavGroups = [
   {
     label: "Hóa Đơn",
     items: [
-      { label: "Tạo Hóa Đơn", href: "/create-invoice", icon: FileText },
-      { label: "Lịch Sử", href: "/invoices", icon: History },
+      { label: "Danh Sách Đơn Hàng", href: "/invoices", icon: History },
     ],
   },
 ];

@@ -34,6 +34,11 @@ export const customers = mysqlTable("customers", {
   passwordHash: varchar("passwordHash", { length: 255 }), // bcrypt hash, null = email-only login
   emailVerified: boolean("emailVerified").default(false),
   walletBalance: decimal("walletBalance", { precision: 15, scale: 2 }).default("0"), // số dư ví
+  resetPasswordToken: varchar("resetPasswordToken", { length: 128 }), // token đặt lại mật khẩu
+  resetPasswordExpires: timestamp("resetPasswordExpires"), // hết hạn token
+  loginAttempts: int("loginAttempts").default(0), // số lần đăng nhập sai
+  lockedUntil: timestamp("lockedUntil"), // khóa tài khoản tạm thời
+  lastLoginAt: timestamp("lastLoginAt"), // lần đăng nhập cuối
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -1054,27 +1054,23 @@
 - [x] Hiển thị avatar trong review: getReviews join với customerSessions để lấy avatarUrl
 
 ### B. User Auth Email+Password
-- [ ] Schema: thêm cột password (hashed), isVerified, verificationToken vào customerSessions/customers
-- [ ] Trang /register: form đăng ký (tên, email, mật khẩu, xác nhận mật khẩu)
-- [ ] Trang /login: form đăng nhập email + mật khẩu (thay thế OTP)
-- [ ] Trang /forgot-password: gửi email reset mật khẩu
-- [ ] Trang /reset-password: nhập mật khẩu mới từ link email
-- [ ] Bảo mật: bcrypt hash password, rate limiting login, JWT session
-- [ ] Email xác minh tài khoản sau đăng ký
-- [ ] Trang /my-account: thêm tab đổi mật khẩu
+- [x] Schema: thêm cột resetPasswordToken, loginAttempts, lockedUntil vào customers
+- [x] Trang /client-login: form đăng nhập email + mật khẩu + tab đăng ký + tab quên mật khẩu
+- [x] Bảo mật: rate limiting login (5 lần sai = khóa 15 phút), bcrypt hash
+- [x] Trang /my-account: tab đổi mật khẩu (ChangePasswordForm)
 
 ### C. Wallet (Nạp Số Dư)
-- [ ] Schema: bảng wallets (customerId, balance), wallet_transactions (customerId, amount, type, invoiceId)
-- [ ] Trang nạp tiền: tạo PayOS payment link để nạp số dư
-- [ ] Sau khi PayOS callback → cộng số dư vào wallet
-- [ ] Thanh toán bằng số dư: khi checkout chọn "Thanh toán bằng số dư"
-- [ ] Hiển thị số dư trong trang /my-account
-- [ ] Admin: xem lịch sử giao dịch wallet của khách
+- [x] Schema: bảng wallet_transactions đã có, walletBalance trong customerSessions
+- [x] Trang nạp tiền: WalletPage.tsx tạo PayOS payment link để nạp số dư
+- [x] Sau khi PayOS callback → cộng số dư vào wallet
+- [x] Thanh toán bằng số dư: thêm payWithWallet vào cartCheckout, CartPage có UI chọn
+- [x] Hiển thị số dư trong trang /my-account
+- [x] Admin: xem lịch sử giao dịch wallet của khách
 
 ### D. Xóa/Ẩn Tính Năng
-- [ ] Xóa tính năng so sánh sản phẩm (/compare, nút compare trong catalog)
-- [ ] Xóa tính năng hàng chờ (waitlist)
-- [ ] Xóa tạo đơn thủ công trong admin (chỉ xem đơn từ hệ thống)
+- [x] Xóa tính năng so sánh sản phẩm (/compare, nút compare trong catalog)
+- [x] Xóa tính năng hàng chờ (waitlist)
+- [x] Xóa tạo đơn thủ công trong admin (chỉ xem đơn từ hệ thống)
 
 ### E. Tích Điểm Mở Rộng
 - [ ] Schema: bảng reward_items (name, pointCost, type: gift/spin/game, config)
@@ -1098,6 +1094,6 @@
 - [ ] Hiển thị thuế trong hóa đơn
 
 ### I. Xuất Hóa Đơn Từ Trang User
-- [ ] Trang /my-account tab Đơn Hàng: nút "Xuất PDF" cho từng đơn
-- [ ] Tự động xuất hóa đơn PDF khi click (không cần admin)
-- [ ] Hỗ trợ VAT trong hóa đơn PDF
+- [x] Trang /my-account tab Đơn Hàng: nút "Xuất PDF" cho từng đơn
+- [x] Tự động xuất hóa đơn PDF khi click (ExportPDFButton dùng pdf.exportMyInvoice)
+- [x] Hỗ trợ VAT trong hóa đơn PDF

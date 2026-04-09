@@ -105,6 +105,32 @@ const warrantyStatusMap: Record<string, { label: string; color: string }> = {
   REJECTED: { label: "Từ Chối", color: "text-red-600 bg-red-50" },
 };
 
+// ExportPDFButton component
+function ExportPDFButton({ orderId, invoiceNumber, token }: { orderId: number; invoiceNumber: string; token: string }) {
+  const exportMutation = trpc.pdf.exportMyInvoice.useMutation({
+    onSuccess: (result) => {
+      if (result?.buffer) {
+        const blob = new Blob([Uint8Array.from(atob(result.buffer), c => c.charCodeAt(0))], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = result.filename || `${invoiceNumber}.pdf`;
+        a.click(); URL.revokeObjectURL(url);
+      }
+    },
+    onError: (err: any) => toast.error(err.message || 'Lỗi xuất PDF'),
+  });
+  return (
+    <button
+      onClick={() => exportMutation.mutate({ invoiceId: orderId, token })}
+      disabled={exportMutation.isPending}
+      className="text-slate-500 hover:text-slate-700 text-xs font-medium flex items-center gap-1 disabled:opacity-50"
+    >
+      {exportMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+      Xuất PDF
+    </button>
+  );
+}
+
 type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile";
 
 export default function MyAccount() {
@@ -541,14 +567,7 @@ export default function MyAccount() {
                       )}
                     </div>
                     <div className="bg-slate-50 border-t border-slate-100 px-4 py-2 flex justify-between items-center gap-2">
-                      <a
-                        href="#"
-                        onClick={(e) => { e.preventDefault(); window.open(`/api/invoices/${order.id}/pdf?token=${token}`, '_blank'); }}
-                        className="text-slate-500 hover:text-slate-700 text-xs font-medium flex items-center gap-1"
-                      >
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        Xuất PDF
-                      </a>
+      <ExportPDFButton orderId={order.id} invoiceNumber={order.invoiceNumber} token={token || ""} />
                       {(order.status === 'CREATED' || order.status === 'sent') && order.paymentLink && (
                         <a href={order.paymentLink} target="_blank" rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-700 text-xs font-medium flex items-center gap-1">

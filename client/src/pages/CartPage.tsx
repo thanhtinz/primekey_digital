@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Trash2, Minus, Plus, Loader2, Package, ArrowLeft, Tag, Users2 } from "lucide-react";
+import { ShoppingCart, Trash2, Minus, Plus, Loader2, Package, ArrowLeft, Tag, Users2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { ClientHeader } from "@/components/ClientHeader";
 import { trpc } from "@/lib/trpc";
@@ -19,12 +19,19 @@ export default function CartPage() {
   const [appliedReferral, setAppliedReferral] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [notes, setNotes] = useState("");
+  const [payWithWallet, setPayWithWallet] = useState(false);
 
   const { data: cartItems = [], isLoading } = trpc.cart.list.useQuery(
     { email },
     { enabled: !!email }
   );
   const utils = trpc.useUtils();
+
+  const { data: walletData } = trpc.wallet.getBalance.useQuery(
+    { token: localStorage.getItem("customerToken") || "" },
+    { enabled: !!customer, staleTime: 30_000 }
+  );
+  const walletBalance = walletData?.balance || 0;
 
   const updateQty = trpc.cart.updateQuantity.useMutation({
     onSuccess: () => utils.cart.list.invalidate({ email }),
@@ -82,11 +89,12 @@ export default function CartPage() {
   const cartCheckout = trpc.checkout.cartCheckout.useMutation({
     onSuccess: (data) => {
       // NOTE: Do NOT clear cart after checkout - user may want to reorder
-      if (data.paymentUrl) {
-        // Redirect to PayOS payment page
+      if (payWithWallet) {
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được thanh toán bằng ví!`);
+        navigate(`/track-order?invoice=${data.invoiceNumber}`);
+      } else if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        // PayOS not configured or failed - invoice created, email sent with /pay link
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo! Kiểm tra email để nhận link thanh toán.`);
         navigate(`/track-order?invoice=${data.invoiceNumber}`);
       }
@@ -114,6 +122,8 @@ export default function CartPage() {
         referralCode: appliedReferral ? referralCode : undefined,
         notes: notes.trim() || undefined,
         origin: window.location.origin,
+        payWithWallet: payWithWallet || undefined,
+        customerToken: payWithWallet ? (localStorage.getItem("customerToken") || undefined) : undefined,
       });
     } catch (err: any) {
       toast.error(err.message || "Lỗi khi thanh toán");
@@ -208,7 +218,7 @@ export default function CartPage() {
                     </div>
                     {appliedCoupon && (
                       <div className="flex justify-between text-green-600">
-                        <span>Giảm giá</span>
+                        <span>Giảm giá ({appliedCoupon.code})</span>
                         <span>-{formatPrice(couponDiscount)}</span>
                       </div>
                     )}
@@ -229,20 +239,22 @@ export default function CartPage() {
                     <label className="text-xs font-medium text-gray-500 flex items-center gap-1 mb-1.5">
                       <Tag className="h-3 w-3" /> Mã giảm giá
                     </label>
-                    <div className="flex gap-1.5">
-                      <Input
-                        placeholder="Nhập mã"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        className="text-sm"
-                        disabled={!!appliedCoupon}
-                      />
-                      {appliedCoupon ? (
-                        <Button variant="outline" size="sm" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>Hủy</Button>
-                      ) : (
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                        <span className="text-sm text-green-700 font-medium">{appliedCoupon.code} ✓</span>
+                        <Button variant="ghost" size="sm" className="h-6 text-xs text-red-500 hover:text-red-700 p-0" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}>Hủy</Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-1.5">
+                        <Input
+                          placeholder="Nhập mã"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          className="text-sm"
+                        />
                         <Button size="sm" onClick={handleApplyCoupon} className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap">Áp dụng</Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Referral code */}
@@ -280,13 +292,35 @@ export default function CartPage() {
                     />
                   </div>
 
+                  {/* Wallet payment option */}
+                  {customer && walletBalance > 0 && (
+                    <div className={`border rounded-lg p-3 ${payWithWallet ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-gray-50"}`}>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={payWithWallet}
+                          onChange={(e) => setPayWithWallet(e.target.checked)}
+                          className="rounded"
+                        />
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Wallet className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium text-blue-800">Thanh toán bằng số dư ví</span>
+                        </div>
+                      </label>
+                      <p className="text-xs text-blue-600 mt-1 ml-6">Số dư: {formatPrice(walletBalance)}</p>
+                      {payWithWallet && walletBalance < total && (
+                        <p className="text-red-500 text-xs mt-1 ml-6">⚠️ Số dư không đủ. Cần thêm {formatPrice(total - walletBalance)}</p>
+                      )}
+                    </div>
+                  )}
+
                   <Button
                     onClick={handleCheckout}
-                    disabled={checkingOut || cartItems.length === 0}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-5 text-base gap-2"
+                    disabled={checkingOut || cartItems.length === 0 || (payWithWallet && walletBalance < total)}
+                    className={`w-full font-semibold py-5 text-base gap-2 ${payWithWallet ? "bg-blue-600 hover:bg-blue-700" : "bg-red-500 hover:bg-red-600"} text-white`}
                   >
-                    {checkingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShoppingCart className="h-5 w-5" />}
-                    Thanh Toán ({formatPrice(total)})
+                    {checkingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : payWithWallet ? <Wallet className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
+                    {payWithWallet ? `Thanh Toán Bằng Ví (${formatPrice(total)})` : `Thanh Toán (${formatPrice(total)})`}
                   </Button>
                 </CardContent>
               </Card>

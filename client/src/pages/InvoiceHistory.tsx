@@ -195,10 +195,7 @@ export default function InvoiceHistory() {
               <RefreshCw className="h-4 w-4" />
               <span className="hidden sm:inline">Làm mới</span>
             </Button>
-            <Button size="sm" onClick={() => setLocation("/create-invoice")} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Tạo Hóa Đơn</span>
-            </Button>
+
           </div>
         </div>
 
@@ -369,12 +366,7 @@ export default function InvoiceHistory() {
                 <p className="text-sm mt-1 mb-4">
                   {searchTerm || filterStatus !== "all" ? "Thử thay đổi bộ lọc" : "Tạo hóa đơn đầu tiên"}
                 </p>
-                {!searchTerm && filterStatus === "all" && (
-                  <Button size="sm" onClick={() => setLocation("/create-invoice")} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
-                    <Plus className="h-4 w-4" />
-                    Tạo Hóa Đơn
-                  </Button>
-                )}
+
               </div>
             ) : (
               <div className="overflow-x-auto">

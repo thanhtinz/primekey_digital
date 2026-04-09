@@ -65,10 +65,7 @@ export default function LandingPage() {
     { label: "FAQ", href: "/faq", icon: HelpCircle },
   ];
 
-  const moreLinks = [
-    { label: "So Sánh Sản Phẩm", href: "/compare", icon: BarChart3 },
-    { label: "Hàng Chờ", href: "/queue", icon: ListOrdered },
-  ];
+  const moreLinks: { label: string; href: string; icon: any }[] = [];
 
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -523,7 +520,6 @@ export default function LandingPage() {
                 {[
                   { label: "Tất Cả Sản Phẩm", href: "/catalog" },
                   { label: "Flash Sale", href: "/flash-sale" },
-                  { label: "So Sánh Sản Phẩm", href: "/compare" },
                 ].map(l => (
                   <li key={l.href}><button onClick={() => navigate(l.href)} className="text-slate-500 hover:text-blue-600 text-sm transition-colors">{l.label}</button></li>
                 ))}

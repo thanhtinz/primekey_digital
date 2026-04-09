@@ -2285,6 +2285,56 @@ export const appRouter = router({
           filename: `${input.invoiceNumber || "preview"}.pdf`,
         };
       }),
+    // Customer self-export invoice PDF
+    exportMyInvoice: publicProcedure
+      .input(z.object({ invoiceId: z.number(), token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customerSessions, invoices, invoiceItems, customers, users, userSettings: userSettingsTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const [invoice] = await drizzleDb.select().from(invoices).where(eq(invoices.id, input.invoiceId)).limit(1);
+        if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy hóa đơn" });
+        // Verify invoice belongs to this customer
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer || invoice.customerId !== customer.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Bạn không có quyền xuất hóa đơn này" });
+        }
+        const invoiceItemsData = await drizzleDb.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, input.invoiceId));
+        const [owner] = await drizzleDb.select().from(users).limit(1);
+        const [settings] = owner ? await drizzleDb.select().from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1) : [[]];
+        const pdfBuffer = await generateInvoicePDF({
+          invoiceNumber: invoice.invoiceNumber,
+          issueDate: invoice.createdAt,
+          dueDate: invoice.expiresAt || undefined,
+          customerName: customer.name || "Khách Hàng",
+          customerEmail: customer.email || "",
+          customerAddress: customer.address || "",
+          companyName: (settings as any)?.companyName || "Công Ty",
+          companyAddress: (settings as any)?.companyAddress || "",
+          companyPhone: (settings as any)?.companyPhone || "",
+          companyEmail: (settings as any)?.companyEmail || "",
+          companyTaxId: (settings as any)?.taxId || "",
+          items: invoiceItemsData.map(item => ({
+            name: item.name,
+            quantity: typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity,
+            unitPrice: typeof item.unitPrice === "string" ? parseFloat(item.unitPrice) : item.unitPrice,
+            taxAmount: typeof item.taxAmount === "string" ? parseFloat(item.taxAmount || "0") : (item.taxAmount || 0),
+            totalAmount: typeof item.totalAmount === "string" ? parseFloat(item.totalAmount) : item.totalAmount,
+          })),
+          subtotal: typeof invoice.subtotal === "string" ? parseFloat(invoice.subtotal) : invoice.subtotal,
+          taxAmount: typeof invoice.taxAmount === "string" ? parseFloat(invoice.taxAmount) : (invoice.taxAmount || 0),
+          discountAmount: typeof invoice.discountAmount === "string" ? parseFloat(invoice.discountAmount) : (invoice.discountAmount || 0),
+          totalAmount: typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : invoice.totalAmount,
+          currency: invoice.currency || "VND",
+          notes: invoice.notes || undefined,
+          paymentUrl: invoice.paymentUrl || undefined,
+        });
+        return { success: true, buffer: pdfBuffer.toString("base64"), filename: `${invoice.invoiceNumber}.pdf` };
+      }),
   }),
   // Email Notificationss
   email: router({
@@ -4248,16 +4298,125 @@ export const appRouter = router({
           .where(and(eq(customers.userId, owner.id), eq(customers.email, input.email)))
           .limit(1);
         if (!customer) throw new Error("Email hoặc mật khẩu không đúng");
-        if (!(customer as any).passwordHash) throw new Error("Tài khoản này chưa đăng ký mật khẩu. Vui lòng đăng ký hoặc dùng email OTP.");
+        if (!(customer as any).passwordHash) throw new Error("Tài khoản này chưa đăng ký mật khẩu. Vui lòng đăng ký.");
+        // Check if account is locked
+        if ((customer as any).lockedUntil && new Date((customer as any).lockedUntil) > new Date()) {
+          const unlockTime = new Date((customer as any).lockedUntil).toLocaleTimeString("vi-VN");
+          throw new Error(`Tài khoản bị khóa tạm thời do nhập sai quá nhiều lần. Thử lại sau ${unlockTime}`);
+        }
         const bcrypt = await import("bcryptjs");
         const valid = await bcrypt.compare(input.password, (customer as any).passwordHash);
-        if (!valid) throw new Error("Email hoặc mật khẩu không đúng");
+        if (!valid) {
+          // Increment login attempts
+          const attempts = ((customer as any).loginAttempts || 0) + 1;
+          const MAX_ATTEMPTS = 5;
+          const LOCK_DURATION = 15 * 60 * 1000; // 15 minutes
+          const updateData: any = { loginAttempts: attempts, updatedAt: new Date() };
+          if (attempts >= MAX_ATTEMPTS) {
+            updateData.lockedUntil = new Date(Date.now() + LOCK_DURATION);
+            updateData.loginAttempts = 0;
+          }
+          await drizzleDb.update(customers).set(updateData).where(eq(customers.id, customer.id));
+          const remaining = MAX_ATTEMPTS - attempts;
+          if (remaining <= 0) {
+            throw new Error("Tài khoản bị khóa 15 phút do nhập sai quá nhiều lần");
+          }
+          throw new Error(`Email hoặc mật khẩu không đúng. Còn ${remaining} lần thử`);
+        }
+        // Reset login attempts on success
+        await drizzleDb.update(customers).set({ loginAttempts: 0, lockedUntil: null, lastLoginAt: new Date(), updatedAt: new Date() } as any).where(eq(customers.id, customer.id));
         // Create session
         const crypto = await import("crypto");
         const token = crypto.randomBytes(48).toString("hex");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token, expiresAt });
         return { token, name: customer.name, email: input.email, expiresAt };
+      }),
+    // Quên mật khẩu - gửi email reset
+    forgotPassword: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        const { customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const { users } = await import("../drizzle/schema");
+        const [owner] = await drizzleDb.select().from(users).limit(1);
+        if (!owner) throw new Error("Hệ thống chưa được cấu hình");
+        const [customer] = await drizzleDb.select()
+          .from(customers)
+          .where(and(eq(customers.userId, owner.id), eq(customers.email, input.email)))
+          .limit(1);
+        // Always return success to prevent email enumeration
+        if (!customer || !(customer as any).passwordHash) {
+          return { success: true, message: "Nếu email tồn tại, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu" };
+        }
+        const crypto = await import("crypto");
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        await drizzleDb.update(customers).set({
+          resetPasswordToken: resetToken,
+          resetPasswordExpires: resetExpires,
+          updatedAt: new Date(),
+        } as any).where(eq(customers.id, customer.id));
+        // Send reset email via SMTP if configured
+        try {
+          const { sendEmail } = await import("./email");
+          const companyName = owner.name || "Hệ thống";
+          const resetUrl = `${process.env.VITE_OAUTH_PORTAL_URL || ""}/client-login?resetToken=${resetToken}`;
+          await sendEmail({
+            userId: owner.id,
+            to: input.email,
+            subject: `Đặt lại mật khẩu - ${companyName}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                <h2>Đặt lại mật khẩu</h2>
+                <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản ${input.email}.</p>
+                <p><a href="${resetUrl}" style="background:#3B82F6;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block">Đặt lại mật khẩu</a></p>
+                <p>Link có hiệu lực trong 1 giờ. Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
+              </div>
+            `,
+          });
+        } catch { /* ignore email errors */ }
+        return { success: true, message: "Nếu email tồn tại, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu", resetToken };
+      }),
+    // Xác nhận token và đặt lại mật khẩu
+    resetPassword: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        newPassword: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+      }))
+      .mutation(async ({ input }) => {
+        const { customers, customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [customer] = await drizzleDb.select()
+          .from(customers)
+          .where(eq(customers.resetPasswordToken as any, input.token))
+          .limit(1);
+        if (!customer) throw new Error("Link đặt lại mật khẩu không hợp lệ");
+        if ((customer as any).resetPasswordExpires && new Date((customer as any).resetPasswordExpires) < new Date()) {
+          throw new Error("Link đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu lại.");
+        }
+        const bcrypt = await import("bcryptjs");
+        const passwordHash = await bcrypt.hash(input.newPassword, 10);
+        await drizzleDb.update(customers).set({
+          passwordHash,
+          resetPasswordToken: null,
+          resetPasswordExpires: null,
+          loginAttempts: 0,
+          lockedUntil: null,
+          updatedAt: new Date(),
+        } as any).where(eq(customers.id, customer.id));
+        // Create new session
+        const crypto = await import("crypto");
+        const sessionToken = crypto.randomBytes(48).toString("hex");
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await drizzleDb.insert(customerSessions).values({ email: customer.email!, name: customer.name, token: sessionToken, expiresAt });
+        return { success: true, token: sessionToken, name: customer.name, email: customer.email };
       }),
 
     // Đổi mật khẩu
@@ -4713,6 +4872,8 @@ export const appRouter = router({
       referralCode: z.string().optional(),
       notes: z.string().optional(),
       origin: z.string(),
+      payWithWallet: z.boolean().optional(), // thanh toán bằng số dư ví
+      customerToken: z.string().optional(), // token xác thực để dùng ví
     })).mutation(async ({ input }) => {
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
@@ -4803,45 +4964,73 @@ export const appRouter = router({
         } as any);
       }
 
-      // Create PayOS payment link
+      // Wallet payment or PayOS payment
       let paymentUrl = "";
       let qrCode = "";
-      try {
-        const [gatewayConfig] = await drizzleDb.select().from(paymentGatewaysConfig).where(eq(paymentGatewaysConfig.userId, owner.id)).limit(1);
-        if (gatewayConfig?.payosApiKey && gatewayConfig?.payosClientId && gatewayConfig?.payosChecksumKey) {
-          const payosResult = await createPayOSPaymentLink(
-            {
-              clientId: gatewayConfig.payosClientId,
-              apiKey: gatewayConfig.payosApiKey,
-              checksumKey: gatewayConfig.payosChecksumKey,
-            },
-            {
-              orderCode,
-              amount: Math.round(totalAmount),
-              description: `TT ${invoiceNumber}`.slice(0, 25),
-              buyerName: customer.name || "Khach hang",
-              buyerEmail: customer.email || "",
-              buyerPhone: customer.phone || "",
-              buyerAddress: customer.address || "",
-              returnUrl: `${input.origin}/track-order`,
-              cancelUrl: `${input.origin}/cart`,
-              webhookUrl: `${input.origin}/api/webhooks/payos`,
-            }
-          );
-          paymentUrl = payosResult.checkoutUrl;
-          qrCode = payosResult.qrCode;
-          await drizzleDb.update(invoices).set({
-            paymentUrl,
-            qrCode,
-            paymentTransactionId: String(payosResult.paymentLinkId),
-          } as any).where(eq(invoices.id, createdInvoice.id));
-        } else {
-          throw new Error("Chưa cấu hình PayOS. Vui lòng liên hệ admin.");
+      if (input.payWithWallet && input.customerToken && totalAmount > 0) {
+        // Pay with wallet balance
+        const { customerSessions, walletTransactions } = await import("../drizzle/schema");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.customerToken)).limit(1);
+        if (!session) throw new Error("Phiên đăng nhập không hợp lệ");
+        const [walletCustomer] = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, session.email)).limit(1);
+        const currentBalance = parseFloat(walletCustomer?.walletBalance?.toString() || "0");
+        if (currentBalance < totalAmount) {
+          throw new Error(`Số dư ví không đủ. Hiện tại: ${currentBalance.toLocaleString("vi-VN")}d, cần: ${totalAmount.toLocaleString("vi-VN")}d`);
         }
-      } catch (err: any) {
-        // PayOS failed: log but still return invoice so customer can track order
-        console.error("[checkout.cartCheckout] PayOS error:", err);
-        // paymentUrl stays empty - frontend will redirect to track-order
+        const newBalance = currentBalance - totalAmount;
+        await drizzleDb.update(customers).set({ walletBalance: newBalance.toString() } as any).where(eq(customers.email, session.email));
+        await drizzleDb.insert(walletTransactions).values({
+          customerEmail: session.email,
+          type: "spend",
+          amount: totalAmount.toString(),
+          balanceBefore: currentBalance.toString(),
+          balanceAfter: newBalance.toString(),
+          description: `Thanh toán đơn hàng ${invoiceNumber}`,
+          invoiceId: createdInvoice.id,
+          status: "completed",
+        });
+        await drizzleDb.update(invoices).set({ status: "PAID", paymentMethod: "WALLET" } as any).where(eq(invoices.id, createdInvoice.id));
+        // Update customer total paid
+        await drizzleDb.update(customers).set({ totalPaid: String((parseFloat(customer.totalPaid || "0") + totalAmount)) } as any).where(eq(customers.id, customer.id));
+      } else {
+        // Create PayOS payment link
+        try {
+          const [gatewayConfig] = await drizzleDb.select().from(paymentGatewaysConfig).where(eq(paymentGatewaysConfig.userId, owner.id)).limit(1);
+          if (gatewayConfig?.payosApiKey && gatewayConfig?.payosClientId && gatewayConfig?.payosChecksumKey) {
+            const payosResult = await createPayOSPaymentLink(
+              {
+                clientId: gatewayConfig.payosClientId,
+                apiKey: gatewayConfig.payosApiKey,
+                checksumKey: gatewayConfig.payosChecksumKey,
+              },
+              {
+                orderCode,
+                amount: Math.round(totalAmount),
+                description: `TT ${invoiceNumber}`.slice(0, 25),
+                buyerName: customer.name || "Khach hang",
+                buyerEmail: customer.email || "",
+                buyerPhone: customer.phone || "",
+                buyerAddress: customer.address || "",
+                returnUrl: `${input.origin}/track-order`,
+                cancelUrl: `${input.origin}/cart`,
+                webhookUrl: `${input.origin}/api/webhooks/payos`,
+              }
+            );
+            paymentUrl = payosResult.checkoutUrl;
+            qrCode = payosResult.qrCode;
+            await drizzleDb.update(invoices).set({
+              paymentUrl,
+              qrCode,
+              paymentTransactionId: String(payosResult.paymentLinkId),
+            } as any).where(eq(invoices.id, createdInvoice.id));
+          } else {
+            throw new Error("Chưa cấu hình PayOS. Vui lòng liên hệ admin.");
+          }
+        } catch (err: any) {
+          // PayOS failed: log but still return invoice so customer can track order
+          console.error("[checkout.cartCheckout] PayOS error:", err);
+          // paymentUrl stays empty - frontend will redirect to track-order
+        }
       }
 
       // Send email to customer with payment link (same as admin manual invoice)

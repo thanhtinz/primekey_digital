@@ -43,6 +43,13 @@
       "when": 1775692571095,
       "tag": "0005_fluffy_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1775693052261,
+      "tag": "0006_wet_deadpool",
+      "breakpoints": true
     }
   ]
 }
