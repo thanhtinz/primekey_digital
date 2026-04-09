@@ -648,22 +648,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 </>
               )}
 
-              {/* Admin link */}
-              {isAdmin && (
-                <>
-                  <div className="px-3 pt-3 pb-1">
-                    <p className="text-xs font-semibold text-amber-500/50 uppercase tracking-wider">Quản trị</p>
-                  </div>
-                  <button
-                    onClick={() => { window.location.href = "/login"; }}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-amber-500/8 transition-all text-sm"
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span className="font-medium">Quản Trị Admin</span>
-                    <ChevronRight className="h-4 w-4 ml-auto opacity-30" />
-                  </button>
-                </>
-              )}
+
             </nav>
           </div>
 

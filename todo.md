@@ -1350,3 +1350,9 @@ todo updated
 ## Phase: Fix Admin Link Router (Apr 9, 2026 - Session 11)
 - [x] Fix dropdown icon user: link Admin trỏ đúng về /login (admin panel) - dùng window.location.href
 - [x] Cả 2 chỗ (desktop dropdown + hamburger menu) đều được sửa
+
+## Phase: Admin Link Cleanup (Apr 9, 2026 - Session 12)
+- [x] Xóa link Admin khỏi hamburger menu (ClientHeader)
+- [x] Xóa link Admin khỏi MyAccount
+- [x] Chỉ giữ link Admin trong dropdown icon user trên header desktop
+- [x] TypeScript: 0 errors
