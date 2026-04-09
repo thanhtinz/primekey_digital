@@ -8,7 +8,8 @@ import {
   Wrench, Phone, Mail, ChevronRight, TrendingUp, Award,
   Heart, ShoppingCart, Users2, Camera, Loader2,
   Copy, Share2, Trophy, Search, CreditCard, BarChart3,
-  ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck, ExternalLink
+  ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck, ExternalLink,
+  Truck, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -236,12 +237,15 @@ function formatDate(date: string | Date) {
 }
 
 const orderStatusMap: Record<string, { label: string; color: string; icon: any }> = {
-  CREATED: { label: "Chờ Xử Lý", color: "text-blue-600 bg-blue-50 border-blue-200", icon: Clock },
-  PAID: { label: "Đã Thanh Toán", color: "text-green-600 bg-green-50 border-green-200", icon: CheckCircle },
-  SHIPPING: { label: "Đang Giao", color: "text-yellow-500 bg-yellow-50 border-yellow-200", icon: Package },
-  WARRANTY: { label: "Bảo Hành", color: "text-purple-600 bg-purple-50 border-purple-200", icon: Shield },
-  CANCELLED: { label: "Đã Hủy", color: "text-red-600 bg-red-50 border-red-200", icon: XCircle },
-  COMPLETED: { label: "Hoàn Thành", color: "text-emerald-500 bg-emerald-50 border-emerald-200", icon: CheckCircle },
+  CREATED:   { label: "Chờ xác nhận",  color: "text-amber-700 bg-amber-50 border-amber-200",   icon: Clock },
+  PAID:      { label: "Đang xử lý",     color: "text-blue-700 bg-blue-50 border-blue-200",     icon: CheckCircle },
+  SHIPPING:  { label: "Đang giao hàng", color: "text-indigo-700 bg-indigo-50 border-indigo-200", icon: Truck },
+  COMPLETED: { label: "Hoàn thành",     color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle },
+  WARRANTY:  { label: "Bảo hành",       color: "text-purple-700 bg-purple-50 border-purple-200", icon: Shield },
+  FAILED:    { label: "Thất bại",       color: "text-red-600 bg-red-50 border-red-200",         icon: XCircle },
+  REFUNDED:  { label: "Đã hoàn tiền",  color: "text-teal-700 bg-teal-50 border-teal-200",   icon: RefreshCw },
+  CANCELLED: { label: "Đã hủy",         color: "text-slate-600 bg-slate-100 border-slate-200", icon: XCircle },
+  EXPIRED:   { label: "Hết hạn",       color: "text-gray-500 bg-gray-100 border-gray-200",     icon: Clock },
 };
 
 const warrantyStatusMap: Record<string, { label: string; color: string }> = {
@@ -636,7 +640,7 @@ type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "pro
 export default function MyAccount() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
-  const [orderFilter, setOrderFilter] = useState<"all" | "CREATED" | "PAID" | "COMPLETED" | "CANCELLED">("all");
+  const [orderFilter, setOrderFilter] = useState<"all" | "CREATED" | "PAID" | "SHIPPING" | "COMPLETED" | "WARRANTY" | "FAILED" | "REFUNDED" | "CANCELLED">("all");
   const { customer, token, logout, isLoading: authLoading } = useCustomerAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showAvatarGallery, setShowAvatarGallery] = useState(false);
@@ -774,8 +778,8 @@ export default function MyAccount() {
   const customerName = customer.name || customer.email.split("@")[0];
   const totalPoints = pointsData?.points ?? 0;
   const totalOrders = (orders as any[]).length;
-  const completedOrders = (orders as any[]).filter((o: any) => o.status === "COMPLETED").length;
-  const pendingOrders = (orders as any[]).filter((o: any) => o.status === "CREATED" || o.status === "PAID").length;
+  const completedOrders = (orders as any[]).filter((o: any) => o.status === "COMPLETED" || o.status === "WARRANTY").length;
+  const pendingOrders = (orders as any[]).filter((o: any) => o.status === "CREATED" || o.status === "PAID" || o.status === "SHIPPING").length;
   const { data: walletData } = trpc.wallet.getBalance.useQuery(
     { token: token! },
     { enabled: !!token, staleTime: 60_000 }
@@ -1060,8 +1064,12 @@ export default function MyAccount() {
             {/* Header with stats + filter */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-2 overflow-x-auto pb-1 flex-1">
-                {["all", "CREATED", "PAID", "COMPLETED", "CANCELLED"].map((s) => {
-                  const labels: Record<string, string> = { all: "Tất cả", CREATED: "Chờ xử lý", PAID: "Đã thanh toán", COMPLETED: "Hoàn thành", CANCELLED: "Đã hủy" };
+                {["all", "CREATED", "PAID", "SHIPPING", "COMPLETED", "WARRANTY", "FAILED", "REFUNDED", "CANCELLED"].map((s) => {
+                  const labels: Record<string, string> = {
+                    all: "Tất cả", CREATED: "Chờ xác nhận", PAID: "Đang xử lý",
+                    SHIPPING: "Đang giao", COMPLETED: "Hoàn thành", WARRANTY: "Bảo hành",
+                    FAILED: "Thất bại", REFUNDED: "Hoàn tiền", CANCELLED: "Đã hủy",
+                  };
                   const cnt = s === "all" ? orders.length : (orders as any[]).filter((o: any) => o.status === s).length;
                   const isActive = (orderFilter ?? "all") === s;
                   return (
@@ -1512,11 +1520,12 @@ export default function MyAccount() {
                       {customerName.charAt(0).toUpperCase()}
                     </div>
                   )}
+                  {/* Nút camera - mở popup chọn/upload avatar */}
                   <button
                     className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition disabled:opacity-50 border-2 border-white"
-                    onClick={handleAvatarUpload}
+                    onClick={() => setShowAvatarGallery(true)}
                     disabled={uploadAvatarMutation.isPending}
-                    title="Upload ảnh từ máy"
+                    title="Đổi ảnh đại diện"
                   >
                     {uploadAvatarMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
                   </button>
@@ -1524,15 +1533,12 @@ export default function MyAccount() {
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-slate-800">{customerName}</p>
                   <p className="text-xs text-slate-500 truncate">{customer.email}</p>
-                  <div className="flex gap-2 mt-1.5">
-                    <button
-                      onClick={() => setShowAvatarGallery(true)}
-                      className="text-[10px] text-blue-600 hover:text-blue-700 font-medium px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 transition flex items-center gap-1"
-                    >
-                      <span>🏞️</span> Chọn từ kho
-                    </button>
-                    <span className="text-[10px] text-slate-400">hoặc upload ảnh</span>
-                  </div>
+                  <button
+                    onClick={() => setShowAvatarGallery(true)}
+                    className="mt-1.5 text-[10px] text-blue-600 hover:text-blue-700 font-medium px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 transition flex items-center gap-1"
+                  >
+                    <Camera className="h-3 w-3" /> Đổi ảnh đại diện
+                  </button>
                 </div>
               </div>
               {/* Avatar Gallery Modal */}
@@ -1540,7 +1546,10 @@ export default function MyAccount() {
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setShowAvatarGallery(false)}>
                   <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                      <h3 className="font-bold text-slate-800">🏞️ Kho ảnh avatar</h3>
+                      <div>
+                        <h3 className="font-bold text-slate-800">📸 Đổi ảnh đại diện</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">Chọn từ kho hoặc tải ảnh mới</p>
+                      </div>
                       <button onClick={() => setShowAvatarGallery(false)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
                     </div>
                     <div className="overflow-y-auto p-4 flex-1">

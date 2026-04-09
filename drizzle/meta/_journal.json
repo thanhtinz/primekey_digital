@@ -148,6 +148,13 @@
       "when": 1775748954913,
       "tag": "0020_sweet_silver_centurion",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1775750163535,
+      "tag": "0021_condemned_leopardon",
+      "breakpoints": true
     }
   ]
 }

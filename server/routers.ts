@@ -217,7 +217,7 @@ export const appRouter = router({
     updateStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
-        status: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED"]),
+        status: z.enum(["CREATED", "PAID", "SHIPPING", "COMPLETED", "WARRANTY", "FAILED", "EXPIRED", "CANCELLED"]),
         sendEmail: z.boolean().optional(),
         origin: z.string().optional(),
       }))
@@ -269,8 +269,9 @@ export const appRouter = router({
           if (customer?.email) {
             const userSettings = await db.getUserSettings(ctx.user.id);
             const statusLabels: Record<string, string> = {
-              CREATED: "Tạo Đơn", PAID: "Đã Thanh Toán", SHIPPING: "Đang Giao Hàng",
-              WARRANTY: "Bảo Hành", FAILED: "Thất Bại", EXPIRED: "Hết Hạn",
+              CREATED: "Chờ xác nhận", PAID: "Đang xử lý", SHIPPING: "Đang giao hàng",
+              COMPLETED: "Hoàn thành", WARRANTY: "Bảo hành", FAILED: "Thất bại",
+              EXPIRED: "Hết hạn", REFUNDED: "Đã hoàn tiền", CANCELLED: "Đã hủy",
             };
             // Build base URL from origin (passed by frontend) or VITE_APP_URL fallback
             const baseUrl = input.origin || process.env.VITE_APP_URL || "";
@@ -400,7 +401,7 @@ export const appRouter = router({
     manualTransition: protectedProcedure
       .input(z.object({
         id: z.number(),
-        newStatus: z.enum(["CREATED", "PAID", "SHIPPING", "WARRANTY", "FAILED", "EXPIRED", "REFUNDED"]),
+        newStatus: z.enum(["CREATED", "PAID", "SHIPPING", "COMPLETED", "WARRANTY", "FAILED", "EXPIRED", "REFUNDED", "CANCELLED"]),
         note: z.string().optional(),
         regeneratePaymentLink: z.boolean().optional(), // true = tạo lại QR PayOS
         origin: z.string().optional(), // window.location.origin từ frontend
@@ -411,8 +412,9 @@ export const appRouter = router({
         if (!invoice || invoice.userId !== ctx.user.id) throw new Error("Invoice not found");
 
         const statusLabels: Record<string, string> = {
-          CREATED: "Tạo Đơn", PAID: "Đã Thanh Toán", SHIPPING: "Đang Giao Hàng",
-          WARRANTY: "Bảo Hành", FAILED: "Thất Bại", EXPIRED: "Hết Hạn",
+          CREATED: "Chờ xác nhận", PAID: "Đang xử lý", SHIPPING: "Đang giao hàng",
+          COMPLETED: "Hoàn thành", WARRANTY: "Bảo hành", FAILED: "Thất bại",
+          EXPIRED: "Hết hạn", REFUNDED: "Đã hoàn tiền", CANCELLED: "Đã hủy",
         };
 
         // Generate review token if transitioning to WARRANTY
@@ -933,8 +935,9 @@ export const appRouter = router({
           invoiceList = invoiceList.filter(inv => inv.currency === input.currency);
         }
         const STATUS_LABELS: Record<string, string> = {
-          CREATED: "Tạo Đơn", PAID: "Đã Thanh Toán", SHIPPING: "Đang Giao",
-          WARRANTY: "Bảo Hành", FAILED: "Thất Bại", EXPIRED: "Hết Hạn",
+          CREATED: "Chờ xác nhận", PAID: "Đang xử lý", SHIPPING: "Đang giao hàng",
+          COMPLETED: "Hoàn thành", WARRANTY: "Bảo hành", FAILED: "Thất bại",
+          EXPIRED: "Hết hạn", REFUNDED: "Đã hoàn tiền", CANCELLED: "Đã hủy",
         };
         const rows = invoiceList.map(inv => ({
           "Số Hóa Đơn": inv.invoiceNumber,

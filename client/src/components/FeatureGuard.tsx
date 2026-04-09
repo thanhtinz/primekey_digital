@@ -12,31 +12,35 @@ interface FeatureGuardProps {
 
 /**
  * Blocks access to a route when the feature flag is disabled.
- * Redirects to `redirectTo` (default: "/") instead of showing a 404.
- * While loading flags, shows a spinner to avoid flash of content.
+ * - While loading: shows spinner (prevents flash of disabled content)
+ * - When disabled: redirects to `redirectTo` (default: "/")
+ * - When enabled: renders children
  */
 export function FeatureGuard({ featureKey, children, redirectTo = "/" }: FeatureGuardProps) {
-  const { isEnabled, isLoading } = useFeatureFlags();
+  const { flags, isLoading } = useFeatureFlags();
   const [, setLocation] = useLocation();
 
-  const enabled = isEnabled(featureKey);
+  // Compute enabled only when flags are loaded (not default-true during loading)
+  const enabled = isLoading || !flags
+    ? null  // null = still loading
+    : (() => {
+        const flag = flags.find((f) => f.key === featureKey);
+        return flag ? flag.enabled : true; // default enabled if not in DB
+      })();
 
   useEffect(() => {
-    if (!isLoading && !enabled) {
+    if (enabled === false) {
       setLocation(redirectTo);
     }
-  }, [isLoading, enabled, redirectTo, setLocation]);
+  }, [enabled, redirectTo, setLocation]);
 
-  if (isLoading) {
+  // Show spinner while loading or while redirect is pending
+  if (enabled === null || enabled === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
       </div>
     );
-  }
-
-  if (!enabled) {
-    return null;
   }
 
   return <>{children}</>;

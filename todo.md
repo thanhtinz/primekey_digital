@@ -1431,3 +1431,13 @@ todo updated
 - [x] MyAccount: modal gallery avatar với grid ảnh, chọn avatar từ kho admin
 - [x] routers.ts: thêm customer.selectAvatar procedure để lưu avatar từ gallery
 - [x] TypeScript: 0 errors, 53/53 tests passed
+
+## Phase: Order Status + Leaderboard + Tag + Avatar UI (Apr 9, 2026 - Session 21)
+- [x] Chuẩn hóa trạng thái đơn hàng: CREATED=Chờ xác nhận, PAID=Đang xử lý, SHIPPING=Đang giao, COMPLETED=Hoàn thành, WARRANTY=Bảo hành, FAILED=Thất bại, REFUNDED=Hoàn tiền, CANCELLED=Đã hủy
+- [x] Cập nhật labels/colors trạng thái trong: OrderDetailPage, TrackOrder, MyAccount, CartPage, admin order management
+- [x] Cập nhật email templates và thông báo khi đổi trạng thái đơn hàng
+- [x] Fix FeatureGuard leaderboard: route /leaderboard vẫn truy cập được khi tắt (do nằm trong ALWAYS_PUBLIC)
+- [x] Redesign LeaderboardPage: bỏ thống kê thừa, hiển thị theo thứ tự số thứ tự (1, 2, 3...)
+- [x] Kiểm tra và fix trang quản lý tag (/settings/tags) trong admin sidebar
+- [x] Cải thiện UI chọn avatar: click vào icon camera mở popup chọn từ kho hoặc upload
+- [x] Fix giỏ hàng không tự xóa sau khi tạo thanh toán PayOS (đảm bảo await clearCart trước khi redirect)

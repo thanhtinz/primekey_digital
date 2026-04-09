@@ -19,20 +19,23 @@ const STATUS_CONFIG: Record<string, {
   icon: React.ComponentType<{ className?: string }>;
   step: number;
 }> = {
-  CREATED:  { label: "Chờ xử lý",    color: "text-amber-600",  bgColor: "bg-amber-50",  borderColor: "border-amber-200",  icon: Clock,       step: 1 },
-  PAID:     { label: "Đã thanh toán", color: "text-green-600",  bgColor: "bg-green-50",  borderColor: "border-green-200",  icon: CheckCircle, step: 2 },
-  SHIPPING: { label: "Đang xử lý",   color: "text-blue-600",   bgColor: "bg-blue-50",   borderColor: "border-blue-200",   icon: Truck,       step: 3 },
-  WARRANTY: { label: "Bảo hành",     color: "text-purple-600", bgColor: "bg-purple-50", borderColor: "border-purple-200", icon: Shield,      step: 4 },
-  FAILED:   { label: "Thất bại",     color: "text-red-500",    bgColor: "bg-red-50",    borderColor: "border-red-200",    icon: XCircle,     step: 0 },
-  EXPIRED:  { label: "Hết hạn",      color: "text-gray-500",   bgColor: "bg-gray-100",  borderColor: "border-gray-200",   icon: Clock,       step: 0 },
-  REFUNDED: { label: "Đã hoàn tiền", color: "text-teal-600",   bgColor: "bg-teal-50",   borderColor: "border-teal-200",   icon: RefreshCw,   step: 0 },
+  CREATED:   { label: "Chờ xác nhận",  color: "text-amber-700",   bgColor: "bg-amber-50",   borderColor: "border-amber-200",   icon: Clock,       step: 1 },
+  PAID:      { label: "Đang xử lý",     color: "text-blue-700",    bgColor: "bg-blue-50",    borderColor: "border-blue-200",    icon: CheckCircle, step: 2 },
+  SHIPPING:  { label: "Đang giao hàng", color: "text-indigo-700",  bgColor: "bg-indigo-50",  borderColor: "border-indigo-200",  icon: Truck,       step: 3 },
+  COMPLETED: { label: "Hoàn thành",     color: "text-emerald-700", bgColor: "bg-emerald-50", borderColor: "border-emerald-200", icon: CheckCircle, step: 4 },
+  WARRANTY:  { label: "Bảo hành",       color: "text-purple-700",  bgColor: "bg-purple-50",  borderColor: "border-purple-200",  icon: Shield,      step: 5 },
+  FAILED:    { label: "Thất bại",       color: "text-red-600",     bgColor: "bg-red-50",     borderColor: "border-red-200",     icon: XCircle,     step: 0 },
+  REFUNDED:  { label: "Đã hoàn tiền",  color: "text-teal-700",   bgColor: "bg-teal-50",   borderColor: "border-teal-200",   icon: RefreshCw,   step: 0 },
+  CANCELLED: { label: "Đã hủy",         color: "text-slate-600",   bgColor: "bg-slate-100",  borderColor: "border-slate-200",   icon: XCircle,     step: 0 },
+  EXPIRED:   { label: "Hết hạn",       color: "text-gray-500",    bgColor: "bg-gray-100",   borderColor: "border-gray-200",    icon: Clock,       step: 0 },
 };
 
 const STEPS = [
-  { key: "CREATED",  label: "Tạo đơn",   icon: Package },
-  { key: "PAID",     label: "Thanh toán", icon: CheckCircle },
-  { key: "SHIPPING", label: "Giao hàng",  icon: Truck },
-  { key: "WARRANTY", label: "Bảo hành",   icon: Shield },
+  { key: "CREATED",   label: "Tạo đơn",      icon: Package },
+  { key: "PAID",      label: "Đang xử lý",  icon: CheckCircle },
+  { key: "SHIPPING",  label: "Đang giao",    icon: Truck },
+  { key: "COMPLETED", label: "Hoàn thành",   icon: CheckCircle },
+  { key: "WARRANTY",  label: "Bảo hành",    icon: Shield },
 ];
 
 function formatCurrency(amount: string | number | null | undefined) {

@@ -12,21 +12,27 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 
 const STATUS_LABELS: Record<string, string> = {
-  CREATED: "Tạo Đơn",
-  PAID: "Đã Thanh Toán",
-  SHIPPING: "Đang Giao",
-  WARRANTY: "Bảo Hành",
-  FAILED: "Thất Bại",
-  EXPIRED: "Hết Hạn",
+  CREATED:   "Chờ xác nhận",
+  PAID:      "Đang xử lý",
+  SHIPPING:  "Đang giao hàng",
+  COMPLETED: "Hoàn thành",
+  WARRANTY:  "Bảo hành",
+  FAILED:    "Thất bại",
+  REFUNDED:  "Đã hoàn tiền",
+  CANCELLED: "Đã hủy",
+  EXPIRED:   "Hết hạn",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  CREATED: "bg-blue-100 text-blue-800 border-blue-200",
-  PAID: "bg-green-100 text-green-800 border-green-200",
-  SHIPPING: "bg-orange-100 text-orange-800 border-orange-200",
-  WARRANTY: "bg-purple-100 text-purple-800 border-purple-200",
-  FAILED: "bg-red-100 text-red-800 border-red-200",
-  EXPIRED: "bg-gray-100 text-gray-700 border-gray-200",
+  CREATED:   "bg-amber-100 text-amber-800 border-amber-200",
+  PAID:      "bg-blue-100 text-blue-800 border-blue-200",
+  SHIPPING:  "bg-indigo-100 text-indigo-800 border-indigo-200",
+  COMPLETED: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  WARRANTY:  "bg-purple-100 text-purple-800 border-purple-200",
+  FAILED:    "bg-red-100 text-red-800 border-red-200",
+  REFUNDED:  "bg-teal-100 text-teal-800 border-teal-200",
+  CANCELLED: "bg-slate-100 text-slate-600 border-slate-200",
+  EXPIRED:   "bg-gray-100 text-gray-700 border-gray-200",
 };
 
 export default function InvoiceHistory() {
@@ -203,9 +209,9 @@ export default function InvoiceHistory() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: "Tổng HĐ", value: invoices.length, color: "text-gray-900" },
-            { label: "Tạo Đơn", value: invoices.filter(i => i.status === "CREATED").length, color: "text-blue-600" },
-            { label: "Đã TT", value: invoices.filter(i => i.status === "PAID").length, color: "text-green-600" },
-            { label: "Hết Hạn", value: invoices.filter(i => i.status === "EXPIRED").length, color: "text-gray-500" },
+            { label: "Chờ xác nhận", value: invoices.filter(i => i.status === "CREATED").length, color: "text-amber-600" },
+            { label: "Đang xử lý", value: invoices.filter(i => i.status === "PAID").length, color: "text-blue-600" },
+            { label: "Hoàn thành", value: invoices.filter(i => i.status === "COMPLETED").length, color: "text-emerald-600" },
           ].map((stat, i) => (
             <Card key={i} className="shadow-sm border border-gray-100">
               <CardContent className="p-4 text-center">
@@ -235,13 +241,16 @@ export default function InvoiceHistory() {
                   <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tất Cả Trạng Thái</SelectItem>
-                  <SelectItem value="CREATED">Tạo Đơn</SelectItem>
-                  <SelectItem value="SHIPPING">Đang Giao</SelectItem>
-                  <SelectItem value="WARRANTY">Bảo Hành</SelectItem>
-                  <SelectItem value="PAID">Đã Thanh Toán</SelectItem>
-                  <SelectItem value="FAILED">Thất Bại</SelectItem>
-                  <SelectItem value="EXPIRED">Hết Hạn</SelectItem>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  <SelectItem value="CREATED">Chờ xác nhận</SelectItem>
+                  <SelectItem value="PAID">Đang xử lý</SelectItem>
+                  <SelectItem value="SHIPPING">Đang giao hàng</SelectItem>
+                  <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
+                  <SelectItem value="WARRANTY">Bảo hành</SelectItem>
+                  <SelectItem value="FAILED">Thất bại</SelectItem>
+                  <SelectItem value="REFUNDED">Đã hoàn tiền</SelectItem>
+                  <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+                  <SelectItem value="EXPIRED">Hết hạn</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filterCurrency} onValueChange={setFilterCurrency}>

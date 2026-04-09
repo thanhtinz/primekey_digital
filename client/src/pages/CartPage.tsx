@@ -143,16 +143,19 @@ export default function CartPage() {
   const cartCheckout = trpc.checkout.cartCheckout.useMutation({
     onSuccess: async (data) => {
       setStep(2);
-      // Xóa giỏ hàng sau khi đặt hàng thành công - xóa khỏi DB
-      try { await clearCartMutation.mutateAsync({ email }); } catch (_) {}
-      utils.cart.list.invalidate({ email });
-      utils.cart.count.invalidate({ email });
+      // Xóa giỏ hàng trước khi chuyển trang - đợi xóa xong mới redirect
+      try {
+        await clearCartMutation.mutateAsync({ email });
+      } catch (_) {}
+      // Invalidate cache sau khi xóa
+      await utils.cart.list.invalidate({ email });
+      await utils.cart.count.invalidate({ email });
       if (payWithWallet) {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được thanh toán bằng ví!`);
         setTimeout(() => navigate(`/track-order`), 2000);
       } else if (data.paymentUrl) {
-        // Điều hướng đến trang thanh toán (giỏ hàng đã được xóa rồi)
-        window.location.href = data.paymentUrl;
+        // Đợi một chút để cache invalidation hoàn tất trước khi redirect
+        setTimeout(() => { window.location.href = data.paymentUrl; }, 300);
       } else {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
         setTimeout(() => navigate(`/track-order`), 2000);

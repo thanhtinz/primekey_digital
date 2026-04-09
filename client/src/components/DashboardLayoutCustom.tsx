@@ -38,6 +38,7 @@ const adminNavGroups = [
     items: [
       { label: "Sản Phẩm", href: "/products", icon: Package },
       { label: "Danh Mục", href: "/settings/categories", icon: Tag },
+      { label: "Quản Lý Tag", href: "/settings/tags", icon: Tag },
       { label: "Mẫu Hóa Đơn", href: "/templates", icon: FileStack },
     ],
   },

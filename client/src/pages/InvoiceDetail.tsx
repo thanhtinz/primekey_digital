@@ -3,7 +3,7 @@ import { useLocation, useParams } from "wouter";
 import {
   ArrowLeft, Download, Mail, Trash2, CheckCircle, Clock, XCircle,
   AlertCircle, Copy, ExternalLink, Loader2, Package, Truck, Shield,
-  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash, Pencil, Printer
+  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash, Pencil, Printer, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,19 +27,23 @@ const STATUS_CONFIG: Record<string, {
   icon: React.ComponentType<{ className?: string }>;
   step: number;
 }> = {
-  CREATED: { label: "Tạo Đơn", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Package, step: 1 },
-  PAID: { label: "Đã Thanh Toán", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle, step: 2 },
-  SHIPPING: { label: "Đang Giao Hàng", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Truck, step: 3 },
-  WARRANTY: { label: "Bảo Hành", color: "bg-purple-100 text-purple-800 border-purple-200", icon: Shield, step: 4 },
-  FAILED: { label: "Thất Bại", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle, step: 0 },
-  EXPIRED: { label: "Hết Hạn", color: "bg-gray-100 text-gray-800 border-gray-200", icon: Clock, step: 0 },
+  CREATED:   { label: "Chờ xác nhận",  color: "bg-amber-100 text-amber-800 border-amber-200",   icon: Clock,       step: 1 },
+  PAID:      { label: "Đang xử lý",     color: "bg-blue-100 text-blue-800 border-blue-200",     icon: CheckCircle, step: 2 },
+  SHIPPING:  { label: "Đang giao hàng", color: "bg-indigo-100 text-indigo-800 border-indigo-200", icon: Truck,       step: 3 },
+  COMPLETED: { label: "Hoàn thành",     color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle, step: 4 },
+  WARRANTY:  { label: "Bảo hành",       color: "bg-purple-100 text-purple-800 border-purple-200", icon: Shield,      step: 5 },
+  FAILED:    { label: "Thất bại",       color: "bg-red-100 text-red-800 border-red-200",         icon: XCircle,     step: 0 },
+  REFUNDED:  { label: "Đã hoàn tiền",  color: "bg-teal-100 text-teal-800 border-teal-200",   icon: RefreshCw,   step: 0 },
+  CANCELLED: { label: "Đã hủy",         color: "bg-slate-100 text-slate-600 border-slate-200", icon: XCircle,     step: 0 },
+  EXPIRED:   { label: "Hết hạn",       color: "bg-gray-100 text-gray-600 border-gray-200",     icon: Clock,       step: 0 },
 };
 
 const ORDER_STEPS = [
-  { key: "CREATED", label: "Tạo Đơn", icon: Package },
-  { key: "PAID", label: "Thanh Toán", icon: CheckCircle },
-  { key: "SHIPPING", label: "Giao Hàng", icon: Truck },
-  { key: "WARRANTY", label: "Bảo Hành", icon: Shield },
+  { key: "CREATED",   label: "Tạo đơn",      icon: Package },
+  { key: "PAID",      label: "Đang xử lý",  icon: CheckCircle },
+  { key: "SHIPPING",  label: "Đang giao",    icon: Truck },
+  { key: "COMPLETED", label: "Hoàn thành",   icon: CheckCircle },
+  { key: "WARRANTY",  label: "Bảo hành",    icon: Shield },
 ];
 
 function formatCurrency(amount: number | string | null | undefined, currency = "VND") {
