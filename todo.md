@@ -1323,3 +1323,19 @@ todo updated
 - [x] Thêm tRPC procedure: customer.changePassword (đã có sẵn)
 - [x] Thêm tab Bảo mật trong MyAccount: SecurityTab với 3 section (Tổng quan, Lịch sử, Thiết bị)
 - [x] Ghi lại lịch sử đăng nhập khi customer.loginWithPassword thành công/thất bại
+
+## Phase: Menu + Announcement (Apr 9, 2026 - Session 9)
+- [ ] ClientHeader: thêm link BXH (/leaderboard) vào menu điều hướng
+- [ ] Admin: kiểm tra và thêm cấu hình thông báo chào mừng (announcement banner) trong admin
+
+## Phase: Menu BXH + Announcement Admin (Apr 9, 2026)
+- [x] ClientHeader: thêm link BXH vào menu (mobile + desktop, hiện theo feature flag leaderboard)
+- [x] Tạo trang AnnouncementManagement trong admin + thêm vào sidebar "Banner & Thông báo"
+- [x] App.tsx: thêm route /announcements → AnnouncementManagement
+
+## Phase: No-Manus Fixes (Apr 9, 2026)
+- [x] Xác nhận: hệ thống KHÔNG dùng Manus OAuth - dùng JWT cookie từ /api/auth/login
+- [x] protectedProcedure đọc JWT cookie (admin login) - ĐÚNG, không cần sửa
+- [x] AnnouncementManagement: route /announcements + sidebar link đã tích hợp đầy đủ
+- [x] Lưu tài liệu AUTH_ARCHITECTURE.md giải thích 2 luồng auth
+- [x] TypeScript: 0 errors, 53/53 tests passed

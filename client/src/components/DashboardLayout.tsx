@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink, BookOpen } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink, BookOpen, Megaphone } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -39,6 +39,7 @@ const menuItems = [
   { icon: Gift, label: "Mã giảm giá", path: "/settings/coupons" },
   { icon: Ticket, label: "Hỗ trợ (Tickets)", path: "/admin-support" },
   { icon: Bell, label: "Thông báo", path: "/notifications" },
+  { icon: Megaphone, label: "Banner & Thông báo", path: "/announcements" },
   { icon: Settings, label: "Cài đặt", path: "/settings" },
   { icon: ExternalLink, label: "Xem trang khách", path: "/" },
 ];

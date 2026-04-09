@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import {
   Menu, X, Search, Bell, Gift, User, Home, Package,
   CreditCard, BookOpen, ChevronRight, ChevronDown, Settings, LogOut,
-  Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare
+  Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare, Trophy
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
@@ -246,6 +246,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
             {/* Other nav links */}
             {[
               isEnabled("blog") ? { label: "Blog", href: "/blog", icon: BookOpen } : null,
+              isEnabled("leaderboard") ? { label: "Bảng Xếp Hạng", href: "/leaderboard", icon: Trophy } : null,
               { label: "Hỗ trợ", href: "/support", icon: MessageSquare },
             ].filter((item): item is { label: string; href: string; icon: any } => item !== null).map(item => (
               <button
@@ -586,6 +587,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" },
                 isEnabled("coupons") ? { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" } : null,
                 isEnabled("blog") ? { icon: BookOpen, label: "Blog", href: "/blog" } : null,
+                isEnabled("leaderboard") ? { icon: Trophy, label: "Bảng Xếp Hạng", href: "/leaderboard" } : null,
                 { icon: HelpCircle, label: "Hỗ trợ", href: "/support" },
               ].filter((link): link is { icon: any; label: string; href: string } => link !== null).map(link => (
                 <button
