@@ -43,13 +43,25 @@ interface FormState {
   endAt: string;
 }
 
+// Trả về datetime-local string theo giờ địa phương (không phải UTC)
+const toLocalDatetimeString = (d: Date) => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+// Parse datetime-local string (local time) thành Date object
+const parseDatetimeLocal = (s: string): Date => {
+  // datetime-local format: "YYYY-MM-DDTHH:mm" → interpreted as local time
+  return new Date(s);
+};
+
 const defaultForm: FormState = {
   title: "",
   content: "",
   type: "info",
   isActive: true,
   showAsPopup: false,
-  startAt: new Date().toISOString().slice(0, 16),
+  startAt: toLocalDatetimeString(new Date()),
   endAt: "",
 };
 
@@ -89,8 +101,8 @@ export default function AnnouncementManagement() {
       type: a.type as AnnouncementType,
       isActive: a.isActive,
       showAsPopup: a.showAsPopup,
-      startAt: a.startAt ? new Date(a.startAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-      endAt: a.endAt ? new Date(a.endAt).toISOString().slice(0, 16) : "",
+      startAt: a.startAt ? toLocalDatetimeString(new Date(a.startAt)) : toLocalDatetimeString(new Date()),
+      endAt: a.endAt ? toLocalDatetimeString(new Date(a.endAt)) : "",
     });
     setDialogOpen(true);
   };
