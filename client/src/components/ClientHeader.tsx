@@ -47,7 +47,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
   const companyName = publicInfo?.companyName || "ShopKey";
 
-  const { token: ctxToken, isLoggedIn: ctxLoggedIn, logout: ctxLogout } = useCustomerAuth();
+  const { token: ctxToken, isLoggedIn: ctxLoggedIn, logout: ctxLogout, customer: ctxCustomer } = useCustomerAuth();
   const token = ctxToken || "";
   const isLoggedIn = ctxLoggedIn;
 
@@ -63,24 +63,21 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
     onSuccess: () => refetchNotif(),
   });
 
-  const { data: sessionData } = trpc.customer.me.useQuery(
-    { token },
-    { enabled: isLoggedIn, staleTime: 60_000 }
-  );
+   // Use context customer data (already fetched by CustomerAuthProvider)
+  const sessionData = ctxCustomer;
   // Check admin role from Manus OAuth session (users table, not customers table)
   const { data: adminUser } = trpc.auth.me.useQuery(undefined, { staleTime: 60_000, retry: false });
   const { isEnabled } = useFeatureFlags();
-
   const walletBalance = walletData?.balance ?? 0;
   const unreadCount = notifData?.unreadCount ?? 0;
   const notifications = notifData?.items ?? [];
-  const avatarUrl = sessionData?.avatarUrl;
-  const displayName = sessionData?.name || sessionData?.email?.split("@")[0] || "Tài Khoản";
-  const email = sessionData?.email || "";
+  const avatarUrl = ctxCustomer?.avatarUrl;
+  const displayName = ctxCustomer?.name || ctxCustomer?.email?.split("@")[0] || "Tài Khoản";
+  const email = ctxCustomer?.email || "";
   // isAdmin = true if:
   // 1. Logged in via Manus OAuth (admin dashboard) with role admin, OR
   // 2. Logged in via client loginWithPassword with admin credentials (isAdminSession)
-  const isAdmin = (adminUser as any)?.role === "admin" || (sessionData as any)?.role === "admin";
+  const isAdmin = (adminUser as any)?.role === "admin" || ctxCustomer?.role === "admin";
 
   const { data: allCategories } = trpc.categories.list.useQuery(undefined, { staleTime: 300_000 });
 

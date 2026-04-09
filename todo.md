@@ -1312,3 +1312,4 @@ todo updated
 - [x] ClientHeader: sửa router "Đơn hàng" trong avatar dropdown → /track-order
 - [x] ClientHeader: sửa "Đơn hàng" trong dropdown → /track-order
 - [x] ClientHeader: sửa dùng CustomerAuthContext (reactive) thay vì đọc localStorage trực tiếp
+- [x] Fix: CustomerAuthContext không lưu role, ClientHeader dùng sessionData.role cũ không reactive → đã sửa cả hai

@@ -6,6 +6,7 @@ interface CustomerInfo {
   name?: string | null;
   avatarUrl?: string | null;
   walletBalance?: string | null;
+  role?: string | null;
 }
 
 interface CustomerAuthContextType {
@@ -60,6 +61,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
         name: meQuery.data.name,
         avatarUrl: (meQuery.data as any).avatarUrl || null,
         walletBalance: (meQuery.data as any).walletBalance || "0",
+        role: (meQuery.data as any).role || null,
       });
     } else if (meQuery.error) {
       // Token invalid or expired
