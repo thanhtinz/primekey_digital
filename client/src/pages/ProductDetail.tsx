@@ -605,65 +605,7 @@ export default function ProductDetail() {
           )}
         </div>{/* end reviews outer */}
 
-      {/* Sticky CTA bottom - fixed, mobile only */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-50">
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 leading-none mb-0.5 truncate">
-              {selectedPackage ? selectedPackage.name : hasMultiPrice ? "Chọn gói để đặt hàng" : product.name}
-            </p>
-            <p className="text-lg font-bold text-red-500 leading-none">
-              {selectedPackage
-                ? formatVND(selectedPackage.price)
-                : hasMultiPrice
-                  ? `${formatVND(minPrice)} ~ ${formatVND(maxPrice)}`
-                  : formatVND(product.price)
-              }
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              if (!email) { toast.info("Vui lòng đăng nhập để thêm giỏ hàng"); return; }
-              if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
-              if (!validateCustomFields()) return;
-              const pkgId = selectedPackage?.id || packages[0]?.id;
-              if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
-              addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: getCustomFieldValues() });
-            }}
-            className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-3 rounded-xl font-semibold text-sm shadow-md hover:bg-blue-700 transition-all active:scale-95 flex-shrink-0"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Giỏ hàng
-          </button>
-          <button
-            disabled={buyNow.isPending}
-            onClick={() => {
-              if (!email) { toast.info("Vui lòng đăng nhập để mua hàng"); return; }
-              if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
-              if (!validateCustomFields()) return;
-              const pkgId = selectedPackage?.id || packages[0]?.id;
-              if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
-              buyNow.mutate({
-                email,
-                customerName: customer?.name || undefined,
-                productId,
-                packageId: pkgId,
-                quantity: 1,
-                customFieldValues: getCustomFieldValues(),
-                couponCode: appliedCoupon?.code || couponCode || undefined,
-                notes: notes || undefined,
-                origin: window.location.origin,
-                payWithWallet: payWithWallet || undefined,
-                customerToken: payWithWallet ? (localStorage.getItem("customerToken") || undefined) : undefined,
-              });
-            }}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0 disabled:opacity-60"
-          >
-            {buyNow.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            {buyNow.isPending ? "Đang xử lý..." : "Mua ngay"}
-          </button>
-        </div>
-      </div>
+
 
           {/* Related Products Section */}
           {relatedProducts.length > 0 && (
@@ -801,6 +743,86 @@ export default function ProductDetail() {
                 rows={2}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+            {/* Order Summary - Tổng tiền */}
+            {(selectedPackage || packages.length === 1) && (() => {
+              const basePrice = selectedPackage ? parseFloat(selectedPackage.price) : parseFloat(packages[0]?.price || "0");
+              const couponDiscount = appliedCoupon
+                ? appliedCoupon.discountType === 'percentage'
+                  ? Math.round(basePrice * appliedCoupon.discountValue / 100)
+                  : appliedCoupon.discountValue
+                : 0;
+              const afterCoupon = Math.max(0, basePrice - couponDiscount);
+              const taxAmount = (!payWithWallet && taxRate > 0) ? Math.round(afterCoupon * taxRate / 100) : 0;
+              const total = afterCoupon + taxAmount;
+              return (
+                <div className="border-t border-dashed border-gray-200 pt-3 space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Tạm tính</span>
+                    <span className="text-gray-700 font-medium">{formatVND(basePrice)}</span>
+                  </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-600">Giảm giá ({appliedCoupon.code})</span>
+                      <span className="text-green-600 font-medium">-{formatVND(couponDiscount)}</span>
+                    </div>
+                  )}
+                  {taxAmount > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">{taxName} ({taxRate}%)</span>
+                      <span className="text-gray-700">{formatVND(taxAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-dashed border-gray-200 pt-2 mt-1">
+                    <span className="font-bold text-gray-800">Tổng cộng</span>
+                    <span className="font-bold text-red-500 text-lg">{formatVND(total)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Action Buttons - inline in card, not fixed/sticky */}
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => {
+                  if (!email) { toast.info("Vui lòng đăng nhập để thêm giỏ hàng"); return; }
+                  if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+                  if (!validateCustomFields()) return;
+                  const pkgId = selectedPackage?.id || packages[0]?.id;
+                  if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
+                  addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: getCustomFieldValues() });
+                }}
+                className="flex items-center justify-center gap-2 flex-1 bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold text-sm shadow-md hover:bg-blue-700 transition-all active:scale-95"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Giỏ hàng
+              </button>
+              <button
+                disabled={buyNow.isPending}
+                onClick={() => {
+                  if (!email) { toast.info("Vui lòng đăng nhập để mua hàng"); return; }
+                  if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+                  if (!validateCustomFields()) return;
+                  const pkgId = selectedPackage?.id || packages[0]?.id;
+                  if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
+                  buyNow.mutate({
+                    email,
+                    customerName: customer?.name || undefined,
+                    productId,
+                    packageId: pkgId,
+                    quantity: 1,
+                    customFieldValues: getCustomFieldValues(),
+                    couponCode: appliedCoupon?.code || couponCode || undefined,
+                    notes: notes || undefined,
+                    origin: window.location.origin,
+                    payWithWallet: payWithWallet || undefined,
+                    customerToken: payWithWallet ? (localStorage.getItem("customerToken") || undefined) : undefined,
+                  });
+                }}
+                className="flex items-center justify-center gap-2 flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white py-3 px-4 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-60"
+              >
+                {buyNow.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {buyNow.isPending ? "Đang xử lý..." : "Mua ngay"}
+              </button>
             </div>
             </div>
           )}

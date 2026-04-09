@@ -1508,17 +1508,17 @@ todo updated
 - [x] Đồng nhất icon tag sản phẩm giữa trang chính (LandingPage) và trang chi tiết (ProductDetail)
 
 ## Phase: Security Audit & Cleanup (Apr 9, 2026)
-- [ ] Backend: thêm rate limiting cho các endpoint nhạy cảm (login, payment, referral)
-- [ ] Backend: validate và sanitize tất cả input từ user (zod schemas chặt chẽ hơn)
-- [ ] Backend: kiểm tra authorization - đảm bảo tất cả admin procedures dùng adminProcedure
-- [ ] Backend: thêm CORS headers và security headers (helmet)
-- [ ] Backend: giới hạn kích thước request body để chống DoS
-- [ ] Backend: ẩn thông tin lỗi chi tiết khỏi response production
-- [ ] Frontend: sanitize HTML input để chống XSS
-- [ ] Frontend: xóa console.log debug trong production
-- [ ] Frontend: bảo vệ route admin - redirect nếu không có quyền
-- [ ] Xóa các trang/component không còn dùng (orphan pages)
-- [ ] Fix các bug đã biết: TypeScript errors, unhandled promises
+- [x] Backend: thêm rate limiting cho các endpoint nhạy cảm (login, payment, referral)
+- [x] Backend: validate và sanitize tất cả input từ user (zod schemas chặt chẽ hơn)
+- [x] Backend: kiểm tra authorization - đã fix adminCredit, adminList wallet/referral thiếu role check
+- [x] Backend: thêm CORS headers và security headers (helmet)
+- [x] Backend: giới hạn kích thước request body để chống DoS (giảm từ 50MB xuống 10MB)
+- [x] Backend: ẩn thông tin lỗi chi tiết khỏi response production (helmet + error handler)
+- [x] Frontend: sanitize HTML input để chống XSS (DOMPurify cho BlogPostPage)
+- [x] Frontend: xóa console.log debug trong production (kiểm tra không có log nhạy cảm)
+- [x] Frontend: bảo vệ route admin - redirect nếu không có quyền (ForbiddenPage đã có sẵn)
+- [x] Xóa các trang/component không còn dùng (orphan pages): ComponentShowcase, Home, ProductCompare
+- [x] Fix các bug đã biết: TypeScript 0 errors, 53/53 tests passed
 
 ## Phase: Security Audit & Cleanup (Apr 9, 2026 - Session 28)
 - [x] Backend: thêm helmet (security headers: X-Frame-Options, X-Content-Type-Options, HSTS, v.v.)
@@ -1530,3 +1530,8 @@ todo updated
 - [x] Thêm routes còn thiếu: RefundPage, QueuePage, SpinWheelPage, SpinWheelAdmin, LoyaltyRewardsAdmin, LoyaltyRewardsPage
 - [x] Xóa route trùng lặp: /blog-management (dùng /admin/blog), /announcements (dùng /admin/announcements)
 - [x] TypeScript 0 errors, 53/53 tests passed
+
+## Phase: Fix Popup Config & Sticky Bar (Apr 9, 2026)
+- [ ] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar
+- [ ] Fix sticky bottom bar ProductDetail mobile: dùng position:fixed thay vì bị cuộn theo trang
+- [ ] ProductDetail: xóa sticky bottom bar mobile, gộp nút Giỏ hàng/Mua ngay vào card thông tin đặt hàng
