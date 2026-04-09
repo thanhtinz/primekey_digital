@@ -1325,8 +1325,9 @@ todo updated
 - [x] Ghi lại lịch sử đăng nhập khi customer.loginWithPassword thành công/thất bại
 
 ## Phase: Menu + Announcement (Apr 9, 2026 - Session 9)
-- [ ] ClientHeader: thêm link BXH (/leaderboard) vào menu điều hướng
-- [ ] Admin: kiểm tra và thêm cấu hình thông báo chào mừng (announcement banner) trong admin
+- [x] ClientHeader: đã có link BXH (/leaderboard) trong menu (hiện theo feature flag leaderboard)
+- [x] Admin: AnnouncementManagement đã tích hợp đầy đủ (route + sidebar + component)
+- [x] Fix bug AnnouncementBanner: sửa a.sa_type → a.type
 
 ## Phase: Menu BXH + Announcement Admin (Apr 9, 2026)
 - [x] ClientHeader: thêm link BXH vào menu (mobile + desktop, hiện theo feature flag leaderboard)

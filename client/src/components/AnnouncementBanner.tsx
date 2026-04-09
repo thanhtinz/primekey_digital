@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { X, Info, CheckCircle, AlertTriangle, AlertCircle, Bell } from "lucide-react";
 
@@ -48,7 +48,7 @@ export function AnnouncementBanner() {
     <>
       {/* Banner notifications */}
       {bannerItems.map((a: any) => {
-        const style = TYPE_STYLES[a.sa_type as keyof typeof TYPE_STYLES] || TYPE_STYLES.info;
+        const style = TYPE_STYLES[a.type as keyof typeof TYPE_STYLES] || TYPE_STYLES.info;
         return (
           <div key={a.id} className={`${style.bg} ${style.text} px-4 py-2.5 flex items-center gap-3 text-sm`}>
             <span className="flex-shrink-0">{style.icon}</span>
@@ -76,19 +76,19 @@ export function AnnouncementBanner() {
             </div>
             <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
               {popupItems.map((a: any) => {
-                const style = TYPE_STYLES[a.sa_type as keyof typeof TYPE_STYLES] || TYPE_STYLES.info;
+                const style = TYPE_STYLES[a.type as keyof typeof TYPE_STYLES] || TYPE_STYLES.info;
                 return (
                   <div key={a.id} className={`rounded-xl p-4 border-l-4 ${
-                    a.sa_type === 'info' ? 'border-blue-500 bg-blue-50' :
-                    a.sa_type === 'success' ? 'border-emerald-500 bg-emerald-50' :
-                    a.sa_type === 'warning' ? 'border-amber-500 bg-amber-50' :
+                    a.type === 'info' ? 'border-blue-500 bg-blue-50' :
+                    a.type === 'success' ? 'border-emerald-500 bg-emerald-50' :
+                    a.type === 'warning' ? 'border-amber-500 bg-amber-50' :
                     'border-red-500 bg-red-50'
                   }`}>
                     <div className="flex items-start gap-2">
                       <span className={`mt-0.5 ${
-                        a.sa_type === 'info' ? 'text-blue-600' :
-                        a.sa_type === 'success' ? 'text-emerald-600' :
-                        a.sa_type === 'warning' ? 'text-amber-600' :
+                        a.type === 'info' ? 'text-blue-600' :
+                        a.type === 'success' ? 'text-emerald-600' :
+                        a.type === 'warning' ? 'text-amber-600' :
                         'text-red-600'
                       }`}>{style.icon}</span>
                       <div>
