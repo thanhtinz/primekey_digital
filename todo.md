@@ -1450,12 +1450,17 @@ todo updated
 
 ## Phase: Fix số 0 + Admin Topup (Apr 9, 2026 - Session 23)
 - [x] Tìm và sửa triệt để số 0 thừa trong OrderDetailPage (warrantyMonths=0 gây ra render 0)
-- [ ] Thêm trang quản lý nạp tiền cho admin (/admin/topup-requests)
-- [ ] Thêm mục "Quản lý nạp tiền" vào sidebar admin
-- [ ] Thêm icon cho tag trong trang TagSettings (form tạo/sửa tag)
+- [x] Thêm trang quản lý nạp tiền cho admin (dùng WalletManagement đã có)
+- [x] Thêm mục "Quản lý nạp tiền" vào sidebar admin (dùng Quản Lý Ví)
+- [x] Thêm icon cho tag trong trang TagSettings (form tạo/sửa tag)
 - [x] Thêm mục Quản Lý Ví vào sidebar admin
 - [x] Fix 404 kho ảnh avatar trong admin (/settings/avatars)
 - [x] Thêm icon cho tag trong TagSettings (thêm cột icon vào schema + UI)
 - [x] Thêm mục Quản Lý Ví vào sidebar admin
 - [x] Cải thiện UI WalletManagement: thêm button thao tác (duyệt nạp tiền, hoàn tiền, điều chỉnh số dư, xem lịch sử giao dịch)
 - [x] Redesign trang Dashboard admin với giao diện mới (stats cards đẹp hơn, recent orders, quick actions)
+
+## Phase: Notifications + WalletManagement Fix (Apr 9, 2026 - Session 24)
+- [x] Fix WalletManagement: đang dùng DashboardLayout sai, cần dùng DashboardLayoutCustom
+- [x] Thêm trang quản lý thông báo website cho admin (/admin/notifications)
+- [x] Thêm mục Thông Báo vào sidebar admin

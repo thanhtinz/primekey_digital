@@ -89,6 +89,9 @@ const adminNavGroups = [
     label: "Hệ Thống",
     items: [
       { label: "Nhân Viên", href: "/staff", icon: Users },
+      { label: "Thông Báo Website", href: "/admin/notifications", icon: Bell },
+      { label: "Quản Lý Blog", href: "/admin/blog", icon: FileText },
+      { label: "Thông Báo Hệ Thống", href: "/admin/announcements", icon: Megaphone },
       { label: "Nhắc Nhở", href: "/reminders", icon: Bell },
       { label: "Lịch Sử HT", href: "/activity-log", icon: History },
       { label: "Sao Lưu", href: "/backup", icon: Database },

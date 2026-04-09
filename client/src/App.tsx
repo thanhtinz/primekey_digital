@@ -262,7 +262,9 @@ function Router() {
         <Route path="/settings/banners" component={() => isAdmin ? <BannerSettings /> : <ForbiddenPage />} />
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
+        <Route path="/admin/blog" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
         <Route path="/blog-management" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
+        <Route path="/admin/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
         <Route path="/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
         <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />

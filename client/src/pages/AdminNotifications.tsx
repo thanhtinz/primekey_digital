@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,7 @@ export default function AdminNotifications() {
   const selectedType = typeOptions.find(t => t.value === form.type);
 
   return (
-    <DashboardLayout>
+    <DashboardLayoutCustom>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gửi thông báo</h1>
@@ -212,6 +212,6 @@ export default function AdminNotifications() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </DashboardLayoutCustom>
   );
 }

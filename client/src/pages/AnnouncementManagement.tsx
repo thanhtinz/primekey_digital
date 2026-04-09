@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +124,7 @@ export default function AnnouncementManagement() {
   const popupCount = (announcements as any[]).filter((a: any) => a.showAsPopup && a.isActive).length;
 
   return (
-    <DashboardLayout>
+    <DashboardLayoutCustom>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -367,6 +367,6 @@ export default function AnnouncementManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </DashboardLayoutCustom>
   );
 }
