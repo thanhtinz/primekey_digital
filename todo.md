@@ -1313,3 +1313,13 @@ todo updated
 - [x] ClientHeader: sửa "Đơn hàng" trong dropdown → /track-order
 - [x] ClientHeader: sửa dùng CustomerAuthContext (reactive) thay vì đọc localStorage trực tiếp
 - [x] Fix: CustomerAuthContext không lưu role, ClientHeader dùng sessionData.role cũ không reactive → đã sửa cả hai
+
+## Phase: Security Features + Admin Link Fix (Apr 9, 2026 - Session 8)
+- [x] Sửa dứt điểm admin link: CustomerAuthContext không lưu role + ClientLogin không truyền role → đã sửa
+- [x] Thêm schema: login_history table (email, ip, userAgent, createdAt, status, failReason)
+- [x] Thêm tRPC procedure: customer.getLoginHistory
+- [x] Thêm tRPC procedure: customer.getActiveSessions + revokeSession + revokeAllOtherSessions
+- [x] Thêm tRPC procedure: customer.revokeSession
+- [x] Thêm tRPC procedure: customer.changePassword (đã có sẵn)
+- [x] Thêm tab Bảo mật trong MyAccount: SecurityTab với 3 section (Tổng quan, Lịch sử, Thiết bị)
+- [x] Ghi lại lịch sử đăng nhập khi customer.loginWithPassword thành công/thất bại

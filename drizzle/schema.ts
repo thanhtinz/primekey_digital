@@ -921,3 +921,17 @@ export const featureFlags = mysqlTable("feature_flags", {
   updatedAt: timestamp("updatedAt_ff").defaultNow().onUpdateNow().notNull(),
 });
 export type FeatureFlag = typeof featureFlags.$inferSelect;
+
+// ─── Phase 16: Login History & Security ──────────────────────────────────────
+export const loginHistory = mysqlTable("login_history", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  userAgent: text("userAgent"),
+  deviceInfo: varchar("deviceInfo", { length: 255 }), // e.g. "Chrome on Windows"
+  status: varchar("status", { length: 20 }).notNull().default("success"), // "success" | "failed"
+  failReason: varchar("failReason", { length: 255 }),
+  sessionToken: varchar("sessionToken", { length: 128 }), // link to customer_sessions.token
+  createdAt: timestamp("createdAt_lh").defaultNow().notNull(),
+});
+export type LoginHistory = typeof loginHistory.$inferSelect;

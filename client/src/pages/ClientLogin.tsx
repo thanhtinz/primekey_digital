@@ -51,8 +51,8 @@ export default function ClientLogin() {
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
   const appName = (publicInfo as any)?.companyName || "Invoice Prime";
 
-  const handleSuccess = (data: { token: string; email: string | null; name?: string | null }) => {
-    login(data.token, data.email || "");
+  const handleSuccess = (data: { token: string; email: string | null; name?: string | null; role?: string | null }) => {
+    login(data.token, data.email || "", data.role);
     toast.success(`Chào mừng ${data.name || data.email}!`);
     navigate(redirectTo ? decodeURIComponent(redirectTo) : "/");
   };

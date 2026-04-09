@@ -277,7 +277,209 @@ function ExportPDFButton({ orderId, invoiceNumber, token }: { orderId: number; i
   );
 }
 
-type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile";
+// ─── SecurityTab Component ───────────────────────────────────────────────────
+function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
+  const [activeSection, setActiveSection] = useState<"overview" | "history" | "sessions">("overview");
+
+  const { data: loginHistory, isLoading: historyLoading } = trpc.customer.getLoginHistory.useQuery(
+    { token, limit: 20 },
+    { enabled: !!token && activeSection === "history", staleTime: 30_000 }
+  );
+
+  const { data: activeSessions, isLoading: sessionsLoading, refetch: refetchSessions } = trpc.customer.getActiveSessions.useQuery(
+    { token },
+    { enabled: !!token && activeSection === "sessions", staleTime: 10_000 }
+  );
+
+  const revokeSession = trpc.customer.revokeSession.useMutation({
+    onSuccess: () => { toast.success("Phên đăng nhập đã bị thu hồi"); refetchSessions(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const revokeAll = trpc.customer.revokeAllOtherSessions.useMutation({
+    onSuccess: () => { toast.success("Đã đăng xuất khỏi tất cả thiết bị khác"); refetchSessions(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const formatDateTime = (d: string | Date) =>
+    new Date(d).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="space-y-4 pb-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-1">
+        <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-slate-100 transition">
+          <svg className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <div>
+          <h2 className="text-base font-bold text-slate-800">Bảo mật tài khoản</h2>
+          <p className="text-xs text-slate-500">Quản lý mật khẩu, phiên đăng nhập và lịch sử</p>
+        </div>
+      </div>
+
+      {/* Section nav */}
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+        {(["overview", "history", "sessions"] as const).map(s => (
+          <button key={s} onClick={() => setActiveSection(s)}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
+              activeSection === s ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}>
+            {s === "overview" ? "🔒 Tổng quan" : s === "history" ? "📅 Lịch sử" : "📱 Thiết bị"}
+          </button>
+        ))}
+      </div>
+
+      {/* Overview section */}
+      {activeSection === "overview" && (
+        <div className="space-y-4">
+          {/* Change password */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-2">
+              <Lock className="h-4 w-4 text-slate-500" />
+              <h3 className="text-sm font-semibold text-slate-800">Đổi mật khẩu</h3>
+            </div>
+            <div className="p-4">
+              <ChangePasswordForm token={token} />
+            </div>
+          </div>
+          {/* 2FA */}
+          <TwoFASection token={token} />
+          {/* Quick links */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <button onClick={() => setActiveSection("history")} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition text-left border-b border-slate-100">
+              <Clock className="h-5 w-5 text-slate-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-700">Lịch sử đăng nhập</p>
+                <p className="text-xs text-slate-400">Xem các lần đăng nhập gần đây</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </button>
+            <button onClick={() => setActiveSection("sessions")} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition text-left">
+              <Shield className="h-5 w-5 text-slate-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-700">Quản lý phiên đăng nhập</p>
+                <p className="text-xs text-slate-400">Xem và thu hồi phiên trên các thiết bị khác</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-400" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Login history section */}
+      {activeSection === "history" && (
+        <div className="space-y-3">
+          {historyLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+          ) : !loginHistory || loginHistory.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
+              <Clock className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm text-slate-500">Chưa có lịch sử đăng nhập</p>
+              <p className="text-xs text-slate-400 mt-1">Lịch sử sẽ xuất hiện sau lần đăng nhập tiếp theo</p>
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-slate-100">
+                <h3 className="text-sm font-semibold text-slate-800">Lịch sử đăng nhập gần đây</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{loginHistory.length} lần gần nhất</p>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {loginHistory.map((entry: any) => (
+                  <div key={entry.id} className="flex items-start gap-3 p-4">
+                    <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      entry.status === "success" ? "bg-green-100" : "bg-red-100"
+                    }`}>
+                      {entry.status === "success"
+                        ? <CheckCircle className="h-4 w-4 text-green-600" />
+                        : <XCircle className="h-4 w-4 text-red-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-xs font-semibold ${
+                          entry.status === "success" ? "text-green-700" : "text-red-600"
+                        }`}>
+                          {entry.status === "success" ? "Đăng nhập thành công" : "Đăng nhập thất bại"}
+                        </span>
+                        <span className="text-xs text-slate-400 whitespace-nowrap">{formatDateTime(entry.createdAt)}</span>
+                      </div>
+                      {entry.deviceInfo && <p className="text-xs text-slate-500 mt-0.5">{entry.deviceInfo}</p>}
+                      {entry.ipAddress && <p className="text-xs text-slate-400 font-mono">{entry.ipAddress}</p>}
+                      {entry.failReason && <p className="text-xs text-red-400 mt-0.5">{entry.failReason}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Active sessions section */}
+      {activeSection === "sessions" && (
+        <div className="space-y-3">
+          {sessionsLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+          ) : (
+            <>
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">Phiên đang hoạt động</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">{activeSessions?.length || 0} phiên</p>
+                  </div>
+                  {(activeSessions?.length || 0) > 1 && (
+                    <button
+                      onClick={() => revokeAll.mutate({ token })}
+                      disabled={revokeAll.isPending}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {revokeAll.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                      Đăng xuất tất cả
+                    </button>
+                  )}
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {(activeSessions || []).map((s: any) => (
+                    <div key={s.id} className="flex items-center gap-3 p-4">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        s.isCurrent ? "bg-blue-100" : "bg-slate-100"
+                      }`}>
+                        <Shield className={`h-4 w-4 ${s.isCurrent ? "text-blue-600" : "text-slate-400"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-slate-700 truncate">
+                            {s.isAdminSession ? "Phên Admin" : "Phên khách hàng"}
+                          </p>
+                          {s.isCurrent && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Hiện tại</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400">Đăng nhập: {formatDateTime(s.createdAt)}</p>
+                        <p className="text-xs text-slate-400">Hết hạn: {formatDateTime(s.expiresAt)}</p>
+                      </div>
+                      {!s.isCurrent && (
+                        <button
+                          onClick={() => revokeSession.mutate({ token, sessionId: s.id })}
+                          disabled={revokeSession.isPending}
+                          className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50 flex-shrink-0"
+                        >
+                          Thu hồi
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile" | "security";
 
 export default function MyAccount() {
   const [, navigate] = useLocation();
@@ -424,6 +626,7 @@ export default function MyAccount() {
     ...(isFeatureEnabled("warranty") ? [{ id: "warranty" as TabType, label: "Bảo hành", icon: Shield }] : []),
     ...(isFeatureEnabled("referral") ? [{ id: "referral" as TabType, label: "Giới thiệu", icon: Users2 }] : []),
     { id: "profile", label: "Hồ sơ", icon: User },
+    { id: "security", label: "Bảo mật", icon: ShieldCheck },
   ];
 
   // Always fetch referral stats so code is consistent across all tabs
@@ -1190,12 +1393,22 @@ export default function MyAccount() {
               <div className="p-4 border-b border-slate-100">
                 <h3 className="text-sm font-semibold text-slate-800">Tài khoản</h3>
               </div>
+              <button onClick={() => setActiveTab("security")} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition text-left">
+                <ShieldCheck className="h-5 w-5 text-slate-500" />
+                <span className="text-sm font-medium text-slate-700">Bảo mật tài khoản</span>
+                <ChevronRight className="h-4 w-4 text-slate-400 ml-auto" />
+              </button>
               <button onClick={handleLogout} disabled={logoutMutation.isPending} className="w-full flex items-center gap-3 p-4 hover:bg-red-50 transition text-left">
                 <LogOut className="h-5 w-5 text-red-500" />
                 <span className="text-sm font-medium text-red-600">Đăng xuất</span>
               </button>
             </div>
           </div>
+        )}
+
+        {/* ===== Tab: Security ===== */}
+        {activeTab === "security" && token && (
+          <SecurityTab token={token} onBack={() => setActiveTab("profile")} />
         )}
       </div>
       <ClientFooter />

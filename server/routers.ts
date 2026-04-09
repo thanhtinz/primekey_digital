@@ -4699,6 +4699,16 @@ export const appRouter = router({
             expiresAt,
             isAdminSession: true,
           } as any);
+          // Record login history
+          try {
+            const { loginHistory } = await import("../drizzle/schema");
+            await drizzleDb.insert(loginHistory).values({
+              email: adminUser.email,
+              status: "success",
+              sessionToken: token,
+              deviceInfo: "Admin login",
+            } as any);
+          } catch {}
           return { token, name, email: adminUser.email, expiresAt, role: adminUser.role };
         }
 
@@ -4740,6 +4750,15 @@ export const appRouter = router({
         const token = crypto.randomBytes(48).toString("hex");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token, expiresAt });
+        // Record login history
+        try {
+          const { loginHistory } = await import("../drizzle/schema");
+          await drizzleDb.insert(loginHistory).values({
+            email: input.email,
+            status: "success",
+            sessionToken: token,
+          } as any);
+        } catch {}
         return { token, name: customer.name, email: input.email, expiresAt };
       }),
     // Quên mật khẩu - gửi email reset
@@ -4960,6 +4979,81 @@ export const appRouter = router({
         if (!session || session.expiresAt < new Date()) return { enabled: false };
         const [customer] = await drizzleDb.select({ totpEnabled: customers.totpEnabled }).from(customers).where(eq(customers.email, session.email)).limit(1);
         return { enabled: !!(customer as any)?.totpEnabled };
+      }),
+    // Lịch sử đăng nhập
+    getLoginHistory: publicProcedure
+      .input(z.object({ token: z.string(), limit: z.number().min(1).max(50).default(20) }))
+      .query(async ({ input }) => {
+        const { customerSessions, loginHistory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, desc } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
+        const history = await drizzleDb.select().from(loginHistory)
+          .where(eq(loginHistory.email, session.email))
+          .orderBy(desc(loginHistory.createdAt))
+          .limit(input.limit);
+        return history;
+      }),
+    // Lấy danh sách phiên đang hoạt động
+    getActiveSessions: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, gt } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
+        const sessions = await drizzleDb.select({
+          id: customerSessions.id,
+          token: customerSessions.token,
+          createdAt: customerSessions.createdAt,
+          expiresAt: customerSessions.expiresAt,
+          isAdminSession: customerSessions.isAdminSession,
+        }).from(customerSessions)
+          .where(eq(customerSessions.email, session.email))
+          .orderBy(customerSessions.createdAt);
+        // Filter out expired sessions and mark current
+        const now = new Date();
+        return sessions
+          .filter(s => s.expiresAt > now)
+          .map(s => ({ ...s, isCurrent: s.token === input.token }));
+      }),
+    // Thu hồi phiên đăng nhập
+    revokeSession: publicProcedure
+      .input(z.object({ token: z.string(), sessionId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
+        // Only allow revoking sessions belonging to same email
+        const [target] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.id, input.sessionId)).limit(1);
+        if (!target || target.email !== session.email) throw new Error("Không có quyền thu hồi phiên này");
+        if (target.token === input.token) throw new Error("Không thể thu hồi phiên hiện tại");
+        await drizzleDb.delete(customerSessions).where(eq(customerSessions.id, input.sessionId));
+        return { success: true };
+      }),
+    // Thu hồi tất cả phiên khác
+    revokeAllOtherSessions: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, ne, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
+        await drizzleDb.delete(customerSessions).where(and(eq(customerSessions.email, session.email), ne(customerSessions.token, input.token)));
+        return { success: true };
       }),
   }),
   // ─── Cartt ──────────────────────────────────────────────────────────────────

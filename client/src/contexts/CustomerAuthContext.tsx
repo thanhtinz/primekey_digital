@@ -14,7 +14,7 @@ interface CustomerAuthContextType {
   token: string | null;
   isLoading: boolean;
   isLoggedIn: boolean;
-  login: (token: string, email: string) => void;
+  login: (token: string, email: string, role?: string | null) => void;
   logout: () => void;
   refreshCustomer: () => void;
 }
@@ -40,7 +40,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     {
       enabled: !!token,
       retry: false,
-      staleTime: 60_000, // Cache for 60s - invalidate manually after avatar upload
+      staleTime: 0, // Always refetch to get latest role/data
       refetchOnWindowFocus: true,
     }
   );
@@ -72,10 +72,10 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, [token, meQuery.data, meQuery.error, meQuery.isLoading]);
 
-  const login = useCallback((newToken: string, email: string) => {
+  const login = useCallback((newToken: string, email: string, role?: string | null) => {
     localStorage.setItem("customerToken", newToken);
     setToken(newToken);
-    setCustomer({ email });
+    setCustomer({ email, role: role || null });
   }, []);
 
   const logout = useCallback(() => {
