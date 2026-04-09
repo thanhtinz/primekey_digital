@@ -54,6 +54,7 @@ export default function ProductDetail() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [notes, setNotes] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [payWithWallet, setPayWithWallet] = useState(false);
 
   const { data: product, isLoading } = trpc.products.getPublicById.useQuery(
     { id: productId },
@@ -61,12 +62,25 @@ export default function ProductDetail() {
   );
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const { data: taxConfig } = trpc.tax.getPublic.useQuery(undefined, { staleTime: 300_000 });
+  const taxRate = taxConfig?.isEnabled ? parseFloat(taxConfig.taxRate || "0") : 0;
+  const taxName = taxConfig?.taxName || "VAT";
+  const customerToken = typeof window !== 'undefined' ? localStorage.getItem('customerToken') || '' : '';
+  const { data: walletData } = trpc.wallet.getBalance.useQuery(
+    { token: customerToken },
+    { enabled: !!customerToken, staleTime: 30_000 }
+  );
+  const walletBalance = (walletData as any)?.balance || 0;
   const { data: productReviews = [] } = trpc.products.getReviews.useQuery({ productId }, { enabled: !!productId });
   const { data: customFields = [] } = trpc.products.getCustomFields.useQuery({ productId }, { enabled: !!productId });
   const { data: wishlistItems = [] } = trpc.wishlist.list.useQuery({ email }, { enabled: !!email });
   const { data: relatedProducts = [] } = trpc.products.getRelated.useQuery(
     { productId, categoryId: product?.categoryId || undefined, limit: 8 },
     { enabled: !!productId && !!product }
+  );
+  const { data: productTagList = [] } = trpc.productTags.getForProduct.useQuery(
+    { productId },
+    { enabled: !!productId, staleTime: 60_000 }
   );
   const isInWishlist = wishlistItems.some((w: any) => w.productId === productId);
   const utils = trpc.useUtils();
@@ -224,7 +238,7 @@ export default function ProductDetail() {
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
 
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
+        <div className="max-w-6xl mx-auto px-4 pt-4 pb-6">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-white/70 mb-4 flex-wrap">
             <button onClick={() => setLocation("/")} className="hover:text-white transition-colors">Trang chủ</button>
@@ -240,8 +254,8 @@ export default function ProductDetail() {
             <span className="text-white font-medium truncate max-w-[120px]">{product.name}</span>
           </nav>
 
-          {/* Product image card */}
-          <div className="flex justify-center">
+          {/* Product image card - desktop shows in left column */}
+          <div className="flex justify-center md:hidden">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-[280px] aspect-square flex items-center justify-center p-2">
               {(product as any).imageUrl ? (
                 <img
@@ -260,7 +274,25 @@ export default function ProductDetail() {
       </div>
 
       {/* ===== PRODUCT INFO SECTION ===== */}
-      <div className="max-w-2xl mx-auto px-4 -mt-2 relative z-10 pb-28">
+      <div className="max-w-6xl mx-auto px-4 -mt-2 relative z-10 pb-28">
+        {/* Responsive layout: flex on desktop, block on mobile */}
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          {/* LEFT: Product image (desktop only) */}
+          <div className="hidden md:flex flex-shrink-0 w-[420px] bg-white rounded-2xl shadow-xl overflow-hidden aspect-square items-center justify-center p-4 border border-gray-100 sticky top-20">
+            {(product as any).imageUrl ? (
+              <img
+                src={(product as any).imageUrl}
+                alt={product.name}
+                className="w-full h-full object-contain rounded-xl"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center">
+                <Package className="w-24 h-24 text-gray-300" />
+              </div>
+            )}
+          </div>
+          {/* RIGHT: All product info, order form, reviews */}
+          <div className="flex-1 min-w-0 space-y-3">
         <div className="bg-white rounded-t-3xl shadow-sm border border-gray-100 px-5 pt-5 pb-4">
           {/* Product name + action buttons */}
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -329,15 +361,15 @@ export default function ProductDetail() {
             <div className="flex items-center gap-1 text-emerald-600 text-sm font-medium">
               <Zap className="w-4 h-4" /> Giao ngay
             </div>
-            {(() => {
-              const maxW = packages.length > 0 ? Math.max(...packages.map((p: any) => p.warrantyMonths || 0)) : 0;
-              return maxW > 0 ? (
-                <div className="flex items-center gap-1 text-blue-600 text-sm">
-                  <Shield className="w-4 h-4" /> BH lên đến {maxW} tháng
-                </div>
-              ) : null;
-            })()}
           </div>
+          {/* Product tags */}
+          {(productTagList as any[]).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {(productTagList as any[]).map((tag: any) => (
+                <span key={tag.id} className="text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>{tag.name}</span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ===== PACKAGE LIST - Card style matching reference ===== */}
@@ -607,64 +639,11 @@ export default function ProductDetail() {
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </div>{/* end reviews outer */}
 
-      {/* Coupon + Notes section (before sticky CTA) */}
-      {isLoggedIn && (
-        <div className="max-w-2xl mx-auto px-4 pb-4">
-          <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-gray-700">Thông tin đặt hàng</h4>
-            {/* Coupon */}
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Mã giảm giá</label>
-              {appliedCoupon ? (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
-                  <span className="text-xs text-green-700 font-medium flex-1">
-                    {appliedCoupon.code} — Giảm {appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `${new Intl.NumberFormat('vi-VN').format(appliedCoupon.discountValue)}₫`}
-                  </span>
-                  <button onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-red-500 hover:text-red-700">Hủy</button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nhập mã giảm giá"
-                    value={couponCode}
-                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
-                    className="text-sm h-9"
-                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCoupon(); }}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 px-3 text-xs whitespace-nowrap"
-                    onClick={handleApplyCoupon}
-                    disabled={validatingCoupon || !couponCode.trim()}
-                  >
-                    {validatingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Áp dụng"}
-                  </Button>
-                </div>
-              )}
-            </div>
-            {/* Notes */}
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Ghi chú đơn hàng (tùy chọn)</label>
-              <textarea
-                placeholder="Nhập ghi chú..."
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                rows={2}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sticky CTA bottom */}
+      {/* Sticky CTA bottom - fixed, outside content flow */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-50">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
+        <div className="max-w-6xl mx-auto flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-500 leading-none mb-0.5 truncate">
               {selectedPackage ? selectedPackage.name : hasMultiPrice ? "Chọn gói để đặt hàng" : product.name}
@@ -710,6 +689,8 @@ export default function ProductDetail() {
                 couponCode: appliedCoupon?.code || couponCode || undefined,
                 notes: notes || undefined,
                 origin: window.location.origin,
+                payWithWallet: payWithWallet || undefined,
+                customerToken: payWithWallet ? (localStorage.getItem("customerToken") || undefined) : undefined,
               });
             }}
             className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white px-5 py-3 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex-shrink-0 disabled:opacity-60"
@@ -720,33 +701,120 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Related Products Section */}
-      {relatedProducts.length > 0 && (
-        <div className="mt-16 pt-8 border-t border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Sản phẩm liên quan</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {relatedProducts.map((p: any) => (
-              <a
-                key={p.id}
-                href={`/product/${p.id}`}
-                className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
-                  {p.imageUrl && (
-                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  )}
+          {/* Related Products Section */}
+          {relatedProducts.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Sản phẩm liên quan</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {relatedProducts.map((p: any) => (
+                  <a
+                    key={p.id}
+                    href={`/product/${p.id}`}
+                    className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
+                      {p.imageUrl && (
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-xs font-medium text-gray-800 line-clamp-2 mb-2">{p.name}</p>
+                      {p.minPrice && (
+                        <p className="text-sm font-bold text-red-500">{formatVND(p.minPrice)}</p>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Coupon + Notes section */}
+          {isLoggedIn && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-gray-700">Thông tin đặt hàng</h4>
+            {/* Coupon */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Mã giảm giá</label>
+              {appliedCoupon ? (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                  <span className="text-xs text-green-700 font-medium flex-1">
+                    {appliedCoupon.code} — Giảm {appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `${new Intl.NumberFormat('vi-VN').format(appliedCoupon.discountValue)}₫`}
+                  </span>
+                  <button onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-red-500 hover:text-red-700">Hủy</button>
                 </div>
-                <div className="p-3">
-                  <p className="text-xs md:text-sm font-medium text-gray-800 line-clamp-2 mb-2">{p.name}</p>
-                  {p.minPrice && (
-                    <p className="text-sm md:text-base font-bold text-red-500">{formatVND(p.minPrice)}</p>
-                  )}
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập mã giảm giá"
+                    value={couponCode}
+                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                    className="text-sm h-9"
+                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCoupon(); }}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 px-3 text-xs whitespace-nowrap"
+                    onClick={handleApplyCoupon}
+                    disabled={validatingCoupon || !couponCode.trim()}
+                  >
+                    {validatingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Áp dụng"}
+                  </Button>
                 </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+              )}
+            </div>
+            {/* Payment method selection */}
+            {walletBalance > 0 && (
+              <div>
+                <label className="text-xs text-gray-500 mb-2 block font-medium">Phương thức thanh toán</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setPayWithWallet(false)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm transition-all ${
+                      !payWithWallet ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-base">🏦</span>
+                    <div className="text-left">
+                      <p className="font-semibold text-xs">Banking</p>
+                      <p className="text-[10px] text-gray-400">PayOS / QR</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setPayWithWallet(true)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm transition-all ${
+                      payWithWallet ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-base">💰</span>
+                    <div className="text-left">
+                      <p className="font-semibold text-xs">Số dư ví</p>
+                      <p className="text-[10px] text-gray-400">{new Intl.NumberFormat('vi-VN').format(walletBalance)}đ</p>
+                    </div>
+                  </button>
+                </div>
+                {payWithWallet && taxRate > 0 && (
+                  <p className="text-xs text-emerald-600 mt-1.5">✅ Miễn {taxName} khi thanh toán bằng số dư</p>
+                )}
+              </div>
+            )}
+            {/* Notes */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Ghi chú đơn hàng (tùy chọn)</label>
+              <textarea
+                placeholder="Nhập ghi chú..."
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={2}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            </div>
+          )}
+          </div>{/* end right column */}
+        </div>{/* end flex row */}
+      </div>{/* end max-w-6xl */}
       <ClientFooter />
     </div>
   );

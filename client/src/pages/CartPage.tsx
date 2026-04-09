@@ -64,7 +64,8 @@ export default function CartPage() {
   const taxRate = taxConfig?.isEnabled ? parseFloat(taxConfig.taxRate || "0") : 0;
   const taxName = taxConfig?.taxName || "VAT";
   const afterDiscount = Math.max(0, subtotal - couponDiscount);
-  const taxAmount = Math.round(afterDiscount * taxRate / 100);
+  // No tax when paying with wallet balance
+  const taxAmount = payWithWallet ? 0 : Math.round(afterDiscount * taxRate / 100);
   const total = afterDiscount + taxAmount;
 
   const handleApplyCoupon = async () => {
@@ -293,27 +294,42 @@ export default function CartPage() {
                     />
                   </div>
 
-                  {/* Wallet payment option */}
-                  {customer && walletBalance > 0 && (
-                    <div className={`border rounded-lg p-3 ${payWithWallet ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-gray-50"}`}>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={payWithWallet}
-                          onChange={(e) => setPayWithWallet(e.target.checked)}
-                          className="rounded"
-                        />
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Wallet className="h-4 w-4 text-blue-600" />
-                          <span className="font-medium text-blue-800">Thanh toán bằng số dư ví</span>
+                  {/* Payment method selection */}
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setPayWithWallet(false)}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm transition-all ${
+                          !payWithWallet ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <span className="text-base">🏦</span>
+                        <div className="text-left">
+                          <p className="font-semibold text-xs">Banking</p>
+                          <p className="text-[10px] text-gray-400">PayOS / QR</p>
                         </div>
-                      </label>
-                      <p className="text-xs text-blue-600 mt-1 ml-6">Số dư: {formatPrice(walletBalance)}</p>
-                      {payWithWallet && walletBalance < total && (
-                        <p className="text-red-500 text-xs mt-1 ml-6">⚠️ Số dư không đủ. Cần thêm {formatPrice(total - walletBalance)}</p>
-                      )}
+                      </button>
+                      <button
+                        onClick={() => setPayWithWallet(true)}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm transition-all ${
+                          payWithWallet ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <Wallet className="w-4 h-4" />
+                        <div className="text-left">
+                          <p className="font-semibold text-xs">Số dư ví</p>
+                          <p className="text-[10px] text-gray-400">{formatPrice(walletBalance)}</p>
+                        </div>
+                      </button>
                     </div>
-                  )}
+                    {payWithWallet && walletBalance < total && (
+                      <p className="text-red-500 text-xs mt-1.5">⚠️ Số dư không đủ. Cần thêm {formatPrice(total - walletBalance)}</p>
+                    )}
+                    {payWithWallet && taxRate > 0 && (
+                      <p className="text-xs text-emerald-600 mt-1.5">✅ Miễn {taxName} khi thanh toán bằng số dư</p>
+                    )}
+                  </div>
 
                   <Button
                     onClick={handleCheckout}

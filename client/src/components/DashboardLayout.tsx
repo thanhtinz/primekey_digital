@@ -21,15 +21,25 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: FileText, label: "Đơn hàng", path: "/invoices" },
+  { icon: Package, label: "Sản phẩm", path: "/products" },
+  { icon: Users, label: "Khách hàng", path: "/customers" },
+  { icon: Wallet, label: "Quản lý ví", path: "/wallet-management" },
+  { icon: BarChart2, label: "Báo cáo", path: "/reports" },
+  { icon: Tag, label: "Tags sản phẩm", path: "/settings/tags" },
+  { icon: Gift, label: "Mã giảm giá", path: "/settings/coupons" },
+  { icon: Ticket, label: "Hỗ trợ (Tickets)", path: "/admin-support" },
+  { icon: Bell, label: "Thông báo", path: "/notifications" },
+  { icon: Settings, label: "Cài đặt", path: "/settings" },
+  { icon: ExternalLink, label: "Xem trang khách", path: "/" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -222,11 +232,18 @@ function DashboardLayoutContent({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
+                  onClick={() => window.open("/", "_blank")}
+                  className="cursor-pointer"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <span>Xem trang khách</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>Đăng xuất</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

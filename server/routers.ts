@@ -4272,6 +4272,7 @@ export const appRouter = router({
         password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
         name: z.string().min(1, "Vui lòng nhập tên"),
         phone: z.string().optional(),
+        origin: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { customers, customerSessions } = await import("../drizzle/schema");
@@ -4292,19 +4293,40 @@ export const appRouter = router({
         // Hash password
         const bcrypt = await import("bcryptjs");
         const passwordHash = await bcrypt.hash(input.password, 10);
+        const crypto = await import("crypto");
+        const verificationToken = crypto.randomBytes(32).toString("hex");
         if (existing) {
           // Update existing customer with password
-          await drizzleDb.update(customers).set({ passwordHash, name: input.name, phone: input.phone || null, updatedAt: new Date() } as any).where(eq(customers.id, existing.id));
+          await drizzleDb.update(customers).set({ passwordHash, name: input.name, phone: input.phone || null, emailVerified: false, emailVerificationToken: verificationToken, updatedAt: new Date() } as any).where(eq(customers.id, existing.id));
         } else {
           // Create new customer
-          await drizzleDb.insert(customers).values({ userId: owner.id, name: input.name, email: input.email, phone: input.phone || null, passwordHash } as any);
+          await drizzleDb.insert(customers).values({ userId: owner.id, name: input.name, email: input.email, phone: input.phone || null, passwordHash, emailVerified: false, emailVerificationToken: verificationToken } as any);
         }
-        // Create session
-        const crypto = await import("crypto");
+        // Send verification email
+        try {
+          const { sendEmail } = await import("./email");
+          const companyName = owner.name || "Hệ thống";
+          const verifyUrl = `${input.origin || ""}/verify-email?token=${verificationToken}`;
+          await sendEmail({
+            userId: owner.id,
+            to: input.email,
+            subject: `Xác minh email - ${companyName}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+                <h2 style="color:#1e293b">Ðăng ký thành công!</h2>
+                <p>Xin chào <strong>${input.name}</strong>,</p>
+                <p>Cảm ơn bạn đã đăng ký. Vui lòng xác minh email để hoàn tất.</p>
+                <p style="margin:24px 0"><a href="${verifyUrl}" style="background:#3B82F6;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:bold">Xác minh email</a></p>
+                <p style="color:#64748b;font-size:14px">Link có hiệu lực trong 24 giờ.</p>
+              </div>
+            `,
+          });
+        } catch { /* ignore email errors */ }
+        // Create session (allow login even before verification)
         const token = crypto.randomBytes(48).toString("hex");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: input.name, token, expiresAt });
-        return { token, name: input.name, email: input.email, expiresAt };
+        return { token, name: input.name, email: input.email, expiresAt, needsVerification: true };
       }),
 
     // Đăng nhập bằng email + mật khẩu
@@ -4448,6 +4470,21 @@ export const appRouter = router({
         return { success: true, token: sessionToken, name: customer.name, email: customer.email };
       }),
 
+    // Xác minh email
+    verifyEmail: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [customer] = await drizzleDb.select().from(customers)
+          .where(eq(customers.emailVerificationToken as any, input.token)).limit(1);
+        if (!customer) throw new Error("Link xác minh không hợp lệ hoặc đã hết hạn");
+        await drizzleDb.update(customers).set({ emailVerified: true, emailVerificationToken: null, updatedAt: new Date() } as any).where(eq(customers.id, customer.id));
+        return { success: true, email: customer.email, name: customer.name };
+      }),
     // Đổi mật khẩu
     changePassword: publicProcedure
       .input(z.object({
@@ -4703,6 +4740,8 @@ export const appRouter = router({
       customFieldValues: z.array(z.object({ fieldName: z.string(), fieldValue: z.string() })).optional(),
       notes: z.string().optional(),
       origin: z.string(), // window.location.origin
+      payWithWallet: z.boolean().optional(),
+      customerToken: z.string().optional(),
     })).mutation(async ({ input }) => {
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
@@ -4745,16 +4784,18 @@ export const appRouter = router({
         }
       }
 
-        // Apply tax from taxSettings
+        // Apply tax from taxSettings (skip if paying with wallet)
       let buyNowTaxAmount = 0;
-      try {
-        const { taxSettings } = await import("../drizzle/schema");
-        const [taxSetting] = await drizzleDb.select().from(taxSettings).where(and(eq(taxSettings.userId, owner.id), eq(taxSettings.isEnabled, true))).limit(1);
-        if (taxSetting && taxSetting.isEnabled) {
-          const rate = Number(taxSetting.taxRate || 0);
-          buyNowTaxAmount = Math.round((subtotal - discountAmount) * rate / 100);
-        }
-      } catch {}
+      if (!input.payWithWallet) {
+        try {
+          const { taxSettings } = await import("../drizzle/schema");
+          const [taxSetting] = await drizzleDb.select().from(taxSettings).where(and(eq(taxSettings.userId, owner.id), eq(taxSettings.isEnabled, true))).limit(1);
+          if (taxSetting && taxSetting.isEnabled) {
+            const rate = Number(taxSetting.taxRate || 0);
+            buyNowTaxAmount = Math.round((subtotal - discountAmount) * rate / 100);
+          }
+        } catch {}
+      }
       const totalAmount = Math.max(subtotal - discountAmount + buyNowTaxAmount, 0);
       // Find or create customer
       let [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
@@ -4783,7 +4824,8 @@ export const appRouter = router({
         status: "CREATED",
           paymentMethod: "PAYOS",
         payosOrderCode: String(orderCode),
-        notes: input.notes || (input.customFieldValues ? JSON.stringify(input.customFieldValues) : null),
+        notes: input.notes || null,
+        orderInfo: input.customFieldValues ? JSON.stringify(input.customFieldValues) : null,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
       } as any);
       // Get created invoice
@@ -4805,6 +4847,30 @@ export const appRouter = router({
         totalAmount: String(unitPrice * qty),
       } as any);
 
+      // If paying with wallet, deduct balance immediately
+      if (input.payWithWallet && input.customerToken) {
+        const { customerSessions, walletTransactions } = await import("../drizzle/schema");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.customerToken)).limit(1);
+        if (!session) throw new TRPCError({ code: "UNAUTHORIZED", message: "Phiên đăng nhập không hợp lệ" });
+        const [walletCustomer] = await drizzleDb.select({ walletBalance: customers.walletBalance }).from(customers).where(eq(customers.email, session.email)).limit(1);
+        const walletBal = parseFloat(walletCustomer?.walletBalance?.toString() || "0");
+        if (walletBal < totalAmount) throw new TRPCError({ code: "BAD_REQUEST", message: `Số dư ví không đủ. Cần ${totalAmount.toLocaleString("vi-VN")}đ, hiện có ${walletBal.toLocaleString("vi-VN")}đ` });
+        const newBal = walletBal - totalAmount;
+        await drizzleDb.update(customers).set({ walletBalance: String(newBal) } as any).where(eq(customers.email, session.email));
+        await drizzleDb.insert(walletTransactions).values({
+          customerEmail: session.email,
+          type: "spend",
+          amount: String(totalAmount),
+          balanceBefore: String(walletBal),
+          balanceAfter: String(newBal),
+          description: `Thanh toán đơn hàng ${invoiceNumber}`,
+          invoiceId: createdInvoice.id,
+          status: "completed",
+        });
+        await drizzleDb.update(invoices).set({ status: "PAID", paymentMethod: "WALLET" } as any).where(eq(invoices.id, createdInvoice.id));
+        await drizzleDb.update(customers).set({ totalPaid: String(parseFloat(customer.totalPaid || "0") + totalAmount) } as any).where(eq(customers.id, customer.id));
+        return { success: true, invoiceId: createdInvoice.id, invoiceNumber, paymentUrl: "", qrCode: "" };
+      }
       // Create PayOS payment link
       let paymentUrl = "";
       let qrCode = "";
@@ -4984,6 +5050,7 @@ export const appRouter = router({
         paymentMethod: "PAYOS",
         payosOrderCode: String(orderCode),
         notes: input.notes || null,
+        orderInfo: input.items.some((i: any) => i.customFieldValues) ? JSON.stringify(input.items.map((i: any) => ({ productId: i.productId, customFieldValues: i.customFieldValues ? JSON.parse(i.customFieldValues) : null }))) : null,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       } as any);
       const [createdInvoice] = await drizzleDb.select().from(invoices).where(eq(invoices.invoiceNumber, invoiceNumber)).limit(1);
@@ -5745,6 +5812,189 @@ export const appRouter = router({
         adminReply: input.adminReply || null,
         repliedAt: input.adminReply ? new Date() : undefined,
       }).where(and(eq(supportTickets.id, input.id), eq(supportTickets.userId, ctx.user.id)));
+      return { success: true };
+    }),
+  }),
+  // ─── Product Tags ─────────────────────────────────────────────────────────────
+  productTags: router({
+    // Admin: list all tags
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { productTags } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(productTags).where(eq(productTags.userId, ctx.user.id));
+    }),
+    // Public: list all tags (for product display)
+    listPublic: publicProcedure.query(async () => {
+      const { productTags, users } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (!owner) return [];
+      const { eq } = await import("drizzle-orm");
+      return drizzleDb.select().from(productTags).where(eq(productTags.userId, owner.id));
+    }),
+    // Admin: create tag
+    create: protectedProcedure.input(z.object({
+      name: z.string().min(1).max(100),
+      slug: z.string().min(1).max(100).optional(),
+      color: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const { productTags } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB not available");
+      const slug = input.slug || input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const [result] = await drizzleDb.insert(productTags).values({
+        userId: ctx.user.id,
+        name: input.name,
+        slug,
+        color: input.color || "#3b82f6",
+      });
+      return { id: (result as any).insertId, name: input.name, slug, color: input.color || "#3b82f6" };
+    }),
+    // Admin: update tag
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      name: z.string().min(1).max(100).optional(),
+      color: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const { productTags } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB not available");
+      const updates: any = {};
+      if (input.name) updates.name = input.name;
+      if (input.color) updates.color = input.color;
+      await drizzleDb.update(productTags).set(updates).where(and(eq(productTags.id, input.id), eq(productTags.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    // Admin: delete tag
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      const { productTags, productTagMappings } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB not available");
+      await drizzleDb.delete(productTagMappings).where(eq(productTagMappings.tagId, input.id));
+      await drizzleDb.delete(productTags).where(and(eq(productTags.id, input.id), eq(productTags.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    // Admin: assign tags to product
+    assignToProduct: protectedProcedure.input(z.object({
+      productId: z.number(),
+      tagIds: z.array(z.number()),
+    })).mutation(async ({ ctx, input }) => {
+      const { productTagMappings } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB not available");
+      // Remove existing mappings
+      await drizzleDb.delete(productTagMappings).where(eq(productTagMappings.productId, input.productId));
+      // Insert new mappings
+      if (input.tagIds.length > 0) {
+        await drizzleDb.insert(productTagMappings).values(input.tagIds.map(tagId => ({ productId: input.productId, tagId })));
+      }
+      return { success: true };
+    }),
+    // Public: get tags for a product
+    getForProduct: publicProcedure.input(z.object({ productId: z.number() })).query(async ({ input }) => {
+      const { productTags, productTagMappings } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const mappings = await drizzleDb.select({ tagId: productTagMappings.tagId }).from(productTagMappings).where(eq(productTagMappings.productId, input.productId));
+      if (mappings.length === 0) return [];
+      const tagIds = mappings.map(m => m.tagId);
+      const { inArray } = await import("drizzle-orm");
+      return drizzleDb.select().from(productTags).where(inArray(productTags.id, tagIds));
+    }),
+    // Public: get tags for multiple products
+    getForProducts: publicProcedure.input(z.object({ productIds: z.array(z.number()) })).query(async ({ input }) => {
+      const { productTags, productTagMappings } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { inArray } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb || input.productIds.length === 0) return [];
+      const mappings = await drizzleDb.select().from(productTagMappings).where(inArray(productTagMappings.productId, input.productIds));
+      if (mappings.length === 0) return [];
+      const tagIds = Array.from(new Set(mappings.map(m => m.tagId)));
+      const tags = await drizzleDb.select().from(productTags).where(inArray(productTags.id, tagIds));
+      return mappings.map(m => ({ productId: m.productId, tag: tags.find(t => t.id === m.tagId) })).filter(m => m.tag);
+    }),
+  }),
+  announcement: router({
+    listPublic: publicProcedure.query(async () => {
+      const { siteAnnouncements } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { and, eq, or, isNull, lte, gte } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const now = new Date();
+      const rows = await drizzleDb.select().from(siteAnnouncements)
+        .where(and(
+          eq(siteAnnouncements.isActive, true),
+          lte(siteAnnouncements.startAt, now),
+          or(isNull(siteAnnouncements.endAt), gte(siteAnnouncements.endAt, now))
+        ));
+      return rows;
+    }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { siteAnnouncements } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(siteAnnouncements).where(eq(siteAnnouncements.userId, ctx.user.id)).orderBy(desc(siteAnnouncements.createdAt));
+    }),
+    create: protectedProcedure.input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+      type: z.enum(["info", "success", "warning", "error"]).default("info"),
+      isActive: z.boolean().default(true),
+      showAsPopup: z.boolean().default(false),
+      startAt: z.date().optional(),
+      endAt: z.date().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const { siteAnnouncements } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.insert(siteAnnouncements).values({ ...input, userId: ctx.user.id, startAt: input.startAt || new Date() } as any);
+      return { success: true };
+    }),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      title: z.string().min(1).optional(),
+      content: z.string().min(1).optional(),
+      type: z.enum(["info", "success", "warning", "error"]).optional(),
+      isActive: z.boolean().optional(),
+      showAsPopup: z.boolean().optional(),
+      startAt: z.date().optional(),
+      endAt: z.date().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const { siteAnnouncements } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { and, eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const { id, ...data } = input;
+      await drizzleDb.update(siteAnnouncements).set(data as any).where(and(eq(siteAnnouncements.id, id), eq(siteAnnouncements.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      const { siteAnnouncements } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { and, eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.delete(siteAnnouncements).where(and(eq(siteAnnouncements.id, input.id), eq(siteAnnouncements.userId, ctx.user.id)));
       return { success: true };
     }),
   }),

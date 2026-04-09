@@ -1203,3 +1203,39 @@
 - [x] Backend: support ticket router (create, list, updateStatus)
 - [x] Backend: coupon.listPublic procedure cho trang public
 - [x] Thêm /coupons, /support, /wallet vào ALWAYS_PUBLIC routes
+
+## Phase: Core Features & Bug Fixes (Apr 9, 2026)
+
+- [x] Fix customField/notes confusion - customFieldValues now saved to orderInfo column, notes is separate
+- [x] Add orderInfo column to invoices table (migration applied)
+- [x] Display orderInfo (Thông Tin Đặt Hàng) separately from notes in InvoiceDetail
+- [x] Fix FAQPage to use faq.listPublic (was using protected faq.list)
+- [x] Add product tags system (productTags, productTagAssignments tables)
+- [x] Add productTags router with CRUD + getForProducts
+- [x] Replace warranty badge with tags in ProductCatalog and ProductDetail
+- [x] Add TagSettings admin page
+- [x] Add payment method selection (wallet/banking) to ProductDetail
+- [x] Fix CartPage: no tax when paying with wallet
+- [x] Fix buyNow: support payWithWallet + customerToken
+- [x] Add email verification on registration (emailVerificationToken column)
+- [x] Add verifyEmail procedure to customer router
+- [x] Create VerifyEmailPage
+- [x] Update ClientLogin to show verification message and pass origin
+- [x] Add site announcements system (siteAnnouncements table + router)
+- [x] Create AnnouncementBanner component
+- [x] Add AnnouncementBanner to ClientHeader
+- [x] Add admin link in ClientHeader avatar dropdown for admin users
+- [x] Add wallet balance display in ClientHeader
+- [x] Add CouponStorePage (Kho Mã Giảm Giá)
+- [x] Add SupportPage with ticket system
+- [x] Add SupportWidget floating button
+- [x] Add coupon.listPublic procedure
+- [x] Add customerNotif router (list, markRead, markAllRead)
+- [x] Add support router (createTicket, listTickets, admin updateStatus)
+- [x] Improve ProductDetail layout for PC (2-column)
+- [x] Improve reviews/feedback UI in ProductDetail
+- [x] Rename TrackOrder to Quản Lý Đơn Hàng, redesign hero
+- [x] Add wallet balance to MyAccount hero section
+- [x] Remove RefundPage from App.tsx
+- [x] Update DashboardLayout with proper admin menu items
+- [x] Add announcement router to appRouter

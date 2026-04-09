@@ -4,6 +4,7 @@
  * Thiết kế theo ảnh tham khảo sieuthicode.vn style
  */
 import { useState, useEffect, useRef, useCallback } from "react";
+import { AnnouncementBanner } from "./AnnouncementBanner";
 import { useLocation } from "wouter";
 import {
   Menu, X, Search, Bell, Gift, User, Home, Package,
@@ -121,6 +122,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
 
   return (
     <>
+      {/* Announcement banners - shown above header */}
+      <AnnouncementBanner />
       {/* Main Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a] border-b border-white/10">
         <div className={`${maxWidth} mx-auto px-4 h-14 flex items-center gap-3`}>

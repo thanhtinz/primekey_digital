@@ -55,7 +55,12 @@ export default function ClientLogin() {
   });
 
   const registerMutation = trpc.customer.register.useMutation({
-    onSuccess: handleSuccess,
+    onSuccess: (data) => {
+      if (data.needsVerification) {
+        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.");
+      }
+      handleSuccess(data);
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -96,6 +101,7 @@ export default function ClientLogin() {
       password: regPassword,
       name: regName.trim(),
       phone: regPhone.trim() || undefined,
+      origin: window.location.origin,
     });
   };
 

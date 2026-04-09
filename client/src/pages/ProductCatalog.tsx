@@ -33,6 +33,11 @@ export default function ProductCatalog() {
   const [filtersApplied, setFiltersApplied] = useState(false);
   const { data: productsRaw = [], isLoading } = trpc.products.listPublic.useQuery(undefined);
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
+  const productIds = useMemo(() => (Array.isArray(productsRaw) ? productsRaw : []).map((p: any) => p.id), [productsRaw]);
+  const { data: tagMappings = [] } = trpc.productTags.getForProducts.useQuery(
+    { productIds },
+    { enabled: productIds.length > 0, staleTime: 60_000 }
+  );
 
   const products: any[] = Array.isArray(productsRaw) ? productsRaw : (productsRaw as any)?.items ?? [];
   const categories: any[] = (categoriesData as any) ?? [];
@@ -352,11 +357,17 @@ export default function ProductCatalog() {
                         {product.categoryName}
                       </div>
                     )}
-                    {maxWarranty > 0 && (
-                      <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-green-600 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
-                        <Shield className="h-2.5 w-2.5" /> BH {maxWarranty}T
-                      </div>
-                    )}
+                    {/* Product tags */}
+                    {(() => {
+                      const ptags = (tagMappings as any[]).filter((m: any) => m.productId === product.id).slice(0, 2);
+                      return ptags.length > 0 ? (
+                        <div className="absolute bottom-2 left-2 flex gap-1">
+                          {ptags.map((m: any) => (
+                            <span key={m.tag.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>{m.tag.name}</span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-gray-800 mb-1.5 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">{product.name}</h3>

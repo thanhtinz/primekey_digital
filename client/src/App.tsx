@@ -55,12 +55,12 @@ const CouponSettings = lazy(() => import("./pages/CouponSettings"));
 
 // Batch 6: New pages
 const CategorySettings = lazy(() => import("./pages/CategorySettings"));
+const TagSettings = lazy(() => import("./pages/TagSettings"));
 const LoyaltySettings = lazy(() => import("./pages/LoyaltySettings"));
 const WarrantyRequestManagement = lazy(() => import("./pages/WarrantyRequestManagement"));
 const FAQSettings = lazy(() => import("./pages/FAQSettings"));
 const FlashSaleSubscriberSettings = lazy(() => import("./pages/FlashSaleSubscriberSettings"));
 const VATInvoicePage = lazy(() => import("./pages/VATInvoicePage"));
-const RefundPage = lazy(() => import("./pages/RefundPage"));
 const TaxReportPage = lazy(() => import("./pages/TaxReportPage"));
 const ReferralSettings = lazy(() => import("./pages/ReferralSettings"));
 const BannerSettings = lazy(() => import("./pages/BannerSettings"));
@@ -85,6 +85,7 @@ import { SupportWidget } from "./components/SupportWidget";
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const CouponStorePage = lazy(() => import("./pages/CouponStorePage"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage"));
 const PublicFeedbacks = lazy(() => import("./pages/PublicFeedbacks"));
 const PaymentPage = lazy(() => import("./pages/PaymentPage"));
@@ -107,7 +108,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/verify-email"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -156,6 +157,7 @@ function Router() {
           <Route path="/wallet" component={() => <CustomerGuard><WalletPage /></CustomerGuard>} />
           <Route path="/coupons" component={() => <CouponStorePage />} />
           <Route path="/support" component={() => <SupportPage />} />
+          <Route path="/verify-email" component={() => <VerifyEmailPage />} />
         </Switch>
       </Suspense>
     );
@@ -225,12 +227,12 @@ function Router() {
         <Route path="/embed-widget" component={() => isAdmin ? <EmbedWidget /> : <ForbiddenPage />} />
         {/* Batch 6 routes */}
         <Route path="/settings/categories" component={() => isAdmin ? <CategorySettings /> : <ForbiddenPage />} />
+        <Route path="/settings/tags" component={() => isAdmin ? <TagSettings /> : <ForbiddenPage />} />
         <Route path="/settings/loyalty" component={() => isAdmin ? <LoyaltySettings /> : <ForbiddenPage />} />
         <Route path="/settings/faq" component={() => isAdmin ? <FAQSettings /> : <ForbiddenPage />} />
         <Route path="/settings/flash-sale-subscribers" component={() => isAdmin ? <FlashSaleSubscriberSettings /> : <ForbiddenPage />} />
         <Route path="/warranty-requests" component={() => isAdmin ? <WarrantyRequestManagement /> : <ForbiddenPage />} />
         <Route path="/vat-invoices" component={() => isAdmin ? <VATInvoicePage /> : <ForbiddenPage />} />
-        <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
         <Route path="/tax-report" component={() => isAdmin ? <TaxReportPage /> : <ForbiddenPage />} />
         <Route path="/settings/referral" component={() => isAdmin ? <ReferralSettings /> : <ForbiddenPage />} />
         <Route path="/admin/referral-withdrawals" component={() => isAdmin ? <ReferralWithdrawalsAdmin /> : <ForbiddenPage />} />

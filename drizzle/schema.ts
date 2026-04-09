@@ -34,6 +34,7 @@ export const customers = mysqlTable("customers", {
   passwordHash: varchar("passwordHash", { length: 255 }), // bcrypt hash, null = email-only login
   emailVerified: boolean("emailVerified").default(false),
   walletBalance: decimal("walletBalance", { precision: 15, scale: 2 }).default("0"), // số dư ví
+  emailVerificationToken: varchar("emailVerificationToken", { length: 128 }), // token xác minh email
   resetPasswordToken: varchar("resetPasswordToken", { length: 128 }), // token đặt lại mật khẩu
   resetPasswordExpires: timestamp("resetPasswordExpires"), // hết hạn token
   loginAttempts: int("loginAttempts").default(0), // số lần đăng nhập sai
@@ -182,6 +183,7 @@ export const invoices = mysqlTable("invoices", {
   paidAt: timestamp("paidAt"),
   expiresAt: timestamp("expiresAt"),
   notes: text("notes"),
+  orderInfo: text("orderInfo"), // JSON: custom field values
   publicNote: text("publicNote"),
   warrantyStartDate: timestamp("warrantyStartDate"), // Ngày bắt đầu bảo hành
   warrantyExpiryDate: timestamp("warrantyExpiryDate"), // Ngày hết hạn bảo hành
@@ -839,3 +841,38 @@ export const referralWithdrawals = mysqlTable("referral_withdrawals", {
   updatedAt: timestamp("updatedAt_rw").defaultNow().onUpdateNow().notNull(),
 });
 export type ReferralWithdrawal = typeof referralWithdrawals.$inferSelect;
+
+// ─── Product Tags ─────────────────────────────────────────────────────────────
+export const productTags = mysqlTable("product_tags", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull(),
+  color: varchar("color", { length: 20 }).default("#3b82f6"), // hex color for badge
+  createdAt: timestamp("createdAt_pt").defaultNow().notNull(),
+});
+export type ProductTag = typeof productTags.$inferSelect;
+export type InsertProductTag = typeof productTags.$inferInsert;
+
+// ─── Product Tag Mappings ─────────────────────────────────────────────────────
+export const productTagMappings = mysqlTable("product_tag_mappings", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  tagId: int("tagId").notNull(),
+});
+export type ProductTagMapping = typeof productTagMappings.$inferSelect;
+
+// ─── Site Announcements (popup/banner notifications) ─────────────────────────
+export const siteAnnouncements = mysqlTable("site_announcements", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  content: text("content").notNull(),
+  type: mysqlEnum("sa_type", ["info", "success", "warning", "error"]).default("info"),
+  isActive: boolean("isActive").default(true),
+  showAsPopup: boolean("showAsPopup").default(false),
+  startAt: timestamp("startAt").notNull().defaultNow(),
+  endAt: timestamp("endAt"),
+  createdAt: timestamp("createdAt_sa").defaultNow().notNull(),
+});
+export type SiteAnnouncement = typeof siteAnnouncements.$inferSelect;

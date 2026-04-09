@@ -612,6 +612,28 @@ export default function InvoiceDetail() {
                         <p className="font-medium">{invoice.customerEmail}</p>
                       </div>
                     )}
+                    {invoice.orderInfo && (
+                      <div className="col-span-2">
+                        <p className="text-muted-foreground mb-1">Thông Tin Đặt Hàng</p>
+                        <div className="space-y-1">
+                          {(() => {
+                            try {
+                              const info = JSON.parse(invoice.orderInfo);
+                              if (Array.isArray(info)) {
+                                return info.flatMap((item: any) =>
+                                  item.customFieldValues ? item.customFieldValues.map((f: any, i: number) => (
+                                    <p key={i} className="font-medium text-sm"><span className="text-muted-foreground">{f.fieldName}:</span> {f.fieldValue}</p>
+                                  )) : []
+                                );
+                              }
+                              return <p className="font-medium text-sm">{invoice.orderInfo}</p>;
+                            } catch {
+                              return <p className="font-medium text-sm">{invoice.orderInfo}</p>;
+                            }
+                          })()}
+                        </div>
+                      </div>
+                    )}
                     {invoice.notes && (
                       <div className="col-span-2">
                         <p className="text-muted-foreground mb-1">Ghi Chú</p>

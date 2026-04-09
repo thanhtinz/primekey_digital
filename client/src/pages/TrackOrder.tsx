@@ -304,23 +304,20 @@ export default function TrackOrder() {
       <ClientHeader />
 
       <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
-        {/* Hero */}
+         {/* Hero */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-1">
-            Quản Lý <span className="text-blue-600">Đơn Hàng</span>
-          </h1>
-          <p className="text-slate-500 text-sm">Xem trạng thái và chi tiết tất cả đơn hàng của bạn</p>
-        </div>
-
-        {/* User info badge */}
-        {customer && (
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm">
-              <Mail className="h-4 w-4 text-blue-600" />
-              <span className="text-sm text-slate-600">{customer.email}</span>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <ShoppingBag className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                Quản Lý <span className="text-blue-600">Đơn Hàng</span>
+              </h1>
+              {customer && <p className="text-slate-500 text-sm">{customer.email}</p>}
             </div>
           </div>
-        )}
+        </div>
 
         {/* Results */}
         {error && (

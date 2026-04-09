@@ -9,7 +9,7 @@ import { ClientFooter } from "@/components/ClientFooter";
 
 export default function FAQPage() {
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery();
-  const { data: faqs = [] } = trpc.faq.list.useQuery();
+  const { data: faqs = [] } = trpc.faq.listPublic.useQuery();
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
 

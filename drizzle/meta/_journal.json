@@ -64,6 +64,20 @@
       "when": 1775697944183,
       "tag": "0008_bent_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1775698120199,
+      "tag": "0009_free_sunspot",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1775702253534,
+      "tag": "0010_complex_risque",
+      "breakpoints": true
     }
   ]
 }
