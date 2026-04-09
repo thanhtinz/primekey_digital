@@ -41,9 +41,9 @@ export default function LeaderboardPage() {
   const { data: leaderboard = [], isLoading } = trpc.leaderboard.getTop.useQuery({ period }, { staleTime: 30_000 });
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white pt-14">
       <ClientHeader />
-      <main className="flex-1 pt-20 pb-16">
+      <main className="flex-1 pb-16">
         {/* Hero Banner */}
         <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 py-10 px-4">
           <div className="max-w-3xl mx-auto text-center">

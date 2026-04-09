@@ -125,7 +125,7 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <ClientHeader />
-        <main className="flex-1 flex items-center justify-center pt-20 px-4">
+        <main className="flex-1 flex items-center justify-center pt-14 px-4">
           <div className="text-center py-16">
             <AlertCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">Vui lòng đăng nhập</h2>
@@ -141,7 +141,7 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <ClientHeader />
-        <main className="flex-1 flex items-center justify-center pt-20">
+        <main className="flex-1 flex items-center justify-center pt-14">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </main>
         <ClientFooter />
@@ -153,7 +153,7 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <ClientHeader />
-        <main className="flex-1 flex items-center justify-center pt-20 px-4">
+        <main className="flex-1 flex items-center justify-center pt-14 px-4">
           <div className="text-center py-16">
             <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">Không tìm thấy đơn hàng</h2>
@@ -174,7 +174,7 @@ export default function OrderDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ClientHeader />
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-20 pb-6 space-y-4">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-14 pb-6 space-y-4">
 
         {/* Back + actions */}
         <div className="flex items-center justify-between">

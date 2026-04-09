@@ -35,7 +35,7 @@ export default function BlogPage() {
       <ClientHeader />
 
       {/* Hero */}
-      <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 pt-20 pb-14">
+      <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 pt-14 pb-14">
         <div className="max-w-5xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full mb-4">
             <BookOpen className="h-3.5 w-3.5" />

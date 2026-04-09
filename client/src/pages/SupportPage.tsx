@@ -101,7 +101,7 @@ export default function SupportPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">
       <ClientHeader />
-      <div className="flex-1 pt-20">
+      <div className="flex-1 pt-14">
         {/* Hero */}
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 border-b border-blue-800 py-10 px-4">
           <div className="max-w-4xl mx-auto text-center">

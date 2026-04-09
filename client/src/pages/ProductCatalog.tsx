@@ -3,7 +3,7 @@ import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import { Search, Package, Grid3X3, List, Shield, Star, ShoppingBag, Filter, RotateCcw, Zap } from "@/components/Icon";
+import { Search, Package, Grid3X3, List, Shield, Star, ShoppingBag, Filter, RotateCcw } from "@/components/Icon";
 
 const formatVND = (val: string | number | null | undefined) => {
   if (!val) return "0 ₫";
@@ -161,7 +161,7 @@ export default function ProductCatalog() {
   const childCats = selectedParentCat ? getChildCats(selectedParentCat) : [];
 
   return (
-    <div className="min-h-screen pt-20 bg-gray-50">
+    <div className="min-h-screen pt-14 bg-gray-50">
       <ClientHeader />
 
       {/* ===== HEADER GRADIENT ===== */}
@@ -412,14 +412,19 @@ export default function ProductCatalog() {
                         {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                      <span className="flex items-center gap-0.5 text-emerald-600 font-medium">
-                        <Zap className="w-3 h-3" /> Giao ngay
-                      </span>
-                      {(product.packages || []).length > 0 && (
-                        <span className="text-gray-400">{(product.packages || []).length} gói</span>
-                      )}
-                    </div>
+                    {(() => {
+                      const ptags2 = (tagMappings as any[]).filter((m: any) => m.productId === product.id).slice(0, 3);
+                      return ptags2.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {ptags2.map((m: any) => (
+                            <span key={m.tag.id} className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-0.5" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>
+                              {m.tag.icon && (m.tag.icon.startsWith("fa-") ? <i className={`${m.tag.icon} text-[9px]`} /> : <span className="text-[9px]">{m.tag.icon}</span>)}
+                              {m.tag.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
 
                   </div>
                 </div>
@@ -457,18 +462,20 @@ export default function ProductCatalog() {
                       <span className="text-red-500 font-bold text-sm">
                         {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
                       </span>
-                      <div className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                        <Zap className="w-3 h-3" /> Giao ngay
-                      </div>
                     </div>
-                    {product.packages && product.packages.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {product.packages.slice(0, 3).map((pkg: any) => (
-                          <span key={pkg.id} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">{pkg.name}</span>
-                        ))}
-                        {product.packages.length > 3 && <span className="text-xs text-gray-400">+{product.packages.length - 3}</span>}
-                      </div>
-                    )}
+                    {(() => {
+                      const ptags3 = (tagMappings as any[]).filter((m: any) => m.productId === product.id).slice(0, 3);
+                      return ptags3.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {ptags3.map((m: any) => (
+                            <span key={m.tag.id} className="text-xs font-semibold px-2 py-0.5 rounded-full text-white inline-flex items-center gap-1" style={{ backgroundColor: m.tag.color || '#3b82f6' }}>
+                              {m.tag.icon && (m.tag.icon.startsWith("fa-") ? <i className={`${m.tag.icon} text-[10px]`} /> : <span className="text-[10px]">{m.tag.icon}</span>)}
+                              {m.tag.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               );

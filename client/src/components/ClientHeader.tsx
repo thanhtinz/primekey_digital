@@ -204,15 +204,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                         </button>
                       );
                     })}
-                    <div className="border-t border-white/10 mt-1 pt-1">
-                      <button
-                        onClick={() => go("/catalog")}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-blue-400 hover:text-blue-300 hover:bg-white/5 transition-colors"
-                      >
-                        <Package className="h-4 w-4" />
-                        <span>Tất cả sản phẩm</span>
-                      </button>
-                    </div>
+
                   </div>
 
                   {/* Right: child categories of hovered parent */}
@@ -617,13 +609,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                         {/* Child categories */}
                         {isExpanded && children.length > 0 && (
                           <div className="ml-4 border-l border-white/10 pl-3 space-y-0.5 mb-1">
-                            <button
-                              onClick={() => go(`/catalog?category=${cat.id}`)}
-                              className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all text-xs"
-                            >
-                              <LayoutGrid className="h-3.5 w-3.5" />
-                              <span>Tất cả {cat.name}</span>
-                            </button>
+
                             {children.map((child: any) => (
                               <button
                                 key={child.id}

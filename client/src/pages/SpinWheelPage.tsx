@@ -117,7 +117,7 @@ export default function SpinWheelPage() {
 
   if (!config?.isEnabled) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pt-14">
         <ClientHeader />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
           <RotateCcw className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -129,7 +129,7 @@ export default function SpinWheelPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 pt-14">
       <ClientHeader />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
