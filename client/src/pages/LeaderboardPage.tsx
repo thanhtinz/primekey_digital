@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Crown, Medal, Trophy, Star, Flame, ShoppingBag } from "lucide-react";
+import { Crown, Medal, Trophy, Star, Flame, ShoppingBag } from "@/components/Icon";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 

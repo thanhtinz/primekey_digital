@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/components/Icon";
 
 // Curated list of FontAwesome icons suitable for e-commerce categories
 const FA_ICONS = [

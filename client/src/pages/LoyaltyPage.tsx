@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Star, Search, Gift, TrendingUp, History, ShoppingBag } from "lucide-react";
+import { Star, Search, Gift, TrendingUp, History, ShoppingBag } from "@/components/Icon";
 import { ClientHeader } from "@/components/ClientHeader";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 

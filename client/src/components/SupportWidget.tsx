@@ -3,7 +3,7 @@
  * Hiển thị ở góc dưới phải, click để mở form gửi ticket nhanh
  */
 import { useState } from "react";
-import { MessageCircle, X, Send, CheckCircle, ChevronRight } from "lucide-react";
+import { MessageCircle, X, Send, CheckCircle, ChevronRight } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";

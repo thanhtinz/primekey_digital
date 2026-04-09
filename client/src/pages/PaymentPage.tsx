@@ -6,20 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import {
-  CheckCircle2,
-  Clock,
-  QrCode,
-  AlertCircle,
-  RefreshCw,
-  Building2,
-  Phone,
-  Mail,
-  ShoppingCart,
-  Tag,
-  X,
-  Loader2,
-} from "lucide-react";
+import { CheckCircle2, Clock, QrCode, AlertCircle, RefreshCw, Building2, Phone, Mail, ShoppingCart, Tag, X, Loader2 } from "@/components/Icon";
 
 function formatCurrency(amount: string | number, currency: string) {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;

@@ -7,11 +7,7 @@ import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Star, Shield, Zap, Package, ChevronRight, AlertTriangle,
-  ShoppingCart, Heart, MessageSquare, Check, ChevronDown, ChevronUp,
-  Share2, CheckCircle, Phone, Mail, Loader2, Info
-} from "lucide-react";
+import { Star, Shield, Zap, Package, ChevronRight, AlertTriangle, ShoppingCart, Heart, MessageSquare, Check, ChevronDown, ChevronUp, Share2, CheckCircle, Phone, Mail, Loader2, Info } from "@/components/Icon";
 import { toast } from "sonner";
 
 const formatVND = (val: string | number | null | undefined) => {

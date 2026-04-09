@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Gift, Star } from "lucide-react";
+import { Plus, Edit, Trash2, Gift, Star } from "@/components/Icon";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 
 export default function LoyaltyRewardsAdmin() {

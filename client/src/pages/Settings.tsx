@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Building2, Bell, Shield, CreditCard, Loader2, Eye, EyeOff, ImageIcon, Upload, X, Globe } from "lucide-react";
+import { Save, Building2, Bell, Shield, CreditCard, Loader2, Eye, EyeOff, ImageIcon, Upload, X, Globe } from "@/components/Icon";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";

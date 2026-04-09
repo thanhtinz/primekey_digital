@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Download, Database, Shield, Clock, CheckCircle } from "lucide-react";
+import { Download, Database, Shield, Clock, CheckCircle } from "@/components/Icon";
 
 export default function DataBackup() {
   const [downloading, setDownloading] = useState(false);

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { RefreshCw, Plus, Trash2, Calendar, User, DollarSign } from "lucide-react";
+import { RefreshCw, Plus, Trash2, Calendar, User, DollarSign } from "@/components/Icon";
 import { useLocation } from "wouter";
 
 const intervalLabels: Record<string, string> = {

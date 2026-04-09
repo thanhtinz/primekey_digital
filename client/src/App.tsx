@@ -4,7 +4,7 @@ import { Route, Switch, useLocation, Redirect } from "wouter";
 import { lazy, Suspense, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { Loader2, ShieldAlert } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 
 // Lazy load all pages for code splitting

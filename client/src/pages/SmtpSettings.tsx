@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
-import { Mail, Save, TestTube, CheckCircle, AlertCircle, Eye, EyeOff, Info } from "lucide-react";
+import { Mail, Save, TestTube, CheckCircle, AlertCircle, Eye, EyeOff, Info } from "@/components/Icon";
 import { toast } from "sonner";
 
 export default function SmtpSettings() {

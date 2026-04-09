@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Shield, Search, Clock, CheckCircle2, XCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { Shield, Search, Clock, CheckCircle2, XCircle, AlertCircle, RefreshCw } from "@/components/Icon";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   PENDING: { label: "Chờ xử lý", color: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30", icon: Clock },

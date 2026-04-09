@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { Star, MessageSquare, Package } from "lucide-react";
+import { Star, MessageSquare, Package } from "@/components/Icon";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";

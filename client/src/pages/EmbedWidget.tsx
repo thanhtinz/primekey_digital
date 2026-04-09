@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Code, Copy, Star, Eye } from "lucide-react";
+import { Code, Copy, Star, Eye } from "@/components/Icon";
 
 export default function EmbedWidget() {
   const [config, setConfig] = useState({

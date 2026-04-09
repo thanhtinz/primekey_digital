@@ -6,10 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-  Wallet, ArrowDownLeft, ArrowUpRight, Search, Plus, Minus,
-  TrendingUp, Users, RefreshCw
-} from "lucide-react";
+import { Wallet, ArrowDownLeft, ArrowUpRight, Search, Plus, Minus, TrendingUp, Users, RefreshCw } from "@/components/Icon";
 
 const TYPE_LABELS: Record<string, string> = {
   topup: "Nạp tiền",

@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
-import {
-  TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, RefreshCw,
-  Package, Users, AlertTriangle, Send, Loader2, ShoppingCart,
-  Wallet, Star, ArrowRight, Plus, Zap, BarChart2
-} from "lucide-react";
+import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, RefreshCw, Package, Users, AlertTriangle, Send, Loader2, ShoppingCart, Wallet, Star, ArrowRight, Plus, Zap, BarChart2 } from "@/components/Icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

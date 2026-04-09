@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "@/components/Icon";
 
 export default function ResetPasswordPage() {
   const [, setLocation] = useLocation();

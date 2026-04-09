@@ -3,10 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  ArrowLeft, User, Phone, Mail, MapPin,
-  FileText, DollarSign, TrendingUp, Loader2, Calendar
-} from "lucide-react";
+import { ArrowLeft, User, Phone, Mail, MapPin, FileText, DollarSign, TrendingUp, Loader2, Calendar } from "@/components/Icon";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
 import { useMemo } from "react";

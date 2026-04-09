@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Shield, Search, CheckCircle, AlertCircle, Package,
-  Calendar, Clock, ShieldCheck, ShieldX, ShieldAlert, Phone, Info,
-  ChevronRight, ShoppingBag, Send, ArrowLeft, X
-} from "lucide-react";
+import { Shield, Search, CheckCircle, AlertCircle, Package, Calendar, Clock, ShieldCheck, ShieldX, ShieldAlert, Phone, Info, ChevronRight, ShoppingBag, Send, ArrowLeft, X } from "@/components/Icon";
 import { useLocation, Link } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";

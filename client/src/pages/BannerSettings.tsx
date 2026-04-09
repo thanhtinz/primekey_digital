@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical, ExternalLink, ImageIcon } from "lucide-react";
+import { Plus, Trash2, GripVertical, ExternalLink, ImageIcon } from "@/components/Icon";
 
 export default function BannerSettings() {
   const [newBanner, setNewBanner] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0 });

@@ -3,10 +3,7 @@ import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import {
-  Search, Package, Grid3X3, List, Shield, Star,
-  ShoppingBag, Filter, RotateCcw, Zap
-} from "lucide-react";
+import { Search, Package, Grid3X3, List, Shield, Star, ShoppingBag, Filter, RotateCcw, Zap } from "@/components/Icon";
 
 const formatVND = (val: string | number | null | undefined) => {
   if (!val) return "0 ₫";

@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import {
-  Star, Shield, Package, ChevronRight, ChevronLeft,
-  Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy, Tag
-} from "lucide-react";
+import { Star, Shield, Package, ChevronRight, ChevronLeft, Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy, Tag } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";

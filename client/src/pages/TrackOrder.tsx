@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, ShoppingBag, CreditCard, ChevronDown, ExternalLink, FileText, RefreshCw, XCircle } from "lucide-react";
+import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, ShoppingBag, CreditCard, ChevronDown, ExternalLink, FileText, RefreshCw, XCircle } from "@/components/Icon";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";

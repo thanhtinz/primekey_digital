@@ -1,9 +1,5 @@
 import React, { useState, useCallback } from "react";
-import {
-  ArrowLeft, Package, CheckCircle, Truck, Shield, Clock, XCircle,
-  RefreshCw, CreditCard, FileText, Download, Copy, Check,
-  AlertCircle, Loader2, Receipt, Calendar, Phone, User
-} from "lucide-react";
+import { ArrowLeft, Package, CheckCircle, Truck, Shield, Clock, XCircle, RefreshCw, CreditCard, FileText, Download, Copy, Check, AlertCircle, Loader2, Receipt, Calendar, Phone, User } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";

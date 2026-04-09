@@ -5,10 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
-import {
-  Star, Shield, Users2, ShoppingBag, Heart, Trophy, BookOpen,
-  Ticket, Wallet, MessageSquare, Loader2, ToggleLeft
-} from "lucide-react";
+import { Star, Shield, Users2, ShoppingBag, Heart, Trophy, BookOpen, Ticket, Wallet, MessageSquare, Loader2, ToggleLeft } from "@/components/Icon";
 
 const FEATURE_ICONS: Record<string, React.ElementType> = {
   points: Star,

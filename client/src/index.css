@@ -281,3 +281,60 @@
 
   @page { margin: 15mm; size: A4; }
 }
+
+/* ===== FONT AWESOME ICON SIZE FIX =====
+ * Lucide icons dung SVG voi width/height attributes.
+ * FA icons dung font-size. Khi dung Tailwind w-N h-N tren <i>,
+ * can map w-N -> font-size tuong ung de icon hien thi dung kich thuoc.
+ */
+i.fa-solid, i.fa-regular, i.fa-brands,
+i[class*="fa-"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+i[class*="fa-"].w-3   { font-size: 0.75rem !important; }
+i[class*="fa-"].w-4   { font-size: 1rem !important; }
+i[class*="fa-"].w-5   { font-size: 1.25rem !important; }
+i[class*="fa-"].w-6   { font-size: 1.5rem !important; }
+i[class*="fa-"].w-7   { font-size: 1.75rem !important; }
+i[class*="fa-"].w-8   { font-size: 2rem !important; }
+i[class*="fa-"].w-9   { font-size: 2.25rem !important; }
+i[class*="fa-"].w-10  { font-size: 2.5rem !important; }
+i[class*="fa-"].w-12  { font-size: 3rem !important; }
+i[class*="fa-"].w-16  { font-size: 4rem !important; }
+i[class*="fa-"].w-20  { font-size: 5rem !important; }
+i[class*="fa-"].w-24  { font-size: 6rem !important; }
+
+i[class*="fa-"].h-3   { font-size: 0.75rem !important; }
+i[class*="fa-"].h-4   { font-size: 1rem !important; }
+i[class*="fa-"].h-5   { font-size: 1.25rem !important; }
+i[class*="fa-"].h-6   { font-size: 1.5rem !important; }
+i[class*="fa-"].h-7   { font-size: 1.75rem !important; }
+i[class*="fa-"].h-8   { font-size: 2rem !important; }
+i[class*="fa-"].h-9   { font-size: 2.25rem !important; }
+i[class*="fa-"].h-10  { font-size: 2.5rem !important; }
+i[class*="fa-"].h-12  { font-size: 3rem !important; }
+i[class*="fa-"].h-16  { font-size: 4rem !important; }
+i[class*="fa-"].h-20  { font-size: 5rem !important; }
+i[class*="fa-"].h-24  { font-size: 6rem !important; }
+
+i[class*="fa-"].size-3  { font-size: 0.75rem !important; }
+i[class*="fa-"].size-4  { font-size: 1rem !important; }
+i[class*="fa-"].size-5  { font-size: 1.25rem !important; }
+i[class*="fa-"].size-6  { font-size: 1.5rem !important; }
+i[class*="fa-"].size-8  { font-size: 2rem !important; }
+i[class*="fa-"].size-10 { font-size: 2.5rem !important; }
+i[class*="fa-"].size-12 { font-size: 3rem !important; }
+
+@keyframes fa-icon-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+i[class*="fa-"].animate-spin {
+  animation: fa-icon-spin 1s linear infinite !important;
+}

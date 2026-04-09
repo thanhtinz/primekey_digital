@@ -8,11 +8,7 @@ import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
   ComposedChart, Line, ReferenceLine
 } from "recharts";
-import {
-  Download, TrendingUp, DollarSign, FileText, Users, Package,
-  Loader2, Trophy, CalendarDays, ShoppingBag, ArrowUpRight, ArrowDownRight,
-  Star, BarChart3, Activity
-} from "lucide-react";
+import { Download, TrendingUp, DollarSign, FileText, Users, Package, Loader2, Trophy, CalendarDays, ShoppingBag, ArrowUpRight, ArrowDownRight, Star, BarChart3, Activity } from "@/components/Icon";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
-import { Zap, Clock, Tag, Loader2, ShoppingBag, Flame, TrendingDown, AlertTriangle } from "lucide-react";
+import { Zap, Clock, Tag, Loader2, ShoppingBag, Flame, TrendingDown, AlertTriangle } from "@/components/Icon";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
 

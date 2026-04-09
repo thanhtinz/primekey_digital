@@ -8,10 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  Bell, Send, Clock, CheckCircle, XCircle, RefreshCw,
-  FileText, Mail, AlertTriangle, Loader2, Settings2, CalendarClock
-} from "lucide-react";
+import { Bell, Send, Clock, CheckCircle, XCircle, RefreshCw, FileText, Mail, AlertTriangle, Loader2, Settings2, CalendarClock } from "@/components/Icon";
 
 const REMINDER_HOURS_OPTIONS = [
   { value: "1", label: "1 giờ trước khi hết hạn" },

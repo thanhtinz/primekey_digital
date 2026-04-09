@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, Package, CheckCircle, Truck, Loader2, ListOrdered, Activity, Timer, ShoppingBag, User } from "lucide-react";
+import { Clock, Package, CheckCircle, Truck, Loader2, ListOrdered, Activity, Timer, ShoppingBag, User } from "@/components/Icon";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
 

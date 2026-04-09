@@ -160,15 +160,7 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import {
-  AlertCircle,
-  CalendarIcon,
-  Check,
-  Clock,
-  Moon,
-  Sun,
-  X,
-} from "lucide-react";
+import { AlertCircle, CalendarIcon, Check, Clock, Moon, Sun, X } from "@/components/Icon";
 import { useState } from "react";
 import { toast as sonnerToast } from "sonner";
 import { AIChatBox, type Message } from "@/components/AIChatBox";

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, FolderTree, ChevronRight, Loader2, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderTree, ChevronRight, Loader2, Layers } from "@/components/Icon";
 import FontAwesomeIconPicker, { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
 
 interface CategoryForm {

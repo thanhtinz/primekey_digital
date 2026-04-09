@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users2, Copy, Check, Gift, TrendingUp, Loader2, Share2 } from "lucide-react";
+import { Users2, Copy, Check, Gift, TrendingUp, Loader2, Share2 } from "@/components/Icon";
 import { toast } from "sonner";
 import { ClientHeader } from "@/components/ClientHeader";
 import { trpc } from "@/lib/trpc";

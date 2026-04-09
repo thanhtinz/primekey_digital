@@ -4,7 +4,7 @@
  * Thiết kế theo ảnh tham khảo (IMG_5245)
  */
 import { useLocation } from "wouter";
-import { Mail, Phone, MapPin, Link2, HelpCircle, MessageCircle, ChevronUp } from "lucide-react";
+import { Mail, Phone, MapPin, Link2, HelpCircle, MessageCircle, ChevronUp } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
 

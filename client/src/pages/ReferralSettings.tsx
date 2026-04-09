@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Users2, Save, Loader2, Gift, TrendingUp, Copy, Check } from "lucide-react";
+import { Users2, Save, Loader2, Gift, TrendingUp, Copy, Check } from "@/components/Icon";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
-import { Star, CheckCircle, XCircle, Trash2, Eye, EyeOff, MessageSquare, Search, RefreshCw } from "lucide-react";
+import { Star, CheckCircle, XCircle, Trash2, Eye, EyeOff, MessageSquare, Search, RefreshCw } from "@/components/Icon";
 import { toast } from "sonner";
 
 function StarRating({ rating }: { rating: number }) {

@@ -8,10 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import {
-  Mail, Plus, Send, Trash2, Edit2, Eye, Users, CheckCircle2,
-  XCircle, Clock, Loader2, ChevronRight, AlertCircle, Megaphone
-} from "lucide-react";
+import { Mail, Plus, Send, Trash2, Edit2, Eye, Users, CheckCircle2, XCircle, Clock, Loader2, ChevronRight, AlertCircle, Megaphone } from "@/components/Icon";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";

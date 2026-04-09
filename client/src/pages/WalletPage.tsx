@@ -3,7 +3,7 @@
  * White background, clean design theo ảnh mẫu
  */
 import { useState } from "react";
-import { Wallet, ArrowDownLeft, ArrowUpRight, Clock, QrCode, ChevronRight, Info, Loader2, CheckCircle, History, Shield, Zap, TrendingUp } from "lucide-react";
+import { Wallet, ArrowDownLeft, ArrowUpRight, Clock, QrCode, ChevronRight, Info, Loader2, CheckCircle, History, Shield, Zap, TrendingUp } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";

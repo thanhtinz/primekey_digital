@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { HelpCircle, ChevronDown, ChevronUp, Search, MessageCircle } from "lucide-react";
+import { HelpCircle, ChevronDown, ChevronUp, Search, MessageCircle } from "@/components/Icon";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 

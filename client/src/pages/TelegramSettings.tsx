@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Send, Bot, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Send, Bot, CheckCircle, AlertCircle, ExternalLink } from "@/components/Icon";
 
 export default function TelegramSettings() {
   const { data: settings, refetch } = trpc.settings.get.useQuery();

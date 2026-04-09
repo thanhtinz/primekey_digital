@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Gift, Star, Package, Wallet, CheckCircle, RotateCcw, Gamepad2, Users, ArrowRight, CreditCard, Banknote, Trophy } from "lucide-react";
+import { Gift, Star, Package, Wallet, CheckCircle, RotateCcw, Gamepad2, Users, ArrowRight, CreditCard, Banknote, Trophy } from "@/components/Icon";
 import { ClientHeader } from "@/components/ClientHeader";
 
 // ─── Spin Wheel Canvas Component ─────────────────────────────────────────────

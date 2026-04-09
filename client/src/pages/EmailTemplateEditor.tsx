@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Save, Eye, EyeOff, Mail, RefreshCw, Info } from "lucide-react";
+import { Save, Eye, EyeOff, Mail, RefreshCw, Info } from "@/components/Icon";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";

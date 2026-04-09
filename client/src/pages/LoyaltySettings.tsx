@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Star, Settings, Users, TrendingUp, Plus, Minus, Search } from "lucide-react";
+import { Star, Settings, Users, TrendingUp, Plus, Minus, Search } from "@/components/Icon";
 
 function formatVND(amount: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);

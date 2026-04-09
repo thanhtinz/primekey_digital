@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Menu, X, LogOut, Home, FileText, History, Users, Package,
-  FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight,
-  Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone,
-  RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code,
-  Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet
-} from "lucide-react";
+import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";

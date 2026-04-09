@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useEffect } from "react";
-import { Star, CheckCircle, AlertCircle, Package, ArrowLeft } from "lucide-react";
+import { Star, CheckCircle, AlertCircle, Package, ArrowLeft } from "@/components/Icon";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClientHeader } from "@/components/ClientHeader";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";

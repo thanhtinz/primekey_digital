@@ -11,11 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import {
-  Plus, Pencil, Trash2, Tag, Percent, DollarSign, Copy, Calendar,
-  Users, TicketCheck, Search, Loader2, BarChart3, TrendingUp,
-  ArrowUpRight, ArrowDownRight, Clock, Eye, EyeOff, Zap,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, Tag, Percent, DollarSign, Copy, Calendar, Users, TicketCheck, Search, Loader2, BarChart3, TrendingUp, ArrowUpRight, ArrowDownRight, Clock, Eye, EyeOff, Zap } from "@/components/Icon";
 
 function formatCurrency(amount: number) {
   return `${amount.toLocaleString("vi-VN")} ₫`;

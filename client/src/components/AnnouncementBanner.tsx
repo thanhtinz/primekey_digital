@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { X, Info, CheckCircle, AlertTriangle, AlertCircle, Bell } from "lucide-react";
+import { X, Info, CheckCircle, AlertTriangle, AlertCircle, Bell } from "@/components/Icon";
 
 const TYPE_STYLES = {
   info: { bg: "bg-blue-600", icon: <Info className="w-4 h-4" />, text: "text-white" },

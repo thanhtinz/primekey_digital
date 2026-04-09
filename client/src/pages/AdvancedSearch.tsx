@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, FileText, User, DollarSign, Calendar } from "lucide-react";
+import { Search, Filter, FileText, User, DollarSign, Calendar } from "@/components/Icon";
 import { useLocation } from "wouter";
 
 const statusLabels: Record<string, string> = {

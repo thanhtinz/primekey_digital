@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Search, Users, Loader2, Mail, Phone, MapPin, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Users, Loader2, Mail, Phone, MapPin, Eye } from "@/components/Icon";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";

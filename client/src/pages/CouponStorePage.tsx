@@ -3,7 +3,7 @@
  * Hiển thị các mã giảm giá đang hoạt động cho khách hàng
  */
 import { useState } from "react";
-import { Copy, Tag, Clock, Percent, DollarSign, CheckCircle, Gift, Zap, Info } from "lucide-react";
+import { Copy, Tag, Clock, Percent, DollarSign, CheckCircle, Gift, Zap, Info } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";

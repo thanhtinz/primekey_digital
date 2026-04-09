@@ -20,7 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink, BookOpen, Megaphone } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink, BookOpen, Megaphone } from "@/components/Icon";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';

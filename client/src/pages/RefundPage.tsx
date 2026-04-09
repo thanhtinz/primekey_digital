@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { RotateCcw, Plus, Search, Clock, CheckCircle2, XCircle, RefreshCw, DollarSign } from "lucide-react";
+import { RotateCcw, Plus, Search, Clock, CheckCircle2, XCircle, RefreshCw, DollarSign } from "@/components/Icon";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   PENDING: { label: "Chờ duyệt", color: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30", icon: Clock },

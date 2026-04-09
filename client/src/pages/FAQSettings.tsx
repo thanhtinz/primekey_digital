@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { HelpCircle, Plus, Pencil, Trash2, GripVertical, ChevronDown } from "lucide-react";
+import { HelpCircle, Plus, Pencil, Trash2, GripVertical, ChevronDown } from "@/components/Icon";
 
 interface FAQForm { question: string; answer: string; category: string; sortOrder: number; }
 const defaultForm: FAQForm = { question: "", answer: "", category: "Chung", sortOrder: 0 };

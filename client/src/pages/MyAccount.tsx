@@ -2,15 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import {
-  User, Package, Star, LogOut, ShoppingBag, Shield,
-  Gift, Clock, CheckCircle, XCircle, AlertCircle,
-  Wrench, Phone, Mail, ChevronRight, TrendingUp, Award,
-  Heart, ShoppingCart, Users2, Camera, Loader2,
-  Copy, Share2, Trophy, Search, CreditCard, BarChart3,
-  ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck, ExternalLink,
-  Truck, RefreshCw
-} from "lucide-react";
+import { User, Package, Star, LogOut, ShoppingBag, Shield, Gift, Clock, CheckCircle, XCircle, AlertCircle, Wrench, Phone, Mail, ChevronRight, TrendingUp, Award, Heart, ShoppingCart, Users2, Camera, Loader2, Copy, Share2, Trophy, Search, CreditCard, BarChart3, ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck, ExternalLink, Truck, RefreshCw } from "@/components/Icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";

@@ -1,11 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  ShoppingCart, Trash2, Minus, Plus, Loader2, Package,
-  Tag, Users2, Wallet, CheckCircle, ClipboardList,
-  RefreshCw, Receipt, CreditCard, ArrowRight, ArrowLeft, ChevronDown
-} from "lucide-react";
+import { ShoppingCart, Trash2, Minus, Plus, Loader2, Package, Tag, Users2, Wallet, CheckCircle, ClipboardList, RefreshCw, Receipt, CreditCard, ArrowRight, ArrowLeft, ChevronDown } from "@/components/Icon";
 import { toast } from "sonner";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";

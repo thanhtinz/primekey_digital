@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/Icon";
 
 interface CustomerGuardProps {
   children: React.ReactNode;

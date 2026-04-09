@@ -4,10 +4,7 @@ import { toast } from "sonner";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  BookOpen, Plus, Edit2, Trash2, Eye, EyeOff, Tag,
-  Loader2, X, Check, FolderOpen
-} from "lucide-react";
+import { BookOpen, Plus, Edit2, Trash2, Eye, EyeOff, Tag, Loader2, X, Check, FolderOpen } from "@/components/Icon";
 
 function slugify(text: string) {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")

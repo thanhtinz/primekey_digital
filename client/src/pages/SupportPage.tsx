@@ -3,7 +3,7 @@
  * Widget hỗ trợ + hệ thống ticket
  */
 import { useState } from "react";
-import { MessageCircle, Send, ChevronDown, ChevronUp, CheckCircle, Clock, AlertCircle, HelpCircle, Headphones, Mail, Phone, Ticket } from "lucide-react";
+import { MessageCircle, Send, ChevronDown, ChevronUp, CheckCircle, Clock, AlertCircle, HelpCircle, Headphones, Mail, Phone, Ticket } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";

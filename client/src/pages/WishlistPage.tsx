@@ -2,7 +2,7 @@ import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import { Heart, ShoppingCart, Trash2, Package, Star, ArrowRight, LogIn, Loader2 } from "lucide-react";
+import { Heart, ShoppingCart, Trash2, Package, Star, ArrowRight, LogIn, Loader2 } from "@/components/Icon";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

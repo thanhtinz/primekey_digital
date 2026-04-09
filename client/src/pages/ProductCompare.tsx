@@ -4,7 +4,7 @@ import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Scale, ShoppingBag, Shield, X, Plus, CheckCircle2, XCircle, ArrowLeft, Search } from "lucide-react";
+import { Scale, ShoppingBag, Shield, X, Plus, CheckCircle2, XCircle, ArrowLeft, Search } from "@/components/Icon";
 import { ClientHeader } from "@/components/ClientHeader";
 
 function formatVND(amount: number) {

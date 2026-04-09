@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Heart, Plus, Trash2, Eye, ExternalLink, Palette, ImagePlus, X } from "lucide-react";
+import { Heart, Plus, Trash2, Eye, ExternalLink, Palette, ImagePlus, X } from "@/components/Icon";
 
 const PLATFORM_OPTIONS = [
   { value: "facebook", label: "Facebook" },

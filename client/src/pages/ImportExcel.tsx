@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Upload, Download, FileSpreadsheet, CheckCircle, AlertCircle, Users, Package } from "lucide-react";
+import { Upload, Download, FileSpreadsheet, CheckCircle, AlertCircle, Users, Package } from "@/components/Icon";
 import * as XLSX from "xlsx";
 
 interface ImportRow {

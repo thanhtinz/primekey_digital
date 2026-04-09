@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Shield, Clock, CheckCircle, XCircle, Wrench, Loader2, Trash2, Search } from "lucide-react";
+import { Shield, Clock, CheckCircle, XCircle, Wrench, Loader2, Trash2, Search } from "@/components/Icon";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 

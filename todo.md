@@ -1460,6 +1460,13 @@ todo updated
 - [x] Cải thiện UI WalletManagement: thêm button thao tác (duyệt nạp tiền, hoàn tiền, điều chỉnh số dư, xem lịch sử giao dịch)
 - [x] Redesign trang Dashboard admin với giao diện mới (stats cards đẹp hơn, recent orders, quick actions)
 
+## Phase: Replace lucide-react with Font Awesome CSS Icons (Apr 9, 2026 - Session 25)
+- [x] Thay the toan bo 122 file dung lucide-react bang Font Awesome 6 CSS
+- [x] Tao component Icon.tsx voi mapping 161 icons lucide -> FA
+- [x] Fix spinner.tsx khong dung SVG props
+- [x] Fix kich thuoc icon CSS bi lech: them CSS global map w-N h-N -> font-size
+- [x] TypeScript 0 errors, 53/53 tests passed
+
 ## Phase: Notifications + WalletManagement Fix (Apr 9, 2026 - Session 24)
 - [x] Fix WalletManagement: đang dùng DashboardLayout sai, cần dùng DashboardLayoutCustom
 - [x] Thêm trang quản lý thông báo website cho admin (/admin/notifications)

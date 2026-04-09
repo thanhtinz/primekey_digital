@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, Loader2, Eye, EyeOff, FileText, TrendingUp, Shield, CheckCircle2, User } from "lucide-react";
+import { AlertCircle, Loader2, Eye, EyeOff, FileText, TrendingUp, Shield, CheckCircle2, User } from "@/components/Icon";
 import { toast } from "sonner";
 
 interface LoginProps {

@@ -6,11 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { AnnouncementBanner } from "./AnnouncementBanner";
 import { useLocation } from "wouter";
-import {
-  Menu, X, Search, Bell, Gift, User, Home, Package,
-  CreditCard, BookOpen, ChevronRight, ChevronDown, Settings, LogOut,
-  Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare, Trophy
-} from "lucide-react";
+import { Menu, X, Search, Bell, Gift, User, Home, Package, CreditCard, BookOpen, ChevronRight, ChevronDown, Settings, LogOut, Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare, Trophy } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";

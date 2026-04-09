@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Gift, Search, X } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Gift, Search, X } from "@/components/Icon";
 
 const formatCurrency = (v: number | string) => {
   const n = typeof v === "string" ? parseFloat(v) : v;

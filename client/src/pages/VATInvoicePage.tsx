@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Receipt, Plus, Search, Download, FileText, CheckCircle2, Clock, XCircle, Building2 } from "lucide-react";
+import { Receipt, Plus, Search, Download, FileText, CheckCircle2, Clock, XCircle, Building2 } from "@/components/Icon";
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   PENDING: { label: "Chờ xuất", color: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30" },

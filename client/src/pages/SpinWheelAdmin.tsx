@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, RotateCcw, Save } from "lucide-react";
+import { Plus, Trash2, RotateCcw, Save } from "@/components/Icon";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 
 const DEFAULT_COLORS = ["#4F46E5", "#7C3AED", "#DB2777", "#DC2626", "#D97706", "#059669", "#0284C7", "#6B7280"];

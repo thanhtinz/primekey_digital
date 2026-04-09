@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { History, Search, FileText, User, Package, Settings, ShoppingCart } from "lucide-react";
+import { History, Search, FileText, User, Package, Settings, ShoppingCart } from "@/components/Icon";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {

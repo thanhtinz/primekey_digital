@@ -5,9 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Upload, Trash2, Eye, EyeOff, Image, Plus, Loader2, ImageIcon, Link
-} from "lucide-react";
+import { Upload, Trash2, Eye, EyeOff, Image, Plus, Loader2, ImageIcon, Link } from "@/components/Icon";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 
 export default function AvatarGalleryAdmin() {

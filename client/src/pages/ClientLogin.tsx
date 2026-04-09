@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Mail, LogIn, ArrowLeft, User, Lock, Eye, EyeOff, Phone, UserPlus, KeyRound, CheckCircle } from "lucide-react";
+import { Mail, LogIn, ArrowLeft, User, Lock, Eye, EyeOff, Phone, UserPlus, KeyRound, CheckCircle } from "@/components/Icon";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 
 type Tab = "login" | "register" | "forgot" | "reset";

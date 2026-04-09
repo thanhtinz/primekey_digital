@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Download, Search, Star, ArrowLeft, Loader2, ExternalLink, MessageSquare } from "lucide-react";
+import { CheckCircle2, Download, Search, Star, ArrowLeft, Loader2, ExternalLink, MessageSquare } from "@/components/Icon";
 import { toast } from "sonner";
 
 const PLATFORM_ICON_COLORS: Record<string, string> = {

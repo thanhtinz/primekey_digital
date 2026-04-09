@@ -1,10 +1,6 @@
 import { useState, useCallback, memo } from "react";
 import { useLocation, useParams } from "wouter";
-import {
-  ArrowLeft, Download, Mail, Trash2, CheckCircle, Clock, XCircle,
-  AlertCircle, Copy, ExternalLink, Loader2, Package, Truck, Shield,
-  ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash, Pencil, Printer, RefreshCw
-} from "lucide-react";
+import { ArrowLeft, Download, Mail, Trash2, CheckCircle, Clock, XCircle, AlertCircle, Copy, ExternalLink, Loader2, Package, Truck, Shield, ChevronDown, Star, Link2, CopyPlus, MessageSquare, Send, Trash, Pencil, Printer, RefreshCw } from "@/components/Icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

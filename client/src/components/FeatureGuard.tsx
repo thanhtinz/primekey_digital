@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/Icon";
 
 interface FeatureGuardProps {
   featureKey: string;

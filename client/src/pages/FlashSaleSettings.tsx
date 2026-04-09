@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Zap, Plus, Trash2, Loader2, Clock, Tag, Edit } from "lucide-react";
+import { Zap, Plus, Trash2, Loader2, Clock, Tag, Edit } from "@/components/Icon";
 import { toast } from "sonner";
 
 function formatCurrency(amount: string | number | null | undefined) {

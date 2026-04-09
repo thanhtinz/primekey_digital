@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useEffect } from "react";
-import { Shield, CheckCircle2, AlertCircle, Upload, Phone, Mail, ArrowLeft } from "lucide-react";
+import { Shield, CheckCircle2, AlertCircle, Upload, Phone, Mail, ArrowLeft } from "@/components/Icon";
 import { ClientHeader } from "@/components/ClientHeader";
 import { toast } from "sonner";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";

@@ -2,7 +2,7 @@ import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
-import { BookOpen, Clock, Eye, ArrowLeft, Tag } from "lucide-react";
+import { BookOpen, Clock, Eye, ArrowLeft, Tag } from "@/components/Icon";
 
 function formatDate(d: string | Date | null | undefined) {
   if (!d) return "";

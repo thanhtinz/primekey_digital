@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Star, CheckCircle, AlertCircle, Package, ArrowLeft, Loader2 } from "lucide-react";
+import { Star, CheckCircle, AlertCircle, Package, ArrowLeft, Loader2 } from "@/components/Icon";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientHeader } from "@/components/ClientHeader";

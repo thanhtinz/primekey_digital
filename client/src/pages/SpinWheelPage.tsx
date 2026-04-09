@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Star, RotateCcw, Trophy, History } from "lucide-react";
+import { Star, RotateCcw, Trophy, History } from "@/components/Icon";
 import { ClientHeader } from "@/components/ClientHeader";
 
 export default function SpinWheelPage() {

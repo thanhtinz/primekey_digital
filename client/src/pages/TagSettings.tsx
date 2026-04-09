@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Tag, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { Tag, Plus, Trash2, Pencil, Check, X } from "@/components/Icon";
 
 const PRESET_COLORS = [
   "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",

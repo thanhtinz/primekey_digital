@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Send, Users, Info, CheckCircle, AlertTriangle, ShoppingBag, CreditCard, Tag } from "lucide-react";
+import { Bell, Send, Users, Info, CheckCircle, AlertTriangle, ShoppingBag, CreditCard, Tag } from "@/components/Icon";
 import { toast } from "sonner";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 

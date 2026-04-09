@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Receipt, Percent } from "lucide-react";
+import { Receipt, Percent } from "@/components/Icon";
 
 export default function TaxSettings() {
   const [taxName, setTaxName] = useState("VAT");
