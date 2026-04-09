@@ -401,12 +401,20 @@ export default function ProductDetail() {
                         {pkg.description && (
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
                         )}
-                        <div className="flex items-center gap-2 mt-1">
-                          {(pkg.warrantyMonths ?? 0) > 0 && (
-                            <span className="text-xs text-blue-500 flex items-center gap-0.5">
-                              <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths}T
-                            </span>
-                          )}
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          {(productTagList as any[]).length > 0
+                            ? (productTagList as any[]).map((tag: any) => (
+                                <span key={tag.id} className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>
+                                  {tag.icon && (tag.icon.startsWith('fa-') ? <i className={tag.icon} /> : <span>{tag.icon}</span>)}
+                                  {tag.name}
+                                </span>
+                              ))
+                            : (pkg.warrantyMonths ?? 0) > 0 && (
+                                <span className="text-xs text-blue-500 flex items-center gap-0.5">
+                                  <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths}T
+                                </span>
+                              )
+                          }
                         </div>
                       </div>
                       {/* Price */}
