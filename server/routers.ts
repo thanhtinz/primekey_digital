@@ -1249,7 +1249,7 @@ export const appRouter = router({
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
-      const { products: productsTable, productPackages, productCategories } = await import("../drizzle/schema");
+      const { products: productsTable, productPackages, productCategories, productTags, productTagMappings } = await import("../drizzle/schema");
       const { eq, inArray } = await import("drizzle-orm");
       const productRows = await drizzleDb.select().from(productsTable).where(eq(productsTable.userId, ctx.user.id)).orderBy(productsTable.createdAt);
       const productIds = productRows.map(p => p.id);
@@ -1261,6 +1261,16 @@ export const appRouter = router({
       }
       // Get all categories
       const allCategories = await drizzleDb.select().from(productCategories).where(eq(productCategories.userId, ctx.user.id));
+      // Get all tag mappings + tags for these products
+      let allTagMappings: any[] = [];
+      let allTagsList: any[] = [];
+      if (productIds.length > 0) {
+        allTagMappings = await drizzleDb.select().from(productTagMappings).where(inArray(productTagMappings.productId, productIds));
+        const tagIds = Array.from(new Set(allTagMappings.map((m: any) => m.tagId)));
+        if (tagIds.length > 0) {
+          allTagsList = await drizzleDb.select().from(productTags).where(inArray(productTags.id, tagIds));
+        }
+      }
       return productRows.map(p => ({
         ...p,
         packages: allPackages.filter(pkg => pkg.productId === p.id),
@@ -1270,6 +1280,7 @@ export const appRouter = router({
           if (!cat?.parentId) return null;
           return allCategories.find(c => c.id === cat.parentId)?.name || null;
         })(),
+        tags: allTagMappings.filter((m: any) => m.productId === p.id).map((m: any) => allTagsList.find((t: any) => t.id === m.tagId)).filter(Boolean),
       }));
     }),
 
@@ -1444,7 +1455,7 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
-        await db.createProduct({
+        const result = await db.createProduct({
           name: input.name,
           description: input.description,
           categoryId: input.categoryId || null,
@@ -1454,9 +1465,9 @@ export const appRouter = router({
           createdAt: new Date(),
           updatedAt: new Date(),
         });
-        return { success: true };
+        const insertId = (result as any)?.insertId ?? (result as any)?.[0]?.insertId ?? null;
+        return { success: true, id: insertId ? Number(insertId) : null };
       }),
-
     update: protectedProcedure
       .input(
         z.object({

@@ -36,10 +36,12 @@ export default function Products() {
     categoryId: null as number | null,
   });
   const [packages, setPackages] = useState<PackageForm[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const { data: products = [], isLoading } = trpc.products.list.useQuery();
   const { data: categories = [] } = trpc.categories.listProtected.useQuery();
+  const { data: allTags = [] } = trpc.productTags.list.useQuery();
   const utils = trpc.useUtils();
 
   // Build category tree
@@ -102,9 +104,15 @@ export default function Products() {
     onError: (err) => toast.error(err.message),
   });
 
+  const assignTags = trpc.productTags.assignToProduct.useMutation({
+    onSuccess: () => utils.products.list.invalidate(),
+    onError: (err: any) => toast.error("Lỗi gán tag: " + (err.message || "")),
+  });
+
   const resetForm = () => {
     setFormData({ name: "", description: "", imageUrl: "", notes: "", categoryId: null });
     setPackages([]);
+    setSelectedTagIds([]);
     setEditingId(null);
     setIsOpen(false);
     setActiveTab("info");
@@ -124,10 +132,15 @@ export default function Products() {
       imageUrl: formData.imageUrl || undefined,
       notes: formData.notes || undefined,
     };
+    let productId = editingId;
     if (editingId) {
       await updateProduct.mutateAsync({ id: editingId, ...payload });
     } else {
-      await createProduct.mutateAsync(payload);
+      const result = await createProduct.mutateAsync(payload);
+      productId = (result as any).id ?? null;
+    }
+    if (productId !== null) {
+      await assignTags.mutateAsync({ productId, tagIds: selectedTagIds });
     }
   };
 
@@ -139,6 +152,7 @@ export default function Products() {
       notes: product.notes || "",
       categoryId: product.categoryId || null,
     });
+    setSelectedTagIds((product.tags || []).map((t: any) => t.id));
     const pkgs = (product.packages || []).map((p: any) => ({
       id: p.id,
       name: p.name,
@@ -524,6 +538,38 @@ export default function Products() {
               <div>
                 <Label className="text-sm font-medium flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-500" /> Lưu Ý Sản Phẩm</Label>
                 <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Lưu ý quan trọng cho khách hàng (VD: không hoàn tiền, thời gian kích hoạt...)" className="mt-1.5 min-h-[60px]" rows={2} />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-1.5"><Tag className="h-3.5 w-3.5 text-blue-500" /> Tag Sản Phẩm</Label>
+                {(allTags as any[]).length === 0 ? (
+                  <p className="text-xs text-gray-400 mt-1.5">Chưa có tag nào. Hãy tạo tag trong trang Quản lý Tag trước.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    {(allTags as any[]).map((tag: any) => {
+                      const isSelected = selectedTagIds.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => setSelectedTagIds(prev =>
+                            isSelected ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                          )}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                            isSelected
+                              ? "border-transparent text-white shadow-sm"
+                              : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                          }`}
+                          style={isSelected ? { backgroundColor: tag.color || "#3b82f6" } : {}}
+                        >
+                          {isSelected && <X className="h-2.5 w-2.5" />}
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Info box */}

@@ -117,7 +117,7 @@ describe("products router", () => {
       description: "Test description",
       categoryId: null,
     });
-    expect(result).toEqual({ success: true });
+    expect(result.success).toBe(true);
   });
 
   it("products.list returns products with packages and categoryName", async () => {
@@ -162,7 +162,7 @@ describe("products.create input validation", () => {
     const result = await caller.products.create({
       name: "No Price Product",
     });
-    expect(result).toEqual({ success: true });
+    expect(result.success).toBe(true);
   });
 
   it("products.update accepts categoryId", async () => {

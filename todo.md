@@ -1378,3 +1378,10 @@ todo updated
 - [x] Fix nút "Về trang khách hàng": dùng window.open("/", "_blank") → mở tab mới
 - [x] Thêm "/" vào ALWAYS_PUBLIC list trong App.tsx để trang chủ luôn accessible
 - [x] Thêm Route path="/" vào ALWAYS_PUBLIC Switch block
+
+## Phase: Product Tag Field (Apr 9, 2026 - Session 17)
+- [x] Thêm trường tag vào form tạo/sửa sản phẩm - UI chip click để chọn/bỏ tag
+- [x] products.list trả về tags cho mỗi sản phẩm
+- [x] products.create trả về id để gán tags ngay sau khi tạo
+- [x] handleEdit load tags hiện có của sản phẩm vào selectedTagIds
+- [x] TypeScript: 0 errors, 53/53 tests passed
