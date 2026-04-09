@@ -40,6 +40,8 @@ export const customers = mysqlTable("customers", {
   loginAttempts: int("loginAttempts").default(0), // số lần đăng nhập sai
   lockedUntil: timestamp("lockedUntil"), // khóa tài khoản tạm thời
   lastLoginAt: timestamp("lastLoginAt"), // lần đăng nhập cuối
+  totpSecret: varchar("totpSecret", { length: 64 }), // TOTP secret for 2FA
+  totpEnabled: boolean("totpEnabled").default(false), // 2FA enabled
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -876,3 +878,31 @@ export const siteAnnouncements = mysqlTable("site_announcements", {
   createdAt: timestamp("createdAt_sa").defaultNow().notNull(),
 });
 export type SiteAnnouncement = typeof siteAnnouncements.$inferSelect;
+
+// ─── Blog ─────────────────────────────────────────────────────────────────────
+export const blogCategories = mysqlTable("blog_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 120 }).notNull(),
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt_bc").defaultNow().notNull(),
+});
+export type BlogCategory = typeof blogCategories.$inferSelect;
+
+export const blogPosts = mysqlTable("blog_posts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  categoryId: int("categoryId"),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 280 }).notNull(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull(),
+  coverImage: varchar("coverImage", { length: 500 }),
+  isPublished: boolean("isPublished").default(false),
+  publishedAt: timestamp("publishedAt"),
+  viewCount: int("viewCount").default(0),
+  createdAt: timestamp("createdAt_bp").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt_bp").defaultNow().onUpdateNow().notNull(),
+});
+export type BlogPost = typeof blogPosts.$inferSelect;

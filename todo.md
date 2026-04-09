@@ -721,35 +721,35 @@
 ## Batch 6: 10 Tính Năng Mới
 
 ### 1. Nhóm Sản Phẩm / Danh Mục
-- [ ] Schema: bảng product_categories (id, name, slug, description, sortOrder)
-- [ ] Thêm categoryId vào bảng products
-- [ ] Backend: CRUD categories + gắn category vào sản phẩm
-- [ ] UI: trang quản lý danh mục trong dashboard
-- [ ] UI: filter sản phẩm theo danh mục trong trang Products
+- [x] Schema: bảng product_categories (id, name, slug, description, sortOrder)
+- [x] Thêm categoryId vào bảng products
+- [x] Backend: CRUD categories + gắn category vào sản phẩm
+- [x] UI: trang quản lý danh mục trong dashboard
+- [x] UI: filter sản phẩm theo danh mục trong trang Products
 
 ### 2. Trang Giới Thiệu Sản Phẩm (Catalog Công Khai)
-- [ ] Trang /products công khai: hiển thị catalog sản phẩm theo danh mục
-- [ ] Filter theo danh mục, tìm kiếm, sắp xếp giá
-- [ ] Trang chi tiết sản phẩm /products/[id]
-- [ ] Thêm link Catalog vào landing page nav
+- [x] Trang /products công khai: hiển thị catalog sản phẩm theo danh mục
+- [x] Filter theo danh mục, tìm kiếm, sắp xếp giá
+- [x] Trang chi tiết sản phẩm /products/[id]
+- [x] Thêm link Catalog vào landing page nav
 
 ### 3. Trang So Sánh Sản Phẩm
-- [ ] Trang /compare: chọn tối đa 3 sản phẩm để so sánh
-- [ ] Bảng so sánh: tên, giá, bảo hành, mô tả
+- [x] Trang /compare: chọn tối đa 3 sản phẩm để so sánh
+- [x] Bảng so sánh: tên, giá, bảo hành, mô tả
 - [x] Nút "So sánh" trên trang catalog
 
 ### 4. Tích Điểm Thành Viên
-- [ ] Schema: bảng loyalty_points (customerId, points, reason, invoiceId, createdAt)
-- [ ] Cấu hình: tỷ lệ tích điểm (VD: 1000đ = 1 điểm), tỷ lệ đổi điểm
-- [ ] Tự động tích điểm khi đơn hàng chuyển sang PAID
-- [ ] Trang /loyalty công khai: khách nhập email xem điểm
-- [ ] Dashboard: trang quản lý điểm thành viên
+- [x] Schema: bảng loyalty_points (customerId, points, reason, invoiceId, createdAt)
+- [x] Cấu hình: tỷ lệ tích điểm (VD: 1000đ = 1 điểm), tỷ lệ đổi điểm
+- [x] Tự động tích điểm khi đơn hàng chuyển sang PAID
+- [x] Trang /loyalty công khai: khách nhập email xem điểm
+- [x] Dashboard: trang quản lý điểm thành viên
 
 ### 5. Yêu Cầu Bảo Hành Online
-- [ ] Schema: bảng warranty_requests (warrantyId, customerEmail, description, images, status)
-- [ ] Trang /warranty-request công khai: form gửi yêu cầu bảo hành
-- [ ] Dashboard: trang quản lý yêu cầu bảo hành (xem, phản hồi, cập nhật trạng thái)
-- [ ] Thông báo Telegram khi có yêu cầu bảo hành mới
+- [x] Schema: bảng warranty_requests (warrantyId, customerEmail, description, images, status)
+- [x] Trang /warranty-request công khai: form gửi yêu cầu bảo hành
+- [x] Dashboard: trang quản lý yêu cầu bảo hành (xem, phản hồi, cập nhật trạng thái)
+- [x] Thông báo Telegram khi có yêu cầu bảo hành mới
 
 ### 6. Thông Báo Flash Sale Qua Email
 - [x] Form đăng ký nhận thông báo Flash Sale trên trang /flash-sale (flashSaleSubscriber.subscribe)
@@ -763,22 +763,22 @@
 - [x] Thêm link FAQ vào landing page footer (liên kết đã có)
 
 ### 8. Hóa Đơn VAT
-- [ ] Thêm trường vatNumber, vatCompanyName, vatAddress vào invoices
-- [ ] UI tạo hóa đơn: checkbox "Xuất hóa đơn VAT", điền thông tin
-- [ ] Trang in/xuất hóa đơn VAT theo chuẩn (có mã số thuế, địa chỉ)
-- [ ] Settings: cấu hình thông tin công ty cho hóa đơn VAT
+- [x] Thêm trường vatNumber, vatCompanyName, vatAddress vào invoices
+- [x] UI tạo hóa đơn: checkbox "Xuất hóa đơn VAT", điền thông tin
+- [x] Trang in/xuất hóa đơn VAT theo chuẩn (có mã số thuế, địa chỉ)
+- [x] Settings: cấu hình thông tin công ty cho hóa đơn VAT
 
 ### 9. Hoàn Tiền (Refund)
-- [ ] Schema: bảng refunds (invoiceId, amount, reason, status, processedAt)
-- [ ] Dashboard: tạo yêu cầu hoàn tiền, theo dõi trạng thái
-- [ ] Khi hoàn tiền: cập nhật trạng thái invoice, ghi log
-- [ ] Thông báo Telegram khi xử lý hoàn tiền
+- [x] Schema: bảng refunds (invoiceId, amount, reason, status, processedAt)
+- [x] Dashboard: tạo yêu cầu hoàn tiền, theo dõi trạng thái
+- [x] Khi hoàn tiền: cập nhật trạng thái invoice, ghi log
+- [x] Thông báo Telegram khi xử lý hoàn tiền
 
 ### 10. Báo Cáo Thuế
-- [ ] Trang /reports/tax trong dashboard
-- [ ] Tổng hợp doanh thu theo tháng/quý/năm
-- [ ] Phân tách: doanh thu gốc, VAT, chiết khấu, thực thu
-- [ ] Xuất báo cáo CSV/Excel
+- [x] Trang /reports/tax trong dashboard
+- [x] Tổng hợp doanh thu theo tháng/quý/năm
+- [x] Phân tách: doanh thu gốc, VAT, chiết khấu, thực thu
+- [x] Xuất báo cáo CSV/Excel
 
 ## Client Portal + Đăng Nhập Khách Hàng
 
@@ -794,26 +794,26 @@
 
 ## Client Portal - Auth Guard + Chi Tiết SP + Trang Cá Nhân
 
-- [ ] CustomerAuth context: lưu token/email trong localStorage, expose useCustomerAuth() hook
-- [ ] Auth guard: các trang TrackOrder, Warranty, Loyalty, WarrantyRequest yêu cầu login khách
-- [ ] Nếu chưa login → redirect /client-login?redirect=<trang hiện tại>
-- [ ] Sau login → tự động redirect về trang đã yêu cầu, không hỏi lại email
-- [ ] Trang /product/:id - chi tiết sản phẩm: ảnh, mô tả, giá, bảo hành, nút liên hệ mua
-- [ ] Click sản phẩm trên trang chủ → điều hướng đến /product/:id
-- [ ] Trang /my-account nâng cấp: tabs Tổng Quan, Đơn Hàng, Điểm Thưởng, Bảo Hành, Yêu Cầu BH, Coupon
-- [ ] Tab Tổng Quan: stats (tổng đơn, tổng chi tiêu, điểm hiện tại, bảo hành còn hiệu lực)
-- [ ] Tab Đơn Hàng: danh sách đơn hàng với filter trạng thái, click xem chi tiết
-- [ ] Tab Điểm Thưởng: lịch sử tích/đổi điểm, số điểm hiện tại, hướng dẫn đổi điểm
-- [ ] Tab Bảo Hành: danh sách bảo hành còn hiệu lực, ngày hết hạn, sản phẩm
-- [ ] Tab Yêu Cầu BH: lịch sử yêu cầu bảo hành, trạng thái xử lý
-- [ ] Tab Coupon: danh sách coupon khả dụng (nếu có coupon cá nhân)
-- [ ] Header: hiển thị tên khách hàng sau khi login (lấy từ customer.me)
+- [x] CustomerAuth context: lưu token/email trong localStorage, expose useCustomerAuth() hook
+- [x] Auth guard: các trang TrackOrder, Warranty, Loyalty, WarrantyRequest yêu cầu login khách
+- [x] Nếu chưa login → redirect /client-login?redirect=<trang hiện tại>
+- [x] Sau login → tự động redirect về trang đã yêu cầu, không hỏi lại email
+- [x] Trang /product/:id - chi tiết sản phẩm: ảnh, mô tả, giá, bảo hành, nút liên hệ mua
+- [x] Click sản phẩm trên trang chủ → điều hướng đến /product/:id
+- [x] Trang /my-account nâng cấp: tabs Tổng Quan, Đơn Hàng, Điểm Thưởng, Bảo Hành, Yêu Cầu BH, Coupon
+- [x] Tab Tổng Quan: stats (tổng đơn, tổng chi tiêu, điểm hiện tại, bảo hành còn hiệu lực)
+- [x] Tab Đơn Hàng: danh sách đơn hàng với filter trạng thái, click xem chi tiết
+- [x] Tab Điểm Thưởng: lịch sử tích/đổi điểm, số điểm hiện tại, hướng dẫn đổi điểm
+- [x] Tab Bảo Hành: danh sách bảo hành còn hiệu lực, ngày hết hạn, sản phẩm
+- [x] Tab Yêu Cầu BH: lịch sử yêu cầu bảo hành, trạng thái xử lý
+- [x] Tab Coupon: danh sách coupon khả dụng (nếu có coupon cá nhân)
+- [x] Header: hiển thị tên khách hàng sau khi login (lấy từ customer.me)
 
 ## Nav + So Sánh + Auth Guard
 
-- [ ] Bỏ "Sản Phẩm" (/catalog) khỏi nav menu (trang chủ đã là catalog)
-- [ ] Thêm "So Sánh" (/compare) vào nav menu riêng
-- [ ] Trang /compare: tách biệt hoàn toàn, có thể chọn sản phẩm để so sánh
+- [x] Bỏ "Sản Phẩm" (/catalog) khỏi nav menu (trang chủ đã là catalog)
+- [x] Thêm "So Sánh" (/compare) vào nav menu riêng
+- [x] Trang /compare: tách biệt hoàn toàn, có thể chọn sản phẩm để so sánh
 
 ## Phase 7 (Session Continuity): Client Portal Enhancement
 - [x] Thêm products.getPublic procedure (lấy 1 sản phẩm theo id, không cần auth)
@@ -1101,10 +1101,10 @@
 ## Phase 23 - UI/UX Overhaul & New Features
 
 ### A. PayOS Fix (Khẩn cấp)
-- [ ] Debug PayOS lỗi trên production: kiểm tra API key, checksum key, webhook URL
-- [ ] Nếu lỗi: fallback sang PayOS payment link trực tiếp (checkout URL), redirect về trang cảm ơn
-- [ ] Nạp số dư tự động qua PayOS webhook (walletTopup)
-- [ ] Hoàn tiền tự động về số dư khi đơn lỗi hoặc admin chuyển trạng thái
+- [x] Debug PayOS lỗi trên production: kiểm tra API key, checksum key, webhook URL
+- [x] Nếu lỗi: fallback sang PayOS payment link trực tiếp (checkout URL), redirect về trang cảm ơn
+- [x] Nạp số dư tự động qua PayOS webhook (walletTopup)
+- [x] Hoàn tiền tự động về số dư khi đơn lỗi hoặc admin chuyển trạng thái
 
 ### B. Header & Mobile Menu (theo ảnh tham khảo)
 - [x] Header mobile: logo trái, search + gift + bell + avatar + hamburger phải
@@ -1136,7 +1136,7 @@
 - [x] Procedures: getMyNotifications, markAsRead, markAllRead
 - [x] Header bell icon với badge số chưa đọc
 - [x] Dropdown thông báo (như ảnh 4)
-- [ ] Tự động tạo thông báo khi: đặt hàng, thanh toán, nạp tiền, đơn hoàn thành
+- [x] Tự động tạo thông báo khi: đặt hàng, thanh toán, nạp tiền, đơn hoàn thành
 
 ### F. Trang Kho Mã Giảm Giá
 - [x] Trang /coupons: hiển thị các mã giảm giá đang active (như ảnh 8)
@@ -1152,7 +1152,7 @@
 
 ### H. Wallet & Dòng Tiền
 - [x] Hiển thị số dư trong header user menu
-- [ ] Trang /wallet: quản lý dòng tiền (lịch sử nạp, lịch sử chi tiêu)
+- [x] Trang /wallet: quản lý dòng tiền (lịch sử nạp, lịch sử chi tiêu)
 - [x] Nạp tiền tự động: PayOS webhook → cộng số dư
 - [x] Thanh toán số dư không tính thuế
 - [x] CartPage: 2 hình thức (số dư / banking), banking tính thuế
@@ -1163,29 +1163,29 @@
 - [x] Schema: bảng product_tag_relations (productId, tagId)
 - [x] Admin: quản lý tags (tạo, sửa, xóa)
 - [x] ProductDetail: hiển thị tags
-- [ ] ProductCatalog: filter theo tag
+- [x] ProductCatalog: filter theo tag
 
 ### J. Email & Auth
 - [x] Email xác minh khi đăng ký (gửi link xác minh qua SMTP)
 - [x] Trang /verify-email?token=xxx: xác minh email
 - [x] Quên mật khẩu: gửi email reset (link /reset-password?token=xxx)
-- [ ] Trang /reset-password: nhập mật khẩu mới
+- [x] Trang /reset-password: nhập mật khẩu mới
 
 ### K. Giới thiệu bạn bè cải tiến
-- [ ] Khi user đăng ký qua link giới thiệu: ghi nhận referrerId
-- [ ] Khi người được giới thiệu nạp/mua lần đầu: tự động thưởng % cho người giới thiệu
-- [ ] Các đơn sau: khách nhập mã của ai thì người đó được thưởng
+- [x] Khi user đăng ký qua link giới thiệu: ghi nhận referrerId
+- [x] Khi người được giới thiệu nạp/mua lần đầu: tự động thưởng % cho người giới thiệu
+- [x] Các đơn sau: khách nhập mã của ai thì người đó được thưởng
 
 ### L. Quản lý Đơn hàng User
 - [x] Đổi tên "Tra cứu đơn hàng" thành "Quản lý đơn hàng"
 - [x] Thiết kế lại UI: không hiện email lookup, hiện trực tiếp đơn hàng của user đã đăng nhập
-- [ ] Hiển thị trạng thái, chi tiết, nút xuất PDF
+- [x] Hiển thị trạng thái, chi tiết, nút xuất PDF
 
 ### M. Dọn dẹp Admin
 - [x] Xóa trang tạo hóa đơn thủ công (đã làm)
-- [ ] Xóa trang tạo bảo hành thủ công
+- [x] Xóa trang tạo bảo hành thủ công
 - [x] Xóa trang hoàn tiền (chỉ cần chuyển trạng thái đơn)
-- [ ] Hoàn tiền tự động về số dư khi admin chuyển trạng thái đơn sang "refunded"
+- [x] Hoàn tiền tự động về số dư khi admin chuyển trạng thái đơn sang "refunded"
 
 ## Phase: UI/UX Improvements (Apr 2026)
 - [x] Viết lại ClientHeader - dark theme, bell notifications, avatar dropdown, admin link
@@ -1258,3 +1258,26 @@
 - [x] Add /reset-password route to App.tsx and ALWAYS_PUBLIC
 - [x] wallet.adminList added to wallet router
 todo updated
+
+## Phase: UX/UI Overhaul (Apr 9, 2026)
+- [ ] ClientHeader: dropdown danh mục lớn → danh mục nhỏ khi hover/click
+- [ ] ClientHeader: nút đăng xuất trong menu khi đã login
+- [ ] ClientHeader: bỏ "Bảng điều khiển" khỏi avatar dropdown
+- [ ] ClientHeader: hiệu ứng bounce/pulse cho icon thông báo và giỏ hàng
+- [ ] ClientHeader: sửa router cho tất cả menu items (không nhảy về trang chính)
+- [ ] Background trắng cho tất cả trang client (SupportPage, CouponStorePage)
+- [ ] ProductDetail: form đánh giá màu trắng
+- [ ] WalletPage: redesign theo ảnh mẫu (trắng, clean, QR nạp tiền)
+- [ ] WalletPage: dùng ClientHeader + ClientFooter chung
+- [ ] DashboardLayout sidebar: fix scroll trên mobile để xem đầy đủ menu
+- [ ] MyAccount: hiển thị số dư ví
+- [ ] MyAccount: lịch sử đăng nhập (login history)
+- [ ] MyAccount: bảo mật 2FA qua Google Authenticator (QR code setup)
+- [ ] MyAccount: OTP qua Email toggle
+- [ ] MyAccount: thông báo đăng nhập toggle
+- [ ] Backend: customer login history table + router
+- [ ] Backend: 2FA TOTP setup/verify procedures
+- [ ] Backend: wallet transaction history router cho user
+- [ ] FAQPage → BlogPage: danh mục bài viết, editor bài viết, hiển thị blog chuyên nghiệp
+- [ ] Blog: admin tạo/sửa/xóa bài viết với danh mục
+- [ ] Blog: trang public /blog với danh mục, tìm kiếm

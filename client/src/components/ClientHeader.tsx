@@ -1,15 +1,15 @@
 /**
  * ClientHeader - Header dùng chung cho tất cả trang client
  * Dark theme, logo, search, bell thông báo, avatar dropdown, hamburger
- * Thiết kế theo ảnh tham khảo sieuthicode.vn style
+ * Dropdown danh mục 2 cấp (danh mục lớn → danh mục nhỏ)
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { AnnouncementBanner } from "./AnnouncementBanner";
 import { useLocation } from "wouter";
 import {
   Menu, X, Search, Bell, Gift, User, Home, Package,
-  CreditCard, BookOpen, ChevronRight, Settings, LogOut,
-  Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle
+  CreditCard, BookOpen, ChevronRight, ChevronDown, Settings, LogOut,
+  Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -23,11 +23,15 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [catDropOpen, setCatDropOpen] = useState(false);
+  const [hoveredParent, setHoveredParent] = useState<number | null>(null);
+  const [expandedMobileCat, setExpandedMobileCat] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const catDropRef = useRef<HTMLDivElement>(null);
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
@@ -61,11 +65,18 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const email = sessionData?.email || "";
   const isAdmin = (sessionData as any)?.role === "admin";
 
+  const { data: allCategories } = trpc.categories.list.useQuery(undefined, { staleTime: 300_000 });
+
+  // Build category tree: parent categories and their children
+  const parentCategories = (allCategories || []).filter((c: any) => !c.parentId);
+  const childrenOf = (parentId: number) => (allCategories || []).filter((c: any) => c.parentId === parentId);
+
   const go = useCallback((href: string) => {
     setMenuOpen(false);
     setNotifOpen(false);
     setAvatarOpen(false);
     setSearchOpen(false);
+    setCatDropOpen(false);
     navigate(href);
   }, [navigate]);
 
@@ -76,6 +87,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (catDropRef.current && !catDropRef.current.contains(e.target as Node)) setCatDropOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -88,8 +100,6 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
       setSearchQuery("");
     }
   };
-
-  const { data: categories } = trpc.categories.list.useQuery(undefined, { staleTime: 300_000 });
 
   const formatBalance = (v: number) => {
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M₫`;
@@ -120,6 +130,14 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("customerToken");
+    setAvatarOpen(false);
+    setMenuOpen(false);
+    navigate("/");
+    window.location.reload();
+  };
+
   return (
     <>
       {/* Announcement banners - shown above header */}
@@ -135,6 +153,91 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
               <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">{companyName}</span>
             )}
           </button>
+
+          {/* Desktop Nav - Categories dropdown */}
+          <nav className="hidden lg:flex items-center gap-1 flex-shrink-0">
+            {/* Danh mục dropdown */}
+            <div ref={catDropRef} className="relative">
+              <button
+                onClick={() => setCatDropOpen(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/8 transition-colors text-sm font-medium"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span>Danh mục</span>
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${catDropOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Category Mega Dropdown */}
+              {catDropOpen && parentCategories.length > 0 && (
+                <div className="absolute top-full left-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl z-50 flex overflow-hidden"
+                  style={{ minWidth: 220, maxWidth: 600 }}>
+                  {/* Left: parent categories */}
+                  <div className="w-52 border-r border-white/10 py-2">
+                    {parentCategories.map((cat: any) => {
+                      const children = childrenOf(cat.id);
+                      return (
+                        <button
+                          key={cat.id}
+                          onMouseEnter={() => setHoveredParent(cat.id)}
+                          onClick={() => { go(`/catalog?category=${cat.id}`); }}
+                          className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors ${hoveredParent === cat.id ? "bg-white/8 text-white" : "text-white/70 hover:text-white hover:bg-white/5"}`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {cat.icon && <span className="text-base flex-shrink-0">{cat.icon}</span>}
+                            <span className="truncate">{cat.name}</span>
+                          </div>
+                          {children.length > 0 && <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 opacity-40" />}
+                        </button>
+                      );
+                    })}
+                    <div className="border-t border-white/10 mt-1 pt-1">
+                      <button
+                        onClick={() => go("/catalog")}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-blue-400 hover:text-blue-300 hover:bg-white/5 transition-colors"
+                      >
+                        <Package className="h-4 w-4" />
+                        <span>Tất cả sản phẩm</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right: child categories of hovered parent */}
+                  {hoveredParent && childrenOf(hoveredParent).length > 0 && (
+                    <div className="w-52 py-2">
+                      <p className="px-4 py-1.5 text-xs font-semibold text-white/30 uppercase tracking-wider">
+                        {parentCategories.find((c: any) => c.id === hoveredParent)?.name}
+                      </p>
+                      {childrenOf(hoveredParent).map((child: any) => (
+                        <button
+                          key={child.id}
+                          onClick={() => go(`/catalog?category=${child.id}`)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+                        >
+                          {child.icon && <span className="text-sm">{child.icon}</span>}
+                          <span>{child.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Other nav links */}
+            {[
+              { label: "Blog", href: "/blog", icon: BookOpen },
+              { label: "Hỗ trợ", href: "/support", icon: MessageSquare },
+            ].map(item => (
+              <button
+                key={item.href}
+                onClick={() => go(item.href)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/8 transition-colors text-sm font-medium"
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
 
           {/* Desktop Search Bar */}
           <div className="hidden md:flex flex-1 max-w-md" ref={searchRef}>
@@ -181,9 +284,9 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                   onClick={() => { setNotifOpen(v => !v); setAvatarOpen(false); }}
                   className="relative p-2.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
                 >
-                  <Bell className="h-5 w-5" />
+                  <Bell className={`h-5 w-5 ${unreadCount > 0 ? "animate-[wiggle_1s_ease-in-out_infinite]" : ""}`} />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none animate-pulse">
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   )}
@@ -234,7 +337,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                         ))
                       )}
                     </div>
-                    <div className="px-4 py-2 border-t border-white/10">
+                    <div className="border-t border-white/10 px-4 py-2">
                       <button onClick={() => go("/my-account?tab=notifications")} className="w-full text-center text-xs text-blue-400 hover:text-blue-300 py-1 transition-colors">
                         Xem tất cả thông báo
                       </button>
@@ -281,22 +384,25 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                         </div>
                       </div>
                       {/* Wallet Balance */}
-                      <div className="mt-3 bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between">
+                      <button
+                        onClick={() => go("/wallet")}
+                        className="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between transition-colors"
+                      >
                         <div className="flex items-center gap-2 text-white/60 text-sm">
                           <Wallet className="h-4 w-4" />
-                          <span>Số dư</span>
+                          <span>Số dư ví</span>
                         </div>
                         <span className="text-blue-400 font-bold text-sm">{formatBalance(walletBalance)}</span>
-                      </div>
+                      </button>
                     </div>
 
                     {/* Menu Items */}
                     <div className="py-1">
                       {[
-                        { icon: LayoutGrid, label: "Bảng điều khiển", href: "/my-account" },
-                        { icon: User, label: "Trang cá nhân", href: "/my-account?tab=profile" },
+                        { icon: User, label: "Trang cá nhân", href: "/my-account" },
                         { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
                         { icon: ShoppingCart, label: "Đơn hàng", href: "/my-account?tab=orders" },
+                        { icon: Wallet, label: "Lịch sử dòng tiền", href: "/my-account?tab=wallet" },
                       ].map(item => (
                         <button
                           key={item.href}
@@ -316,18 +422,13 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                           className="w-full flex items-center gap-3 px-4 py-3 text-amber-400 hover:text-amber-300 hover:bg-amber-500/5 transition-colors text-sm"
                         >
                           <Settings className="h-4 w-4 flex-shrink-0" />
-                          <span>Quản Trị</span>
+                          <span>Quản Trị Admin</span>
                         </button>
                       </div>
                     )}
                     <div className="border-t border-white/10 py-1">
                       <button
-                        onClick={() => {
-                          localStorage.removeItem("customerToken");
-                          setAvatarOpen(false);
-                          navigate("/");
-                          window.location.reload();
-                        }}
+                        onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-colors text-sm"
                       >
                         <LogOut className="h-4 w-4 flex-shrink-0" />
@@ -388,10 +489,10 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
           onClick={() => setMenuOpen(false)}
         />
 
-        {/* Drawer */}
-        <div className={`absolute top-0 right-0 h-full w-72 bg-[#111] border-l border-white/10 transition-transform duration-300 overflow-y-auto ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>
+        {/* Drawer - full height with scroll */}
+        <div className={`absolute top-0 right-0 h-full w-72 bg-[#111] border-l border-white/10 transition-transform duration-300 flex flex-col ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
+          <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 flex-shrink-0">
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
@@ -416,63 +517,120 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
             </button>
           </div>
 
-          {/* Balance (if logged in) */}
-          {isLoggedIn && (
-            <div className="mx-4 mt-3 bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-white/60 text-sm">
-                <Wallet className="h-4 w-4" />
-                <span>Số dư</span>
-              </div>
-              <span className="text-blue-400 font-bold text-sm">{formatBalance(walletBalance)}</span>
-            </div>
-          )}
-
-          {/* Nav Links */}
-          <nav className="px-2 py-3 space-y-0.5">
-            {[
-              { icon: Home, label: "Trang chủ", href: "/" },
-              { icon: Package, label: "Sản phẩm", href: "/catalog" },
-              { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
-              { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" },
-              { icon: BookOpen, label: "Hướng dẫn", href: "/faq" },
-              { icon: HelpCircle, label: "Hỗ trợ", href: "/support" },
-            ].map(link => (
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            {/* Balance (if logged in) */}
+            {isLoggedIn && (
               <button
-                key={link.href}
-                onClick={() => go(link.href)}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/8 transition-all text-sm"
+                onClick={() => go("/wallet")}
+                className="mx-4 mt-3 w-[calc(100%-2rem)] bg-white/5 hover:bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between transition-colors"
               >
-                <link.icon className="h-5 w-5 text-white/40" />
-                <span className="font-medium">{link.label}</span>
-                <ChevronRight className="h-4 w-4 ml-auto opacity-30" />
-              </button>
-            ))}
-
-            {/* Categories */}
-            {categories && categories.length > 0 && (
-              <>
-                <div className="px-3 pt-3 pb-1">
-                  <p className="text-xs font-semibold text-white/30 uppercase tracking-wider">Danh mục</p>
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <Wallet className="h-4 w-4" />
+                  <span>Số dư ví</span>
                 </div>
-                {categories.slice(0, 8).map((cat: any) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => go(`/catalog?category=${cat.id}`)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/8 transition-all text-sm"
-                  >
-                    <LayoutGrid className="h-4 w-4 text-white/30" />
-                    <span>{cat.name}</span>
-                    {cat.productCount > 0 && (
-                      <span className="ml-auto text-xs text-white/30">{cat.productCount}</span>
-                    )}
-                  </button>
-                ))}
-              </>
+                <span className="text-blue-400 font-bold text-sm">{formatBalance(walletBalance)}</span>
+              </button>
             )}
-          </nav>
 
-          {/* Bottom Actions */}
-          <div className="px-4 pb-6 pt-2 border-t border-white/10 mt-2 space-y-2">
+            {/* Nav Links */}
+            <nav className="px-2 py-3 space-y-0.5">
+              {[
+                { icon: Home, label: "Trang chủ", href: "/" },
+                { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
+                { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" },
+                { icon: BookOpen, label: "Blog", href: "/blog" },
+                { icon: HelpCircle, label: "Hỗ trợ", href: "/support" },
+              ].map(link => (
+                <button
+                  key={link.href}
+                  onClick={() => go(link.href)}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/8 transition-all text-sm"
+                >
+                  <link.icon className="h-5 w-5 text-white/40" />
+                  <span className="font-medium">{link.label}</span>
+                  <ChevronRight className="h-4 w-4 ml-auto opacity-30" />
+                </button>
+              ))}
+
+              {/* Categories with accordion */}
+              {parentCategories.length > 0 && (
+                <>
+                  <div className="px-3 pt-3 pb-1">
+                    <p className="text-xs font-semibold text-white/30 uppercase tracking-wider">Danh mục</p>
+                  </div>
+                  {parentCategories.map((cat: any) => {
+                    const children = childrenOf(cat.id);
+                    const isExpanded = expandedMobileCat === cat.id;
+                    return (
+                      <div key={cat.id}>
+                        <button
+                          onClick={() => {
+                            if (children.length > 0) {
+                              setExpandedMobileCat(isExpanded ? null : cat.id);
+                            } else {
+                              go(`/catalog?category=${cat.id}`);
+                            }
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/8 transition-all text-sm"
+                        >
+                          {cat.icon && <span className="text-base">{cat.icon}</span>}
+                          <span className="flex-1 text-left">{cat.name}</span>
+                          {children.length > 0 ? (
+                            <ChevronDown className={`h-4 w-4 opacity-40 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 opacity-30" />
+                          )}
+                        </button>
+                        {/* Child categories */}
+                        {isExpanded && children.length > 0 && (
+                          <div className="ml-4 border-l border-white/10 pl-3 space-y-0.5 mb-1">
+                            <button
+                              onClick={() => go(`/catalog?category=${cat.id}`)}
+                              className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all text-xs"
+                            >
+                              <LayoutGrid className="h-3.5 w-3.5" />
+                              <span>Tất cả {cat.name}</span>
+                            </button>
+                            {children.map((child: any) => (
+                              <button
+                                key={child.id}
+                                onClick={() => go(`/catalog?category=${child.id}`)}
+                                className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 transition-all text-sm"
+                              >
+                                {child.icon && <span className="text-sm">{child.icon}</span>}
+                                <span>{child.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Admin link */}
+              {isAdmin && (
+                <>
+                  <div className="px-3 pt-3 pb-1">
+                    <p className="text-xs font-semibold text-amber-500/50 uppercase tracking-wider">Quản trị</p>
+                  </div>
+                  <button
+                    onClick={() => go("/dashboard")}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-amber-400 hover:text-amber-300 hover:bg-amber-500/8 transition-all text-sm"
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span className="font-medium">Quản Trị Admin</span>
+                    <ChevronRight className="h-4 w-4 ml-auto opacity-30" />
+                  </button>
+                </>
+              )}
+            </nav>
+          </div>
+
+          {/* Bottom Actions - fixed at bottom */}
+          <div className="px-4 pb-6 pt-3 border-t border-white/10 flex-shrink-0 space-y-2">
             {isLoggedIn ? (
               <>
                 <button
@@ -482,10 +640,10 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                   <User className="h-4 w-4" /> Tài khoản của tôi
                 </button>
                 <button
-                  onClick={() => go("/support")}
-                  className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                  onClick={handleLogout}
+                  className="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium transition-colors flex items-center justify-center gap-2 text-sm"
                 >
-                  <Ticket className="h-4 w-4" /> Hỗ trợ
+                  <LogOut className="h-4 w-4" /> Đăng xuất
                 </button>
               </>
             ) : (
@@ -499,6 +657,19 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Wiggle animation for bell */}
+      <style>{`
+        @keyframes wiggle {
+          0%, 100% { transform: rotate(0deg); }
+          15% { transform: rotate(-15deg); }
+          30% { transform: rotate(12deg); }
+          45% { transform: rotate(-10deg); }
+          60% { transform: rotate(8deg); }
+          75% { transform: rotate(-5deg); }
+          90% { transform: rotate(3deg); }
+        }
+      `}</style>
     </>
   );
 }

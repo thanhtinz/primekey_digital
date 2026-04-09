@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -8,13 +8,157 @@ import {
   Wrench, Phone, Mail, ChevronRight, TrendingUp, Award,
   Heart, ShoppingCart, Users2, Camera, Loader2,
   Copy, Share2, Trophy, Search, CreditCard, BarChart3,
-  ArrowRight, Sparkles, Eye, Lock, EyeOff
+  ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
+
+// TwoFASection component
+function TwoFASection({ token }: { token: string }) {
+  const [step, setStep] = useState<"idle" | "setup" | "verify" | "disable">("idle");
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const [secret, setSecret] = useState("");
+  const [code, setCode] = useState("");
+
+  const { data: twoFaStatus, refetch: refetch2fa } = trpc.customer.get2faStatus.useQuery({ token }, { enabled: !!token });
+  const enabled = twoFaStatus?.enabled ?? false;
+
+  const setup2fa = trpc.customer.setup2fa.useMutation({
+    onSuccess: (data: any) => {
+      setQrDataUrl(data.qrDataUrl);
+      setSecret(data.secret);
+      setStep("verify");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const verify2fa = trpc.customer.verify2fa.useMutation({
+    onSuccess: () => {
+      toast.success("Xác thực 2 lớp đã được bật!");
+      setStep("idle"); setCode("");
+      refetch2fa();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const disable2fa = trpc.customer.disable2fa.useMutation({
+    onSuccess: () => {
+      toast.success("Xác thực 2 lớp đã được tắt!");
+      setStep("idle"); setCode("");
+      refetch2fa();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-slate-500" />
+          Xác thực 2 lớp (2FA)
+        </h3>
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${enabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+          {enabled ? "Đã bật" : "Chưa bật"}
+        </span>
+      </div>
+
+      {step === "idle" && (
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">
+            {enabled
+              ? "Tài khoản đang được bảo vệ bằng Google Authenticator. Mỗi lần đăng nhập sẽ yêu cầu mã OTP."
+              : "Bật xác thực 2 lờbp để bảo vệ tài khoản bằng Google Authenticator."}
+          </p>
+          {!enabled ? (
+            <button
+              onClick={() => { setStep("setup"); setup2fa.mutate({ token }); }}
+              disabled={setup2fa.isPending}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+            >
+              {setup2fa.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
+              Cài đặt Google Authenticator
+            </button>
+          ) : (
+            <button
+              onClick={() => setStep("disable")}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium rounded-lg transition border border-red-200"
+            >
+              <ShieldCheck className="h-4 w-4" /> Tắt 2FA
+            </button>
+          )}
+        </div>
+      )}
+
+      {step === "verify" && (
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <ul className="text-xs text-amber-700 space-y-1">
+              <li>✓ Tải ứng dụng Google Authenticator trên điện thoại</li>
+              <li>✓ Quét mã QR để liên kết tài khoản</li>
+              <li>✓ Nhập mã 6 số từ ứng dụng để xác nhận</li>
+            </ul>
+          </div>
+          {qrDataUrl && (
+            <div className="flex justify-center">
+              <img src={qrDataUrl} alt="QR Code 2FA" className="w-40 h-40 rounded-xl border border-gray-200" />
+            </div>
+          )}
+          <div>
+            <p className="text-xs text-slate-500 mb-1">Secret key (backup):</p>
+            <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono break-all">{secret}</code>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              maxLength={6}
+              value={code}
+              onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="Nhập mã 6 số"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            />
+            <button
+              onClick={() => verify2fa.mutate({ token, code })}
+              disabled={code.length !== 6 || verify2fa.isPending}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
+            >
+              {verify2fa.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+              Xác nhận
+            </button>
+          </div>
+          <button onClick={() => setStep("idle")} className="text-xs text-slate-400 hover:text-slate-600">Hủy</button>
+        </div>
+      )}
+
+      {step === "disable" && (
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">Nhập mã OTP từ Google Authenticator để tắt 2FA:</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              maxLength={6}
+              value={code}
+              onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="Mã 6 số"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            />
+            <button
+              onClick={() => disable2fa.mutate({ token, code })}
+              disabled={code.length !== 6 || disable2fa.isPending}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
+            >
+              {disable2fa.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Tắt 2FA
+            </button>
+          </div>
+          <button onClick={() => setStep("idle")} className="text-xs text-slate-400 hover:text-slate-600">Hủy</button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ChangePasswordForm component
 function ChangePasswordForm({ token }: { token: string }) {
@@ -986,6 +1130,9 @@ export default function MyAccount() {
               </h3>
               <ChangePasswordForm token={token!} />
             </div>
+
+            {/* 2FA Section */}
+            <TwoFASection token={token!} />
 
             {/* Account security */}
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">

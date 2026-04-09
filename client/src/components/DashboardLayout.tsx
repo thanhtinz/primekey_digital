@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, Package, ShoppingCart, Settings, Tag, Ticket, Wallet, BarChart2, Gift, Bell, ExternalLink, BookOpen } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: Package, label: "Sản phẩm", path: "/products" },
   { icon: Users, label: "Khách hàng", path: "/customers" },
   { icon: Wallet, label: "Quản lý ví", path: "/wallet-management" },
+  { icon: BookOpen, label: "Quản lý Blog", path: "/blog-management" },
   { icon: BarChart2, label: "Báo cáo", path: "/reports" },
   { icon: Tag, label: "Tags sản phẩm", path: "/settings/tags" },
   { icon: Gift, label: "Mã giảm giá", path: "/settings/coupons" },
@@ -188,7 +189,7 @@ function DashboardLayoutContent({
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0">
+          <SidebarContent className="gap-0 overflow-y-auto">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
                 const isActive = location === item.path;

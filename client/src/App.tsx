@@ -71,6 +71,9 @@ const ProductCatalog = lazy(() => import("./pages/ProductCatalog"));
 const LoyaltyPage = lazy(() => import("./pages/LoyaltyPage"));
 const WarrantyRequestPage = lazy(() => import("./pages/WarrantyRequestPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
+const BlogManagement = lazy(() => import("./pages/BlogManagement"));
 
 // Client Portal
 const ClientLogin = lazy(() => import("./pages/ClientLogin"));
@@ -110,7 +113,7 @@ const ForbiddenPage = () => (
 );
 
 // Routes that never require admin auth (always accessible to public or customers)
-const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/verify-email", "/reset-password"];
+const ALWAYS_PUBLIC = ["/track-order", "/feedbacks-public", "/review", "/thank-you", "/pay", "/warranty", "/leaderboard", "/flash-sale", "/catalog", "/loyalty", "/warranty-request", "/faq", "/blog", "/client-login", "/my-account", "/product", "/cart", "/referral", "/coupons", "/support", "/wallet", "/verify-email", "/reset-password"];
 
 function isAlwaysPublic(path: string) {
   return ALWAYS_PUBLIC.some(r => path === r || path.startsWith(r + "/"));
@@ -147,6 +150,8 @@ function Router() {
           <Route path="/flash-sale" component={() => <FlashSalePage />} />
           <Route path="/catalog" component={() => <ProductCatalog />} />
           <Route path="/faq" component={() => <FAQPage />} />
+          <Route path="/blog" component={() => <BlogPage />} />
+          <Route path="/blog/:slug" component={() => <BlogPostPage />} />
           <Route path="/client-login" component={() => <ClientLogin />} />
           <Route path="/product/:id" component={() => <ProductDetail />} />
           {/* Customer-only - requires customer login */}
@@ -242,6 +247,7 @@ function Router() {
         <Route path="/settings/banners" component={() => isAdmin ? <BannerSettings /> : <ForbiddenPage />} />
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
+        <Route path="/blog-management" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

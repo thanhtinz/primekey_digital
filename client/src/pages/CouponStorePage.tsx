@@ -38,7 +38,7 @@ function CouponCard({ coupon }: { coupon: any }) {
   const usagePercent = coupon.maxUses > 0 ? Math.min(100, Math.round(((coupon.usedCount || 0) / coupon.maxUses) * 100)) : 0;
 
   return (
-    <div className={`relative bg-[#111] border rounded-2xl overflow-hidden transition-all duration-200 ${isAvailable ? "border-white/10 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/10" : "border-white/5 opacity-60"}`}>
+    <div className={`relative bg-white border rounded-2xl overflow-hidden transition-all duration-200 shadow-sm ${isAvailable ? "border-gray-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-100" : "border-gray-100 opacity-60"}`}>
       {/* Decorative left stripe */}
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${coupon.discountType === "percent" ? "bg-gradient-to-b from-blue-500 to-cyan-500" : "bg-gradient-to-b from-green-500 to-emerald-500"}`} />
 
@@ -65,7 +65,7 @@ function CouponCard({ coupon }: { coupon: any }) {
                 )}
               </div>
               {coupon.description && (
-                <p className="text-xs text-white/50 mt-0.5 line-clamp-1">{coupon.description}</p>
+                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{coupon.description}</p>
               )}
             </div>
           </div>
@@ -73,14 +73,14 @@ function CouponCard({ coupon }: { coupon: any }) {
 
         {/* Code */}
         <div className="flex items-center gap-2 mb-3">
-          <div className={`flex-1 bg-white/5 border border-dashed ${isAvailable ? "border-white/20" : "border-white/10"} rounded-xl px-3 py-2 flex items-center justify-between gap-2`}>
-            <span className={`font-mono font-bold tracking-widest text-sm ${isAvailable ? "text-white" : "text-white/40"}`}>
+          <div className={`flex-1 bg-gray-50 border border-dashed ${isAvailable ? "border-white/20" : "border-gray-200"} rounded-xl px-3 py-2 flex items-center justify-between gap-2`}>
+            <span className={`font-mono font-bold tracking-widest text-sm ${isAvailable ? "text-white" : "text-gray-400"}`}>
               {coupon.code}
             </span>
             <button
               onClick={handleCopy}
               disabled={!isAvailable}
-              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${isAvailable ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-white/5 text-white/30 cursor-not-allowed"}`}
+              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${isAvailable ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-50 text-gray-400 cursor-not-allowed"}`}
             >
               {copied ? <CheckCircle className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? "Đã copy" : "Copy"}
@@ -89,7 +89,7 @@ function CouponCard({ coupon }: { coupon: any }) {
         </div>
 
         {/* Info row */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/40">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
           {Number(coupon.minOrderAmount) > 0 && (
             <span className="flex items-center gap-1">
               <Info className="h-3 w-3" />
@@ -113,13 +113,13 @@ function CouponCard({ coupon }: { coupon: any }) {
         {/* Usage progress bar */}
         {coupon.maxUses > 0 && (
           <div className="mt-3">
-            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-gray-50 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${usagePercent >= 80 ? "bg-red-500" : usagePercent >= 50 ? "bg-yellow-500" : "bg-blue-500"}`}
                 style={{ width: `${usagePercent}%` }}
               />
             </div>
-            <p className="text-xs text-white/30 mt-1">Đã dùng {usagePercent}%</p>
+            <p className="text-xs text-gray-400 mt-1">Đã dùng {usagePercent}%</p>
           </div>
         )}
       </div>
@@ -146,24 +146,24 @@ export default function CouponStorePage() {
   const activeCoupons = coupons;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
       <ClientHeader />
       <div className="flex-1 pt-14">
         {/* Hero */}
-        <div className="bg-gradient-to-b from-[#111] to-[#0a0a0a] border-b border-white/5 py-10 px-4">
+        <div className="bg-gradient-to-b from-[#111] to-[#0a0a0a] border-b border-gray-100 py-10 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 mb-4">
               <Gift className="h-4 w-4 text-blue-400" />
               <span className="text-sm text-blue-400 font-medium">Ưu đãi đặc biệt</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-3">Kho Mã Giảm Giá</h1>
-            <p className="text-white/50 text-base max-w-xl mx-auto">
+            <p className="text-gray-500 text-base max-w-xl mx-auto">
               Sao chép mã và áp dụng khi thanh toán để nhận ưu đãi hấp dẫn
             </p>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-              <span className="text-white/40">Đang có</span>
+              <span className="text-gray-400">Đang có</span>
               <span className="text-blue-400 font-bold text-lg">{activeCoupons.length}</span>
-              <span className="text-white/40">mã đang hoạt động</span>
+              <span className="text-gray-400">mã đang hoạt động</span>
             </div>
           </div>
         </div>
@@ -173,13 +173,13 @@ export default function CouponStorePage() {
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             {/* Search */}
             <div className="relative flex-1">
-              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm mã giảm giá..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
               />
             </div>
             {/* Type filter */}
@@ -192,7 +192,7 @@ export default function CouponStorePage() {
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key as any)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${filter === f.key ? "bg-blue-600 text-white" : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"}`}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${filter === f.key ? "bg-blue-600 text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-white"}`}
                 >
                   {f.label}
                 </button>
@@ -204,21 +204,21 @@ export default function CouponStorePage() {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-40 bg-white/5 rounded-2xl animate-pulse" />
+                <div key={i} className="h-40 bg-gray-50 rounded-2xl animate-pulse" />
               ))}
             </div>
           ) : coupons.length === 0 ? (
             <div className="text-center py-16">
               <Gift className="h-12 w-12 text-white/20 mx-auto mb-3" />
-              <p className="text-white/40 text-lg font-medium">Chưa có mã giảm giá</p>
-              <p className="text-white/30 text-sm mt-1">Hãy quay lại sau để xem các ưu đãi mới nhất</p>
+              <p className="text-gray-400 text-lg font-medium">Chưa có mã giảm giá</p>
+              <p className="text-gray-400 text-sm mt-1">Hãy quay lại sau để xem các ưu đãi mới nhất</p>
             </div>
           ) : (
             <>
               {/* Active coupons */}
               {activeCoupons.length > 0 && (
                 <div className="mb-8">
-                  <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                     Đang hoạt động ({activeCoupons.length})
                   </h2>
@@ -230,7 +230,7 @@ export default function CouponStorePage() {
               {/* Expired/unavailable coupons */}
               {coupons.filter((c: any) => !activeCoupons.includes(c)).length > 0 && (
                 <div>
-                  <h2 className="text-sm font-semibold text-white/30 uppercase tracking-wider mb-3">
+                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
                     Không còn hiệu lực
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

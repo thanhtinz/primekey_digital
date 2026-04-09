@@ -103,7 +103,7 @@ export function ClientFooter() {
             </div>
             <div className="space-y-3">
               {[
-                { label: "Câu hỏi thường gặp", href: "/faq", icon: HelpCircle },
+                { label: "Blog & Hướng dẫn", href: "/blog", icon: HelpCircle },
                 { label: "Liên hệ chúng tôi", href: "/support", icon: MessageCircle },
                 { label: "Kho mã giảm giá", href: "/coupons", icon: Link2 },
               ].map(link => (

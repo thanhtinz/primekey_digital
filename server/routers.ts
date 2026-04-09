@@ -4587,9 +4587,95 @@ export const appRouter = router({
         await drizzleDb.update(customers).set({ passwordHash: newHash, updatedAt: new Date() } as any).where(eq(customers.id, customer.id));
         return { success: true };
       }),
+    // 2FA: Lấy QR code để setup
+    setup2fa: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) throw new Error("Tài khoản không tồn tại");
+        // Generate TOTP secret
+        const crypto = await import("crypto");
+        // Generate a random base32 secret for TOTP
+        const rawBytes = crypto.randomBytes(20);
+        const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        let secret = "";
+        for (let i = 0; i < 32; i++) {
+          secret += base32Chars[rawBytes[i % 20] % 32];
+        }
+        await drizzleDb.update(customers).set({ totpSecret: secret } as any).where(eq(customers.id, customer.id));
+        // Build otpauth URI
+        const issuer = encodeURIComponent("PayOS Shop");
+        const account = encodeURIComponent(session.email);
+        const otpauthUrl = `otpauth://totp/${issuer}:${account}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+        // Generate QR code as data URL
+        const QRCode = await import("qrcode");
+        const qrDataUrl = await QRCode.toDataURL(otpauthUrl);
+        return { secret, qrDataUrl, otpauthUrl };
+      }),
+    // 2FA: Xác minh và bật
+    verify2fa: publicProcedure
+      .input(z.object({ token: z.string(), code: z.string().length(6) }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer || !(customer as any).totpSecret) throw new Error("Chưa cài đặt 2FA");
+        // Verify TOTP code
+        const OTPAuth = await import("otpauth");
+        const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32((customer as any).totpSecret), algorithm: "SHA1", digits: 6, period: 30 });
+        const delta = totp.validate({ token: input.code, window: 1 });
+        if (delta === null) throw new Error("Mã OTP không hợp lệ");
+        await drizzleDb.update(customers).set({ totpEnabled: true } as any).where(eq(customers.id, customer.id));
+        return { success: true };
+      }),
+    // 2FA: Tắt
+    disable2fa: publicProcedure
+      .input(z.object({ token: z.string(), code: z.string().length(6) }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phên đăng nhập hết hạn");
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer || !(customer as any).totpEnabled) throw new Error("2FA chưa được bật");
+        const OTPAuth = await import("otpauth");
+        const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32((customer as any).totpSecret!), algorithm: "SHA1", digits: 6, period: 30 });
+        const delta = totp.validate({ token: input.code, window: 1 });
+        if (delta === null) throw new Error("Mã OTP không hợp lệ");
+        await drizzleDb.update(customers).set({ totpEnabled: false, totpSecret: null } as any).where(eq(customers.id, customer.id));
+        return { success: true };
+      }),
+    // Lấy trạng thái 2FA
+    get2faStatus: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { enabled: false };
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) return { enabled: false };
+        const [customer] = await drizzleDb.select({ totpEnabled: customers.totpEnabled }).from(customers).where(eq(customers.email, session.email)).limit(1);
+        return { enabled: !!(customer as any)?.totpEnabled };
+      }),
   }),
-
-  // ─── Cart ──────────────────────────────────────────────────────────────────
+  // ─── Cartt ──────────────────────────────────────────────────────────────────
   cart: router({
     list: publicProcedure.input(z.object({ email: z.string().email() })).query(async ({ input }) => {
       const { cartItems, products: productsTable, productPackages } = await import("../drizzle/schema");
@@ -6085,6 +6171,145 @@ export const appRouter = router({
       await drizzleDb.delete(siteAnnouncements).where(and(eq(siteAnnouncements.id, input.id), eq(siteAnnouncements.userId, ctx.user.id)));
       return { success: true };
     }),
+  }),
+  // ─── Blog ──────────────────────────────────────────────────────────────────────────────────────
+  blog: router({
+    // Public: list published posts
+    listPosts: publicProcedure
+      .input(z.object({ categoryId: z.number().optional(), page: z.number().default(1), limit: z.number().default(10) }))
+      .query(async ({ input }) => {
+        const { blogPosts, blogCategories } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, desc, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { posts: [], total: 0 };
+        const conditions = [eq(blogPosts.isPublished, true)];
+        if (input.categoryId) conditions.push(eq(blogPosts.categoryId, input.categoryId));
+        const offset = (input.page - 1) * input.limit;
+        const posts = await drizzleDb.select({
+          id: blogPosts.id, title: blogPosts.title, slug: blogPosts.slug,
+          excerpt: blogPosts.excerpt, coverImage: blogPosts.coverImage,
+          publishedAt: blogPosts.publishedAt, viewCount: blogPosts.viewCount,
+          categoryId: blogPosts.categoryId,
+        }).from(blogPosts).where(and(...conditions)).orderBy(desc(blogPosts.publishedAt)).limit(input.limit).offset(offset);
+        return { posts };
+      }),
+    // Public: get single post by slug
+    getPost: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        const { blogPosts, blogCategories } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return null;
+        const [post] = await drizzleDb.select().from(blogPosts).where(eq(blogPosts.slug, input.slug)).limit(1);
+        if (!post || !post.isPublished) return null;
+        // Increment view count
+        await drizzleDb.update(blogPosts).set({ viewCount: (post.viewCount || 0) + 1 }).where(eq(blogPosts.id, post.id));
+        return post;
+      }),
+    // Public: list categories
+    listCategories: publicProcedure.query(async () => {
+      const { blogCategories } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(blogCategories).orderBy(asc(blogCategories.sortOrder));
+    }),
+    // Admin: create post
+    createPost: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1), slug: z.string().min(1), content: z.string().min(1),
+        excerpt: z.string().optional(), coverImage: z.string().optional(),
+        categoryId: z.number().optional(), isPublished: z.boolean().default(false),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { blogPosts } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [post] = await drizzleDb.insert(blogPosts).values({
+          userId: ctx.user.id, title: input.title, slug: input.slug,
+          content: input.content, excerpt: input.excerpt, coverImage: input.coverImage,
+          categoryId: input.categoryId, isPublished: input.isPublished,
+          publishedAt: input.isPublished ? new Date() : undefined,
+        }).$returningId();
+        return { id: post.id };
+      }),
+    // Admin: update post
+    updatePost: protectedProcedure
+      .input(z.object({
+        id: z.number(), title: z.string().optional(), slug: z.string().optional(),
+        content: z.string().optional(), excerpt: z.string().optional(),
+        coverImage: z.string().optional(), categoryId: z.number().optional(),
+        isPublished: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { blogPosts } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const updateData: any = { updatedAt: new Date() };
+        if (input.title !== undefined) updateData.title = input.title;
+        if (input.slug !== undefined) updateData.slug = input.slug;
+        if (input.content !== undefined) updateData.content = input.content;
+        if (input.excerpt !== undefined) updateData.excerpt = input.excerpt;
+        if (input.coverImage !== undefined) updateData.coverImage = input.coverImage;
+        if (input.categoryId !== undefined) updateData.categoryId = input.categoryId;
+        if (input.isPublished !== undefined) {
+          updateData.isPublished = input.isPublished;
+          if (input.isPublished) updateData.publishedAt = new Date();
+        }
+        await drizzleDb.update(blogPosts).set(updateData).where(eq(blogPosts.id, input.id));
+        return { success: true };
+      }),
+    // Admin: delete post
+    deletePost: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { blogPosts } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(blogPosts).where(eq(blogPosts.id, input.id));
+        return { success: true };
+      }),
+    // Admin: list all posts (including unpublished)
+    adminListPosts: protectedProcedure.query(async ({ ctx }) => {
+      const { blogPosts, blogCategories } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { desc, eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(blogPosts).where(eq(blogPosts.userId, ctx.user.id)).orderBy(desc(blogPosts.createdAt));
+    }),
+    // Admin: create category
+    createCategory: protectedProcedure
+      .input(z.object({ name: z.string().min(1), slug: z.string().min(1), sortOrder: z.number().default(0) }))
+      .mutation(async ({ input, ctx }) => {
+        const { blogCategories } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [cat] = await drizzleDb.insert(blogCategories).values({ userId: ctx.user.id, name: input.name, slug: input.slug, sortOrder: input.sortOrder }).$returningId();
+        return { id: cat.id };
+      }),
+    // Admin: delete category
+    deleteCategory: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { blogCategories } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(blogCategories).where(eq(blogCategories.id, input.id));
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;
