@@ -64,6 +64,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
     { token },
     { enabled: isLoggedIn, staleTime: 60_000 }
   );
+  // Check admin role from Manus OAuth session (users table, not customers table)
+  const { data: adminUser } = trpc.auth.me.useQuery(undefined, { staleTime: 60_000, retry: false });
 
   const walletBalance = walletData?.balance ?? 0;
   const unreadCount = notifData?.unreadCount ?? 0;
@@ -71,7 +73,10 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const avatarUrl = sessionData?.avatarUrl;
   const displayName = sessionData?.name || sessionData?.email?.split("@")[0] || "Tài Khoản";
   const email = sessionData?.email || "";
-  const isAdmin = (sessionData as any)?.role === "admin";
+  // isAdmin = true if:
+  // 1. Logged in via Manus OAuth (admin dashboard) with role admin, OR
+  // 2. Logged in via client loginWithPassword with admin credentials (isAdminSession)
+  const isAdmin = (adminUser as any)?.role === "admin" || (sessionData as any)?.role === "admin";
 
   const { data: allCategories } = trpc.categories.list.useQuery(undefined, { staleTime: 300_000 });
 

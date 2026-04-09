@@ -1,0 +1,1 @@
+ALTER TABLE `customer_sessions` ADD `isAdminSession` boolean DEFAULT false;

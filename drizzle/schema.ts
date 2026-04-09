@@ -593,6 +593,7 @@ export const customerSessions = mysqlTable("customer_sessions", {
   avatarUrl: text("avatarUrl"),
   token: varchar("token", { length: 128 }).notNull().unique(),
   expiresAt: timestamp("expiresAt").notNull(),
+  isAdminSession: boolean("isAdminSession").default(false), // true if logged in as admin user
   createdAt: timestamp("createdAt_cs").defaultNow().notNull(),
 });
 export type CustomerSession = typeof customerSessions.$inferSelect;

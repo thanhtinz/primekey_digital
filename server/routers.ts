@@ -4322,7 +4322,15 @@ export const appRouter = router({
         // Get walletBalance AND avatarUrl from customers table (persistent across sessions)
         const [cust] = await drizzleDb.select({ walletBalance: customers.walletBalance, avatarUrl: (customers as any).avatarUrl }).from(customers).where(eq(customers.email, session.email)).limit(1);
         const avatarUrl = (session as any).avatarUrl || (cust as any)?.avatarUrl || null;
-        return { email: session.email, name: session.name, avatarUrl, walletBalance: cust?.walletBalance || "0" };
+        // If this is an admin session, also return role from users table
+        const isAdminSession = (session as any).isAdminSession === true || (session as any).isAdminSession === 1;
+        let role: string | undefined;
+        if (isAdminSession) {
+          const { users } = await import("../drizzle/schema");
+          const [adminUser] = await drizzleDb.select({ role: users.role }).from(users).where(eq(users.email, session.email)).limit(1);
+          role = adminUser?.role;
+        }
+        return { email: session.email, name: session.name, avatarUrl, walletBalance: cust?.walletBalance || "0", role };
       }),
 
     // Lịch sử đơn hàng của khách (theo email)
@@ -4610,12 +4618,34 @@ export const appRouter = router({
         password: z.string(),
       }))
       .mutation(async ({ input }) => {
-        const { customers, customerSessions } = await import("../drizzle/schema");
+        const { customers, customerSessions, users } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
         const { eq, and } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new Error("DB unavailable");
-        const { users } = await import("../drizzle/schema");
+        const bcrypt = await import("bcryptjs");
+        const crypto = await import("crypto");
+
+        // ── Check admin users table first ──────────────────────────────────────
+        const [adminUser] = await drizzleDb.select().from(users).where(eq(users.email, input.email)).limit(1);
+        if (adminUser) {
+          const validAdmin = await bcrypt.compare(input.password, adminUser.password);
+          if (!validAdmin) throw new Error("Email hoặc mật khẩu không đúng");
+          // Create customer session with isAdminSession flag
+          const token = crypto.randomBytes(48).toString("hex");
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          const name = adminUser.name || adminUser.email.split("@")[0];
+          await drizzleDb.insert(customerSessions).values({
+            email: adminUser.email,
+            name,
+            token,
+            expiresAt,
+            isAdminSession: true,
+          } as any);
+          return { token, name, email: adminUser.email, expiresAt, role: adminUser.role };
+        }
+
+        // ── Fallback: check customers table ───────────────────────────────────
         const [owner] = await drizzleDb.select().from(users).limit(1);
         if (!owner) throw new Error("Hệ thống chưa được cấu hình");
         const [customer] = await drizzleDb.select()
@@ -4629,7 +4659,6 @@ export const appRouter = router({
           const unlockTime = new Date((customer as any).lockedUntil).toLocaleTimeString("vi-VN");
           throw new Error(`Tài khoản bị khóa tạm thời do nhập sai quá nhiều lần. Thử lại sau ${unlockTime}`);
         }
-        const bcrypt = await import("bcryptjs");
         const valid = await bcrypt.compare(input.password, (customer as any).passwordHash);
         if (!valid) {
           // Increment login attempts
@@ -4651,7 +4680,6 @@ export const appRouter = router({
         // Reset login attempts on success
         await drizzleDb.update(customers).set({ loginAttempts: 0, lockedUntil: null, lastLoginAt: new Date(), updatedAt: new Date() } as any).where(eq(customers.id, customer.id));
         // Create session
-        const crypto = await import("crypto");
         const token = crypto.randomBytes(48).toString("hex");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token, expiresAt });
