@@ -8,7 +8,7 @@ import {
   Wrench, Phone, Mail, ChevronRight, TrendingUp, Award,
   Heart, ShoppingCart, Users2, Camera, Loader2,
   Copy, Share2, Trophy, Search, CreditCard, BarChart3,
-  ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck
+  ArrowRight, Sparkles, Eye, Lock, EyeOff, QrCode, KeyRound, ShieldCheck, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -602,8 +602,8 @@ export default function MyAccount() {
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-slate-100">
                 <h3 className="text-sm font-semibold text-slate-800">Đơn hàng gần đây</h3>
-                <button onClick={() => setActiveTab("orders")} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-0.5">
-                  Xem tất cả <ChevronRight className="h-3.5 w-3.5" />
+                <button onClick={() => navigate("/track-order")} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-0.5">
+                  Xem tất cả đơn hàng <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
               {(orders as any[]).length === 0 ? (
@@ -690,6 +690,20 @@ export default function MyAccount() {
         {/* ===== Tab: Orders ===== */}
         {activeTab === "orders" && (
           <div className="space-y-3">
+            {/* Link to full order management page */}
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-blue-800">Xem đầy đủ lịch sử đơn hàng</p>
+                <p className="text-xs text-blue-600 mt-0.5">Tìm kiếm, lọc và xem chi tiết tất cả đơn hàng</p>
+              </div>
+              <button
+                onClick={() => navigate("/track-order")}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Quản lý đơn hàng
+              </button>
+            </div>
             {ordersLoading ? (
               <div className="text-center py-16 text-slate-500">
                 <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />

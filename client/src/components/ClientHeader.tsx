@@ -75,6 +75,13 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
 
   const { data: allCategories } = trpc.categories.list.useQuery(undefined, { staleTime: 300_000 });
 
+  // Cart count
+  const { data: cartData } = trpc.cart.list.useQuery(
+    { email },
+    { enabled: isLoggedIn && !!email, staleTime: 30_000 }
+  );
+  const cartCount = (cartData as any[])?.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) ?? 0;
+
   // Build category tree: parent categories and their children
   const parentCategories = (allCategories || []).filter((c: any) => !c.parentId);
   const childrenOf = (parentId: number) => (allCategories || []).filter((c: any) => c.parentId === parentId);
@@ -284,6 +291,22 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
             >
               <Gift className="h-5 w-5" />
             </button>
+
+            {/* Cart Icon */}
+            {isLoggedIn && (
+              <button
+                onClick={() => go("/cart")}
+                className="relative p-2.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                title="Giỏ hàng"
+              >
+                <ShoppingCart className={`h-5 w-5 ${cartCount > 0 ? "animate-[wiggle_2s_ease-in-out_infinite]" : ""}`} />
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Notification Bell */}
             {isLoggedIn && (
