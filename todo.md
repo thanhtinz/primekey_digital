@@ -1457,3 +1457,5 @@ todo updated
 - [x] Fix 404 kho ảnh avatar trong admin (/settings/avatars)
 - [x] Thêm icon cho tag trong TagSettings (thêm cột icon vào schema + UI)
 - [x] Thêm mục Quản Lý Ví vào sidebar admin
+- [x] Cải thiện UI WalletManagement: thêm button thao tác (duyệt nạp tiền, hoàn tiền, điều chỉnh số dư, xem lịch sử giao dịch)
+- [x] Redesign trang Dashboard admin với giao diện mới (stats cards đẹp hơn, recent orders, quick actions)

@@ -1,62 +1,41 @@
 import { useState } from "react";
-import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, Plus, RefreshCw, Package, Users, Star, AlertTriangle, Send, Loader2 } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
+import {
+  TrendingUp, FileText, CheckCircle, Clock, ArrowUpRight, RefreshCw,
+  Package, Users, AlertTriangle, Send, Loader2, ShoppingCart,
+  Wallet, Star, ArrowRight, Plus, Zap, BarChart2
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
-function StatCardSkeleton() {
-  return (
-    <Card className="border-0 shadow-sm">
-      <CardContent className="p-6">
-        <div className="animate-pulse space-y-3">
-          <div className="flex justify-between">
-            <div className="h-4 bg-gray-200 rounded w-24" />
-            <div className="h-10 w-10 bg-gray-200 rounded-lg" />
-          </div>
-          <div className="h-8 bg-gray-200 rounded w-32" />
-          <div className="h-3 bg-gray-200 rounded w-16" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ChartSkeleton({ height = 300 }: { height?: number }) {
-  return (
-    <div className="animate-pulse" style={{ height }}>
-      <div className="h-full bg-gray-100 rounded-xl" />
-    </div>
-  );
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  CREATED: "Tạo Đơn",
-  PAID: "Đã TT",
-  SHIPPING: "Đang Giao",
-  WARRANTY: "Bảo Hành",
-  FAILED: "Thất Bại",
-  EXPIRED: "Hết Hạn",
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  CREATED:   { label: "Chờ xác nhận", color: "text-blue-700",   bg: "bg-blue-100" },
+  PAID:      { label: "Đang xử lý",   color: "text-teal-700",   bg: "bg-teal-100" },
+  SHIPPING:  { label: "Đang giao",    color: "text-amber-700",  bg: "bg-amber-100" },
+  COMPLETED: { label: "Hoàn thành",   color: "text-green-700",  bg: "bg-green-100" },
+  WARRANTY:  { label: "Bảo hành",     color: "text-purple-700", bg: "bg-purple-100" },
+  FAILED:    { label: "Thất bại",     color: "text-red-700",    bg: "bg-red-100" },
+  REFUNDED:  { label: "Hoàn tiền",    color: "text-orange-700", bg: "bg-orange-100" },
+  CANCELLED: { label: "Đã hủy",       color: "text-gray-700",   bg: "bg-gray-100" },
+  EXPIRED:   { label: "Hết hạn",      color: "text-gray-700",   bg: "bg-gray-100" },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  CREATED: "bg-blue-100 text-blue-800",
-  PAID: "bg-green-100 text-green-800",
-  SHIPPING: "bg-yellow-100 text-yellow-800",
-  WARRANTY: "bg-purple-100 text-purple-800",
-  FAILED: "bg-red-100 text-red-800",
-  EXPIRED: "bg-gray-100 text-gray-800",
-};
+function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />;
+}
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [isSendingBulk, setIsSendingBulk] = useState(false);
+
   const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats } = trpc.reports.getDashboardStats.useQuery();
   const { data: revenueByMonth, isLoading: revenueLoading } = trpc.reports.getRevenueByMonth.useQuery();
-  const { data: invoiceStats, isLoading: invoiceStatsLoading } = trpc.reports.getInvoiceStats.useQuery();
+  const { data: invoiceStats } = trpc.reports.getInvoiceStats.useQuery();
   const { data: recentInvoices, isLoading: invoicesLoading } = trpc.invoices.list.useQuery();
   const { data: topProducts } = trpc.reports.getTopProducts.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
@@ -69,10 +48,7 @@ export default function Dashboard() {
     setIsSendingBulk(true);
     try {
       const invoiceIds = expiringSoon.map((inv: any) => inv.id);
-      const result = await sendBulkReminderMutation.mutateAsync({
-        invoiceIds,
-        origin: window.location.origin,
-      });
+      const result = await sendBulkReminderMutation.mutateAsync({ invoiceIds, origin: window.location.origin });
       toast.success(`Đã gửi ${result.sent} email nhắc nhở thành công`);
       refetchExpiring();
     } catch {
@@ -87,283 +63,286 @@ export default function Dashboard() {
     revenue: typeof item.revenue === "string" ? parseFloat(item.revenue) : (item.revenue || 0),
   }));
 
-  const statusData = invoiceStats ? [
-    { name: "Đã Thanh Toán", value: invoiceStats.PAID || 0, color: "#10B981" },
-    { name: "Tạo Đơn", value: invoiceStats.CREATED || 0, color: "#3B82F6" },
-    { name: "Đang Giao", value: invoiceStats.SHIPPING || 0, color: "#F59E0B" },
-    { name: "Bảo Hành", value: invoiceStats.WARRANTY || 0, color: "#8B5CF6" },
-    { name: "Thất Bại", value: invoiceStats.FAILED || 0, color: "#EF4444" },
-    { name: "Hết Hạn", value: invoiceStats.EXPIRED || 0, color: "#8B5CF6" },
-  ].filter(d => d.value > 0) : [];
-
   const totalRevenue = typeof dashboardStats?.totalRevenue === "string"
     ? parseFloat(dashboardStats.totalRevenue)
     : (dashboardStats?.totalRevenue || 0);
 
   const paymentRate = dashboardStats?.totalInvoices
-    ? Math.round((dashboardStats.paidInvoices / dashboardStats.totalInvoices) * 100)
-    : 0;
+    ? Math.round((dashboardStats.paidInvoices / dashboardStats.totalInvoices) * 100) : 0;
 
-  const pendingRate = dashboardStats?.totalInvoices
-    ? Math.round((dashboardStats.pendingInvoices / dashboardStats.totalInvoices) * 100)
-    : 0;
+  const latestInvoices = (recentInvoices || []).slice(0, 8);
 
-  const kpiCards = [
-    {
-      title: "Tổng Doanh Thu",
-      value: totalRevenue.toLocaleString("vi-VN"),
-      unit: "VND",
-      change: "+12.5%",
-      positive: true,
-      icon: TrendingUp,
-      gradient: "from-blue-500 to-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      title: "Tổng Hóa Đơn",
-      value: (dashboardStats?.totalInvoices || 0).toString(),
-      unit: "hóa đơn",
-      change: `+${dashboardStats?.totalInvoices || 0} tổng`,
-      positive: true,
-      icon: FileText,
-      gradient: "from-purple-500 to-purple-600",
-      bg: "bg-purple-50",
-    },
-    {
-      title: "Đã Thanh Toán",
-      value: (dashboardStats?.paidInvoices || 0).toString(),
-      unit: `${paymentRate}% tỷ lệ`,
-      change: `${paymentRate}% tỷ lệ TT`,
-      positive: true,
-      icon: CheckCircle,
-      gradient: "from-green-500 to-green-600",
-      bg: "bg-green-50",
-    },
-    {
-      title: "Chờ Thanh Toán",
-      value: (dashboardStats?.pendingInvoices || 0).toString(),
-      unit: `${pendingRate}% tổng`,
-      change: `${pendingRate}% chờ xử lý`,
-      positive: false,
-      icon: Clock,
-      gradient: "from-orange-500 to-orange-600",
-      bg: "bg-orange-50",
-    },
-  ];
+  // Status bar chart data
+  const statusBarData = invoiceStats ? Object.entries(invoiceStats)
+    .filter(([, v]) => (v as number) > 0)
+    .map(([k, v]) => ({ name: STATUS_CONFIG[k]?.label || k, value: v as number, key: k })) : [];
 
-  const latestInvoices = (recentInvoices || []).slice(0, 5);
+  const CHART_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#6B7280"];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-5 p-1">
+
+        {/* ── Header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="hidden sm:block text-sm text-gray-500 mt-0.5">Tổng quan hoạt động kinh doanh</p>
+            <h1 className="text-xl font-bold text-gray-900">Tổng Quan</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Cập nhật theo thời gian thực</p>
           </div>
-          <div className="flex gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetchStats()}
-              className="gap-1.5 h-8 px-2.5 text-xs"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Làm mới</span>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => refetchStats()} className="h-8 gap-1.5 text-xs">
+              <RefreshCw className="h-3.5 w-3.5" /> Làm mới
             </Button>
-
+            <Button size="sm" onClick={() => setLocation("/invoices/new")} className="h-8 gap-1.5 text-xs bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-3.5 w-3.5" /> Tạo hóa đơn
+            </Button>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        {/* ── KPI Cards ── */}
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {statsLoading ? (
-            Array(4).fill(0).map((_, i) => <StatCardSkeleton key={i} />)
+            Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-28" />)
           ) : (
-            kpiCards.map((card, i) => {
-              const Icon = card.icon;
-              return (
-                <Card key={i} className={`${card.bg} border-0 shadow-sm hover:shadow-md transition-shadow`}>
-                  <CardContent className="p-3 sm:p-5">
-                    <div className="flex items-start justify-between mb-2 sm:mb-3">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 leading-tight">{card.title}</p>
-                      <div className={`bg-gradient-to-br ${card.gradient} p-2 sm:p-2.5 rounded-lg sm:rounded-xl shadow-sm flex-shrink-0 ml-1`}>
-                        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                      </div>
+            <>
+              {/* Revenue */}
+              <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-blue-100">Tổng Doanh Thu</p>
+                    <div className="bg-white/20 p-1.5 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-white" />
                     </div>
-                    <div className="space-y-0.5 sm:space-y-1">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-xl sm:text-2xl font-bold text-gray-900">{card.value}</span>
-                        <span className="text-xs text-gray-500 truncate">{card.unit}</span>
-                      </div>
-                      <div className={`flex items-center gap-0.5 text-xs font-medium ${card.positive ? "text-green-600" : "text-orange-600"}`}>
-                        <ArrowUpRight className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{card.change}</span>
-                      </div>
+                  </div>
+                  <p className="text-2xl font-bold truncate">{totalRevenue.toLocaleString("vi-VN")}</p>
+                  <p className="text-xs text-blue-200 mt-0.5">VND</p>
+                </CardContent>
+              </Card>
+
+              {/* Total invoices */}
+              <Card className="border-0 shadow-sm bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-gray-500">Tổng Hóa Đơn</p>
+                    <div className="bg-purple-100 p-1.5 rounded-lg">
+                      <FileText className="h-4 w-4 text-purple-600" />
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardStats?.totalInvoices || 0}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">hóa đơn</p>
+                </CardContent>
+              </Card>
+
+              {/* Paid */}
+              <Card className="border-0 shadow-sm bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-gray-500">Đã Thanh Toán</p>
+                    <div className="bg-green-100 p-1.5 rounded-lg">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardStats?.paidInvoices || 0}</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                      <div className="bg-green-500 h-1.5 rounded-full transition-all" style={{ width: `${paymentRate}%` }} />
+                    </div>
+                    <span className="text-xs text-green-600 font-medium">{paymentRate}%</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pending */}
+              <Card className="border-0 shadow-sm bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-gray-500">Chờ Xử Lý</p>
+                    <div className="bg-orange-100 p-1.5 rounded-lg">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardStats?.pendingInvoices || 0}</p>
+                  <p className="text-xs text-orange-500 mt-0.5 flex items-center gap-0.5">
+                    <AlertTriangle className="h-3 w-3" /> cần xử lý
+                  </p>
+                </CardContent>
+              </Card>
+            </>
           )}
         </div>
 
-        {/* Charts */}
+        {/* ── Quick Actions ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { label: "Quản lý đơn",   icon: ShoppingCart, href: "/invoices",  color: "text-blue-600",   bg: "bg-blue-50 hover:bg-blue-100" },
+            { label: "Sản phẩm",      icon: Package,      href: "/products",  color: "text-orange-600", bg: "bg-orange-50 hover:bg-orange-100" },
+            { label: "Khách hàng",    icon: Users,        href: "/customers", color: "text-purple-600", bg: "bg-purple-50 hover:bg-purple-100" },
+            { label: "Quản lý ví",    icon: Wallet,       href: "/wallet-management", color: "text-teal-600", bg: "bg-teal-50 hover:bg-teal-100" },
+          ].map(({ label, icon: Icon, href, color, bg }) => (
+            <button
+              key={href}
+              onClick={() => setLocation(href)}
+              className={`flex items-center gap-2 p-3 rounded-xl ${bg} transition-colors text-left`}
+            >
+              <Icon className={`h-4 w-4 ${color} flex-shrink-0`} />
+              <span className={`text-xs font-medium ${color}`}>{label}</span>
+              <ArrowRight className={`h-3 w-3 ${color} ml-auto opacity-60`} />
+            </button>
+          ))}
+        </div>
+
+        {/* ── Revenue Chart + Status Bar ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Revenue Chart */}
-          <Card className="lg:col-span-2 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Doanh Thu Theo Tháng</CardTitle>
+          {/* Revenue Area Chart */}
+          <Card className="lg:col-span-2 border-0 shadow-sm">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <BarChart2 className="h-4 w-4 text-blue-500" />
+                Doanh Thu Theo Tháng
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {revenueLoading ? (
-                <ChartSkeleton />
+                <Skeleton className="h-52" />
               ) : revenueData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-                  <TrendingUp className="h-12 w-12 mb-3 opacity-30" />
-                  <p className="text-sm">Chưa có dữ liệu doanh thu</p>
-                  <p className="text-xs mt-1">Tạo hóa đơn đầu tiên để xem biểu đồ</p>
+                <div className="flex flex-col items-center justify-center h-52 text-gray-300">
+                  <TrendingUp className="h-10 w-10 mb-2" />
+                  <p className="text-sm">Chưa có dữ liệu</p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={revenueData}>
+                <ResponsiveContainer width="100%" height={210}>
+                  <AreaChart data={revenueData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
                         <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis dataKey="month" stroke="#9CA3AF" tick={{ fontSize: 12 }} />
-                    <YAxis stroke="#9CA3AF" tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#D1D5DB" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="#D1D5DB" tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#fff", border: "1px solid #E5E7EB", borderRadius: "8px" }}
-                      formatter={(v) => [`${(v as number).toLocaleString("vi-VN")} VND`, "Doanh Thu"]}
+                      contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E5E7EB" }}
+                      formatter={(v) => [`${(v as number).toLocaleString("vi-VN")} VND`, "Doanh thu"]}
                     />
-                    <Area type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                    <Area type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={2} fill="url(#revGrad)" dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
 
-          {/* Status Pie Chart */}
-          <Card className="shadow-sm">
+          {/* Status Bar Chart */}
+          <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Trạng Thái Hóa Đơn</CardTitle>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Zap className="h-4 w-4 text-amber-500" />
+                Trạng Thái Đơn
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {invoiceStatsLoading ? (
-                <ChartSkeleton />
-              ) : statusData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-                  <FileText className="h-12 w-12 mb-3 opacity-30" />
-                  <p className="text-sm">Chưa có hóa đơn nào</p>
+              {statusBarData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-52 text-gray-300">
+                  <FileText className="h-10 w-10 mb-2" />
+                  <p className="text-sm">Chưa có đơn</p>
                 </div>
               ) : (
-                <>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={false}>
-                        {statusData.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(v) => `${v} hóa đơn`} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="space-y-2 mt-2">
-                    {statusData.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-gray-600">{item.name}</span>
-                        </div>
-                        <span className="font-medium">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
+                <ResponsiveContainer width="100%" height={210}>
+                  <BarChart data={statusBarData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                    <XAxis type="number" tick={{ fontSize: 10 }} stroke="#D1D5DB" />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} stroke="#D1D5DB" />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => [`${v} đơn`, ""]} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                      {statusBarData.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Top Products + Customer Stats */}
+        {/* ── Top Products + Recent Customers ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top Products */}
-          <Card className="shadow-sm">
+          <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Package className="h-4 w-4 text-orange-500" />
-                  Sản Phẩm Bán Chạy
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Star className="h-4 w-4 text-amber-500" />
+                  Sản Phẩm Nổi Bật
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setLocation("/products")} className="text-blue-600 hover:text-blue-700 text-xs">Xem tất cả →</Button>
+                <Button variant="ghost" size="sm" onClick={() => setLocation("/products")} className="text-blue-600 text-xs h-7 px-2">
+                  Xem tất cả →
+                </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-2">
               {!topProducts || topProducts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                  <Package className="h-10 w-10 mb-2 opacity-30" />
-                  <p className="text-sm">Chưa có dữ liệu</p>
+                <div className="flex flex-col items-center py-8 text-gray-300">
+                  <Package className="h-10 w-10 mb-2" />
+                  <p className="text-sm">Chưa có sản phẩm</p>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {topProducts.slice(0, 5).map((p: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-orange-600">{i + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{p.name}</p>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                          <div
-                            className="bg-orange-400 h-1.5 rounded-full"
-                            style={{ width: `${Math.min(100, (p.price / (topProducts[0]?.price || 1)) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-semibold">{(p.price || 0).toLocaleString("vi-VN")}</p>
-                        <p className="text-xs text-gray-400">VND</p>
-                      </div>
+              ) : topProducts.slice(0, 5).map((p: any, i: number) => (
+                <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                    i === 0 ? "bg-amber-100 text-amber-700" :
+                    i === 1 ? "bg-gray-100 text-gray-600" :
+                    i === 2 ? "bg-orange-100 text-orange-600" : "bg-gray-50 text-gray-400"
+                  }`}>{i + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <div className="w-full bg-gray-100 rounded-full h-1 mt-1">
+                      <div
+                        className="bg-gradient-to-r from-blue-400 to-blue-600 h-1 rounded-full"
+                        style={{ width: `${Math.min(100, (p.price / (topProducts[0]?.price || 1)) * 100)}%` }}
+                      />
                     </div>
-                  ))}
+                  </div>
+                  <span className="text-xs font-semibold text-gray-700 flex-shrink-0">
+                    {(p.price || 0).toLocaleString("vi-VN")}đ
+                  </span>
                 </div>
-              )}
+              ))}
             </CardContent>
           </Card>
 
-          {/* Customer Stats */}
-          <Card className="shadow-sm">
+          {/* Recent Customers */}
+          <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <Users className="h-4 w-4 text-blue-500" />
-                  Khách Hàng
+                  Khách Hàng Gần Đây
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setLocation("/customers")} className="text-blue-600 hover:text-blue-700 text-xs">Xem tất cả →</Button>
+                <Button variant="ghost" size="sm" onClick={() => setLocation("/customers")} className="text-blue-600 text-xs h-7 px-2">
+                  Xem tất cả →
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-700">{customers?.length || 0}</p>
-                  <p className="text-xs text-blue-500">Tổng khách hàng</p>
+              {/* Mini stats */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="p-2.5 bg-blue-50 rounded-xl text-center">
+                  <p className="text-xl font-bold text-blue-700">{customers?.length || 0}</p>
+                  <p className="text-xs text-blue-400">Tổng khách</p>
                 </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-700">{dashboardStats?.paidInvoices || 0}</p>
-                  <p className="text-xs text-green-500">Đơn đã thanh toán</p>
+                <div className="p-2.5 bg-green-50 rounded-xl text-center">
+                  <p className="text-xl font-bold text-green-700">{dashboardStats?.paidInvoices || 0}</p>
+                  <p className="text-xs text-green-400">Đơn đã TT</p>
                 </div>
               </div>
               {customers && customers.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Khách hàng gần đây</p>
+                <div className="space-y-1.5">
                   {customers.slice(0, 4).map((c: any) => (
-                    <div key={c.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors" onClick={() => setLocation(`/customers/${c.id}`)}>
-                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => setLocation(`/customers/${c.id}`)}
+                    >
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
                         <span className="text-xs font-bold text-white">{(c.name || "?").charAt(0).toUpperCase()}</span>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -371,14 +350,14 @@ export default function Dashboard() {
                         <p className="text-xs text-gray-400 truncate">{c.email || c.phone || ""}</p>
                       </div>
                       {c.totalInvoices > 0 && (
-                        <span className="text-xs text-gray-400">{c.totalInvoices} đơn</span>
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0">{c.totalInvoices} đơn</Badge>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-6 text-gray-400">
-                  <Users className="h-10 w-10 mb-2 opacity-30" />
+                <div className="flex flex-col items-center py-6 text-gray-300">
+                  <Users className="h-10 w-10 mb-2" />
                   <p className="text-sm">Chưa có khách hàng</p>
                 </div>
               )}
@@ -386,19 +365,18 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Expiring Soon Alert */}
+        {/* ── Expiring Soon Alert ── */}
         {expiringSoon && expiringSoon.length > 0 && (
-          <Card className="shadow-sm border-l-4 border-l-orange-400 bg-orange-50">
+          <Card className="border-0 shadow-sm border-l-4 border-l-orange-400 bg-gradient-to-r from-orange-50 to-white">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2 text-orange-700">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-orange-700">
                   <AlertTriangle className="h-4 w-4 text-orange-500" />
                   Hóa Đơn Sắp Hết Hạn ({expiringSoon.length})
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
-                    size="sm"
-                    variant="outline"
+                    size="sm" variant="outline"
                     onClick={handleSendBulkReminder}
                     disabled={isSendingBulk}
                     className="text-xs h-7 px-2.5 border-orange-300 text-orange-700 hover:bg-orange-100 gap-1.5"
@@ -406,29 +384,34 @@ export default function Dashboard() {
                     {isSendingBulk ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                     Gửi Nhắc Tất Cả
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-orange-600 hover:text-orange-700 text-xs">Xem tất cả →</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-orange-600 text-xs h-7 px-2">
+                    Xem tất cả →
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {expiringSoon.slice(0, 5).map((inv) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {expiringSoon.slice(0, 4).map((inv) => {
                   const expiresAt = inv.expiresAt ? new Date(inv.expiresAt) : null;
                   const minutesLeft = expiresAt ? Math.round((expiresAt.getTime() - Date.now()) / 60000) : null;
                   const hoursLeft = minutesLeft !== null ? Math.floor(minutesLeft / 60) : null;
                   const minsLeft = minutesLeft !== null ? minutesLeft % 60 : null;
                   const timeLabel = hoursLeft !== null
-                    ? hoursLeft > 0 ? `Còn ${hoursLeft}h ${minsLeft}m` : `Còn ${minsLeft}m`
-                    : "";
+                    ? hoursLeft > 0 ? `Còn ${hoursLeft}h ${minsLeft}m` : `Còn ${minsLeft}m` : "";
                   return (
-                    <div key={inv.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-orange-100 hover:border-orange-300 cursor-pointer transition-colors" onClick={() => setLocation(`/invoices/${inv.id}`)}>
+                    <div
+                      key={inv.id}
+                      className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-orange-100 hover:border-orange-300 cursor-pointer transition-all hover:shadow-sm"
+                      onClick={() => setLocation(`/invoices/${inv.id}`)}
+                    >
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="h-7 w-7 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
                           <FileText className="h-3.5 w-3.5 text-orange-600" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{inv.invoiceNumber}</p>
-                          <p className="text-xs text-gray-500">{Number(inv.totalAmount || 0).toLocaleString("vi-VN")} {inv.currency || "VND"}</p>
+                          <p className="text-xs font-semibold text-gray-800 truncate">{inv.invoiceNumber}</p>
+                          <p className="text-xs text-gray-400">{Number(inv.totalAmount || 0).toLocaleString("vi-VN")}đ</p>
                         </div>
                       </div>
                       <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">{timeLabel}</span>
@@ -440,62 +423,65 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Recent Invoices */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
+        {/* ── Recent Invoices Table ── */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Hóa Đơn Gần Đây</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-blue-600 hover:text-blue-700 text-xs">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4 text-gray-500" />
+                Hóa Đơn Gần Đây
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/invoices")} className="text-blue-600 text-xs h-7 px-2">
                 Xem tất cả →
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {invoicesLoading ? (
-              <div className="space-y-3">
-                {Array(3).fill(0).map((_, i) => (
-                  <div key={i} className="animate-pulse flex gap-4 py-2">
-                    <div className="h-4 bg-gray-200 rounded w-24" />
-                    <div className="h-4 bg-gray-200 rounded w-32 flex-1" />
-                    <div className="h-4 bg-gray-200 rounded w-20" />
-                    <div className="h-4 bg-gray-200 rounded w-16" />
-                  </div>
-                ))}
+              <div className="p-4 space-y-2">
+                {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-10" />)}
               </div>
             ) : latestInvoices.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <FileText className="h-12 w-12 mb-3 opacity-30" />
-                <p className="text-sm font-medium">Chưa có hóa đơn nào</p>
-                <p className="text-xs mt-1 mb-4">Tạo hóa đơn đầu tiên để bắt đầu</p>
-
+              <div className="flex flex-col items-center py-12 text-gray-300">
+                <FileText className="h-10 w-10 mb-2" />
+                <p className="text-sm">Chưa có hóa đơn nào</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left py-2 px-3 text-gray-500 font-medium">Số HĐ</th>
-                      <th className="text-left py-2 px-3 text-gray-500 font-medium hidden sm:table-cell">Ngày</th>
-                      <th className="text-right py-2 px-3 text-gray-500 font-medium">Số Tiền</th>
-                      <th className="text-center py-2 px-3 text-gray-500 font-medium">Trạng Thái</th>
+                    <tr className="border-b bg-gray-50/80">
+                      <th className="text-left py-2.5 px-4 text-xs font-medium text-gray-400 uppercase tracking-wide">Số HĐ</th>
+                      <th className="text-left py-2.5 px-4 text-xs font-medium text-gray-400 uppercase tracking-wide hidden sm:table-cell">Ngày</th>
+                      <th className="text-left py-2.5 px-4 text-xs font-medium text-gray-400 uppercase tracking-wide hidden md:table-cell">Khách hàng</th>
+                      <th className="text-right py-2.5 px-4 text-xs font-medium text-gray-400 uppercase tracking-wide">Số Tiền</th>
+                      <th className="text-center py-2.5 px-4 text-xs font-medium text-gray-400 uppercase tracking-wide">Trạng Thái</th>
                     </tr>
                   </thead>
                   <tbody>
                     {latestInvoices.map((inv) => {
                       const amount = typeof inv.totalAmount === "string" ? parseFloat(inv.totalAmount) : (inv.totalAmount || 0);
                       const status = inv.status || "CREATED";
+                      const cfg = STATUS_CONFIG[status] || { label: status, color: "text-gray-700", bg: "bg-gray-100" };
                       return (
-                        <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                          <td className="py-3 px-3 font-medium text-blue-600">{inv.invoiceNumber}</td>
-                          <td className="py-3 px-3 text-gray-500 hidden sm:table-cell">
+                        <tr
+                          key={inv.id}
+                          className="border-b border-gray-50 hover:bg-blue-50/30 cursor-pointer transition-colors"
+                          onClick={() => setLocation(`/invoices/${inv.id}`)}
+                        >
+                          <td className="py-3 px-4 font-semibold text-blue-600 text-xs">{inv.invoiceNumber}</td>
+                          <td className="py-3 px-4 text-gray-400 text-xs hidden sm:table-cell">
                             {new Date(inv.createdAt).toLocaleDateString("vi-VN")}
                           </td>
-                          <td className="py-3 px-3 text-right font-medium">
-                            {amount.toLocaleString("vi-VN")} {inv.currency || "VND"}
+                          <td className="py-3 px-4 text-gray-500 text-xs hidden md:table-cell truncate max-w-[120px]">
+                            {(inv as any).customerName || "—"}
                           </td>
-                          <td className="py-3 px-3 text-center">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[status] || "bg-gray-100 text-gray-800"}`}>
-                              {STATUS_LABELS[status] || status}
+                          <td className="py-3 px-4 text-right font-semibold text-gray-800 text-xs">
+                            {amount.toLocaleString("vi-VN")}đ
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color}`}>
+                              {cfg.label}
                             </span>
                           </td>
                         </tr>
@@ -507,9 +493,8 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
       </div>
-
-
     </DashboardLayout>
   );
 }
