@@ -237,15 +237,15 @@ export default function OrderDetailPage() {
         {/* Progress steps */}
         {["CREATED", "PAID", "SHIPPING", "WARRANTY"].includes(order.status || "") && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               {STEPS.map((s, i) => {
                 const Icon = s.icon;
                 const stepNum = i + 1;
                 const isActive = stepNum === currentStep;
                 const isDone = stepNum < currentStep;
                 return (
-                  <div key={s.key} className="flex items-center flex-1">
-                    <div className="flex flex-col items-center">
+                  <>
+                    <div key={s.key} className="flex flex-col items-center flex-shrink-0">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
                         isDone ? "bg-teal-500 border-teal-500" :
                         isActive ? "bg-[#1e3a6e] border-[#1e3a6e]" :
@@ -253,14 +253,14 @@ export default function OrderDetailPage() {
                       }`}>
                         <Icon className={`h-4 w-4 ${isDone || isActive ? "text-white" : "text-gray-400"}`} />
                       </div>
-                      <p className={`text-[10px] font-bold mt-1.5 tracking-wide text-center ${
+                      <p className={`text-[10px] font-bold mt-1.5 tracking-wide text-center whitespace-nowrap ${
                         isDone ? "text-teal-500" : isActive ? "text-[#1e3a6e]" : "text-gray-400"
                       }`}>{s.label}</p>
                     </div>
                     {i < STEPS.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-2 mb-5 rounded-full ${isDone ? "bg-teal-400" : "bg-gray-200"}`} />
+                      <div className={`flex-1 h-0.5 mx-2 rounded-full self-start mt-5 ${isDone ? "bg-teal-400" : "bg-gray-200"}`} />
                     )}
-                  </div>
+                  </>
                 );
               })}
             </div>
@@ -355,25 +355,25 @@ export default function OrderDetailPage() {
           </div>
         )}
 
-        {/* Payment summary */}
+        {/* Payment summary card */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
             <CreditCard className="h-4 w-4 text-green-600" /> Thông tin thanh toán
           </h3>
           <div className="space-y-2 text-sm">
-            {order.subtotal && parseFloat(String(order.subtotal)) > 0 && (
+            {parseFloat(String(order.subtotal || 0)) > 0 && (
               <div className="flex justify-between text-gray-600">
                 <span>Giá gốc</span>
                 <span>{formatCurrency(order.subtotal)}</span>
               </div>
             )}
-            {order.discountAmount && parseFloat(String(order.discountAmount)) > 0 && (
+            {parseFloat(String(order.discountAmount || 0)) > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>Giảm giá</span>
                 <span>-{formatCurrency(order.discountAmount)}</span>
               </div>
             )}
-            {order.taxAmount && parseFloat(String(order.taxAmount)) > 0 && (
+            {parseFloat(String(order.taxAmount || 0)) > 0 && (
               <div className="flex justify-between text-gray-600">
                 <span>Thuế</span>
                 <span>+{formatCurrency(order.taxAmount)}</span>
@@ -430,3 +430,4 @@ export default function OrderDetailPage() {
     </div>
   );
 }
+

@@ -23,14 +23,15 @@ const STEPS = [
 function ProgressBar({ step }: { step: number }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         {STEPS.map((s, i) => {
           const Icon = s.icon;
           const isActive = i === step;
           const isDone = i < step;
           return (
-            <div key={s.label} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
+            <>
+              {/* Step circle + label */}
+              <div key={s.label} className="flex flex-col items-center flex-shrink-0">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
                   isDone ? "bg-teal-500 border-teal-500" :
                   isActive ? "bg-[#1e3a6e] border-[#1e3a6e]" :
@@ -38,16 +39,17 @@ function ProgressBar({ step }: { step: number }) {
                 }`}>
                   <Icon className={`h-5 w-5 ${isDone || isActive ? "text-white" : "text-gray-400"}`} />
                 </div>
-                <p className={`text-[10px] font-bold mt-2 tracking-wide text-center ${
+                <p className={`text-[10px] font-bold mt-2 tracking-wide text-center whitespace-nowrap ${
                   isDone ? "text-teal-500" : isActive ? "text-[#1e3a6e]" : "text-gray-400"
                 }`}>{s.label}</p>
               </div>
+              {/* Connector line between steps */}
               {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-3 mb-5 rounded-full transition-all ${
+                <div className={`flex-1 h-0.5 mx-3 rounded-full transition-all self-start mt-6 ${
                   isDone ? "bg-teal-400" : "bg-gray-200"
                 }`} />
               )}
-            </div>
+            </>
           );
         })}
       </div>

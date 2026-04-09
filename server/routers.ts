@@ -1306,7 +1306,7 @@ export const appRouter = router({
         const { getDb } = await import("./db");
         const drizzleDb = await getDb();
         if (!drizzleDb) return [];
-        const { products: productsTable, productPackages, productCategories, users } = await import("../drizzle/schema");
+        const { products: productsTable, productPackages, productCategories, users, productTags, productTagMappings } = await import("../drizzle/schema");
         const { eq, and, inArray } = await import("drizzle-orm");
         const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
         if (!owner) return [];
@@ -1322,6 +1322,16 @@ export const appRouter = router({
         }
         // Get categories
         const allCategories = await drizzleDb.select().from(productCategories).where(eq(productCategories.userId, owner.id));
+        // Get tags for products
+        let allTagMappings: any[] = [];
+        let allTagsList: any[] = [];
+        if (productIds.length > 0) {
+          allTagMappings = await drizzleDb.select().from(productTagMappings).where(inArray(productTagMappings.productId, productIds));
+          const tagIds = Array.from(new Set(allTagMappings.map((m: any) => m.tagId)));
+          if (tagIds.length > 0) {
+            allTagsList = await drizzleDb.select().from(productTags).where(inArray(productTags.id, tagIds));
+          }
+        }
         return productRows.map(p => ({
           ...p,
           packages: allPackages.filter(pkg => pkg.productId === p.id),
@@ -1331,6 +1341,7 @@ export const appRouter = router({
             if (!cat?.parentId) return null;
             return allCategories.find(c => c.id === cat.parentId)?.name || null;
           })(),
+          tags: allTagMappings.filter((m: any) => m.productId === p.id).map((m: any) => allTagsList.find((t: any) => t.id === m.tagId)).filter(Boolean),
         }));
       }),
     // Public: lấy 1 sản phẩm kèm packages theo id

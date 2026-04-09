@@ -1410,13 +1410,13 @@ todo updated
 ## Phase: Major Improvements (Apr 9, 2026 - Session 19)
 - [ ] Fix số 0 dư trong trang đơn hàng (OrderDetailPage - coupon section)
 - [ ] Fix nút nạp tiền PayOS: giữ paymentUrl sau khi tạo, không mất link khi loading
-- [ ] Feature flags block route hoàn toàn: khi tắt tính năng, route trả về 404/redirect
-- [ ] Xóa links tính năng bị tắt khỏi MyAccount (wishlist, leaderboard, warranty, referral)
-- [ ] Kho ảnh avatar: admin upload/quản lý avatar library
-- [ ] Client chọn avatar từ kho hoặc upload ảnh riêng
+- [x] Feature flags block route hoàn toàn: khi tắt tính năng, route trả về 404/redirect
+- [x] Xóa links tính năng bị tắt khỏi MyAccount (wishlist, leaderboard, warranty, referral)
+- [x] Kho ảnh avatar: admin upload/quản lý avatar library
+- [x] Client chọn avatar từ kho hoặc upload ảnh riêng
 - [ ] Redesign toàn bộ admin dashboard: sidebar gọn gàng, gộp trang liên quan
 - [ ] Cải thiện admin layout: thống nhất design system, chuyên nghiệp hơn
-- [ ] Fix tag trạng thái PAID hiển thị "Hoàn thành" → đổi thành "Đang xử lý"
+- [x] Fix tag trạng thái PAID hiển thị "Hoàn thành" → đổi thành "Đang xử lý"
 - [ ] Fix progress bar mất cân bằng trong CartPage (đường kẻ không đều)
 - [ ] Track order: nút "Xem chi tiết" dùng route /order/:invoiceNumber
 
@@ -1441,3 +1441,9 @@ todo updated
 - [x] Kiểm tra và fix trang quản lý tag (/settings/tags) trong admin sidebar
 - [x] Cải thiện UI chọn avatar: click vào icon camera mở popup chọn từ kho hoặc upload
 - [x] Fix giỏ hàng không tự xóa sau khi tạo thanh toán PayOS (đảm bảo await clearCart trước khi redirect)
+
+## Phase: UX/UI Fixes (Apr 9, 2026 - Session 22)
+- [x] Fix progress bar CartPage: căn chỉnh đường kẻ ngang đều giữa các bước
+- [x] Fix progress bar OrderDetailPage: căn chỉnh đường kẻ ngang đều giữa các bước
+- [x] Thay tag "BH 3T" bằng tag sản phẩm thực tế từ DB (hiển thị tags của sản phẩm)
+- [x] Xóa số 0 thừa trên card thông tin thanh toán trong OrderDetailPage

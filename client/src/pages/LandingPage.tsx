@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Star, Shield, Package, ChevronRight, ChevronLeft,
-  Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy
+  Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy, Tag
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
@@ -124,9 +124,7 @@ export default function LandingPage() {
     const minPkgPrice = pkgPrices.length > 0 ? Math.min(...pkgPrices) : null;
     const maxPkgPrice = pkgPrices.length > 0 ? Math.max(...pkgPrices) : null;
     const hasMultiPkg = pkgPrices.length > 1;
-    const maxWarranty = (product.packages || []).length > 0
-      ? Math.max(...(product.packages || []).map((p: any) => p.warrantyMonths || 0))
-      : 0;
+    const productTags = (product.tags || []) as any[];
     const avgRating = product.avgRating || 0;
 
     return (
@@ -148,9 +146,18 @@ export default function LandingPage() {
               GIẢM {sale.discountPercent}%
             </div>
           )}
-          {maxWarranty > 0 && (
-            <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-green-600 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
-              <Shield className="h-2.5 w-2.5" /> BH {maxWarranty}T
+          {/* Hiển thị tag sản phẩm (tối đa 2 tag) */}
+          {productTags.length > 0 && (
+            <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
+              {productTags.slice(0, 2).map((tag: any) => (
+                <div
+                  key={tag.id}
+                  className="bg-white/90 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium"
+                  style={{ color: tag.color || "#3b82f6" }}
+                >
+                  <Tag className="h-2.5 w-2.5" /> {tag.name}
+                </div>
+              ))}
             </div>
           )}
         </div>
