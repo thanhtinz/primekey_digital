@@ -28,8 +28,9 @@ const getDiscountPercent = (price: string | number, originalPrice: string | numb
 
 function CategoryIcon({ icon, className = "" }: { icon: string | null | undefined; className?: string }) {
   if (!icon) return null;
-  if (icon.startsWith("fa-")) return <i className={`${icon} ${className}`} />;
-  return <span className={className}>{icon}</span>;
+  // Only render font-awesome icons (fa-), skip emoji/text icons
+  if (icon.startsWith("fa-")) return <i className={`fa ${icon} ${className}`} />;
+  return null;
 }
 
 export default function ProductDetail() {
@@ -497,7 +498,7 @@ export default function ProductDetail() {
             {/* Info */}
             <div className="flex-1 min-w-0 text-white">
               <div className="flex items-start justify-between gap-3 mb-3">
-                <h1 className="text-xl md:text-2xl font-bold leading-snug flex-1">{product.name}</h1>
+                <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={handleShare}
@@ -515,28 +516,28 @@ export default function ProductDetail() {
               </div>
 
               {/* Rating */}
-              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-3">
                 <div className="flex items-center gap-0.5">
                   {[1,2,3,4,5].map(i => (
-                    <Star key={i} className={`w-4 h-4 ${i <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-white/30"}`} />
+                    <Star key={i} className={`w-4 h-4 ${i <= Math.round(avgRating) ? "fill-amber-300 text-amber-300" : "text-white/40"}`} />
                   ))}
                 </div>
-                <span className="text-sm font-semibold">{avgRating > 0 ? avgRating.toFixed(1) : "0.0"}</span>
-                <span className="text-sm text-white/70">({(productReviews as any[]).length} đánh giá)</span>
-                {totalSold > 0 && <span className="text-sm text-white/70">· Đã bán {totalSold}</span>}
+                <span className="text-sm font-bold text-amber-200">{avgRating > 0 ? avgRating.toFixed(1) : "0.0"}</span>
+                <span className="text-sm text-white/80">({(productReviews as any[]).length} đánh giá)</span>
+                {totalSold > 0 && <span className="text-sm text-white/80">· Đã bán {totalSold}</span>}
               </div>
 
               {/* Category + product tags */}
               <div className="flex flex-wrap gap-2 mb-3">
                 {categoryTags.map((tag, idx) => (
                   <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur rounded-xl text-sm font-medium text-white border border-white/20">
-                    {tag.icon && <CategoryIcon icon={tag.icon} className="text-sm" />}
+                    {tag.icon && tag.icon.startsWith("fa-") && <i className={`fa ${tag.icon}`} />}
                     {tag.name}
                   </span>
                 ))}
                 {(productTagList as any[]).map((tag: any) => (
                   <span key={tag.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold text-white border border-white/20" style={{ backgroundColor: tag.color ? `${tag.color}99` : 'rgba(255,255,255,0.2)' }}>
-                    {tag.icon && (tag.icon.startsWith("fa-") ? <i className={tag.icon} /> : <span>{tag.icon}</span>)}
+                    {tag.icon && tag.icon.startsWith("fa-") && <i className={`fa ${tag.icon}`} />}
                     {tag.name}
                   </span>
                 ))}
@@ -544,7 +545,7 @@ export default function ProductDetail() {
 
               {/* Short description */}
               {product.description && (
-                <p className="text-sm text-white/80 line-clamp-2 leading-relaxed">{product.description}</p>
+                <p className="text-sm text-white/90 line-clamp-2 leading-relaxed font-medium">{product.description}</p>
               )}
             </div>
           </div>
@@ -590,7 +591,7 @@ export default function ProductDetail() {
                           <div className="flex flex-wrap gap-1 mt-1">
                             {(productTagList as any[]).slice(0, 2).map((tag: any) => (
                               <span key={tag.id} className="inline-flex items-center gap-0.5 text-xs font-medium" style={{ color: tag.color || '#0d9488' }}>
-                                {tag.icon && <span>{tag.icon}</span>} {tag.name}
+                                {tag.icon && tag.icon.startsWith('fa-') && <i className={`fa ${tag.icon}`} />} {tag.name}
                               </span>
                             ))}
                           </div>

@@ -1592,3 +1592,4 @@ todo updated
 - [x] Quantity selector: căn đều trong card (justify-between)
 - [x] Order info card: Số lượng, Custom fields, Coupon, Wallet, Notes, Tổng tiền, Nút mua
 - [x] Đánh giá sản phẩm: full width bên dưới left column (không nằm trong right sidebar)
+- [x] ProductDetail: bỏ icon thường trong tags, sửa lỗi fa- icon CSS không nhận diện, chữ trong hero xanh màu nổi bật hơn
