@@ -635,58 +635,225 @@ function NotificationPrefsSection({ token }: { token: string }) {
     onSuccess: () => { utils.customer.me.invalidate(); toast.success("Cập nhật thông báo thành công"); },
     onError: (e: any) => toast.error(e.message),
   });
+  const [emailOpen, setEmailOpen] = useState(true);
+  const [telegramOpen, setTelegramOpen] = useState(false);
 
   const prefs = meData || {};
+  const hasTelegram = !!(prefs as any).telegramChatId;
 
   const handleToggle = (field: string, value: boolean) => {
     updateNotif.mutate({ token, [field]: value });
   };
 
-  const notifItems = [
-    { key: "notifyOrderStatus", label: "Trạng thái đơn hàng", desc: "Nhận email khi đơn hàng được cập nhật trạng thái", icon: "fa-box", color: "bg-blue-100 text-blue-600" },
-    { key: "notifyOnLogin", label: "Cảnh báo đăng nhập", desc: "Nhận email khi có đăng nhập mới vào tài khoản", icon: "fa-shield-alt", color: "bg-red-100 text-red-600" },
-    { key: "notifyNewProduct", label: "Sản phẩm mới", desc: "Nhận thông báo khi có sản phẩm mới được thêm", icon: "fa-star", color: "bg-yellow-100 text-yellow-600" },
-    { key: "notifyFlashSale", label: "Flash Sale", desc: "Nhận cảnh báo khi có chương trình flash sale", icon: "fa-bolt", color: "bg-orange-100 text-orange-600" },
-    { key: "notifyPromotion", label: "Khuyến mãi & ưu đãi", desc: "Nhận email về mã giảm giá và chương trình ưu đãi", icon: "fa-gift", color: "bg-purple-100 text-purple-600" },
+  const emailItems = [
+    { key: "notifyOrderStatus", label: "Trạng thái đơn hàng", desc: "Nhận email khi đơn hàng được cập nhật", icon: "fa-box", color: "bg-blue-100 text-blue-600" },
+    { key: "notifyOnLogin", label: "Cảnh báo đăng nhập", desc: "Nhận email khi có đăng nhập mới", icon: "fa-shield-alt", color: "bg-red-100 text-red-600" },
+    { key: "notifyNewProduct", label: "Sản phẩm mới", desc: "Nhận thông báo khi có sản phẩm mới", icon: "fa-star", color: "bg-yellow-100 text-yellow-600" },
+    { key: "notifyFlashSale", label: "Flash Sale", desc: "Nhận cảnh báo khi có flash sale", icon: "fa-bolt", color: "bg-orange-100 text-orange-600" },
+    { key: "notifyPromotion", label: "Khuyến mãi & ưu đãi", desc: "Nhận email về mã giảm giá và ưu đãi", icon: "fa-gift", color: "bg-purple-100 text-purple-600" },
   ];
+
+  const telegramItems = [
+    { key: "notifyTelegramOrderStatus", label: "Trạng thái đơn hàng", desc: "Nhận Telegram khi đơn hàng được cập nhật", icon: "fa-box", color: "bg-blue-100 text-blue-600" },
+    { key: "notifyTelegramFlashSale", label: "Flash Sale", desc: "Nhận Telegram khi có flash sale", icon: "fa-bolt", color: "bg-orange-100 text-orange-600" },
+    { key: "notifyTelegramPromotion", label: "Khuyến mãi & ưu đãi", desc: "Nhận Telegram về mã giảm giá và ưu đãi", icon: "fa-gift", color: "bg-purple-100 text-purple-600" },
+  ];
+
+  const ToggleSwitch = ({ field, isOn }: { field: string; isOn: boolean }) => (
+    <button
+      onClick={() => handleToggle(field, !isOn)}
+      disabled={updateNotif.isPending}
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${isOn ? "bg-green-500" : "bg-slate-200"}`}
+    >
+      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isOn ? "translate-x-5" : "translate-x-0"}`} />
+    </button>
+  );
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-green-50 to-emerald-50">
         <div className="w-8 h-8 rounded-xl bg-green-500 flex items-center justify-center">
           <i className="fa fa-bell text-white text-sm" />
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-800">Cài đặt thông báo</h3>
-          <p className="text-[11px] text-slate-500">Chọn loại email bạn muốn nhận</p>
+          <p className="text-[11px] text-slate-500">Quản lý thông báo qua email và Telegram</p>
         </div>
       </div>
-      <div className="divide-y divide-slate-100">
-          {notifItems.map(item => {
-          const isOn = !!(prefs as any)[item.key];
-          return (
-            <div key={item.key} className="flex items-center gap-3 px-5 py-3.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${item.color}`}>
-                <i className={`fa ${item.icon} text-sm`} />
+
+      {/* Email Accordion */}
+      <div className="border-b border-slate-100">
+        <button
+          onClick={() => setEmailOpen(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+              <i className="fa-solid fa-envelope text-blue-600 text-xs" />
+            </div>
+            <span className="text-sm font-semibold text-slate-700">Thông báo Email</span>
+            <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+              {emailItems.filter(i => !!(prefs as any)[i.key]).length}/{emailItems.length} bật
+            </span>
+          </div>
+          <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform ${emailOpen ? "rotate-180" : ""}`} />
+        </button>
+        {emailOpen && (
+          <div className="divide-y divide-slate-50 pb-1">
+            {emailItems.map(item => {
+              const isOn = !!(prefs as any)[item.key];
+              return (
+                <div key={item.key} className="flex items-center gap-3 px-5 py-3">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                    <i className={`fa ${item.icon} text-xs`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                    <p className="text-[11px] text-slate-400">{item.desc}</p>
+                  </div>
+                  <ToggleSwitch field={item.key} isOn={isOn} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Telegram Accordion */}
+      <div>
+        <button
+          onClick={() => setTelegramOpen(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center">
+              <i className="fa-brands fa-telegram text-sky-500 text-xs" />
+            </div>
+            <span className="text-sm font-semibold text-slate-700">Thông báo Telegram</span>
+            {hasTelegram ? (
+              <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">Đã liên kết</span>
+            ) : (
+              <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Chưa liên kết</span>
+            )}
+          </div>
+          <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform ${telegramOpen ? "rotate-180" : ""}`} />
+        </button>
+        {telegramOpen && (
+          <div className="pb-2">
+            {!hasTelegram ? (
+              <div className="px-5 py-4 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-sky-100 flex items-center justify-center mx-auto mb-3">
+                  <i className="fa-brands fa-telegram text-sky-500 text-xl" />
+                </div>
+                <p className="text-sm font-semibold text-slate-700 mb-1">Chưa liên kết Telegram</p>
+                <p className="text-xs text-slate-400 mb-3">Liên kết tài khoản Telegram để nhận thông báo tức thì</p>
+                <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+                  Đến mục <strong>"Liên kết Telegram"</strong> phía trên để liên kết tài khoản
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-50 px-5">
+                {telegramItems.map(item => {
+                  const isOn = !!(prefs as any)[item.key];
+                  return (
+                    <div key={item.key} className="flex items-center gap-3 py-3">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                        <i className={`fa ${item.icon} text-xs`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                        <p className="text-[11px] text-slate-400">{item.desc}</p>
+                      </div>
+                      <ToggleSwitch field={item.key} isOn={isOn} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// TelegramLinkSection - liên kết tài khoản Telegram
+function TelegramLinkSection({ token }: { token: string }) {
+  const utils = trpc.useUtils();
+  const { data: meData } = trpc.customer.me.useQuery({ token }, { enabled: !!token });
+  const { data: botConfig } = trpc.telegramBot.getConfig.useQuery({ botType: "user" } as any, { staleTime: 300_000 });
+  const unlinkMutation = trpc.customer.unlinkTelegram.useMutation({
+    onSuccess: () => { utils.customer.me.invalidate(); toast.success("Hủy liên kết Telegram thành công"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const telegramChatId = (meData as any)?.telegramChatId;
+  const telegramUsername = (meData as any)?.telegramUsername;
+  const telegramLinkedAt = (meData as any)?.telegramLinkedAt;
+  const botUsername = (botConfig as any)?.botUsername || "";
+  const isLinked = !!telegramChatId;
+  const botEnabled = !!(botConfig as any)?.enabled;
+
+  if (!botEnabled) return null;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-cyan-50">
+        <div className="w-8 h-8 rounded-xl bg-sky-500 flex items-center justify-center">
+          <i className="fa-brands fa-telegram text-white text-sm" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-800">Liên kết Telegram</h3>
+          <p className="text-[11px] text-slate-500">Nhận thông báo đơn hàng qua Telegram</p>
+        </div>
+      </div>
+      <div className="px-5 py-4">
+        {isLinked ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
+              <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <i className="fa-brands fa-telegram text-green-600 text-base" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-700">{item.label}</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">{item.desc}</p>
+                <p className="text-sm font-semibold text-green-700">Đã liên kết thành công</p>
+                {telegramUsername && <p className="text-xs text-green-600">@{telegramUsername}</p>}
+                {telegramLinkedAt && <p className="text-[11px] text-green-500">{new Date(telegramLinkedAt).toLocaleDateString("vi-VN")}</p>}
               </div>
-              <button
-                onClick={() => handleToggle(item.key, !isOn)}
-                disabled={updateNotif.isPending}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
-                  isOn ? "bg-green-500" : "bg-slate-200"
-                }`}
-              >
-                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  isOn ? "translate-x-5" : "translate-x-0"
-                }`} />
-              </button>
+              <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full font-medium">Hoạt động</span>
             </div>
-          );
-        })}
+            <button
+              onClick={() => unlinkMutation.mutate({ token })}
+              disabled={unlinkMutation.isPending}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition text-sm font-medium"
+            >
+              <i className="fa-solid fa-link-slash text-xs" />
+              Hủy liên kết Telegram
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="p-3 bg-sky-50 rounded-xl border border-sky-200">
+              <p className="text-xs font-semibold text-sky-700 mb-2">Cách liên kết:</p>
+              <ol className="text-xs text-sky-600 space-y-1.5 list-none">
+                <li className="flex items-start gap-2"><span className="w-4 h-4 rounded-full bg-sky-200 text-sky-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">1</span>Mở Telegram và tìm bot <strong>{botUsername ? `@${botUsername}` : "của cửa hàng"}</strong></li>
+                <li className="flex items-start gap-2"><span className="w-4 h-4 rounded-full bg-sky-200 text-sky-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">2</span>Gửi lệnh <code className="bg-sky-100 px-1 rounded">/start</code></li>
+                <li className="flex items-start gap-2"><span className="w-4 h-4 rounded-full bg-sky-200 text-sky-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>Nhập email tài khoản khi bot yêu cầu</li>
+              </ol>
+            </div>
+            {botUsername && (
+              <a
+                href={`https://t.me/${botUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-500 text-white hover:bg-sky-600 transition text-sm font-medium"
+              >
+                <i className="fa-brands fa-telegram text-sm" />
+                Mở Telegram Bot
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1888,7 +2055,10 @@ export default function MyAccount() {
               <SecurityInlineSection token={token!} />
             </div>
 
-            {/* ── Section 3: Cài đặt thông báo ── */}
+            {/* ── Section 3: Liên kết Telegram ── */}
+            <TelegramLinkSection token={token!} />
+
+            {/* ── Section 4: Cài đặt thông báo ── */}
             <NotificationPrefsSection token={token!} />
 
             {/* ── Section 4: Tài khoản ── */}

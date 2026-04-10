@@ -44,12 +44,20 @@ export const customers = mysqlTable("customers", {
   totpEnabled: boolean("totpEnabled").default(false), // 2FA enabled
   avatarUrl: text("avatarUrl"), // Avatar URL stored persistently
   customerRole: mysqlEnum("customerRole", ["customer", "vip", "wholesale", "partner"]).default("customer"),
+  // Telegram linking
+  telegramChatId: varchar("telegramChatId", { length: 100 }),
+  telegramUsername: varchar("telegramUsername", { length: 100 }),
+  telegramLinkedAt: timestamp("telegramLinkedAt"),
   // Notification preferences
   notifyOnLogin: boolean("notifyOnLogin").default(false),
   notifyNewProduct: boolean("notifyNewProduct").default(false),
   notifyFlashSale: boolean("notifyFlashSale").default(false),
   notifyPromotion: boolean("notifyPromotion").default(true),
   notifyOrderStatus: boolean("notifyOrderStatus").default(true),
+  // Telegram notification preferences
+  notifyTelegramOrderStatus: boolean("notifyTelegramOrderStatus").default(true),
+  notifyTelegramPromotion: boolean("notifyTelegramPromotion").default(false),
+  notifyTelegramFlashSale: boolean("notifyTelegramFlashSale").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -338,6 +346,28 @@ export const userSettings = mysqlTable("userSettings", {
   sessionDuration: int("sessionDuration").default(86400),
   cronJobSecret: varchar("cronJobSecret", { length: 100 }),
   requireStrongPassword: boolean("requireStrongPassword").default(false),
+  // Feature flags
+  featureFlashSale: boolean("featureFlashSale").default(true),
+  featureCoupons: boolean("featureCoupons").default(true),
+  featureAffiliate: boolean("featureAffiliate").default(true),
+  featureLoyalty: boolean("featureLoyalty").default(true),
+  featureBlog: boolean("featureBlog").default(true),
+  featureWarranty: boolean("featureWarranty").default(true),
+  featureSpinWheel: boolean("featureSpinWheel").default(false),
+  featureTopup: boolean("featureTopup").default(true),
+  featureTicket: boolean("featureTicket").default(true),
+  featureReview: boolean("featureReview").default(true),
+  featureCart: boolean("featureCart").default(true),
+  featureWishlist: boolean("featureWishlist").default(true),
+  featureCompare: boolean("featureCompare").default(false),
+  // Tax config
+  taxEnabled: boolean("taxEnabled").default(false),
+  taxName: varchar("taxName", { length: 50 }).default("VAT"),
+  taxRate: int("taxRate").default(10),
+  taxIncluded: boolean("taxIncluded").default(false),
+  taxNumber: varchar("taxNumber", { length: 50 }),
+  taxCompanyName: varchar("taxCompanyName", { length: 255 }),
+  taxAddress: text("taxAddress"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1150,11 +1180,22 @@ export const telegramBotConfig = mysqlTable("telegram_bot_config", {
   notifyRefund: boolean("notifyRefund").default(true),
   notifyNewCustomer: boolean("notifyNewCustomer").default(false),
   notifyLowStock: boolean("notifyLowStock").default(false),
+  notifyStatusUpdate: boolean("notifyStatusUpdate").default(true),
+  notifyNewReview: boolean("notifyNewReview").default(false),
+  notifyNewTopup: boolean("notifyNewTopup").default(false),
+  notifyFlashSaleEnd: boolean("notifyFlashSaleEnd").default(false),
+  notifyDailyReport: boolean("notifyDailyReport").default(false),
+  notifyNewTicket: boolean("notifyNewTicket").default(false),
+  notifyWithdrawal: boolean("notifyWithdrawal").default(false),
   // Notification settings for user bot
   notifyOrderStatus: boolean("notifyOrderStatus").default(true),
   notifyOrderCreated: boolean("notifyOrderCreated").default(true),
   notifyOrderPaid: boolean("notifyOrderPaid").default(true),
+  notifyOrderShipping: boolean("notifyOrderShipping").default(true),
   notifyOrderCompleted: boolean("notifyOrderCompleted").default(true),
+  notifyWarranty: boolean("notifyWarranty").default(false),
+  notifyFlashSale: boolean("notifyFlashSale").default(false),
+  notifyPromotion: boolean("notifyPromotion").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

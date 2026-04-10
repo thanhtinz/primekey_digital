@@ -60,6 +60,7 @@ function BotCard({
   const [enabled, setEnabled] = useState(false);
   const [notifs, setNotifs] = useState<Record<string, boolean>>({});
   const [showToken, setShowToken] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
     if (!config) return;
@@ -72,15 +73,26 @@ function BotCard({
         notifyNewOrder: c.notifyNewOrder ?? true,
         notifyPayment: c.notifyPayment ?? true,
         notifyRefund: c.notifyRefund ?? true,
+        notifyStatusUpdate: c.notifyStatusUpdate ?? true,
         notifyNewCustomer: c.notifyNewCustomer ?? false,
         notifyLowStock: c.notifyLowStock ?? false,
+        notifyNewReview: c.notifyNewReview ?? false,
+        notifyNewTopup: c.notifyNewTopup ?? false,
+        notifyFlashSaleEnd: c.notifyFlashSaleEnd ?? false,
+        notifyDailyReport: c.notifyDailyReport ?? false,
+        notifyNewTicket: c.notifyNewTicket ?? false,
+        notifyWithdrawal: c.notifyWithdrawal ?? false,
       });
     } else {
       setNotifs({
         notifyOrderStatus: c.notifyOrderStatus ?? true,
         notifyOrderCreated: c.notifyOrderCreated ?? true,
         notifyOrderPaid: c.notifyOrderPaid ?? true,
+        notifyOrderShipping: c.notifyOrderShipping ?? true,
         notifyOrderCompleted: c.notifyOrderCompleted ?? true,
+        notifyWarranty: c.notifyWarranty ?? false,
+        notifyFlashSale: c.notifyFlashSale ?? false,
+        notifyPromotion: c.notifyPromotion ?? false,
       });
     }
   }, [config]);
@@ -170,31 +182,56 @@ function BotCard({
               )}
             </div>
 
-            {/* Notification settings */}
+            {/* Notification settings - Accordion */}
             <div className="border border-border rounded-xl overflow-hidden">
-              <div className="px-4 py-2.5 bg-muted/50 border-b border-border">
+              <button
+                type="button"
+                onClick={() => setNotifOpen(o => !o)}
+                className="w-full px-4 py-3 bg-muted/50 flex items-center justify-between hover:bg-muted/70 transition-colors"
+              >
                 <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <Bell className="h-3.5 w-3.5" /> Cài đặt thông báo
+                  <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                    ({Object.values(notifs).filter(Boolean).length}/{Object.keys(notifs).length} bật)
+                  </span>
                 </p>
-              </div>
-              <div className="px-4 divide-y divide-border">
-                {botType === "admin" ? (
-                  <>
-                    <SwitchRow label="Đơn hàng mới" hint="Thông báo khi có đơn hàng mới được tạo" checked={notifs.notifyNewOrder ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyNewOrder: v }))} />
-                    <SwitchRow label="Thanh toán thành công" hint="Thông báo khi khách hàng thanh toán" checked={notifs.notifyPayment ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyPayment: v }))} />
-                    <SwitchRow label="Yêu cầu hoàn tiền" hint="Thông báo khi có yêu cầu hoàn tiền mới" checked={notifs.notifyRefund ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyRefund: v }))} />
-                    <SwitchRow label="Khách hàng mới" hint="Thông báo khi có khách hàng đăng ký mới" checked={notifs.notifyNewCustomer ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyNewCustomer: v }))} />
-                    <SwitchRow label="Cảnh báo tồn kho thấp" hint="Thông báo khi sản phẩm sắp hết hàng" checked={notifs.notifyLowStock ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyLowStock: v }))} />
-                  </>
-                ) : (
-                  <>
-                    <SwitchRow label="Cập nhật trạng thái đơn" hint="Gửi thông báo khi trạng thái đơn hàng thay đổi" checked={notifs.notifyOrderStatus ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderStatus: v }))} />
-                    <SwitchRow label="Đơn hàng được tạo" hint="Thông báo xác nhận khi đơn hàng được tạo" checked={notifs.notifyOrderCreated ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderCreated: v }))} />
-                    <SwitchRow label="Thanh toán thành công" hint="Thông báo khi đơn hàng được thanh toán" checked={notifs.notifyOrderPaid ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderPaid: v }))} />
-                    <SwitchRow label="Đơn hàng hoàn thành" hint="Thông báo khi đơn hàng được hoàn thành" checked={notifs.notifyOrderCompleted ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderCompleted: v }))} />
-                  </>
-                )}
-              </div>
+                <i className={`fa fa-chevron-${notifOpen ? 'up' : 'down'} text-xs text-muted-foreground`} />
+              </button>
+              {notifOpen && (
+                <div className="px-4 divide-y divide-border">
+                  {botType === "admin" ? (
+                    <>
+                      <div className="py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Giao dịch</div>
+                      <SwitchRow label="Đơn hàng mới" hint="Thông báo khi có đơn hàng mới" checked={notifs.notifyNewOrder ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyNewOrder: v }))} />
+                      <SwitchRow label="Thanh toán thành công" hint="Khách hàng thanh toán xong" checked={notifs.notifyPayment ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyPayment: v }))} />
+                      <SwitchRow label="Yêu cầu hoàn tiền" hint="Có yêu cầu hoàn tiền mới" checked={notifs.notifyRefund ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyRefund: v }))} />
+                      <SwitchRow label="Cập nhật trạng thái" hint="Trạng thái đơn hàng thay đổi" checked={notifs.notifyStatusUpdate ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyStatusUpdate: v }))} />
+                      <SwitchRow label="Yêu cầu rút tiền" hint="Affiliate/CTV yêu cầu rút tiền" checked={notifs.notifyWithdrawal ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyWithdrawal: v }))} />
+                      <div className="py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Khách hàng</div>
+                      <SwitchRow label="Khách hàng mới" hint="Khách hàng đăng ký mới" checked={notifs.notifyNewCustomer ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyNewCustomer: v }))} />
+                      <SwitchRow label="Nạp tiền ví" hint="Khách hàng nạp tiền vào ví" checked={notifs.notifyNewTopup ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyNewTopup: v }))} />
+                      <SwitchRow label="Đánh giá mới" hint="Khách hàng gửi đánh giá sản phẩm" checked={notifs.notifyNewReview ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyNewReview: v }))} />
+                      <SwitchRow label="Ticket hỗ trợ mới" hint="Khách hàng gửi yêu cầu hỗ trợ" checked={notifs.notifyNewTicket ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyNewTicket: v }))} />
+                      <div className="py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Vận hành</div>
+                      <SwitchRow label="Tồn kho thấp" hint="Sản phẩm sắp hết hàng" checked={notifs.notifyLowStock ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyLowStock: v }))} />
+                      <SwitchRow label="Flash Sale sắp kết thúc" hint="Flash sale còn ít thời gian" checked={notifs.notifyFlashSaleEnd ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyFlashSaleEnd: v }))} />
+                      <SwitchRow label="Báo cáo hàng ngày" hint="Tóm tắt doanh thu cuối ngày" checked={notifs.notifyDailyReport ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyDailyReport: v }))} />
+                    </>
+                  ) : (
+                    <>
+                      <div className="py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Trạng thái đơn hàng</div>
+                      <SwitchRow label="Đơn hàng được tạo" hint="Xác nhận khi đơn hàng được tạo" checked={notifs.notifyOrderCreated ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderCreated: v }))} />
+                      <SwitchRow label="Thanh toán thành công" hint="Khi đơn hàng được thanh toán" checked={notifs.notifyOrderPaid ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderPaid: v }))} />
+                      <SwitchRow label="Đang giao hàng" hint="Khi đơn hàng chuyển sang SHIPPING" checked={notifs.notifyOrderShipping ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderShipping: v }))} />
+                      <SwitchRow label="Hoàn thành" hint="Khi đơn hàng được hoàn thành" checked={notifs.notifyOrderCompleted ?? true} onCheckedChange={v => setNotifs(n => ({ ...n, notifyOrderCompleted: v }))} />
+                      <SwitchRow label="Bảo hành" hint="Khi đơn hàng chuyển sang bảo hành" checked={notifs.notifyWarranty ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyWarranty: v }))} />
+                      <div className="py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Khuyến mãi</div>
+                      <SwitchRow label="Flash Sale" hint="Thông báo khi có flash sale mới" checked={notifs.notifyFlashSale ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyFlashSale: v }))} />
+                      <SwitchRow label="Khuyến mãi & ưu đãi" hint="Thông báo về mã giảm giá và ưu đãi" checked={notifs.notifyPromotion ?? false} onCheckedChange={v => setNotifs(n => ({ ...n, notifyPromotion: v }))} />
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Webhook info for user bot */}

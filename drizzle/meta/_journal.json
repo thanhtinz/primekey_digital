@@ -239,6 +239,13 @@
       "when": 1775855986178,
       "tag": "0033_slimy_lenny_balinger",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1775857956609,
+      "tag": "0034_stiff_corsair",
+      "breakpoints": true
     }
   ]
 }

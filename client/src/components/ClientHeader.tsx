@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Helper to render category icon (emoji or FontAwesome)
 function CatIcon({ icon, className = "" }: { icon?: string | null; className?: string }) {
@@ -285,6 +286,9 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
               <Gift className="h-5 w-5" />
             </button>
             )}
+
+            {/* Dark/Light Mode Toggle */}
+            <ThemeSwitcher />
 
             {/* Cart Icon - always visible */}
             <button
@@ -674,5 +678,24 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
         }
       `}</style>
     </>
+  );
+}
+
+// Dark/Light Mode Switcher component
+function ThemeSwitcher() {
+  const { theme, toggleTheme } = useTheme();
+  if (!toggleTheme) return null;
+  return (
+    <button
+      onClick={toggleTheme}
+      className="p-2.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+      title={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+    >
+      {theme === "dark" ? (
+        <i className="fa-solid fa-sun h-5 w-5 text-yellow-300 text-base" />
+      ) : (
+        <i className="fa-solid fa-moon h-5 w-5 text-blue-300 text-base" />
+      )}
+    </button>
   );
 }

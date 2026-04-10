@@ -2492,6 +2492,10 @@ export const appRouter = router({
         website: userSettings.website,
         logoUrl: userSettings.logoUrl,
         faviconUrl: userSettings.faviconUrl,
+        themeColor: userSettings.themeColor,
+        themeColor1: userSettings.themeColor1,
+        logoDarkUrl: userSettings.logoDarkUrl,
+        fontFamily: userSettings.fontFamily,
       }).from(userSettings).limit(1);
       // Lấy logo từ default template (fallback nếu không có brand logo)
       const templateRows = await drizzleDb.select({
@@ -2709,6 +2713,42 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    updateFeaturesSettings: protectedProcedure
+      .input(z.object({
+        featureFlashSale: z.boolean().optional(),
+        featureCoupons: z.boolean().optional(),
+        featureAffiliate: z.boolean().optional(),
+        featureLoyalty: z.boolean().optional(),
+        featureBlog: z.boolean().optional(),
+        featureWarranty: z.boolean().optional(),
+        featureSpinWheel: z.boolean().optional(),
+        featureTopup: z.boolean().optional(),
+        featureTicket: z.boolean().optional(),
+        featureReview: z.boolean().optional(),
+        featureCart: z.boolean().optional(),
+        featureWishlist: z.boolean().optional(),
+        featureCompare: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+    updateTaxSettings: protectedProcedure
+      .input(z.object({
+        taxEnabled: z.boolean().optional(),
+        taxName: z.string().max(50).optional(),
+        taxRate: z.number().int().min(0).max(100).optional(),
+        taxIncluded: z.boolean().optional(),
+        taxNumber: z.string().max(50).optional(),
+        taxCompanyName: z.string().max(255).optional(),
+        taxAddress: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
     // Upload banner for thank-you page
     uploadThankYouBanner: protectedProcedure
       .input(z.object({
@@ -4926,6 +4966,9 @@ export const appRouter = router({
         notifyFlashSale: z.boolean().optional(),
         notifyPromotion: z.boolean().optional(),
         notifyOrderStatus: z.boolean().optional(),
+        notifyTelegramOrderStatus: z.boolean().optional(),
+        notifyTelegramPromotion: z.boolean().optional(),
+        notifyTelegramFlashSale: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
         const { customerSessions, customers } = await import("../drizzle/schema");
@@ -4943,9 +4986,27 @@ export const appRouter = router({
         if (input.notifyFlashSale !== undefined) updates.notifyFlashSale = input.notifyFlashSale;
         if (input.notifyPromotion !== undefined) updates.notifyPromotion = input.notifyPromotion;
         if (input.notifyOrderStatus !== undefined) updates.notifyOrderStatus = input.notifyOrderStatus;
+        if (input.notifyTelegramOrderStatus !== undefined) updates.notifyTelegramOrderStatus = input.notifyTelegramOrderStatus;
+        if (input.notifyTelegramPromotion !== undefined) updates.notifyTelegramPromotion = input.notifyTelegramPromotion;
+        if (input.notifyTelegramFlashSale !== undefined) updates.notifyTelegramFlashSale = input.notifyTelegramFlashSale;
         if (Object.keys(updates).length > 0) {
           await drizzleDb.update(customers).set(updates).where(eq(customers.id, customer.id));
         }
+        return { success: true };
+      }),
+    unlinkTelegram: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Session expired");
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) throw new Error("Không tìm thấy tài khoản");
+        await drizzleDb.update(customers).set({ telegramChatId: null, telegramUsername: null, telegramLinkedAt: null }).where(eq(customers.id, customer.id));
         return { success: true };
       }),
     uploadAvatar: publicProcedure

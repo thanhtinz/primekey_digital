@@ -347,7 +347,20 @@ function GlobalBrandApplier() {
     if (publicInfo?.companyName) {
       document.title = publicInfo.companyName + " - Hệ Thống Quản Lý Hóa Đơn";
     }
-  }, [publicInfo?.faviconUrl, publicInfo?.companyName]);
+    // Apply brand colors as CSS variables
+    const root = document.documentElement;
+    if ((publicInfo as any)?.themeColor) {
+      root.style.setProperty("--brand-primary", (publicInfo as any).themeColor);
+    }
+    if ((publicInfo as any)?.themeColor1) {
+      root.style.setProperty("--brand-secondary", (publicInfo as any).themeColor1);
+    }
+    // Apply font family
+    if ((publicInfo as any)?.fontFamily) {
+      root.style.setProperty("--font-brand", (publicInfo as any).fontFamily);
+      document.body.style.fontFamily = `'${(publicInfo as any).fontFamily}', sans-serif`;
+    }
+  }, [publicInfo]);
   return null;
 }
 

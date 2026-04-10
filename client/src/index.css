@@ -43,6 +43,10 @@
 }
 
 :root {
+  /* Brand colors - overridden dynamically by GlobalBrandApplier from settings */
+  --brand-primary: #405189;
+  --brand-secondary: #0ab39c;
+  --font-brand: "Be Vietnam Pro";
   --primary: var(--color-blue-700);
   --primary-foreground: var(--color-blue-50);
   --sidebar-primary: var(--color-blue-600);

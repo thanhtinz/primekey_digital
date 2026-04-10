@@ -21,9 +21,8 @@ const adminNavGroups = [
     label: "Bán Hàng",
     items: [
       { label: "Đơn Hàng", href: "/invoices", icon: History },
-      { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
-      { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
       { label: "Khách Hàng", href: "/customers", icon: Users },
+      { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
     ],
   },
   {
@@ -34,6 +33,7 @@ const adminNavGroups = [
       { label: "Danh Mục", href: "/settings/categories", icon: Tag },
       { label: "Tags Sản Phẩm", href: "/settings/tags", icon: Tag },
       { label: "Đánh Giá KH", href: "/feedbacks", icon: MessageSquare },
+      { label: "Bảo Hành", href: "/admin/warranty", icon: Shield },
     ],
   },
   {
@@ -72,13 +72,6 @@ const adminNavGroups = [
     ],
   },
   {
-    label: "Vận Hành",
-    items: [
-      { label: "Bảo Hành", href: "/admin/warranty", icon: Shield },
-      { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
-    ],
-  },
-  {
     label: "Blog",
     items: [
       { label: "Tất Cả Bài Viết", href: "/admin/blog", icon: BookOpen },
@@ -91,7 +84,6 @@ const adminNavGroups = [
     items: [
       { label: "Thư Viện Ảnh", href: "/admin/avatar-gallery", icon: Image },
       { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
-      { label: "Liên Hệ", href: "/contact-settings", icon: MessageSquare },
       { label: "Tạo Trang", href: "/admin/page-builder", icon: Layers },
       { label: "Quản Lý Menu", href: "/admin/menu-manager", icon: Navigation },
     ],
@@ -138,6 +130,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showContactWidget, setShowContactWidget] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const logoutMutation = trpc.auth.logout.useMutation();
   const { data: user } = trpc.auth.me.useQuery(undefined, {
@@ -441,6 +434,72 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-slate-800">
           {children}
         </main>
+      </div>
+
+      {/* Contact Widget - Floating Button */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        {showContactWidget && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 w-72 overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-white" />
+                <span className="text-sm font-semibold text-white">Liên Hệ & Hỗ Trợ</span>
+              </div>
+              <button onClick={() => setShowContactWidget(false)} className="text-white/70 hover:text-white transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-2">
+              <button
+                onClick={() => { setLocation("/contact-settings"); setShowContactWidget(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-left"
+              >
+                <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Cấu hình Liên Hệ</p>
+                  <p className="text-xs text-slate-500">Số điện thoại, email, mạng xã hội</p>
+                </div>
+              </button>
+              <button
+                onClick={() => { setLocation("/admin/tickets"); setShowContactWidget(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors text-left"
+              >
+                <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
+                  <Headphones className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Ticket Hỗ Trợ</p>
+                  <p className="text-xs text-slate-500">Quản lý yêu cầu hỗ trợ khách hàng</p>
+                </div>
+              </button>
+              <button
+                onClick={() => { setLocation("/admin/announcements"); setShowContactWidget(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors text-left"
+              >
+                <div className="h-8 w-8 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <Megaphone className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Thông Báo & Banner</p>
+                  <p className="text-xs text-slate-500">Quản lý banner và thông báo</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => setShowContactWidget(prev => !prev)}
+          className={`h-12 w-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
+            showContactWidget
+              ? "bg-gray-600 hover:bg-gray-700 rotate-45"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+          title="Liên hệ & Hỗ trợ"
+        >
+          {showContactWidget ? <X className="h-5 w-5 text-white" /> : <MessageSquare className="h-5 w-5 text-white" />}
+        </button>
       </div>
     </div>
   );

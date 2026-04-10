@@ -48,13 +48,15 @@ const FONT_FAMILIES = [
 ];
 
 // ─── Tab type ──────────────────────────────────────────────────────────────────────────────
-type TabKey = "general" | "images" | "colors" | "primekey" | "security";
+type TabKey = "general" | "images" | "colors" | "primekey" | "security" | "features" | "tax";
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: "general",  label: "Cài đặt chung",  icon: <SettingsIcon className="h-4 w-4" /> },
   { key: "images",   label: "Hình ảnh",        icon: <ImageIcon className="h-4 w-4" /> },
   { key: "colors",   label: "Màu sắc",          icon: <Palette className="h-4 w-4" /> },
   { key: "primekey", label: "Primekey",        icon: <Layers className="h-4 w-4" /> },
+  { key: "features", label: "Tính năng",       icon: <Eye className="h-4 w-4" /> },
+  { key: "tax",      label: "Thuế",             icon: <Info className="h-4 w-4" /> },
   { key: "security", label: "Bảo mật",         icon: <AlertTriangle className="h-4 w-4" /> },
 ];
 
@@ -188,6 +190,36 @@ export default function Settings() {
   });
   const [primekeySaving, setPrimekeySaving] = useState(false);
 
+  // ── Features state ──
+  const [features, setFeatures] = useState({
+    featureFlashSale: true,
+    featureCoupons: true,
+    featureAffiliate: true,
+    featureLoyalty: true,
+    featureBlog: true,
+    featureWarranty: true,
+    featureSpinWheel: false,
+    featureTopup: true,
+    featureTicket: true,
+    featureReview: true,
+    featureCart: true,
+    featureWishlist: true,
+    featureCompare: false,
+  });
+  const [featuresSaving, setFeaturesSaving] = useState(false);
+
+  // ── Tax state ──
+  const [tax, setTax] = useState({
+    taxEnabled: false,
+    taxName: "VAT",
+    taxRate: 10,
+    taxIncluded: false,
+    taxNumber: "",
+    taxCompanyName: "",
+    taxAddress: "",
+  });
+  const [taxSaving, setTaxSaving] = useState(false);
+
   // ── Security state ──
   const [security, setSecurity] = useState({
     bfMaxLoginAttempts: 5,
@@ -220,6 +252,8 @@ export default function Settings() {
   const updateBrand = trpc.settings.updateBrand.useMutation();
   const updatePrimekeySettings = trpc.settings.updatePrimekeySettings.useMutation();
   const updateSecuritySettings = trpc.settings.updateSecuritySettings.useMutation();
+  const updateFeaturesSettings = trpc.settings.updateFeaturesSettings.useMutation();
+  const updateTaxSettings = trpc.settings.updateTaxSettings.useMutation();
   const utils = trpc.useUtils();
 
   useEffect(() => {
@@ -269,6 +303,32 @@ export default function Settings() {
       orderCodePrefix: s.orderCodePrefix || "",
       siteAddress: s.siteAddress || "",
       siteCopyright: s.siteCopyright || "",
+    });
+    // Features
+    setFeatures({
+      featureFlashSale: s.featureFlashSale ?? true,
+      featureCoupons: s.featureCoupons ?? true,
+      featureAffiliate: s.featureAffiliate ?? true,
+      featureLoyalty: s.featureLoyalty ?? true,
+      featureBlog: s.featureBlog ?? true,
+      featureWarranty: s.featureWarranty ?? true,
+      featureSpinWheel: s.featureSpinWheel ?? false,
+      featureTopup: s.featureTopup ?? true,
+      featureTicket: s.featureTicket ?? true,
+      featureReview: s.featureReview ?? true,
+      featureCart: s.featureCart ?? true,
+      featureWishlist: s.featureWishlist ?? true,
+      featureCompare: s.featureCompare ?? false,
+    });
+    // Tax
+    setTax({
+      taxEnabled: s.taxEnabled ?? false,
+      taxName: s.taxName || "VAT",
+      taxRate: s.taxRate ?? 10,
+      taxIncluded: s.taxIncluded ?? false,
+      taxNumber: s.taxNumber || "",
+      taxCompanyName: s.taxCompanyName || "",
+      taxAddress: s.taxAddress || "",
     });
     // Security
     setSecurity({
@@ -356,6 +416,28 @@ export default function Settings() {
     } catch (e: any) {
       toast.error(e.message || "Lưu thất bại");
     } finally { setSecuritySaving(false); }
+  };
+
+  const handleSaveFeatures = async () => {
+    setFeaturesSaving(true);
+    try {
+      await updateFeaturesSettings.mutateAsync(features);
+      await utils.settings.get.invalidate();
+      toast.success("Đã lưu cài đặt tính năng!");
+    } catch (e: any) {
+      toast.error(e.message || "Lưu thất bại");
+    } finally { setFeaturesSaving(false); }
+  };
+
+  const handleSaveTax = async () => {
+    setTaxSaving(true);
+    try {
+      await updateTaxSettings.mutateAsync(tax);
+      await utils.settings.get.invalidate();
+      toast.success("Đã lưu cấu hình thuế!");
+    } catch (e: any) {
+      toast.error(e.message || "Lưu thất bại");
+    } finally { setTaxSaving(false); }
   };
 
   const makeUploadHandler = (
@@ -924,33 +1006,6 @@ export default function Settings() {
                   </CardContent>
                 </Card>
 
-                {/* Telegram & Địa chỉ */}
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-emerald-600" /> Thông báo & Thông tin
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="divide-y divide-border">
-                    <SettingRow label="Địa chỉ cửa hàng">
-                      <Textarea
-                        value={primekey.siteAddress}
-                        onChange={e => setPrimekey(p => ({ ...p, siteAddress: e.target.value }))}
-                        placeholder="123 Đường ABC, Quận 1, TP.HCM"
-                        rows={2}
-                        className="resize-none"
-                      />
-                    </SettingRow>
-                    <SettingRow label="Copyright" hint="Nội dung copyright hiển thị ở footer">
-                      <Input
-                        value={primekey.siteCopyright}
-                        onChange={e => setPrimekey(p => ({ ...p, siteCopyright: e.target.value }))}
-                        placeholder="© 2024 Prime Shop. All rights reserved."
-                      />
-                    </SettingRow>
-                  </CardContent>
-                </Card>
-
                 <div className="flex justify-end">
                   <Button onClick={handleSavePrimekey} disabled={primekeySaving} className="gap-2 min-w-32">
                     {primekeySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -1067,6 +1122,125 @@ export default function Settings() {
                   <Button onClick={handleSaveSecurity} disabled={securitySaving} className="gap-2 min-w-32">
                     {securitySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     {securitySaving ? "Đang lưu..." : "Lưu Bảo mật"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB TÍNH NĂNG
+            ═══════════════════════════════════════════════════════════ */}
+            {tab === "features" && (
+              <div className="space-y-5">
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-blue-600" /> Bật / Tắt Tính Năng
+                    </CardTitle>
+                    <CardDescription>Kiểm soát các tính năng hiển thị trên website khách hàng</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    {([
+                      { key: "featureCart",       label: "Giỏ hàng",          hint: "Cho phép khách hàng thêm vào giỏ và mua nhiều sản phẩm" },
+                      { key: "featureWishlist",   label: "Yêu thích",          hint: "Cho phép khách hàng lưu sản phẩm yêu thích" },
+                      { key: "featureReview",     label: "Đánh giá sản phẩm",  hint: "Khách hàng có thể viết đánh giá" },
+                      { key: "featureCoupons",    label: "Mã giảm giá",        hint: "Hiển thị ô nhập mã giảm giá khi thanh toán" },
+                      { key: "featureFlashSale",  label: "Flash Sale",          hint: "Hiển thị banner và sản phẩm flash sale" },
+                      { key: "featureAffiliate",  label: "Affiliate",           hint: "Chương trình giới thiệu kiếm hoa hồng" },
+                      { key: "featureLoyalty",    label: "Tích điểm",           hint: "Hệ thống tích điểm và đổi thưởng" },
+                      { key: "featureSpinWheel",  label: "Vòng quay may mắn",  hint: "Mini game vòng quay cho khách hàng" },
+                      { key: "featureTopup",      label: "Nạp tiền ví",        hint: "Khách hàng có thể nạp tiền vào ví" },
+                      { key: "featureTicket",     label: "Ticket hỗ trợ",      hint: "Hệ thống gửi yêu cầu hỗ trợ" },
+                      { key: "featureWarranty",   label: "Bảo hành",           hint: "Quản lý bảo hành sản phẩm" },
+                      { key: "featureBlog",       label: "Blog",                hint: "Hiển thị trang blog trên website" },
+                      { key: "featureCompare",    label: "So sánh sản phẩm",  hint: "Cho phép so sánh nhiều sản phẩm" },
+                    ] as { key: keyof typeof features; label: string; hint: string }[]).map(({ key, label, hint }) => (
+                      <SwitchRow key={key} label={label} hint={hint}
+                        checked={features[key]}
+                        onCheckedChange={v => setFeatures(f => ({ ...f, [key]: v }))}
+                      />
+                    ))}
+                  </CardContent>
+                </Card>
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveFeatures} disabled={featuresSaving} className="gap-2 min-w-32">
+                    {featuresSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {featuresSaving ? "Đang lưu..." : "Lưu Tính năng"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB THUẾS
+            ═══════════════════════════════════════════════════════════ */}
+            {tab === "tax" && (
+              <div className="space-y-5">
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Info className="h-4 w-4 text-orange-600" /> Cấu hình Thuế
+                    </CardTitle>
+                    <CardDescription>Cài đặt thuế VAT và thông tin hóa đơn thuế</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SwitchRow label="Bật thuế" hint="Áp dụng thuế vào giá sản phẩm"
+                      checked={tax.taxEnabled}
+                      onCheckedChange={v => setTax(t => ({ ...t, taxEnabled: v }))}
+                    />
+                    {tax.taxEnabled && (
+                      <>
+                        <SettingRow label="Tên thuế" hint="Ví dụ: VAT, GST, PPN">
+                          <Input
+                            value={tax.taxName}
+                            onChange={e => setTax(t => ({ ...t, taxName: e.target.value }))}
+                            placeholder="VAT"
+                            className="max-w-32"
+                          />
+                        </SettingRow>
+                        <SettingRow label="Thuế suất (%)" hint="Phần trăm thuế áp dụng">
+                          <Input
+                            type="number" min={0} max={100}
+                            value={tax.taxRate}
+                            onChange={e => setTax(t => ({ ...t, taxRate: Number(e.target.value) }))}
+                            className="max-w-32"
+                          />
+                        </SettingRow>
+                        <SwitchRow label="Thuế đã bao gồm trong giá" hint="Nếu bật, giá hiển thị đã bao gồm thuế"
+                          checked={tax.taxIncluded}
+                          onCheckedChange={v => setTax(t => ({ ...t, taxIncluded: v }))}
+                        />
+                        <SettingRow label="Mã số thuế" hint="Mã số thuế của doanh nghiệp">
+                          <Input
+                            value={tax.taxNumber}
+                            onChange={e => setTax(t => ({ ...t, taxNumber: e.target.value }))}
+                            placeholder="0123456789"
+                          />
+                        </SettingRow>
+                        <SettingRow label="Tên công ty" hint="Tên công ty trên hóa đơn thuế">
+                          <Input
+                            value={tax.taxCompanyName}
+                            onChange={e => setTax(t => ({ ...t, taxCompanyName: e.target.value }))}
+                            placeholder="Công ty TNHH..."
+                          />
+                        </SettingRow>
+                        <SettingRow label="Địa chỉ công ty" hint="Địa chỉ trên hóa đơn thuế">
+                          <Textarea
+                            value={tax.taxAddress}
+                            onChange={e => setTax(t => ({ ...t, taxAddress: e.target.value }))}
+                            placeholder="123 Đường ABC, Quận 1, TP.HCM"
+                            rows={2}
+                            className="resize-none"
+                          />
+                        </SettingRow>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveTax} disabled={taxSaving} className="gap-2 min-w-32">
+                    {taxSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {taxSaving ? "Đang lưu..." : "Lưu Thuế"}
                   </Button>
                 </div>
               </div>
