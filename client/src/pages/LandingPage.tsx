@@ -451,10 +451,9 @@ export default function LandingPage() {
                   <Sparkles className="h-5 w-5 text-blue-500" /> Sản phẩm nổi bật
                   <span className="text-sm font-normal text-slate-400">({Math.min(products.length, 10)})</span>
                 </h2>
-                <button onClick={() => navigate("/catalog")}
-                  className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 font-medium">
-                  Xem tất cả <ArrowRight className="h-3.5 w-3.5" />
-                </button>
+                <Button onClick={() => navigate("/catalog")} className="bg-slate-800 hover:bg-slate-900 text-white rounded-xl px-5 gap-1.5 flex-shrink-0">
+                  Xem tất cả <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {products.slice(0, 10).map((product: any) => (
