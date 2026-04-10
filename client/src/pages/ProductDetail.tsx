@@ -527,7 +527,7 @@ export default function ProductDetail() {
           )}
           {/* Order Info: custom fields + coupon + payment + notes */}
           {isLoggedIn && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3 sticky top-24 md:max-w-xs">
             <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-600" />
               Thông tin đặt hàng
