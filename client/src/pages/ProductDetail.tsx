@@ -522,7 +522,7 @@ export default function ProductDetail() {
                   {referralSettings?.isEnabled && (
                     <button
                       onClick={() => { if (!email) { toast.info("Vui lòng đăng nhập để lấy link giới thiệu"); return; } setShowAffiliatePopup(true); }}
-                      className="relative w-9 h-9 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+                      className="relative w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
                       title="Chia sẻ kiếm tiền"
                     >
                       <i className="fa fa-hand-holding-usd text-white text-sm" />
@@ -533,13 +533,13 @@ export default function ProductDetail() {
                   )}
                   <button
                     onClick={handleShare}
-                    className="w-9 h-9 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+                    className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
                   >
                     {copied ? <CheckCircle className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui lòng đăng nhập"); }}
-                    className={`w-9 h-9 backdrop-blur rounded-xl flex items-center justify-center transition-all ${isInWishlist ? "bg-red-500" : "bg-white/20 hover:bg-white/30"}`}
+                    className={`w-10 h-10 backdrop-blur rounded-xl flex items-center justify-center transition-all ${isInWishlist ? "bg-red-500" : "bg-white/20 hover:bg-white/30"}`}
                   >
                     <Heart className={`w-4 h-4 ${isInWishlist ? "fill-white" : ""}`} />
                   </button>
@@ -574,10 +574,7 @@ export default function ProductDetail() {
                 ))}
               </div>
 
-              {/* Short description */}
-              {product.description && (
-                <p className="text-sm text-white/90 line-clamp-2 leading-relaxed font-medium">{product.description}</p>
-              )}
+
             </div>
           </div>
         </div>
