@@ -630,8 +630,14 @@ function SecurityInlineSection({ token }: { token: string }) {
 type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile";
 
 export default function MyAccount() {
-  const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [location, navigate] = useLocation();
+  const initialTab = (): TabType => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab === "referral" || tab === "orders" || tab === "points" || tab === "warranty" || tab === "profile") return tab as TabType;
+    return "overview";
+  };
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [orderFilter, setOrderFilter] = useState<"all" | "CREATED" | "PAID" | "SHIPPING" | "COMPLETED" | "WARRANTY" | "FAILED" | "REFUNDED" | "CANCELLED">("all");
   const { customer, token, logout, isLoading: authLoading } = useCustomerAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);

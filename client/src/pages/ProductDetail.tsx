@@ -1008,7 +1008,7 @@ export default function ProductDetail() {
 
                 {/* View stats */}
                 <button
-                  onClick={() => { setShowAffiliatePopup(false); setLocation("/referral"); }}
+                  onClick={() => { setShowAffiliatePopup(false); setLocation("/my-account?tab=referral"); }}
                   className="w-full flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all"
                 >
                   <i className="fa-solid fa-chart-line text-sm" /> Xem thống kê hoa hồng
