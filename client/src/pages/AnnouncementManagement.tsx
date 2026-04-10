@@ -225,15 +225,40 @@ export default function AnnouncementManagement() {
           </div>
         </div>
 
+        {/* ── Custom Tab Bar ── */}
+        <div className="flex gap-0 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <button
+            onClick={() => setActiveTab("announcements")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "announcements"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <Bell className="h-4 w-4" />
+            <span>Thông Báo</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "announcements" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(announcements as any[]).length}</span>
+          </button>
+          <div className="w-px bg-gray-200" />
+          <button
+            onClick={() => setActiveTab("banners")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "banners"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>Banner</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "banners" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(banners as any[]).length}</span>
+          </button>
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border border-gray-200 shadow-sm">
-            <TabsTrigger value="announcements" className="gap-1.5">
-              <Bell className="h-4 w-4" /> Thông Báo ({(announcements as any[]).length})
-            </TabsTrigger>
-            <TabsTrigger value="banners" className="gap-1.5">
-              <ImageIcon className="h-4 w-4" /> Banner ({(banners as any[]).length})
-            </TabsTrigger>
-          </TabsList>
 
           {/* ── Announcements Tab ── */}
           <TabsContent value="announcements" className="mt-4">

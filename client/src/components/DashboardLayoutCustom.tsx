@@ -79,9 +79,16 @@ const adminNavGroups = [
     ],
   },
   {
+    label: "Blog",
+    items: [
+      { label: "Tất Cả Bài Viết", href: "/admin/blog", icon: BookOpen },
+      { label: "Viết Bài Mới", href: "/admin/blog/new", icon: Plus },
+      { label: "Chuyên Mục", href: "/admin/blog/categories", icon: Tag },
+    ],
+  },
+  {
     label: "Nội Dung",
     items: [
-      { label: "Blog", href: "/admin/blog-hub", icon: BookOpen },
       { label: "Thư Viện Ảnh", href: "/admin/avatar-gallery", icon: Image },
       { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
       { label: "Liên Hệ", href: "/contact-settings", icon: MessageSquare },

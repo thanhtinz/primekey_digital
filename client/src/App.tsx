@@ -288,8 +288,8 @@ function Router() {
         <Route path="/settings/banners" component={() => isAdmin ? <BannerSettings /> : <ForbiddenPage />} />
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
-        <Route path="/admin/blog" component={() => isAdmin ? <BlogManagement /> : <ForbiddenPage />} />
-        {/* Removed duplicate /blog-management route - use /admin/blog instead */}
+        <Route path="/admin/blog" component={() => isAdmin ? <BlogPosts /> : <ForbiddenPage />} />
+        {/* BlogManagement still available for legacy routes */}
         <Route path="/admin/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
         {/* Removed duplicate /announcements route - use /admin/announcements instead */}
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />

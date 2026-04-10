@@ -1312,6 +1312,84 @@ export const appRouter = router({
           ))
           .limit(20);
       }),
+    adminGetDetail: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { getDb } = await import("./db");
+        const { eq, desc } = await import("drizzle-orm");
+        const { customers: customersTable, walletTransactions, customerSessions, invoices: invoicesTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const customerRows = await drizzleDb.select().from(customersTable).where(eq(customersTable.id, input.id)).limit(1);
+        if (!customerRows[0]) throw new TRPCError({ code: "NOT_FOUND" });
+        const customer = customerRows[0];
+        // Recent wallet transactions
+        const recentTransactions = await drizzleDb.select().from(walletTransactions)
+          .where(eq(walletTransactions.customerEmail, customer.email || ""))
+          .orderBy(desc(walletTransactions.createdAt))
+          .limit(10);
+        // Active sessions
+        const sessions = await drizzleDb.select().from(customerSessions)
+          .where(eq(customerSessions.email, customer.email || ""))
+          .orderBy(desc(customerSessions.createdAt))
+          .limit(5);
+        // Recent invoices
+        const recentInvoices = await drizzleDb.select().from(invoicesTable)
+          .where(eq(invoicesTable.customerId, input.id))
+          .orderBy(desc(invoicesTable.createdAt))
+          .limit(5);
+        return { customer, recentTransactions, sessions, recentInvoices };
+      }),
+    adminUpdate: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        customerRole: z.enum(["customer", "vip", "wholesale", "partner"]).optional(),
+        emailVerified: z.boolean().optional(),
+        walletBalance: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customers: customersTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { id, ...updateData } = input;
+        await drizzleDb.update(customersTable).set({ ...updateData, updatedAt: new Date() } as any).where(eq(customersTable.id, id));
+        return { success: true };
+      }),
+    adminResetPassword: protectedProcedure
+      .input(z.object({ id: z.number(), newPassword: z.string().min(6) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customers: customersTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const bcrypt = await import("bcrypt");
+        const hash = await bcrypt.hash(input.newPassword, 10);
+        await drizzleDb.update(customersTable).set({ passwordHash: hash, updatedAt: new Date() } as any).where(eq(customersTable.id, input.id));
+        return { success: true };
+      }),
+    adminToggleLock: protectedProcedure
+      .input(z.object({ id: z.number(), lock: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customers: customersTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const lockedUntil = input.lock ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null;
+        await drizzleDb.update(customersTable).set({ lockedUntil, updatedAt: new Date() } as any).where(eq(customersTable.id, input.id));
+        return { success: true };
+      }),
   }),
   // Productss
   products: router({
