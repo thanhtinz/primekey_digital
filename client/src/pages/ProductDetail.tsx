@@ -518,7 +518,7 @@ export default function ProductDetail() {
             <div className="flex-1 min-w-0 text-white">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
-                <div className="flex items-start gap-2 flex-shrink-0 pt-1">
+                <div className="flex items-start gap-2 flex-shrink-0 pt-1 -mr-1">
                   {referralSettings?.isEnabled && (
                     <div className="relative">
                       <button
