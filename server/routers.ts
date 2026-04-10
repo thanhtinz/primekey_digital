@@ -2598,6 +2598,72 @@ export const appRouter = router({
         await db.upsertUserSettings(ctx.user.id, data);
         return { success: true };
       }),
+    updateGeneral: protectedProcedure
+      .input(z.object({
+        siteTitle: z.string().optional(),
+        siteDescription: z.string().optional(),
+        siteKeywords: z.string().optional(),
+        siteAuthor: z.string().optional(),
+        siteTimezone: z.string().optional(),
+        hotline: z.string().optional(),
+        fanpageUrl: z.string().optional(),
+        copyrightFooter: z.string().optional(),
+        maintenanceMode: z.boolean().optional(),
+        autoUpdate: z.boolean().optional(),
+        debugMode: z.boolean().optional(),
+        debugAutoBank: z.boolean().optional(),
+        debugApiSuppliers: z.boolean().optional(),
+        fontFamily: z.string().optional(),
+        showApiDocs: z.boolean().optional(),
+        showAvatar: z.boolean().optional(),
+        showTelegramReminder: z.boolean().optional(),
+        showSlider: z.boolean().optional(),
+        showBanner: z.boolean().optional(),
+        showRecentlyViewed: z.boolean().optional(),
+        headerScript: z.string().optional(),
+        footerScript: z.string().optional(),
+        adminFooterScript: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    updateColors: protectedProcedure
+      .input(z.object({
+        themeColor: z.string().optional(),
+        themeColor1: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    uploadBrandAssetExtra: protectedProcedure
+      .input(z.object({
+        type: z.enum(["logoDark", "siteImage", "avatar"]),
+        dataUrl: z.string(),
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { storagePut } = await import("./storage");
+        const matches = input.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) throw new Error("Invalid data URL format");
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, "base64");
+        const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const fileName = input.fileName || `${input.type}-${ctx.user.id}-${Date.now()}.${ext}`;
+        const fileKey = `brand-assets/${ctx.user.id}/${input.type}/${fileName}`;
+        const { url } = await storagePut(fileKey, buffer, mimeType);
+        const fieldMap: Record<string, string> = { logoDark: "logoDarkUrl", siteImage: "siteImageUrl", avatar: "avatarImageUrl" };
+        await db.upsertUserSettings(ctx.user.id, { [fieldMap[input.type]]: url });
+        return { url };
+      }),
+
     // Upload banner for thank-you page
     uploadThankYouBanner: protectedProcedure
       .input(z.object({

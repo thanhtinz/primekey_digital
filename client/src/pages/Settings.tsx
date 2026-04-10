@@ -4,242 +4,236 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Building2, Bell, Shield, CreditCard, Loader2, Eye, EyeOff, ImageIcon, Upload, X, Globe, Webhook, Check, AlertCircle, Copy, RefreshCw, CheckCircle2, XCircle, Send, Bot, ExternalLink, Receipt, Percent, Star, Users2, ShoppingBag, Heart, Trophy, BookOpen, Ticket, Wallet, MessageSquare, ToggleLeft, Tag, Plus, Trash2, Pencil } from "@/components/Icon";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
+import {
+  Save, Globe, ImageIcon, Palette, Upload, X, Loader2,
+  Settings as SettingsIcon, Code, Eye, Bell, Layers,
+  AlertTriangle, Info, ChevronRight
+} from "@/components/Icon";
 
-// FeatureFlags icons map
-const FEATURE_ICONS: Record<string, React.ElementType> = {
-  points: Star,
-  warranty: Shield,
-  referral: Users2,
-  flash_sale: ShoppingBag,
-  wishlist: Heart,
-  leaderboard: Trophy,
-  blog: BookOpen,
-  coupon: Ticket,
-  wallet: Wallet,
-  review: MessageSquare,
-};
-const CATEGORY_LABELS: Record<string, string> = {
-  loyalty: "Khách hàng thân thiết",
-  service: "Dịch vụ",
-  marketing: "Marketing & Khuyến mãi",
-  ux: "Trải nghiệm người dùng",
-  gamification: "Gamification",
-  content: "Nội dung",
-  payment: "Thanh toán",
-  general: "Chung",
-};
+// ─── Gradient Presets ──────────────────────────────────────────────────────────
+const GRADIENT_PRESETS = [
+  { name: "Ocean & Teal",       c1: "#405189", c2: "#0ab39c" },
+  { name: "Warm & Vibrant",     c1: "#f7931e", c2: "#e74c3c" },
+  { name: "Purple & Pink",      c1: "#8b5cf6", c2: "#ec4899" },
+  { name: "Professional Dark",  c1: "#1e293b", c2: "#334155" },
+  { name: "Nature & Fresh",     c1: "#16a34a", c2: "#0ea5e9" },
+  { name: "Sunset",             c1: "#f59e0b", c2: "#ef4444" },
+];
 
+const TIMEZONES = [
+  "Asia/Ho_Chi_Minh",
+  "Asia/Bangkok",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "America/New_York",
+  "America/Los_Angeles",
+  "Europe/London",
+  "Europe/Paris",
+  "UTC",
+];
+
+const FONT_FAMILIES = [
+  "Be Vietnam Pro",
+  "Inter",
+  "Roboto",
+  "Open Sans",
+  "Montserrat",
+  "Nunito",
+  "Poppins",
+  "Arial",
+  "system-ui",
+];
+
+// ─── Tab type ──────────────────────────────────────────────────────────────────
+type TabKey = "general" | "images" | "colors";
+
+const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
+  { key: "general", label: "Cài đặt chung",  icon: <SettingsIcon className="h-4 w-4" /> },
+  { key: "images",  label: "Hình ảnh",        icon: <ImageIcon className="h-4 w-4" /> },
+  { key: "colors",  label: "Màu sắc",          icon: <Palette className="h-4 w-4" /> },
+];
+
+// ─── SettingRow helper ─────────────────────────────────────────────────────────
+function SettingRow({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 py-4 border-b border-border last:border-0">
+      <div className="sm:w-64 flex-shrink-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {hint && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{hint}</p>}
+      </div>
+      <div className="flex-1">{children}</div>
+    </div>
+  );
+}
+
+// ─── SwitchRow helper ──────────────────────────────────────────────────────────
+function SwitchRow({ label, hint, checked, onCheckedChange, danger }: {
+  label: string; hint?: string; checked: boolean;
+  onCheckedChange: (v: boolean) => void; danger?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3.5 border-b border-border last:border-0">
+      <div className="flex-1">
+        <p className={`text-sm font-medium ${danger ? "text-red-600" : "text-foreground"}`}>{label}</p>
+        {hint && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{hint}</p>}
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
+}
+
+// ─── ImageUploadCard helper ────────────────────────────────────────────────────
+function ImageUploadCard({
+  title, description, preview, uploading, onUpload, onRemove, accept, maxSizeMB, recommendedSize, wide
+}: {
+  title: string; description: string; preview: string | null;
+  uploading: boolean; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void; accept: string; maxSizeMB: number; recommendedSize: string; wide?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+        <CardDescription className="text-xs">{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className={`flex flex-col ${wide ? "sm:flex-row" : ""} items-start gap-4`}>
+          {/* Preview */}
+          <div className={`flex-shrink-0 ${wide ? "w-40 h-20" : "w-24 h-24"} rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/30 flex items-center justify-center overflow-hidden`}>
+            {preview ? (
+              <img src={preview} alt={title} className="max-w-full max-h-full object-contain p-2" />
+            ) : (
+              <div className="text-center p-2">
+                <ImageIcon className="h-6 w-6 text-muted-foreground/40 mx-auto" />
+                <p className="text-xs text-muted-foreground/60 mt-1">Chưa có</p>
+              </div>
+            )}
+          </div>
+          {/* Actions */}
+          <div className="flex-1 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Kích thước khuyến nghị: <strong>{recommendedSize}</strong>. Tối đa {maxSizeMB}MB.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={onUpload} />
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => inputRef.current?.click()} disabled={uploading}>
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {uploading ? "Đang tải..." : "Chọn file"}
+              </Button>
+              {preview && (
+                <Button variant="outline" size="sm" className="gap-1.5 text-red-500 hover:text-red-600 hover:border-red-300" onClick={onRemove}>
+                  <X className="h-3.5 w-3.5" /> Xóa
+                </Button>
+              )}
+            </div>
+            {preview && <p className="text-xs text-emerald-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Đã lưu</p>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 export default function Settings() {
-  const [, setLocation] = useLocation();
+  const [tab, setTab] = useState<TabKey>("general");
 
-  // PayOS state
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [showChecksum, setShowChecksum] = useState(false);
-  const [payosSaving, setPayosSaving] = useState(false);
-  const [payosTesting, setPayosTesting] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
-  const [payosForm, setPayosForm] = useState({ payosApiKey: "", payosClientId: "", payosChecksumKey: "" });
-  const webhookUrl = `${window.location.origin}/api/webhooks/payos`;
-
-  // Telegram state
-  const [telegramForm, setTelegramForm] = useState({ telegramBotToken: "", telegramChatId: "", telegramEnabled: false });
-  const [telegramSaving, setTelegramSaving] = useState(false);
-
-  // Tax state
-  const [taxForm, setTaxForm] = useState({ taxName: "VAT", taxRate: 10, isEnabled: false });
-  const [taxSaving, setTaxSaving] = useState(false);
-
-  // Feature flags state
-  const [loadingFlagKey, setLoadingFlagKey] = useState<string | null>(null);
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
-  const [showConfirmPw, setShowConfirmPw] = useState(false);
-  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
-  const [companyData, setCompanyData] = useState({
-    companyName: "",
-    companyEmail: "",
-    companyPhone: "",
-    companyAddress: "",
-    taxId: "",
-    website: "",
+  // ── General state ──
+  const [general, setGeneral] = useState({
+    siteTitle: "", siteDescription: "", siteKeywords: "", siteAuthor: "",
+    siteTimezone: "Asia/Ho_Chi_Minh",
+    companyEmail: "", hotline: "", companyAddress: "", fanpageUrl: "",
+    copyrightFooter: "", fontFamily: "Be Vietnam Pro",
+    maintenanceMode: false, autoUpdate: false, debugMode: false,
+    debugAutoBank: false, debugApiSuppliers: false, showApiDocs: true,
+    showAvatar: true, showTelegramReminder: false, showSlider: true,
+    showBanner: true, showRecentlyViewed: true,
+    headerScript: "", footerScript: "", adminFooterScript: "",
   });
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    invoiceReminder: true,
-    paymentConfirmation: true,
-    weeklyReport: false,
-  });
+  const [generalSaving, setGeneralSaving] = useState(false);
 
-  // Brand state
+  // ── Images state ──
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoDarkPreview, setLogoDarkPreview] = useState<string | null>(null);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [siteImagePreview, setSiteImagePreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [logoDarkUploading, setLogoDarkUploading] = useState(false);
   const [faviconUploading, setFaviconUploading] = useState(false);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const faviconInputRef = useRef<HTMLInputElement>(null);
+  const [siteImageUploading, setSiteImageUploading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
-  // Load settings from server
+  // ── Colors state ──
+  const [themeColor, setThemeColor] = useState("#405189");
+  const [themeColor1, setThemeColor1] = useState("#0ab39c");
+  const [colorSaving, setColorSaving] = useState(false);
+
+  // ── Queries ──
   const { data: settingsData, isLoading } = trpc.settings.get.useQuery();
-  const updateCompany = trpc.settings.updateCompany.useMutation();
-  const updateNotifications = trpc.settings.updateNotifications.useMutation();
-  const changePassword = trpc.settings.changePassword.useMutation();
+  const updateGeneral = trpc.settings.updateGeneral.useMutation();
+  const updateColors = trpc.settings.updateColors.useMutation();
   const uploadBrandAsset = trpc.settings.uploadBrandAsset.useMutation();
+  const uploadBrandAssetExtra = trpc.settings.uploadBrandAssetExtra.useMutation();
   const updateBrand = trpc.settings.updateBrand.useMutation();
   const utils = trpc.useUtils();
 
-  // PayOS queries
-  const { data: payosConfig } = trpc.paymentGateways.get.useQuery();
-  const updateGateway = trpc.paymentGateways.update.useMutation();
-  const testConnection = trpc.paymentGateways.testConnection.useMutation();
-
-  // Telegram queries
-  const saveTelegram = trpc.settingsExt.updateTelegram.useMutation({
-    onSuccess: () => { toast.success("Đã lưu cấu hình Telegram!"); setTelegramSaving(false); },
-    onError: (e: any) => { toast.error(e.message || "Lưu thất bại"); setTelegramSaving(false); },
-  });
-  const testTelegram = trpc.settingsExt.testTelegram.useMutation({
-    onSuccess: () => toast.success("Gửi tin nhắn test thành công!"),
-    onError: (e: any) => toast.error(e.message || "Test thất bại"),
-  });
-
-  // Tax queries
-  const { data: taxData } = trpc.tax.getSettings.useQuery();
-  const saveTax = trpc.tax.save.useMutation({
-    onSuccess: () => { toast.success("Đã lưu cấu hình thuế!"); setTaxSaving(false); },
-    onError: (e: any) => { toast.error(e.message || "Lưu thất bại"); setTaxSaving(false); },
-  });
-
-  // Feature flags queries
-  const { data: featureFlags, isLoading: flagsLoading, refetch: refetchFlags } = trpc.featureFlags.getAll.useQuery();
-  const updateFlag = trpc.featureFlags.update.useMutation();
-
   useEffect(() => {
-    if (settingsData) {
-      setCompanyData({
-        companyName: settingsData.companyName || "",
-        companyEmail: settingsData.companyEmail || "",
-        companyPhone: settingsData.companyPhone || "",
-        companyAddress: settingsData.companyAddress || "",
-        taxId: settingsData.taxId || "",
-        website: settingsData.website || "",
-      });
-      setNotifications({
-        emailNotifications: settingsData.emailNotifications ?? true,
-        invoiceReminder: settingsData.invoiceReminder ?? true,
-        paymentConfirmation: settingsData.paymentConfirmation ?? true,
-        weeklyReport: settingsData.weeklyReport ?? false,
-      });
-      // Load brand assets
-      if ((settingsData as any).logoUrl) setLogoPreview((settingsData as any).logoUrl);
-      if ((settingsData as any).faviconUrl) setFaviconPreview((settingsData as any).faviconUrl);
-    }
+    if (!settingsData) return;
+    const s = settingsData as any;
+    setGeneral({
+      siteTitle: s.siteTitle || "",
+      siteDescription: s.siteDescription || "",
+      siteKeywords: s.siteKeywords || "",
+      siteAuthor: s.siteAuthor || "",
+      siteTimezone: s.siteTimezone || "Asia/Ho_Chi_Minh",
+      companyEmail: s.companyEmail || "",
+      hotline: s.hotline || "",
+      companyAddress: s.companyAddress || "",
+      fanpageUrl: s.fanpageUrl || "",
+      copyrightFooter: s.copyrightFooter || "",
+      fontFamily: s.fontFamily || "Be Vietnam Pro",
+      maintenanceMode: s.maintenanceMode ?? false,
+      autoUpdate: s.autoUpdate ?? false,
+      debugMode: s.debugMode ?? false,
+      debugAutoBank: s.debugAutoBank ?? false,
+      debugApiSuppliers: s.debugApiSuppliers ?? false,
+      showApiDocs: s.showApiDocs ?? true,
+      showAvatar: s.showAvatar ?? true,
+      showTelegramReminder: s.showTelegramReminder ?? false,
+      showSlider: s.showSlider ?? true,
+      showBanner: s.showBanner ?? true,
+      showRecentlyViewed: s.showRecentlyViewed ?? true,
+      headerScript: s.headerScript || "",
+      footerScript: s.footerScript || "",
+      adminFooterScript: s.adminFooterScript || "",
+    });
+    if (s.logoUrl) setLogoPreview(s.logoUrl);
+    if (s.logoDarkUrl) setLogoDarkPreview(s.logoDarkUrl);
+    if (s.faviconUrl) setFaviconPreview(s.faviconUrl);
+    if (s.siteImageUrl) setSiteImagePreview(s.siteImageUrl);
+    if (s.avatarImageUrl) setAvatarPreview(s.avatarImageUrl);
+    if (s.themeColor) setThemeColor(s.themeColor);
+    if (s.themeColor1) setThemeColor1(s.themeColor1);
   }, [settingsData]);
 
-  // Load PayOS config
-  useEffect(() => {
-    if (payosConfig) {
-      setPayosForm({
-        payosApiKey: payosConfig.payosApiKey || "",
-        payosClientId: payosConfig.payosClientId || "",
-        payosChecksumKey: payosConfig.payosChecksumKey || "",
-      });
-    }
-  }, [payosConfig]);
-
-  // Load Telegram config
-  useEffect(() => {
-    if (settingsData) {
-      const s = settingsData as any;
-      setTelegramForm({
-        telegramBotToken: s.telegramBotToken || "",
-        telegramChatId: s.telegramChatId || "",
-        telegramEnabled: s.telegramEnabled ?? false,
-      });
-    }
-  }, [settingsData]);
-
-  // Load Tax config
-  useEffect(() => {
-    if (taxData) {
-      setTaxForm({
-        taxName: taxData.taxName || "VAT",
-        taxRate: Number(taxData.taxRate ?? 10),
-        isEnabled: taxData.isEnabled ?? false,
-      });
-    }
-  }, [taxData]);
-
-  // Feature flag toggle handler
-  const handleToggleFlag = async (key: string, enabled: boolean) => {
-    setLoadingFlagKey(key);
-    try {
-      await updateFlag.mutateAsync({ key, enabled });
-      await refetchFlags();
-      toast.success(`Đã ${enabled ? "bật" : "tắt"} tính năng thành công`);
-    } catch {
-      toast.error("Có lỗi xảy ra, vui lòng thử lại");
-    } finally {
-      setLoadingFlagKey(null);
-    }
-  };
-
-  // Apply favicon dynamically
+  // Apply favicon
   useEffect(() => {
     if (faviconPreview) {
       const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-      if (link) {
-        link.href = faviconPreview;
-      } else {
-        const newLink = document.createElement("link");
-        newLink.rel = "icon";
-        newLink.href = faviconPreview;
-        document.head.appendChild(newLink);
+      if (link) link.href = faviconPreview;
+      else {
+        const l = document.createElement("link");
+        l.rel = "icon"; l.href = faviconPreview;
+        document.head.appendChild(l);
       }
     }
   }, [faviconPreview]);
-
-  const handleSaveCompany = async () => {
-    try {
-      await updateCompany.mutateAsync(companyData);
-      await utils.settings.get.invalidate();
-      toast.success("Đã lưu thông tin công ty!");
-    } catch (e: any) {
-      toast.error(e.message || "Lưu thất bại");
-    }
-  };
-
-  const handleSaveNotifications = async () => {
-    try {
-      await updateNotifications.mutateAsync(notifications);
-      await utils.settings.get.invalidate();
-      toast.success("Đã lưu cài đặt thông báo!");
-    } catch (e: any) {
-      toast.error(e.message || "Lưu thất bại");
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (pwForm.newPw !== pwForm.confirm) {
-      toast.error("Mật khẩu mới không khớp!");
-      return;
-    }
-    try {
-      await changePassword.mutateAsync({ currentPassword: pwForm.current, newPassword: pwForm.newPw });
-      setPwForm({ current: "", newPw: "", confirm: "" });
-      toast.success("Đổi mật khẩu thành công!");
-    } catch (e: any) {
-      toast.error(e.message || "Đổi mật khẩu thất bại");
-    }
-  };
 
   const fileToDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -249,850 +243,537 @@ export default function Settings() {
       reader.readAsDataURL(file);
     });
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSaveGeneral = async () => {
+    setGeneralSaving(true);
+    try {
+      await updateGeneral.mutateAsync(general);
+      await utils.settings.get.invalidate();
+      toast.success("Đã lưu cài đặt chung!");
+    } catch (e: any) {
+      toast.error(e.message || "Lưu thất bại");
+    } finally { setGeneralSaving(false); }
+  };
+
+  const handleSaveColors = async () => {
+    setColorSaving(true);
+    try {
+      await updateColors.mutateAsync({ themeColor, themeColor1 });
+      await utils.settings.get.invalidate();
+      toast.success("Đã lưu màu sắc!");
+    } catch (e: any) {
+      toast.error(e.message || "Lưu thất bại");
+    } finally { setColorSaving(false); }
+  };
+
+  const makeUploadHandler = (
+    type: "logo" | "favicon",
+    setPreview: (v: string | null) => void,
+    setUploading: (v: boolean) => void,
+    maxBytes: number
+  ) => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("File logo không được vượt quá 2MB");
-      return;
-    }
-    setLogoUploading(true);
+    if (file.size > maxBytes) { toast.error(`File không được vượt quá ${maxBytes / 1024 / 1024}MB`); return; }
+    setUploading(true);
     try {
       const dataUrl = await fileToDataUrl(file);
-      setLogoPreview(dataUrl);
-      const result = await uploadBrandAsset.mutateAsync({
-        type: "logo",
-        dataUrl,
-        fileName: file.name,
-      });
-      setLogoPreview(result.url);
+      setPreview(dataUrl);
+      const result = await uploadBrandAsset.mutateAsync({ type, dataUrl, fileName: file.name });
+      setPreview(result.url);
       await utils.settings.get.invalidate();
-      toast.success("Đã tải lên logo website!");
-    } catch (e: any) {
-      toast.error(e.message || "Upload thất bại");
-      setLogoPreview(null);
-    } finally {
-      setLogoUploading(false);
-      if (logoInputRef.current) logoInputRef.current.value = "";
-    }
+      toast.success(`Đã tải lên ${type === "logo" ? "logo" : "favicon"}!`);
+    } catch (e: any) { toast.error(e.message || "Upload thất bại"); setPreview(null); }
+    finally { setUploading(false); e.target.value = ""; }
   };
 
-  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const makeUploadExtraHandler = (
+    type: "logoDark" | "siteImage" | "avatar",
+    setPreview: (v: string | null) => void,
+    setUploading: (v: boolean) => void,
+    maxBytes: number
+  ) => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 512 * 1024) {
-      toast.error("File favicon không được vượt quá 512KB");
-      return;
-    }
-    setFaviconUploading(true);
+    if (file.size > maxBytes) { toast.error(`File không được vượt quá ${maxBytes / 1024 / 1024}MB`); return; }
+    setUploading(true);
     try {
       const dataUrl = await fileToDataUrl(file);
-      setFaviconPreview(dataUrl);
-      const result = await uploadBrandAsset.mutateAsync({
-        type: "favicon",
-        dataUrl,
-        fileName: file.name,
-      });
-      setFaviconPreview(result.url);
+      setPreview(dataUrl);
+      const result = await uploadBrandAssetExtra.mutateAsync({ type, dataUrl, fileName: file.name });
+      setPreview(result.url);
       await utils.settings.get.invalidate();
-      toast.success("Đã tải lên favicon!");
-    } catch (e: any) {
-      toast.error(e.message || "Upload thất bại");
-      setFaviconPreview(null);
-    } finally {
-      setFaviconUploading(false);
-      if (faviconInputRef.current) faviconInputRef.current.value = "";
-    }
+      toast.success("Đã tải lên ảnh!");
+    } catch (e: any) { toast.error(e.message || "Upload thất bại"); setPreview(null); }
+    finally { setUploading(false); e.target.value = ""; }
   };
 
-  const handleRemoveLogo = async () => {
+  const makeRemoveHandler = (field: "logoUrl" | "faviconUrl", setPreview: (v: string | null) => void) => async () => {
     try {
-      await updateBrand.mutateAsync({ logoUrl: null });
-      setLogoPreview(null);
+      await updateBrand.mutateAsync({ [field]: null });
+      setPreview(null);
+      if (field === "faviconUrl") {
+        const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+        if (link) link.href = "/favicon.ico";
+      }
       await utils.settings.get.invalidate();
-      toast.success("Đã xóa logo");
-    } catch (e: any) {
-      toast.error(e.message || "Xóa thất bại");
-    }
+      toast.success("Đã xóa");
+    } catch (e: any) { toast.error(e.message || "Xóa thất bại"); }
   };
 
-  const handleRemoveFavicon = async () => {
+  const makeRemoveExtraHandler = (field: "logoDarkUrl" | "siteImageUrl" | "avatarImageUrl", setPreview: (v: string | null) => void) => async () => {
     try {
-      await updateBrand.mutateAsync({ faviconUrl: null });
-      setFaviconPreview(null);
-      // Reset favicon to default
-      const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-      if (link) link.href = "/favicon.ico";
+      await updateBrand.mutateAsync({ [field]: null } as any);
+      setPreview(null);
       await utils.settings.get.invalidate();
-      toast.success("Đã xóa favicon");
-    } catch (e: any) {
-      toast.error(e.message || "Xóa thất bại");
-    }
+      toast.success("Đã xóa");
+    } catch (e: any) { toast.error(e.message || "Xóa thất bại"); }
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-5">
-        {/* ── Page Header ── */}
-        <div className="ak-page-header">
-          <div>
-            <h1 className="ak-page-title">Cài Đặt Hệ Thống</h1>
-            <p className="ak-page-subtitle">Quản lý thông tin công ty, thương hiệu và tích hợp</p>
-          </div>
+      <div className="space-y-5 max-w-4xl">
+        {/* Header */}
+        <div>
+          <h1 className="ak-page-title">Cài Đặt Hệ Thống</h1>
+          <p className="ak-page-subtitle">Quản lý thông tin, hình ảnh thương hiệu và màu sắc giao diện</p>
         </div>
 
-        <Tabs defaultValue="identity" className="space-y-5">
-          <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="bg-gray-100 p-1 rounded-lg flex-nowrap h-auto gap-1 w-max">
-              <TabsTrigger value="identity" className="gap-1.5 text-sm whitespace-nowrap">
-                <Building2 className="h-4 w-4" /> Identity
-              </TabsTrigger>
-              <TabsTrigger value="visuals" className="gap-1.5 text-sm whitespace-nowrap">
-                <Globe className="h-4 w-4" /> Visuals
-              </TabsTrigger>
-              <TabsTrigger value="assets" className="gap-1.5 text-sm whitespace-nowrap">
-                <ImageIcon className="h-4 w-4" /> Assets
-              </TabsTrigger>
-              <TabsTrigger value="storage" className="gap-1.5 text-sm whitespace-nowrap">
-                <Receipt className="h-4 w-4" /> Storage
-              </TabsTrigger>
-              <TabsTrigger value="system" className="gap-1.5 text-sm whitespace-nowrap">
-                <Shield className="h-4 w-4" /> System
-              </TabsTrigger>
-              <TabsTrigger value="danger" className="gap-1.5 text-sm whitespace-nowrap text-red-600 data-[state=active]:text-red-600">
-                <AlertCircle className="h-4 w-4" /> Danger
-              </TabsTrigger>
-            </TabsList>
+        {/* Tab bar */}
+        <div className="flex gap-1 p-1 bg-muted rounded-xl w-full sm:w-auto sm:inline-flex">
+          {TABS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 sm:flex-none justify-center sm:justify-start ${
+                tab === t.key
+                  ? "bg-white shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.icon}
+              <span className="hidden sm:inline">{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16 text-muted-foreground gap-3">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-sm">Đang tải cài đặt...</span>
           </div>
-
-          {/* Identity Tab */}
-          <TabsContent value="identity">
-            <Card className="shadow-sm border border-gray-100">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-blue-600" />
-                  Thông Tin Công Ty
-                </CardTitle>
-                <CardDescription>Thông tin này sẽ hiển thị trên hóa đơn của bạn</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isLoading ? (
-                  <div className="space-y-3">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Tên Công Ty</Label>
-                        <Input
-                          value={companyData.companyName}
-                          onChange={(e) => setCompanyData({ ...companyData, companyName: e.target.value })}
-                          placeholder="Invoice Prime"
-                          className="mt-1.5"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Mã Số Thuế</Label>
-                        <Input
-                          value={companyData.taxId}
-                          onChange={(e) => setCompanyData({ ...companyData, taxId: e.target.value })}
-                          placeholder="0123456789"
-                          className="mt-1.5"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Email Công Ty</Label>
-                        <Input
-                          type="email"
-                          value={companyData.companyEmail}
-                          onChange={(e) => setCompanyData({ ...companyData, companyEmail: e.target.value })}
-                          placeholder="info@company.com"
-                          className="mt-1.5"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Số Điện Thoại</Label>
-                        <Input
-                          value={companyData.companyPhone}
-                          onChange={(e) => setCompanyData({ ...companyData, companyPhone: e.target.value })}
-                          placeholder="(028) 1234-5678"
-                          className="mt-1.5"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Website</Label>
-                        <Input
-                          value={companyData.website}
-                          onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })}
-                          placeholder="https://yourcompany.com"
-                          className="mt-1.5"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Địa Chỉ</Label>
-                      <Input
-                        value={companyData.companyAddress}
-                        onChange={(e) => setCompanyData({ ...companyData, companyAddress: e.target.value })}
-                        placeholder="123 Đường ABC, Quận 1, TP.HCM"
-                        className="mt-1.5"
-                      />
-                    </div>
-                    <div className="pt-2">
-                      <Button
-                        onClick={handleSaveCompany}
-                        disabled={updateCompany.isPending}
-                        className="gap-2 bg-blue-600 hover:bg-blue-700"
+        ) : (
+          <>
+            {/* ═══════════════════════════════════════════════════════════
+                TAB 1: CÀI ĐẶT CHUNG
+            ═══════════════════════════════════════════════════════════ */}
+            {tab === "general" && (
+              <div className="space-y-5">
+                {/* SEO */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-blue-600" /> SEO & Metadata
+                    </CardTitle>
+                    <CardDescription>Thông tin hiển thị trên công cụ tìm kiếm</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SettingRow label="Title" hint="Tiêu đề trang web (tối đa 60 ký tự)">
+                      <Input value={general.siteTitle} onChange={e => setGeneral(g => ({ ...g, siteTitle: e.target.value }))} placeholder="Prime Shop - Mua sắm thông minh" />
+                    </SettingRow>
+                    <SettingRow label="Description" hint="Mô tả ngắn về website (tối đa 160 ký tự)">
+                      <Textarea value={general.siteDescription} onChange={e => setGeneral(g => ({ ...g, siteDescription: e.target.value }))} placeholder="Mô tả website..." rows={2} className="resize-none" />
+                    </SettingRow>
+                    <SettingRow label="Keywords" hint="Từ khóa SEO, cách nhau bởi dấu phẩy">
+                      <Input value={general.siteKeywords} onChange={e => setGeneral(g => ({ ...g, siteKeywords: e.target.value }))} placeholder="mua sắm, sản phẩm, khuyến mãi" />
+                    </SettingRow>
+                    <SettingRow label="Author">
+                      <Input value={general.siteAuthor} onChange={e => setGeneral(g => ({ ...g, siteAuthor: e.target.value }))} placeholder="Tên tác giả / công ty" />
+                    </SettingRow>
+                    <SettingRow label="Timezone">
+                      <select
+                        value={general.siteTimezone}
+                        onChange={e => setGeneral(g => ({ ...g, siteTimezone: e.target.value }))}
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                       >
-                        {updateCompany.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Lưu Thông Tin
-                      </Button>
+                        {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
+                      </select>
+                    </SettingRow>
+                  </CardContent>
+                </Card>
+
+                {/* Contact */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-emerald-600" /> Thông Tin Liên Hệ
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SettingRow label="Email">
+                      <Input type="email" value={general.companyEmail} onChange={e => setGeneral(g => ({ ...g, companyEmail: e.target.value }))} placeholder="contact@example.com" />
+                    </SettingRow>
+                    <SettingRow label="Hotline">
+                      <Input value={general.hotline} onChange={e => setGeneral(g => ({ ...g, hotline: e.target.value }))} placeholder="1900 xxxx" />
+                    </SettingRow>
+                    <SettingRow label="Địa chỉ">
+                      <Textarea value={general.companyAddress} onChange={e => setGeneral(g => ({ ...g, companyAddress: e.target.value }))} placeholder="123 Đường ABC, Quận 1, TP.HCM" rows={2} className="resize-none" />
+                    </SettingRow>
+                    <SettingRow label="Fanpage">
+                      <Input value={general.fanpageUrl} onChange={e => setGeneral(g => ({ ...g, fanpageUrl: e.target.value }))} placeholder="https://facebook.com/yourpage" />
+                    </SettingRow>
+                    <SettingRow label="Copyright Footer Left">
+                      <Input value={general.copyrightFooter} onChange={e => setGeneral(g => ({ ...g, copyrightFooter: e.target.value }))} placeholder="© 2024 Prime Shop. All rights reserved." />
+                    </SettingRow>
+                  </CardContent>
+                </Card>
+
+                {/* Display toggles */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-violet-600" /> Hiển Thị
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SwitchRow label="Trạng thái website" hint="Chọn OFF để bật chế độ bảo trì. Lưu ý: đang bảo trì vui lòng không đăng xuất tài khoản Admin." checked={!general.maintenanceMode} onCheckedChange={v => setGeneral(g => ({ ...g, maintenanceMode: !v }))} />
+                    <SwitchRow label="Cập nhật phiên bản tự động" hint="Hệ thống sẽ tự động cập nhật khi có phiên bản mới nếu bạn chọn ON." checked={general.autoUpdate} onCheckedChange={v => setGeneral(g => ({ ...g, autoUpdate: v }))} />
+                    <SwitchRow label="Hiển thị hình đại diện" checked={general.showAvatar} onCheckedChange={v => setGeneral(g => ({ ...g, showAvatar: v }))} />
+                    <SwitchRow label="Thông báo liên kết Telegram" hint="Hiển thị thông báo nhắc nhở User liên kết Telegram" checked={general.showTelegramReminder} onCheckedChange={v => setGeneral(g => ({ ...g, showTelegramReminder: v }))} />
+                    <SwitchRow label="Hiển thị Slider" hint="Bật/Tắt hiển thị Slider trên trang chủ" checked={general.showSlider} onCheckedChange={v => setGeneral(g => ({ ...g, showSlider: v }))} />
+                    <SwitchRow label="Hiển thị Banner" hint="Bật/Tắt hiển thị Banner trên trang chủ" checked={general.showBanner} onCheckedChange={v => setGeneral(g => ({ ...g, showBanner: v }))} />
+                    <SwitchRow label="Hiển thị Sản phẩm đã xem" hint='Bật/Tắt hiển thị widget "Sản phẩm đã xem gần đây" trên trang chủ' checked={general.showRecentlyViewed} onCheckedChange={v => setGeneral(g => ({ ...g, showRecentlyViewed: v }))} />
+                    <SwitchRow label="ON/OFF Tài liệu API" hint="Hệ thống sẽ ẩn menu tài liệu API nếu bạn chọn OFF" checked={general.showApiDocs} onCheckedChange={v => setGeneral(g => ({ ...g, showApiDocs: v }))} />
+                  </CardContent>
+                </Card>
+
+                {/* Font */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-orange-600" /> Giao Diện
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SettingRow label="Font Family" hint="Font chữ hiển thị trên toàn bộ website">
+                      <select
+                        value={general.fontFamily}
+                        onChange={e => setGeneral(g => ({ ...g, fontFamily: e.target.value }))}
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                        style={{ fontFamily: general.fontFamily }}
+                      >
+                        {FONT_FAMILIES.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                      </select>
+                    </SettingRow>
+                  </CardContent>
+                </Card>
+
+                {/* Debug */}
+                <Card className="shadow-sm border-amber-200 bg-amber-50/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-amber-700">
+                      <AlertTriangle className="h-4 w-4" /> Debug
+                    </CardTitle>
+                    <CardDescription className="text-amber-600">Chỉ bật khi được yêu cầu từ đội kỹ thuật</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-amber-100">
+                    <SwitchRow label="ON/OFF Debug" hint="Không bật ON khi chưa được yêu cầu." checked={general.debugMode} onCheckedChange={v => setGeneral(g => ({ ...g, debugMode: v }))} danger />
+                    <SwitchRow label="ON/OFF Debug Auto Bank" hint="Không bật ON khi chưa được yêu cầu." checked={general.debugAutoBank} onCheckedChange={v => setGeneral(g => ({ ...g, debugAutoBank: v }))} danger />
+                    <SwitchRow label="ON/OFF Debug API Suppliers" hint="Debug API đồng bộ nguồn hàng." checked={general.debugApiSuppliers} onCheckedChange={v => setGeneral(g => ({ ...g, debugApiSuppliers: v }))} danger />
+                  </CardContent>
+                </Card>
+
+                {/* Custom Scripts */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Code className="h-4 w-4 text-slate-600" /> Tùy Chỉnh Script/HTML
+                    </CardTitle>
+                    <CardDescription>Cấu hình các script và HTML tùy chỉnh cho website</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-700 space-y-1">
+                      <p className="font-semibold flex items-center gap-1"><Info className="h-3.5 w-3.5" /> Lưu ý quan trọng</p>
+                      <p>Header Script: Dành cho Google Analytics, Facebook Pixel, Meta tags...</p>
+                      <p>Footer Script: Dành cho chat plugin, tracking, popup...</p>
+                      <p>Admin Footer: Script chỉ hiển thị trong trang quản trị</p>
+                      <p className="text-red-600 font-medium">Cẩn thận với script có thể ảnh hưởng đến bảo mật website</p>
                     </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Visuals Tab */}
-          <TabsContent value="visuals">
-            <div className="space-y-4">
-              {/* Logo Card */}
-              <Card className="shadow-sm border border-gray-100">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-blue-600" />
-                    Logo Website
-                  </CardTitle>
-                  <CardDescription>
-                    Logo hiển thị trên navbar, trang thanh toán và landing page. Khuyến nghị PNG/SVG nền trong suốt, tối đa 2MB.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col sm:flex-row items-start gap-6">
-                    {/* Preview */}
-                    <div className="flex-shrink-0">
-                      <div className="w-40 h-24 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
-                        {logoPreview ? (
-                          <img
-                            src={logoPreview}
-                            alt="Logo preview"
-                            className="max-w-full max-h-full object-contain p-2"
-                          />
-                        ) : (
-                          <div className="text-center">
-                            <ImageIcon className="h-8 w-8 text-gray-300 mx-auto" />
-                            <p className="text-xs text-gray-400 mt-1">Chưa có logo</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex-1 space-y-3">
-                      <p className="text-sm text-gray-600">
-                        Tải lên file ảnh PNG, JPG, SVG hoặc WebP. Kích thước khuyến nghị: <strong>200×60px</strong> hoặc tỷ lệ tương đương.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <input
-                          ref={logoInputRef}
-                          type="file"
-                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                          className="hidden"
-                          onChange={handleLogoUpload}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => logoInputRef.current?.click()}
-                          disabled={logoUploading}
-                        >
-                          {logoUploading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Upload className="h-4 w-4" />
-                          )}
-                          {logoUploading ? "Đang tải lên..." : "Chọn File Logo"}
-                        </Button>
-                        {logoPreview && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2 text-red-500 hover:text-red-600 hover:border-red-300"
-                            onClick={handleRemoveLogo}
-                            disabled={updateBrand.isPending}
-                          >
-                            <X className="h-4 w-4" />
-                            Xóa Logo
-                          </Button>
-                        )}
-                      </div>
-                      {logoPreview && (
-                        <p className="text-xs text-green-600 flex items-center gap-1">
-                          <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-                          Logo đã được lưu và áp dụng
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Favicon Card */}
-              <Card className="shadow-sm border border-gray-100">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-purple-600" />
-                    Favicon (Icon Tab Trình Duyệt)
-                  </CardTitle>
-                  <CardDescription>
-                    Icon nhỏ hiển thị trên tab trình duyệt. Khuyến nghị ICO hoặc PNG vuông 32×32px hoặc 64×64px, tối đa 512KB.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col sm:flex-row items-start gap-6">
-                    {/* Preview */}
-                    <div className="flex-shrink-0">
-                      <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
-                        {faviconPreview ? (
-                          <img
-                            src={faviconPreview}
-                            alt="Favicon preview"
-                            className="w-12 h-12 object-contain"
-                          />
-                        ) : (
-                          <div className="text-center">
-                            <Globe className="h-8 w-8 text-gray-300 mx-auto" />
-                            <p className="text-xs text-gray-400 mt-1">Chưa có</p>
-                          </div>
-                        )}
-                      </div>
-                      {faviconPreview && (
-                        <p className="text-xs text-gray-500 mt-2 text-center">Xem trước 48px</p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex-1 space-y-3">
-                      <p className="text-sm text-gray-600">
-                        Tải lên file ICO, PNG hoặc SVG. Kích thước tốt nhất: <strong>32×32px</strong> hoặc <strong>64×64px</strong> (hình vuông).
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <input
-                          ref={faviconInputRef}
-                          type="file"
-                          accept="image/x-icon,image/png,image/svg+xml,image/vnd.microsoft.icon"
-                          className="hidden"
-                          onChange={handleFaviconUpload}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => faviconInputRef.current?.click()}
-                          disabled={faviconUploading}
-                        >
-                          {faviconUploading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Upload className="h-4 w-4" />
-                          )}
-                          {faviconUploading ? "Đang tải lên..." : "Chọn File Favicon"}
-                        </Button>
-                        {faviconPreview && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2 text-red-500 hover:text-red-600 hover:border-red-300"
-                            onClick={handleRemoveFavicon}
-                            disabled={updateBrand.isPending}
-                          >
-                            <X className="h-4 w-4" />
-                            Xóa Favicon
-                          </Button>
-                        )}
-                      </div>
-                      {faviconPreview && (
-                        <p className="text-xs text-green-600 flex items-center gap-1">
-                          <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-                          Favicon đã được lưu và áp dụng cho tab trình duyệt
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Usage hint */}
-              <div className="rounded-lg bg-blue-50 border border-blue-100 p-4">
-                <p className="text-sm text-blue-700 font-medium mb-1">Lưu ý về Logo & Favicon</p>
-                <ul className="text-xs text-blue-600 space-y-1 list-disc list-inside">
-                  <li>Logo sẽ hiển thị trên navbar dashboard, trang thanh toán (/pay), và landing page</li>
-                  <li>Favicon sẽ hiển thị ngay lập tức trên tab trình duyệt sau khi tải lên</li>
-                  <li>Để logo hiển thị đẹp trên nền tối, hãy dùng PNG có nền trong suốt</li>
-                </ul>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Assets Tab */}
-          <TabsContent value="assets">
-            <Card className="shadow-sm border border-gray-100">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-blue-600" />
-                  Cài Đặt Thông Báo
-                </CardTitle>
-                <CardDescription>Quản lý các loại thông báo bạn muốn nhận</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {[
-                  {
-                    key: "emailNotifications" as const,
-                    title: "Thông Báo Qua Email",
-                    desc: "Nhận email khi có hóa đơn mới được tạo",
-                  },
-                  {
-                    key: "invoiceReminder" as const,
-                    title: "Nhắc Nhở Hóa Đơn Chưa Thanh Toán",
-                    desc: "Tự động nhắc khách hàng thanh toán khi gần đến hạn",
-                  },
-                  {
-                    key: "paymentConfirmation" as const,
-                    title: "Xác Nhận Thanh Toán",
-                    desc: "Nhận thông báo khi khách hàng thanh toán thành công",
-                  },
-                  {
-                    key: "weeklyReport" as const,
-                    title: "Báo Cáo Hàng Tuần",
-                    desc: "Nhận tóm tắt doanh thu và hóa đơn mỗi tuần",
-                  },
-                ].map(item => (
-                  <div key={item.key} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                      <Label className="text-sm font-medium">Script/HTML Header Trang Khách</Label>
+                      <p className="text-xs text-muted-foreground mb-1.5">Hiển thị trong thẻ &lt;head&gt; của trang khách</p>
+                      <Textarea
+                        value={general.headerScript}
+                        onChange={e => setGeneral(g => ({ ...g, headerScript: e.target.value }))}
+                        placeholder={'<link rel="preconnect" href="https://fonts.googleapis.com">'}
+                        rows={4}
+                        className="font-mono text-xs resize-y"
+                      />
                     </div>
-                    <Switch
-                      checked={notifications[item.key]}
-                      onCheckedChange={(checked) => setNotifications({ ...notifications, [item.key]: checked })}
-                    />
-                  </div>
-                ))}
-                <div className="pt-2">
-                  <Button
-                    onClick={handleSaveNotifications}
-                    disabled={updateNotifications.isPending}
-                    className="gap-2 bg-blue-600 hover:bg-blue-700"
-                  >
-                    {updateNotifications.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    Lưu Cài Đặt
+                    <div>
+                      <Label className="text-sm font-medium">Script/HTML Footer Trang Khách</Label>
+                      <p className="text-xs text-muted-foreground mb-1.5">Hiển thị cuối trang khách trước thẻ &lt;/body&gt;</p>
+                      <Textarea
+                        value={general.footerScript}
+                        onChange={e => setGeneral(g => ({ ...g, footerScript: e.target.value }))}
+                        placeholder="<!-- Footer scripts -->"
+                        rows={4}
+                        className="font-mono text-xs resize-y"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Script/HTML Footer Trang Quản Trị</Label>
+                      <p className="text-xs text-muted-foreground mb-1.5">Hiển thị cuối trang admin trước thẻ &lt;/body&gt;</p>
+                      <Textarea
+                        value={general.adminFooterScript}
+                        onChange={e => setGeneral(g => ({ ...g, adminFooterScript: e.target.value }))}
+                        placeholder="<!-- Admin footer scripts -->"
+                        rows={4}
+                        className="font-mono text-xs resize-y"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveGeneral} disabled={generalSaving} className="gap-2 min-w-32">
+                    {generalSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {generalSaving ? "Đang lưu..." : "Lưu cài đặt"}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            )}
 
-          {/* Storage Tab */}
-          <TabsContent value="storage">
-            <Card className="shadow-sm border border-gray-100">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-blue-600" />
-                  Bảo Mật Tài Khoản
-                </CardTitle>
-                <CardDescription>Đổi mật khẩu để bảo vệ tài khoản của bạn</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium">Mật Khẩu Hiện Tại</Label>
-                  <div className="relative mt-1.5">
-                    <Input
-                      type={showCurrentPw ? "text" : "password"}
-                      value={pwForm.current}
-                      onChange={(e) => setPwForm({ ...pwForm, current: e.target.value })}
-                      placeholder="••••••••"
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPw(!showCurrentPw)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Mật Khẩu Mới</Label>
-                  <div className="relative mt-1.5">
-                    <Input
-                      type={showNewPw ? "text" : "password"}
-                      value={pwForm.newPw}
-                      onChange={(e) => setPwForm({ ...pwForm, newPw: e.target.value })}
-                      placeholder="Tối thiểu 6 ký tự"
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPw(!showNewPw)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Xác Nhận Mật Khẩu Mới</Label>
-                  <div className="relative mt-1.5">
-                    <Input
-                      type={showConfirmPw ? "text" : "password"}
-                      value={pwForm.confirm}
-                      onChange={(e) => setPwForm({ ...pwForm, confirm: e.target.value })}
-                      placeholder="Nhập lại mật khẩu mới"
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPw(!showConfirmPw)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div className="pt-2">
-                  <Button
-                    className="gap-2 bg-blue-600 hover:bg-blue-700"
-                    onClick={handleChangePassword}
-                    disabled={changePassword.isPending}
-                  >
-                    {changePassword.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
-                    Đổi Mật Khẩu
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* System Tab - PayOS + Telegram */}
-          <TabsContent value="system">
-            <div className="space-y-5">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <Card className="shadow-sm border border-gray-100">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-blue-600" />
-                    Thông Tin API PayOS
-                  </CardTitle>
-                  <CardDescription>Lấy thông tin từ PayOS Developer Dashboard</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium">Client ID</Label>
-                    <Input
-                      value={payosForm.payosClientId}
-                      onChange={(e) => setPayosForm({ ...payosForm, payosClientId: e.target.value })}
-                      placeholder="Nhập Client ID từ PayOS Dashboard"
-                      className="mt-1.5 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">API Key</Label>
-                    <div className="relative mt-1.5">
-                      <Input
-                        type={showApiKey ? "text" : "password"}
-                        value={payosForm.payosApiKey}
-                        onChange={(e) => setPayosForm({ ...payosForm, payosApiKey: e.target.value })}
-                        placeholder="Nhập API Key"
-                        className="pr-10 font-mono"
-                      />
-                      <button type="button" onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">API Key bí mật, không chia sẻ với ai</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Checksum Key</Label>
-                    <div className="relative mt-1.5">
-                      <Input
-                        type={showChecksum ? "text" : "password"}
-                        value={payosForm.payosChecksumKey}
-                        onChange={(e) => setPayosForm({ ...payosForm, payosChecksumKey: e.target.value })}
-                        placeholder="Nhập Checksum Key"
-                        className="pr-10 font-mono"
-                      />
-                      <button type="button" onClick={() => setShowChecksum(!showChecksum)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        {showChecksum ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">Dùng để xác thực chữ ký webhook từ PayOS</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={async () => {
-                        setPayosSaving(true);
-                        try {
-                          await updateGateway.mutateAsync(payosForm);
-                          await utils.paymentGateways.get.invalidate();
-                          toast.success("Đã lưu cấu hình PayOS!");
-                        } catch { toast.error("Lưu thất bại"); }
-                        finally { setPayosSaving(false); }
-                      }}
-                      disabled={payosSaving}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      {payosSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                      Lưu Cấu Hình
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={async () => {
-                        setPayosTesting(true);
-                        try {
-                          await updateGateway.mutateAsync(payosForm);
-                          const r = await testConnection.mutateAsync({ gateway: "payos" });
-                          r.success ? (setConnectionStatus("success"), toast.success(r.message || "Kết nối thành công!")) : (setConnectionStatus("error"), toast.error(r.message || "Kết nối thất bại"));
-                        } catch (e: any) { setConnectionStatus("error"); toast.error(e.message || "Lỗi kết nối"); }
-                        finally { setPayosTesting(false); }
-                      }}
-                      disabled={payosTesting}
-                    >
-                      {payosTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  {connectionStatus !== "idle" && (
-                    <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
-                      connectionStatus === "success" ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"
-                    }`}>
-                      {connectionStatus === "success" ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                      {connectionStatus === "success" ? "Kết nối PayOS thành công" : "Kết nối thất bại, kiểm tra lại API"}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border border-gray-100">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Webhook className="h-4 w-4 text-purple-600" />
-                    Webhook PayOS
-                  </CardTitle>
-                  <CardDescription>URL webhook để nhận thông báo thanh toán từ PayOS</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Webhook URL</p>
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs font-mono text-gray-700 flex-1 break-all">{`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/payos`}</code>
-                      <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/payos`); toast.success("Đã sao chép!"); }}>
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-700">
-                      <strong>Hướng dẫn:</strong> Dán URL này vào mục "Webhook URL" trên PayOS Dashboard để nhận thông báo thanh toán tự động.
-                    </p>
-                  </div>
-                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                    <p className="text-xs text-amber-700">Lấy Client ID, API Key và Checksum Key từ <a href="https://my.payos.vn" target="_blank" rel="noreferrer" className="underline font-medium">my.payos.vn</a> → Tích hợp → Thông tin tích hợp</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Telegram section inside System */}
-            <div className="max-w-2xl">
-              <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-                <Send className="h-4 w-4 text-blue-500" /> Telegram Bot
-              </h3>
+            {/* ═══════════════════════════════════════════════════════════
+                TAB 2: HÌNH ẢNH
+            ═══════════════════════════════════════════════════════════ */}
+            {tab === "images" && (
               <div className="space-y-4">
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardContent className="text-sm text-blue-700 space-y-1.5 pt-4">
-                    <p><strong>Bước 1:</strong> Mở Telegram, tìm @BotFather và gõ <code className="bg-blue-100 px-1 rounded">/newbot</code></p>
-                    <p><strong>Bước 2:</strong> Đặt tên bot, BotFather sẽ cấp <strong>Bot Token</strong></p>
-                    <p><strong>Bước 3:</strong> Nhắn tin cho bot, truy cập <code className="bg-blue-100 px-1 rounded">api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> để lấy <strong>Chat ID</strong></p>
+                <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-700">
+                  <p className="font-semibold mb-1">Lưu ý về hình ảnh</p>
+                  <p>Logo sẽ hiển thị trên navbar, trang thanh toán và landing page. Favicon sẽ hiển thị ngay lập tức trên tab trình duyệt. Để logo hiển thị đẹp trên nền tối, hãy dùng PNG có nền trong suốt.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ImageUploadCard
+                    title="Logo Light"
+                    description="Logo hiển thị trên nền sáng (navbar, trang chủ)"
+                    preview={logoPreview}
+                    uploading={logoUploading}
+                    onUpload={makeUploadHandler("logo", setLogoPreview, setLogoUploading, 2 * 1024 * 1024)}
+                    onRemove={makeRemoveHandler("logoUrl", setLogoPreview)}
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    maxSizeMB={2}
+                    recommendedSize="200×60px"
+                    wide
+                  />
+
+                  <ImageUploadCard
+                    title="Logo Dark"
+                    description="Logo hiển thị trên nền tối (dark mode)"
+                    preview={logoDarkPreview}
+                    uploading={logoDarkUploading}
+                    onUpload={makeUploadExtraHandler("logoDark", setLogoDarkPreview, setLogoDarkUploading, 2 * 1024 * 1024)}
+                    onRemove={makeRemoveExtraHandler("logoDarkUrl", setLogoDarkPreview)}
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    maxSizeMB={2}
+                    recommendedSize="200×60px"
+                    wide
+                  />
+
+                  <ImageUploadCard
+                    title="Favicon"
+                    description="Icon tab trình duyệt (ICO/PNG vuông)"
+                    preview={faviconPreview}
+                    uploading={faviconUploading}
+                    onUpload={makeUploadHandler("favicon", setFaviconPreview, setFaviconUploading, 512 * 1024)}
+                    onRemove={makeRemoveHandler("faviconUrl", setFaviconPreview)}
+                    accept="image/x-icon,image/png,image/svg+xml"
+                    maxSizeMB={0.5}
+                    recommendedSize="32×32px hoặc 64×64px"
+                  />
+
+                  <ImageUploadCard
+                    title="Image"
+                    description="Ảnh đại diện website (OG image, share preview)"
+                    preview={siteImagePreview}
+                    uploading={siteImageUploading}
+                    onUpload={makeUploadExtraHandler("siteImage", setSiteImagePreview, setSiteImageUploading, 5 * 1024 * 1024)}
+                    onRemove={makeRemoveExtraHandler("siteImageUrl", setSiteImagePreview)}
+                    accept="image/png,image/jpeg,image/webp"
+                    maxSizeMB={5}
+                    recommendedSize="1200×630px"
+                    wide
+                  />
+
+                  <ImageUploadCard
+                    title="Avatar"
+                    description="Ảnh đại diện mặc định cho tài khoản"
+                    preview={avatarPreview}
+                    uploading={avatarUploading}
+                    onUpload={makeUploadExtraHandler("avatar", setAvatarPreview, setAvatarUploading, 2 * 1024 * 1024)}
+                    onRemove={makeRemoveExtraHandler("avatarImageUrl", setAvatarPreview)}
+                    accept="image/png,image/jpeg,image/webp"
+                    maxSizeMB={2}
+                    recommendedSize="200×200px"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB 3: MÀU SẮC
+            ═══════════════════════════════════════════════════════════ */}
+            {tab === "colors" && (
+              <div className="space-y-5">
+                {/* Live preview */}
+                <Card className="shadow-sm overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-blue-600" /> Xem trước Gradient
+                    </CardTitle>
+                    <CardDescription>Giao diện của bạn — Gradient được tạo từ 2 màu chủ đạo</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      className="h-24 rounded-xl flex items-center justify-center text-white font-semibold text-sm shadow-inner transition-all duration-300"
+                      style={{ background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor1} 100%)` }}
+                    >
+                      <span className="drop-shadow">Giao diện của bạn</span>
+                    </div>
+                    <div className="flex gap-3 mt-3">
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className="w-8 h-8 rounded-lg border-2 border-white shadow-sm flex-shrink-0" style={{ background: themeColor }} />
+                        <div>
+                          <p className="text-xs font-medium">Theme Color</p>
+                          <p className="text-xs text-muted-foreground">{themeColor}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className="w-8 h-8 rounded-lg border-2 border-white shadow-sm flex-shrink-0" style={{ background: themeColor1 }} />
+                        <div>
+                          <p className="text-xs font-medium">Theme Color 1</p>
+                          <p className="text-xs text-muted-foreground">{themeColor1}</p>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
-                <Card className="shadow-sm border border-gray-100">
-                  <CardContent className="space-y-4 pt-4">
-                    <div>
-                      <Label className="text-sm font-medium">Bot Token *</Label>
-                      <Input type="password" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz" value={telegramForm.telegramBotToken} onChange={e => setTelegramForm(f => ({ ...f, telegramBotToken: e.target.value }))} className="mt-1.5 font-mono" />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Chat ID *</Label>
-                      <Input placeholder="-1001234567890" value={telegramForm.telegramChatId} onChange={e => setTelegramForm(f => ({ ...f, telegramChatId: e.target.value }))} className="mt-1.5" />
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+
+                {/* Color pickers */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-violet-600" /> Theme Colors
+                    </CardTitle>
+                    <CardDescription>Thiết lập màu chủ đạo cho giao diện website</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <p className="text-sm font-medium">Bật thông báo Telegram</p>
-                        <p className="text-xs text-gray-500">Nhận thông báo khi có đơn mới</p>
+                        <Label className="text-sm font-medium">Theme Color</Label>
+                        <p className="text-xs text-muted-foreground mb-2">Màu chủ đạo cho buttons, links, headers</p>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={themeColor}
+                            onChange={e => setThemeColor(e.target.value)}
+                            className="w-12 h-10 rounded-lg border border-input cursor-pointer"
+                          />
+                          <Input
+                            value={themeColor}
+                            onChange={e => setThemeColor(e.target.value)}
+                            placeholder="#405189"
+                            className="font-mono flex-1"
+                            maxLength={7}
+                          />
+                        </div>
+                        {/* Suggested colors */}
+                        <div className="flex gap-1.5 mt-2 flex-wrap">
+                          {["#405189","#0d6efd","#198754","#dc3545","#6f42c1","#fd7e14","#0dcaf0","#1e293b"].map(c => (
+                            <button key={c} onClick={() => setThemeColor(c)}
+                              className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${themeColor === c ? "border-foreground scale-110" : "border-transparent"}`}
+                              style={{ background: c }} title={c}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Màu đề xuất</p>
                       </div>
-                      <Switch checked={telegramForm.telegramEnabled} onCheckedChange={v => setTelegramForm(f => ({ ...f, telegramEnabled: v }))} />
-                    </div>
-                    <div className="flex gap-3">
-                      <Button onClick={() => { setTelegramSaving(true); saveTelegram.mutate(telegramForm); }} disabled={telegramSaving} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                        {telegramSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />} Lưu Cấu Hình
-                      </Button>
-                      <Button variant="outline" onClick={() => testTelegram.mutate()} disabled={testTelegram.isPending || !telegramForm.telegramBotToken || !telegramForm.telegramChatId}>
-                        {testTelegram.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                      </Button>
+
+                      <div>
+                        <Label className="text-sm font-medium">Theme Color 1</Label>
+                        <p className="text-xs text-muted-foreground mb-2">Màu phụ cho gradient, hover effects</p>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={themeColor1}
+                            onChange={e => setThemeColor1(e.target.value)}
+                            className="w-12 h-10 rounded-lg border border-input cursor-pointer"
+                          />
+                          <Input
+                            value={themeColor1}
+                            onChange={e => setThemeColor1(e.target.value)}
+                            placeholder="#0ab39c"
+                            className="font-mono flex-1"
+                            maxLength={7}
+                          />
+                        </div>
+                        <div className="flex gap-1.5 mt-2 flex-wrap">
+                          {["#0ab39c","#20c997","#0dcaf0","#6610f2","#e83e8c","#ffc107","#28a745","#17a2b8"].map(c => (
+                            <button key={c} onClick={() => setThemeColor1(c)}
+                              className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${themeColor1 === c ? "border-foreground scale-110" : "border-transparent"}`}
+                              style={{ background: c }} title={c}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Màu đề xuất</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            </div>
-            </div>
-          </TabsContent>
 
-          {/* Danger Tab */}
-          <TabsContent value="danger">
-            <div className="space-y-5">
-              {/* Tax Section */}
-              <Card className="shadow-sm border border-gray-100">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Receipt className="h-4 w-4 text-blue-600" />
-                    Cấu Hình Thuế
-                  </CardTitle>
-                  <CardDescription>Thuế sẽ được tự động tính vào tổng tiền khi thanh toán</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Kích hoạt thuế</p>
-                      <p className="text-xs text-gray-500">Bật/tắt tính thuế khi thanh toán</p>
+                {/* Gradient presets */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold">Gradient phổ biến</CardTitle>
+                    <CardDescription>Nhấn để áp dụng nhanh</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {GRADIENT_PRESETS.map(preset => (
+                        <button
+                          key={preset.name}
+                          onClick={() => { setThemeColor(preset.c1); setThemeColor1(preset.c2); }}
+                          className={`group relative h-16 rounded-xl overflow-hidden border-2 transition-all hover:scale-[1.02] hover:shadow-md ${
+                            themeColor === preset.c1 && themeColor1 === preset.c2
+                              ? "border-foreground shadow-md"
+                              : "border-transparent"
+                          }`}
+                          style={{ background: `linear-gradient(135deg, ${preset.c1} 0%, ${preset.c2} 100%)` }}
+                        >
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-white text-xs font-semibold drop-shadow text-center px-2 leading-tight">{preset.name}</span>
+                          </div>
+                          {themeColor === preset.c1 && themeColor1 === preset.c2 && (
+                            <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center">
+                              <ChevronRight className="h-3 w-3 text-foreground" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
                     </div>
-                    <Switch checked={taxForm.isEnabled} onCheckedChange={v => setTaxForm(f => ({ ...f, isEnabled: v }))} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Tên thuế</Label>
-                      <Input
-                        value={taxForm.taxName}
-                        onChange={(e) => setTaxForm(f => ({ ...f, taxName: e.target.value }))}
-                        placeholder="VD: VAT, GST"
-                        disabled={!taxForm.isEnabled}
-                        className="mt-1.5"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Tỷ lệ (%)</Label>
-                      <div className="relative mt-1.5">
-                        <Input
-                          type="number" min={0} max={100} step={0.1}
-                          value={taxForm.taxRate}
-                          onChange={(e) => setTaxForm(f => ({ ...f, taxRate: parseFloat(e.target.value) || 0 }))}
-                          className="pr-10"
-                          disabled={!taxForm.isEnabled}
-                        />
-                        <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-                  {taxForm.isEnabled && (
-                    <p className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg">
-                      Đơn hàng 100,000đ với thuế {taxForm.taxRate}% → Tổng: {(100000 * (1 + taxForm.taxRate / 100)).toLocaleString("vi-VN")}đ
-                    </p>
-                  )}
-                  <Button
-                    onClick={() => { setTaxSaving(true); saveTax.mutate(taxForm); }}
-                    disabled={taxSaving}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {taxSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                    Lưu Cấu Hình Thuế
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveColors} disabled={colorSaving} className="gap-2 min-w-32">
+                    {colorSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {colorSaving ? "Đang lưu..." : "Lưu màu sắc"}
                   </Button>
-                </CardContent>
-              </Card>
-
-              {/* Feature Flags Section */}
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <ToggleLeft className="h-4 w-4 text-blue-600" />
-                  Quản Lý Tính Năng
-                </h3>
-                {flagsLoading ? (
-                  <div className="flex items-center justify-center py-10">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {(() => {
-                      const grouped: Record<string, typeof featureFlags> = {};
-                      if (featureFlags) {
-                        for (const flag of featureFlags) {
-                          const cat = flag.category || "general";
-                          if (!grouped[cat]) grouped[cat] = [];
-                          grouped[cat]!.push(flag);
-                        }
-                      }
-                      const CATEGORY_COLORS: Record<string, string> = {
-                        loyalty: "bg-yellow-100 text-yellow-800",
-                        service: "bg-blue-100 text-blue-800",
-                        marketing: "bg-pink-100 text-pink-800",
-                        ux: "bg-purple-100 text-purple-800",
-                        gamification: "bg-orange-100 text-orange-800",
-                        content: "bg-green-100 text-green-800",
-                        payment: "bg-teal-100 text-teal-800",
-                        general: "bg-slate-100 text-slate-800",
-                      };
-                      return Object.entries(grouped).map(([category, items]) => (
-                        <Card key={category} className="shadow-sm border border-gray-100">
-                          <CardHeader className="pb-2 pt-3 px-4">
-                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full w-fit ${CATEGORY_COLORS[category] || CATEGORY_COLORS.general}`}>
-                              {CATEGORY_LABELS[category] || category}
-                            </span>
-                          </CardHeader>
-                          <CardContent className="px-4 pb-3 space-y-2">
-                            {(items || []).map((flag) => {
-                              const Icon = FEATURE_ICONS[flag.key] || ToggleLeft;
-                              const isUpdating = loadingFlagKey === flag.key;
-                              return (
-                                <div key={flag.key} className="flex items-center justify-between p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${flag.enabled ? "bg-blue-100" : "bg-gray-100"}`}>
-                                      <Icon className={`h-3.5 w-3.5 ${flag.enabled ? "text-blue-600" : "text-gray-400"}`} />
-                                    </div>
-                                    <div>
-                                      <div className="flex items-center gap-1.5">
-                                        <p className="text-sm font-medium text-gray-800">{flag.label}</p>
-                                        <Badge variant={flag.enabled ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">
-                                          {flag.enabled ? "Đang bật" : "Đã tắt"}
-                                        </Badge>
-                                      </div>
-                                      {flag.description && <p className="text-xs text-gray-500">{flag.description}</p>}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    {isUpdating && <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />}
-                                    <Switch
-                                      checked={flag.enabled}
-                                      onCheckedChange={(checked) => handleToggleFlag(flag.key, checked)}
-                                      disabled={isUpdating}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </CardContent>
-                        </Card>
-                      ));
-                    })()}
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            )}
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

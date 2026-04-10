@@ -218,6 +218,13 @@
       "when": 1775840079471,
       "tag": "0030_yummy_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1775842154143,
+      "tag": "0031_daily_scalphunter",
+      "breakpoints": true
     }
   ]
 }

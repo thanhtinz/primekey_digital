@@ -1712,3 +1712,11 @@ todo updated
 ## Session 2026-04-10 - Redesign Nhật Ký Hoạt Động
 
 - [x] Redesign ActivityLog.tsx: timeline style, filter theo loại hành động, stats summary, mobile-friendly
+
+## Session 2026-04-10 - Redesign BlockIP + Settings
+
+- [x] Redesign BlockIpAdmin.tsx cho mobile: card layout thay table, filter gọn, bulk action bar
+- [x] Redesign Settings.tsx: 3 tab (Cài đặt chung, Hình ảnh, Màu sắc), bỏ tab Bảo mật/PayOS/Telegram
+- [x] Settings tab Cài đặt chung: SEO fields, contact, toggles, custom script/HTML
+- [x] Settings tab Hình ảnh: Logo Light/Dark, Favicon, Image, Avatar upload
+- [x] Settings tab Màu sắc: theme color picker, gradient presets, live preview
