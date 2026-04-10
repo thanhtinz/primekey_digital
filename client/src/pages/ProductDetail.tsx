@@ -989,17 +989,17 @@ export default function ProductDetail() {
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Chia sẻ nhanh</p>
                     <div className="flex gap-2">
                       {[
-                        { label: 'Facebook', color: 'bg-[#1877f2]', icon: 'fa-facebook-f', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}` },
-                        { label: 'Telegram', color: 'bg-[#2ca5e0]', icon: 'fa-telegram-plane', url: `https://t.me/share/url?url=${encodeURIComponent(productUrl)}&text=${encodeURIComponent(product?.name || '')}` },
-                        { label: 'Zalo', color: 'bg-[#0068ff]', icon: 'fa-comment', url: `https://zalo.me/share/url?url=${encodeURIComponent(productUrl)}` },
-                        { label: 'WhatsApp', color: 'bg-[#25d366]', icon: 'fa-whatsapp', url: `https://wa.me/?text=${encodeURIComponent((product?.name || '') + ' ' + productUrl)}` },
-                        { label: 'X', color: 'bg-black', icon: 'fa-twitter', url: `https://twitter.com/intent/tweet?url=${encodeURIComponent(productUrl)}&text=${encodeURIComponent(product?.name || '')}` },
+                        { label: 'Facebook', color: 'bg-[#1877f2]', icon: 'fa-brands fa-facebook-f', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}` },
+                        { label: 'Telegram', color: 'bg-[#2ca5e0]', icon: 'fa-brands fa-telegram', url: `https://t.me/share/url?url=${encodeURIComponent(productUrl)}&text=${encodeURIComponent(product?.name || '')}` },
+                        { label: 'Zalo', color: 'bg-[#0068ff]', icon: 'fa-solid fa-z', url: `https://zalo.me/share/url?url=${encodeURIComponent(productUrl)}` },
+                        { label: 'WhatsApp', color: 'bg-[#25d366]', icon: 'fa-brands fa-whatsapp', url: `https://wa.me/?text=${encodeURIComponent((product?.name || '') + ' ' + productUrl)}` },
+                        { label: 'X / Twitter', color: 'bg-black', icon: 'fa-brands fa-x-twitter', url: `https://twitter.com/intent/tweet?url=${encodeURIComponent(productUrl)}&text=${encodeURIComponent(product?.name || '')}` },
                       ].map(s => (
                         <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer"
                           className={`w-10 h-10 ${s.color} rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity`}
                           title={s.label}
                         >
-                          <i className={`fa ${s.icon} text-white text-sm`} />
+                          <i className={`${s.icon} text-white text-sm`} />
                         </a>
                       ))}
                     </div>
@@ -1008,10 +1008,10 @@ export default function ProductDetail() {
 
                 {/* View stats */}
                 <button
-                  onClick={() => { setShowAffiliatePopup(false); setLocation("/account?tab=referral"); }}
+                  onClick={() => { setShowAffiliatePopup(false); setLocation("/referral"); }}
                   className="w-full flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all"
                 >
-                  <i className="fa fa-chart-line text-sm" /> Xem thống kê hoa hồng
+                  <i className="fa-solid fa-chart-line text-sm" /> Xem thống kê hoa hồng
                 </button>
               </div>
             </div>
