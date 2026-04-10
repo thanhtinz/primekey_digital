@@ -306,7 +306,7 @@ export default function LandingPage() {
                     <button
                       key={cat.id}
                       onClick={() => navigate(`/catalog?category=${cat.id}`)}
-                      className="flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-gray-100 hover:border-blue-400 hover:shadow-sm transition-all group"
+                      className="flex-shrink-0 flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-white border border-gray-100 hover:border-blue-400 hover:shadow-sm transition-all group w-24 h-24"
                     >
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                         {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-black`} /> : <span className="text-3xl">{cat.icon}</span>) : <Package className="h-6 w-6 text-black" />}
