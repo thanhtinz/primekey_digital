@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Star, Shield, Package, ChevronRight, ChevronLeft, Flame, ArrowRight, Sparkles, X, CheckCircle, Trophy, Tag } from "@/components/Icon";
@@ -53,6 +53,77 @@ function LeaderboardMiniSection({ navigate }: { navigate: (href: string) => void
     </section>
   );
 }
+
+// ProductCard tách ra ngoài để tránh re-render khi banner chuyển
+const ProductCard = React.memo(({ product, saleMap, navigate }: { product: any; saleMap: Map<number, any>; navigate: (href: string) => void }) => {
+  const sale = saleMap.get(product.id) as any;
+  const pkgPrices = (product.packages || []).map((p: any) => parseFloat(p.price));
+  const minPkgPrice = pkgPrices.length > 0 ? Math.min(...pkgPrices) : null;
+  const maxPkgPrice = pkgPrices.length > 0 ? Math.max(...pkgPrices) : null;
+  const hasMultiPkg = pkgPrices.length > 1;
+  const productTags = (product.tags || []) as any[];
+  const avgRating = product.avgRating || 0;
+
+  return (
+    <div
+      onClick={() => navigate(`/product/${product.id}`)}
+      className="group bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer"
+    >
+      {/* Image */}
+      <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+        {product.imageUrl ? (
+          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+            <Package className="h-10 w-10 text-slate-300" />
+          </div>
+        )}
+        {sale && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+            GIẢM {sale.discountPercent}%
+          </div>
+        )}
+        {productTags.length > 0 && (
+          <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
+            {productTags.slice(0, 2).map((tag: any) => (
+              <div
+                key={tag.id}
+                className="bg-white/90 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium"
+                style={{ color: tag.color || "#3b82f6" }}
+              >
+                {tag.icon ? (tag.icon.startsWith("fa-") ? <i className={`${tag.icon} text-[10px]`} /> : <span className="text-[10px]">{tag.icon}</span>) : null}
+                {tag.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Body */}
+      <div className="p-3">
+        <p className="text-sm font-semibold text-gray-800 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors leading-tight">{product.name}</p>
+        <div className="mb-1.5">
+          {minPkgPrice !== null ? (
+            <div className="text-sm font-bold text-red-500">
+              {hasMultiPkg ? `${formatPrice(minPkgPrice)} ~ ${formatPrice(maxPkgPrice!)}` : formatPrice(minPkgPrice)}
+            </div>
+          ) : product.price ? (
+            <div className="text-sm font-bold text-red-500">{formatPrice(product.price)}</div>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2 text-xs mt-1">
+          <div className="flex items-center gap-0.5 text-amber-500">
+            <Star className="h-3 w-3 fill-current" />
+            <span className="font-medium">{avgRating > 0 ? avgRating.toFixed(1) : "5.0"}</span>
+            {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
+          </div>
+          {product.soldCount > 0 && (
+            <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -126,78 +197,6 @@ export default function LandingPage() {
     }, 4000);
     return () => clearInterval(timer);
   }, [(bannersData as any[]).length]);
-
-  // Product card component
-  const ProductCard = ({ product }: { product: any }) => {
-    const sale = saleMap.get(product.id) as any;
-    const pkgPrices = (product.packages || []).map((p: any) => parseFloat(p.price));
-    const minPkgPrice = pkgPrices.length > 0 ? Math.min(...pkgPrices) : null;
-    const maxPkgPrice = pkgPrices.length > 0 ? Math.max(...pkgPrices) : null;
-    const hasMultiPkg = pkgPrices.length > 1;
-    const productTags = (product.tags || []) as any[];
-    const avgRating = product.avgRating || 0;
-
-    return (
-      <div
-        onClick={() => navigate(`/product/${product.id}`)}
-        className="group bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer"
-      >
-        {/* Image */}
-        <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
-          {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-              <Package className="h-10 w-10 text-slate-300" />
-            </div>
-          )}
-          {sale && (
-            <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-              GIẢM {sale.discountPercent}%
-            </div>
-          )}
-          {/* Hiển thị tag sản phẩm (tối đa 2 tag) */}
-          {productTags.length > 0 && (
-            <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
-              {productTags.slice(0, 2).map((tag: any) => (
-                <div
-                  key={tag.id}
-                  className="bg-white/90 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm font-medium"
-                  style={{ color: tag.color || "#3b82f6" }}
-                >
-                  {tag.icon ? (tag.icon.startsWith("fa-") ? <i className={`${tag.icon} text-[10px]`} /> : <span className="text-[10px]">{tag.icon}</span>) : null}
-                  {tag.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Body */}
-        <div className="p-3">
-          <p className="text-sm font-semibold text-gray-800 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors leading-tight">{product.name}</p>
-          <div className="mb-1.5">
-            {minPkgPrice !== null ? (
-              <div className="text-sm font-bold text-red-500">
-                {hasMultiPkg ? `${formatPrice(minPkgPrice)} ~ ${formatPrice(maxPkgPrice!)}` : formatPrice(minPkgPrice)}
-              </div>
-            ) : product.price ? (
-              <div className="text-sm font-bold text-red-500">{formatPrice(product.price)}</div>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2 text-xs mt-1">
-            <div className="flex items-center gap-0.5 text-amber-500">
-              <Star className="h-3 w-3 fill-current" />
-              <span className="font-medium">{avgRating > 0 ? avgRating.toFixed(1) : "5.0"}</span>
-              {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
-            </div>
-            {product.soldCount > 0 && (
-              <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-800 flex flex-col">
@@ -276,7 +275,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setSelectedParentCat(null)}
+                onClick={() => { setSelectedParentCat(null); setSelectedChildCat(null); }}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   !selectedParentCat
                     ? "bg-blue-600 text-white shadow-md"
@@ -351,7 +350,7 @@ export default function LandingPage() {
               {filteredByChild.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                   {filteredByChild.map((product: any) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} saleMap={saleMap} navigate={navigate} />
                   ))}
                 </div>
               ) : (
@@ -381,7 +380,7 @@ export default function LandingPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {featuredProducts.slice(0, 10).map((product: any) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} saleMap={saleMap} navigate={navigate} />
                 ))}
               </div>
             </div>
@@ -406,7 +405,7 @@ export default function LandingPage() {
               {filteredByParent.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                   {filteredByParent.slice(0, 12).map((product: any) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} saleMap={saleMap} navigate={navigate} />
                   ))}
                 </div>
               ) : (
@@ -436,7 +435,7 @@ export default function LandingPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {bestSellingProducts.map((product: any) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} saleMap={saleMap} navigate={navigate} />
                 ))}
               </div>
             </div>
@@ -459,7 +458,7 @@ export default function LandingPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {products.slice(0, 10).map((product: any) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} saleMap={saleMap} navigate={navigate} />
                 ))}
               </div>
               {products.length > 8 && (
