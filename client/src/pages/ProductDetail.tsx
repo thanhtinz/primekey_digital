@@ -607,6 +607,59 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {/* Lưu ý sản phẩm - hiển thị mô tả gói đang chọn */}
+            {packages.length > 0 && (() => {
+              // Lấy mô tả từ gói đang chọn, hoặc gói đầu tiên nếu chưa chọn
+              const activePackage = selectedPackage || (packages.length === 1 ? packages[0] : null);
+              const packageDesc = activePackage?.description;
+              const hasAnyDesc = packages.some((p: any) => !!p.description);
+              if (!hasAnyDesc) return null;
+              return (
+                <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-amber-100">
+                  {/* Header - click để toggle */}
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i className="fa fa-exclamation-circle text-white text-sm" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-amber-600 font-semibold uppercase tracking-wide">Lưu ý</p>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {activePackage ? activePackage.name : "Chọn gói để xem lưu ý"}
+                        </p>
+                      </div>
+                    </div>
+                    {!activePackage && (
+                      <span className="text-xs text-amber-500 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
+                        Chưa chọn gói
+                      </span>
+                    )}
+                  </div>
+                  {/* Content */}
+                  <div className="px-4 py-3">
+                    {packageDesc ? (
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{packageDesc}</p>
+                    ) : activePackage ? (
+                      <p className="text-sm text-gray-400 italic">Gói này không có lưu ý đặc biệt.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {packages.filter((p: any) => !!p.description).map((p: any) => (
+                          <div key={p.id} className="flex items-start gap-2">
+                            <span className="text-amber-400 mt-0.5 flex-shrink-0">•</span>
+                            <div>
+                              <span className="text-xs font-semibold text-gray-600">{p.name}:</span>
+                              <span className="text-xs text-gray-500 ml-1 line-clamp-1">{p.description}</span>
+                            </div>
+                          </div>
+                        ))}
+                        <p className="text-xs text-amber-500 mt-2">Bấm vào gói để xem chi tiết lưu ý.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Chi tiết gói */}
             {(product as any).notes && (
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">

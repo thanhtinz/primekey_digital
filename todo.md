@@ -1599,3 +1599,4 @@ todo updated
 - [x] LandingPage: bấm danh mục con → filter sản phẩm theo danh mục con đó
 - [x] LandingPage: đổi "Tất cả sản phẩm" → "Sản phẩm nổi bật", tối đa 10 sản phẩm
 - [x] LandingPage: thêm card "Sản phẩm bán chạy" (lượt mua nhiều nhất)
+- [x] ProductDetail: thêm card "Lưu ý sản phẩm" hiển thị mô tả gói đang chọn, tự động cập nhật khi bấm gói khác
