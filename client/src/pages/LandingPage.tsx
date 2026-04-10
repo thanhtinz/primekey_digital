@@ -57,6 +57,7 @@ function LeaderboardMiniSection({ navigate }: { navigate: (href: string) => void
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [selectedParentCat, setSelectedParentCat] = useState<number | null>(null);
+  const [selectedChildCat, setSelectedChildCat] = useState<number | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     try { return sessionStorage.getItem("bannerDismissed") === "1"; } catch { return false; }
   });
@@ -92,6 +93,17 @@ export default function LandingPage() {
         return p.categoryId === selectedParentCat || childIds.includes(p.categoryId);
       })
     : products;
+
+  // Filter by child category
+  const filteredByChild = selectedChildCat
+    ? products.filter((p: any) => p.categoryId === selectedChildCat)
+    : null;
+
+  // Best selling products (sorted by soldCount)
+  const bestSellingProducts = [...products]
+    .filter((p: any) => (p.soldCount || 0) > 0)
+    .sort((a: any, b: any) => (b.soldCount || 0) - (a.soldCount || 0))
+    .slice(0, 10);
 
   const saleMap = new Map(activeSales.map((s: any) => [s.productId, s]));
 
@@ -305,8 +317,8 @@ export default function LandingPage() {
                   {displayCats.map((cat: any) => (
                     <button
                       key={cat.id}
-                      onClick={() => navigate(`/catalog?category=${cat.id}`)}
-                      className="flex-shrink-0 flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-white border border-gray-100 hover:border-blue-400 hover:shadow-sm transition-all group w-24 h-24"
+                      onClick={() => { setSelectedChildCat(cat.id === selectedChildCat ? null : cat.id); setSelectedParentCat(null); }}
+                      className={`flex-shrink-0 flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all group w-24 h-24 ${selectedChildCat === cat.id ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-gray-100 hover:border-blue-400 hover:shadow-sm'}`}
                     >
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                         {cat.icon ? (cat.icon.startsWith("fa-") ? <i className={`${cat.icon} text-2xl text-black`} /> : <span className="text-3xl">{cat.icon}</span>) : <Package className="h-6 w-6 text-black" />}
@@ -321,8 +333,39 @@ export default function LandingPage() {
           );
         })()}
 
+        {/* ===== CHILD CATEGORY FILTERED PRODUCTS ===== */}
+        {filteredByChild && (
+          <section className="px-4 mb-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <Package className="h-5 w-5 text-blue-500" />
+                  {categories.find((c: any) => c.id === selectedChildCat)?.name || "Sản phẩm"}
+                  <span className="text-sm font-normal text-slate-400">({filteredByChild.length})</span>
+                </h2>
+                <button onClick={() => setSelectedChildCat(null)}
+                  className="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-1 font-medium">
+                  Xem tất cả <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {filteredByChild.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                  {filteredByChild.map((product: any) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+                  <Package className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">Chưa có sản phẩm trong danh mục này</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* ===== FEATURED PRODUCTS SECTION ===== */}
-        {featuredProducts.length > 0 && !selectedParentCat && (
+        {featuredProducts.length > 0 && !selectedParentCat && !selectedChildCat && (
           <section className="px-4 mb-8">
             <div className="max-w-7xl mx-auto">
               <div className="flex items-start justify-between mb-4">
@@ -337,7 +380,7 @@ export default function LandingPage() {
                 </Button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-                {featuredProducts.slice(0, 8).map((product: any) => (
+                {featuredProducts.slice(0, 10).map((product: any) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
@@ -376,14 +419,38 @@ export default function LandingPage() {
           </section>
         )}
 
+        {/* ===== BEST SELLING PRODUCTS ===== */}
+        {bestSellingProducts.length > 0 && !selectedParentCat && !selectedChildCat && (
+          <section className="px-4 mb-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <Flame className="h-6 w-6 text-orange-500" /> Sản phẩm bán chạy
+                  </h2>
+                  <p className="text-slate-500 text-sm mt-1">Những sản phẩm được mua nhiều nhất</p>
+                </div>
+                <Button onClick={() => navigate("/catalog")} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-5 gap-1.5 flex-shrink-0">
+                  Xem tất cả <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                {bestSellingProducts.map((product: any) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* ===== ALL PRODUCTS (when no filter, no featured) ===== */}
-        {!selectedParentCat && featuredProducts.length === 0 && (
+        {!selectedParentCat && !selectedChildCat && featuredProducts.length === 0 && (
           <section className="px-4 mb-8">
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-500" /> Tất cả sản phẩm
-                  <span className="text-sm font-normal text-slate-400">({products.length})</span>
+                  <Sparkles className="h-5 w-5 text-blue-500" /> Sản phẩm nổi bật
+                  <span className="text-sm font-normal text-slate-400">({Math.min(products.length, 10)})</span>
                 </h2>
                 <button onClick={() => navigate("/catalog")}
                   className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 font-medium">
@@ -391,7 +458,7 @@ export default function LandingPage() {
                 </button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-                {products.slice(0, 8).map((product: any) => (
+                {products.slice(0, 10).map((product: any) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
@@ -411,7 +478,7 @@ export default function LandingPage() {
 
 
         {/* ===== VIEW ALL CTA (when featured shown) ===== */}
-        {!selectedParentCat && featuredProducts.length > 0 && products.length > featuredProducts.length && (
+        {!selectedParentCat && !selectedChildCat && featuredProducts.length > 0 && products.length > featuredProducts.length && (
           <section className="px-4 mb-8">
             <div className="max-w-7xl mx-auto text-center">
               <Button onClick={() => navigate("/catalog")} variant="outline" className="border-slate-300 text-slate-600 hover:bg-slate-100 px-8 gap-2 rounded-xl">

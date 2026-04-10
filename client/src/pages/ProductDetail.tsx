@@ -305,7 +305,7 @@ export default function ProductDetail() {
             className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
           >
             <span className="text-sm text-gray-600 flex items-center gap-2">
-              <span className="text-base">🎫</span> Bạn có mã giảm giá?
+              <i className="fa fa-tag text-indigo-500" /> Bạn có mã giảm giá?
             </span>
             <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showCouponInput ? "rotate-180" : ""}`} />
           </button>
@@ -446,14 +446,7 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* View reviews */}
-        <button
-          onClick={() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' })}
-          className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm hover:bg-gray-50 transition-colors"
-        >
-          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-          Xem chi tiết &amp; Đánh giá
-        </button>
+
       </div>
     </div>
   );

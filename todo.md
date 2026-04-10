@@ -1593,3 +1593,9 @@ todo updated
 - [x] Order info card: Số lượng, Custom fields, Coupon, Wallet, Notes, Tổng tiền, Nút mua
 - [x] Đánh giá sản phẩm: full width bên dưới left column (không nằm trong right sidebar)
 - [x] ProductDetail: bỏ icon thường trong tags, sửa lỗi fa- icon CSS không nhận diện, chữ trong hero xanh màu nổi bật hơn
+- [x] ProductDetail: icon CSS (fa-tag) cho mã giảm giá thay vì emoji
+- [x] ProductDetail: bỏ button "Xem chi tiết & Đánh giá" trong order info card
+- [x] ProductDetail: thêm card sản phẩm liên quan (cùng danh mục)
+- [x] LandingPage: bấm danh mục con → filter sản phẩm theo danh mục con đó
+- [x] LandingPage: đổi "Tất cả sản phẩm" → "Sản phẩm nổi bật", tối đa 10 sản phẩm
+- [x] LandingPage: thêm card "Sản phẩm bán chạy" (lượt mua nhiều nhất)
