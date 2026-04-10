@@ -1586,3 +1586,9 @@ todo updated
 - [x] Đồng bộ card sản phẩm ProductCatalog grid/list với LandingPage (tag style, rating, sold count)
 - [x] Thêm nút trái/phải (ChevronLeft/ChevronRight) cho banner slider trong LandingPage
 - [x] Sửa layout danh mục con: mỗi card riêng, icon lớn hơn, border highlight khi hover
+## Phase: ProductDetail Rewrite (Apr 10, 2026)
+- [x] Viết lại toàn bộ ProductDetail layout theo ảnh mẫu: hero gradient teal, 2 cột PC (left 70% + right 30% sticky), mobile single column, review full width
+- [x] Package card: horizontal layout (image + info + price + radio), grid 2 cột desktop, single column mobile
+- [x] Quantity selector: căn đều trong card (justify-between)
+- [x] Order info card: Số lượng, Custom fields, Coupon, Wallet, Notes, Tổng tiền, Nút mua
+- [x] Đánh giá sản phẩm: full width bên dưới left column (không nằm trong right sidebar)
