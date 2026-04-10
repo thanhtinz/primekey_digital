@@ -273,8 +273,8 @@ export default function ProductDetail() {
     addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: getCustomFieldValues() });
   };
 
-  // ===== ORDER INFO CARD COMPONENT =====
-  const OrderInfoCard = () => (
+  // ===== ORDER INFO CARD JSX (biến JSX, không phải component, để tránh re-mount khi state thay đổi) =====
+  const orderInfoCardJSX = (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Quantity row */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -725,7 +725,7 @@ export default function ProductDetail() {
 
             {/* Mobile: Order Info Card */}
             <div className="md:hidden">
-              <OrderInfoCard />
+              {orderInfoCardJSX}
             </div>
 
             {/* ===== REVIEWS ===== */}
@@ -891,7 +891,7 @@ export default function ProductDetail() {
 
           {/* ===== RIGHT COLUMN (desktop only, sticky) ===== */}
           <div className="hidden md:block w-72 flex-shrink-0 sticky top-24 self-start">
-            <OrderInfoCard />
+            {orderInfoCardJSX}
           </div>
 
         </div>
