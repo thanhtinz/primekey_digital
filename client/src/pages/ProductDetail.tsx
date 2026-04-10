@@ -516,36 +516,28 @@ export default function ProductDetail() {
 
             {/* Info */}
             <div className="flex-1 min-w-0 text-white">
-              <div className="mb-3">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
-                </div>
-                <div className="flex items-center justify-end gap-2 pt-3">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
+                <div className="flex items-start gap-2 flex-shrink-0 pt-1">
                   {referralSettings?.isEnabled && (
                     <div className="relative">
                       <button
                         onClick={() => { if (!email) { toast.info("Vui lòng đăng nhập để lấy link giới thiệu"); return; } setShowAffiliatePopup(true); }}
-                        className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+                        className="w-11 h-11 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center hover:bg-white/30 transition-colors"
                         title="Chia sẻ kiếm tiền"
                       >
-                        <i className="fa fa-hand-holding-usd text-white text-sm" />
+                        <i className="fa fa-hand-holding-usd text-white text-base" />
                       </button>
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-400 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">
+                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-400 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap shadow-sm">
                         {referralSettings.rewardType === 'percentage' ? `${referralSettings.rewardAmount}%` : '+đ'}
                       </span>
                     </div>
                   )}
                   <button
-                    onClick={handleShare}
-                    className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
-                  >
-                    {copied ? <CheckCircle className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                  </button>
-                  <button
                     onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui lòng đăng nhập"); }}
-                    className={`w-10 h-10 backdrop-blur rounded-xl flex items-center justify-center transition-all ${isInWishlist ? "bg-red-500" : "bg-white/20 hover:bg-white/30"}`}
+                    className={`w-11 h-11 backdrop-blur rounded-2xl flex items-center justify-center transition-all ${isInWishlist ? "bg-red-500" : "bg-white/20 hover:bg-white/30"}`}
                   >
-                    <Heart className={`w-4 h-4 ${isInWishlist ? "fill-white" : ""}`} />
+                    <Heart className={`w-5 h-5 ${isInWishlist ? "fill-white" : ""}`} />
                   </button>
                 </div>
               </div>
