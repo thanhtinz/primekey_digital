@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, ShoppingBag, CreditCard, ChevronDown, ExternalLink, FileText, RefreshCw, XCircle } from "@/components/Icon";
+import { Search, Package, CheckCircle, Truck, Shield, Clock, AlertCircle, ShoppingBag, CreditCard, ChevronDown, ExternalLink, FileText, RefreshCw, XCircle, RotateCcw } from "@/components/Icon";
 import { useLocation } from "wouter";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const STATUS_CONFIG: Record<string, {
   label: string;
@@ -44,11 +50,110 @@ function formatDate(date: Date | string | null | undefined) {
   return new Date(date).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+// Refund Dialog Component
+function RefundDialog({
+  open,
+  onClose,
+  order,
+  token,
+}: {
+  open: boolean;
+  onClose: () => void;
+  order: any;
+  token: string;
+}) {
+  const utils = trpc.useUtils();
+  const [reason, setReason] = useState("");
+  const [amount, setAmount] = useState(parseFloat(String(order?.totalAmount || 0)));
+
+  const createRefund = trpc.refund.customerCreate.useMutation({
+    onSuccess: () => {
+      toast.success("Đã gửi yêu cầu hoàn tiền. Admin sẽ xem xét trong thời gian sớm nhất.");
+      utils.invoices.getByEmail.invalidate();
+      onClose();
+      setReason("");
+    },
+    onError: (e: any) => toast.error(e.message || "Gửi yêu cầu thất bại"),
+  });
+
+  const handleSubmit = () => {
+    if (!reason.trim() || reason.trim().length < 10) {
+      toast.error("Vui lòng nhập lý do hoàn tiền (ít nhất 10 ký tự)");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      toast.error("Số tiền hoàn không hợp lệ");
+      return;
+    }
+    createRefund.mutate({ token, invoiceId: order.id, amount, reason: reason.trim() });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <RotateCcw className="h-5 w-5 text-red-500" />
+            Yêu Cầu Hoàn Tiền
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-600">
+            <p className="font-semibold text-gray-800">Đơn hàng #{order?.invoiceNumber}</p>
+            <p className="mt-0.5">Tổng tiền: <span className="font-bold text-[#1e3a6e]">{formatCurrency(order?.totalAmount)}</span></p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium text-gray-700">Số tiền hoàn (VNĐ) *</Label>
+            <Input
+              type="number"
+              value={amount}
+              onChange={e => setAmount(Number(e.target.value))}
+              max={parseFloat(String(order?.totalAmount || 0))}
+              min={1}
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-400 mt-0.5">Tối đa: {formatCurrency(order?.totalAmount)}</p>
+          </div>
+          <div>
+            <Label className="text-sm font-medium text-gray-700">Lý do hoàn tiền * <span className="text-gray-400 font-normal">(tối thiểu 10 ký tự)</span></Label>
+            <Textarea
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              placeholder="Mô tả lý do bạn muốn hoàn tiền cho đơn hàng này..."
+              rows={4}
+              className="mt-1 resize-none"
+            />
+            <p className="text-xs text-gray-400 mt-0.5">{reason.length} ký tự</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+            <p className="font-semibold mb-0.5">Lưu ý:</p>
+            <p>Yêu cầu hoàn tiền sẽ được admin xem xét trong vòng 1-3 ngày làm việc. Tiền sẽ được hoàn vào ví của bạn sau khi được duyệt.</p>
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={createRefund.isPending}>Hủy</Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={createRefund.isPending || !reason.trim() || reason.trim().length < 10}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {createRefund.isPending ? "Đang gửi..." : "Gửi Yêu Cầu"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Detail view for a single order
-function OrderDetail({ order, onBack }: { order: any; onBack: () => void }) {
+function OrderDetail({ order, onBack, token }: { order: any; onBack: () => void; token: string }) {
   const statusCfg = STATUS_CONFIG[order.status || "CREATED"] || STATUS_CONFIG.CREATED;
   const StatusIcon = statusCfg.icon;
   const currentStep = statusCfg.step;
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+
+  // Show refund button for FAILED, PAID, COMPLETED orders
+  const canRequestRefund = ["FAILED", "PAID", "COMPLETED"].includes(order.status || "");
 
   return (
     <div className="space-y-4">
@@ -73,12 +178,22 @@ function OrderDetail({ order, onBack }: { order: any; onBack: () => void }) {
               {formatDate(order.createdAt)}
             </p>
           </div>
-          {order.status === "CREATED" && order.paymentUrl && (
-            <a href={order.paymentUrl} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-[#1e3a6e] hover:bg-[#162d57] text-white text-sm font-semibold rounded-xl transition-colors">
-              <ExternalLink className="h-4 w-4" /> Thanh toán ngay
-            </a>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {order.status === "CREATED" && order.paymentUrl && (
+              <a href={order.paymentUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-[#1e3a6e] hover:bg-[#162d57] text-white text-sm font-semibold rounded-xl transition-colors">
+                <ExternalLink className="h-4 w-4" /> Thanh toán ngay
+              </a>
+            )}
+            {canRequestRefund && (
+              <button
+                onClick={() => setRefundDialogOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-sm font-semibold rounded-xl transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" /> Yêu cầu hoàn tiền
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Progress steps */}
@@ -103,6 +218,17 @@ function OrderDetail({ order, onBack }: { order: any; onBack: () => void }) {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Failed notice */}
+        {order.status === "FAILED" && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-red-700">
+              <p className="font-semibold">Đơn hàng thất bại</p>
+              <p className="mt-0.5 text-red-600">Đơn hàng không thể xử lý. Bạn có thể yêu cầu hoàn tiền nếu đã thanh toán.</p>
             </div>
           </div>
         )}
@@ -181,6 +307,14 @@ function OrderDetail({ order, onBack }: { order: any; onBack: () => void }) {
           </div>
         </div>
       )}
+
+      {/* Refund Dialog */}
+      <RefundDialog
+        open={refundDialogOpen}
+        onClose={() => setRefundDialogOpen(false)}
+        order={order}
+        token={token}
+      />
     </div>
   );
 }
@@ -242,9 +376,10 @@ const STATUS_TABS = [
 
 export default function TrackOrder() {
   const [, setLocation] = useLocation();
-  const { customer, isLoggedIn, isLoading: authLoading } = useCustomerAuth();
+  const { customer, isLoggedIn, isLoading: authLoading, token } = useCustomerAuth();
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) setLocation("/client-login");
@@ -270,6 +405,23 @@ export default function TrackOrder() {
       : (orders as any[]).filter(o => o.status === tab.key).length;
     return acc;
   }, {} as Record<string, number>);
+
+  // If viewing order detail
+  if (selectedOrder) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <ClientHeader />
+        <main className="flex-1 max-w-3xl mx-auto w-full px-4 pt-16 pb-6">
+          <OrderDetail
+            order={selectedOrder}
+            onBack={() => setSelectedOrder(null)}
+            token={token || ""}
+          />
+        </main>
+        <ClientFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -365,7 +517,7 @@ export default function TrackOrder() {
         ) : (
           <div className="space-y-3">
             {filtered.map((order: any) => (
-              <OrderCard key={order.id} order={order} onView={() => setLocation(`/order/${order.invoiceNumber}`)} />
+              <OrderCard key={order.id} order={order} onView={() => setSelectedOrder(order)} />
             ))}
           </div>
         )}

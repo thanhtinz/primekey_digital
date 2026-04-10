@@ -1740,3 +1740,31 @@ todo updated
 - [x] Clean: xóa unused imports BlogManagement, BlogHub khỏi App.tsx
 - [x] Blog: thêm route /admin/blog/edit/:id + edit mode trong BlogNewPost.tsx
 - [x] Blog: thêm adminGetPost procedure trong blog router
+
+## Session 2026-04-10 - Settings: Primekey & Bảo mật
+
+- [ ] Schema: thêm cột primekey settings (requireLoginToView, showSoldCount, allowReview, telegramOrderChatId, orderCodeType, orderCodeLength, orderCodePrefix, copyright)
+- [ ] Schema: thêm cột security settings (bruteForceMaxLogin, bruteForceMaxAccount, bruteForceMaxApi, bruteForceMax2FA, bruteForceMaxOTP, bruteForceMaxTopup, bruteForceMaxPasswordReset, bruteForceMaxApiWhitelist, adminPanelMaxWrongUrl, adminSingleIp, adminSingleDevice, clientSingleDevice, adminPanelPath, showAdminPanelButton, maxRegisterPerIp, sessionDuration, cronJobSecret, requireStrongPassword)
+- [ ] Migration: push schema changes to DB
+- [ ] Backend: procedure updatePrimekeySettings
+- [ ] Backend: procedure updateSecuritySettings
+- [ ] Frontend: thêm tab "Primekey" vào Settings.tsx với đầy đủ fields
+- [ ] Frontend: thêm tab "Bảo mật" vào Settings.tsx với 3 nhóm (Brute Force, Kiểm soát truy cập, Bảo mật khác)
+
+## Session 2026-04-10 - Fix Icon CSS & Logic Hoàn Tiền
+
+- [ ] MyAccount: thay icon thường bằng icon CSS trong mục Bảo mật (SecurityInlineSection)
+- [ ] MyAccount: thay icon thường bằng icon CSS trong mục Cài đặt thông báo (NotificationPrefsSection)
+- [ ] Logic hoàn tiền: chỉ cho phép tạo yêu cầu hoàn tiền khi sản phẩm không có thay đổi trạng thái hoặc đơn bị lỗi
+- [ ] Admin: ẩn nút "Tạo yêu cầu hoàn tiền" nếu đơn đã được xử lý bình thường
+
+## Session 2026-04-10 (tiếp) - Logic Hoàn Tiền & Refactor
+
+- [x] RefundPage.tsx (admin): bỏ nút "Tạo Yêu Cầu" thủ công - admin chỉ xem và duyệt/từ chối
+- [x] Backend refund router: sửa list lấy tất cả (không filter userId), sửa updateStatus không filter userId
+- [x] Backend refund router: thêm customerCreate procedure (dùng token, kiểm tra đơn hàng thuộc về khách)
+- [x] Backend refund router: thêm customerList procedure (lấy danh sách yêu cầu hoàn tiền của khách)
+- [x] TrackOrder.tsx: thêm nút "Yêu cầu hoàn tiền" trong OrderDetail khi đơn FAILED/PAID/COMPLETED
+- [x] TrackOrder.tsx: thêm RefundDialog component với form nhập lý do và số tiền hoàn
+- [x] TrackOrder.tsx: chuyển sang render OrderDetail inline thay vì navigate (không mất context)
+- [x] Settings.tsx: xác nhận không còn lỗi syntax (Vite compile thành công)

@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { RotateCcw, Plus, Search, Clock, CheckCircle2, XCircle, RefreshCw, DollarSign } from "@/components/Icon";
+import { RotateCcw, Search, Clock, CheckCircle2, XCircle, RefreshCw, DollarSign } from "@/components/Icon";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   PENDING: { label: "Chờ duyệt", color: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30", icon: Clock },
@@ -21,10 +17,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
 export default function RefundPage() {
   const utils = trpc.useUtils();
   const { data: refunds = [], isLoading } = trpc.refund.list.useQuery();
-  const createMutation = trpc.refund.create.useMutation({
-    onSuccess: () => { utils.refund.list.invalidate(); toast.success("Đã tạo yêu cầu hoàn tiền"); setDialogOpen(false); },
-    onError: (e: any) => toast.error(e.message),
-  });
   const updateMutation = trpc.refund.updateStatus.useMutation({
     onSuccess: () => { utils.refund.list.invalidate(); toast.success("Đã cập nhật trạng thái"); },
     onError: (e: any) => toast.error(e.message),
@@ -32,11 +24,9 @@ export default function RefundPage() {
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ invoiceId: 0, amount: 0, reason: "" });
 
   const filtered = (refunds as any[]).filter(r => {
-    const matchSearch = !search || r.reason.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || r.reason?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = filterStatus === "all" || r.status === filterStatus;
     return matchSearch && matchStatus;
   });
@@ -49,16 +39,9 @@ export default function RefundPage() {
     <DashboardLayoutCustom>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="ak-page-header">
-          <div>
-            <h1 className="ak-page-title">Quản Lý Hoàn Tiền</h1>
-            <p className="ak-page-subtitle">Xử lý yêu cầu hoàn tiền từ khách hàng</p>
-          </div>
-        </div>
-          <Button onClick={() => setDialogOpen(true)} className="bg-red-600 hover:bg-red-700 text-white gap-2">
-            <Plus className="w-4 h-4" /> Tạo Yêu Cầu
-          </Button>
+        <div className="ak-page-header">
+          <h1 className="ak-page-title">Quản Lý Hoàn Tiền</h1>
+          <p className="ak-page-subtitle">Xem và duyệt yêu cầu hoàn tiền từ khách hàng</p>
         </div>
 
         {/* Stats */}
@@ -101,6 +84,7 @@ export default function RefundPage() {
             <div className="p-12 text-center">
               <RotateCcw className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <p className="text-slate-400">Chưa có yêu cầu hoàn tiền nào</p>
+              <p className="text-slate-500 text-sm mt-1">Khách hàng có thể tạo yêu cầu từ trang theo dõi đơn hàng</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-700">
@@ -118,19 +102,26 @@ export default function RefundPage() {
                             <StatusIcon className="w-3 h-3 mr-1" />{statusInfo.label}
                           </Badge>
                           <Badge variant="outline" className="text-xs border-slate-600 text-slate-400 font-mono">Đơn #{refund.invoiceId}</Badge>
+                          {refund.customerId && (
+                            <Badge variant="outline" className="text-xs border-slate-600 text-slate-400">
+                              KH #{refund.customerId}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-slate-300 text-sm mt-1 line-clamp-2">{refund.reason}</p>
-                        {refund.adminNote && <p className="text-slate-500 text-xs mt-1 italic">Ghi chú: {refund.adminNote}</p>}
+                        {refund.adminNote && <p className="text-slate-500 text-xs mt-1 italic">Ghi chú admin: {refund.adminNote}</p>}
                         <p className="text-slate-500 text-xs mt-1">{new Date(refund.createdAt).toLocaleString("vi-VN")}</p>
                       </div>
-                      <Select value={refund.status} onValueChange={s => updateMutation.mutate({ id: refund.id, status: s as any })}>
-                        <SelectTrigger className="w-36 bg-slate-900 border-slate-600 text-white text-xs h-8 flex-shrink-0">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-slate-700">
-                          {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k} className="text-white text-xs">{v.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <Select value={refund.status} onValueChange={s => updateMutation.mutate({ id: refund.id, status: s as any })}>
+                          <SelectTrigger className="w-36 bg-slate-900 border-slate-600 text-white text-xs h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-slate-700">
+                            {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k} className="text-white text-xs">{v.label}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 );
@@ -139,35 +130,6 @@ export default function RefundPage() {
           )}
         </div>
       </div>
-
-      {/* Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle>Tạo Yêu Cầu Hoàn Tiền</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div>
-              <Label className="text-slate-300 text-sm">ID Hóa Đơn *</Label>
-              <Input type="number" value={form.invoiceId || ""} onChange={e => setForm(f => ({ ...f, invoiceId: Number(e.target.value) }))} placeholder="Nhập ID hóa đơn" className="mt-1 bg-slate-800 border-slate-600 text-white" />
-            </div>
-            <div>
-              <Label className="text-slate-300 text-sm">Số tiền hoàn (VNĐ) *</Label>
-              <Input type="number" value={form.amount || ""} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} placeholder="0" className="mt-1 bg-slate-800 border-slate-600 text-white" />
-            </div>
-            <div>
-              <Label className="text-slate-300 text-sm">Lý do hoàn tiền *</Label>
-              <Textarea value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} placeholder="Nhập lý do hoàn tiền..." className="mt-1 bg-slate-800 border-slate-600 text-white resize-none" rows={3} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setDialogOpen(false)} className="text-slate-400 hover:text-white">Hủy</Button>
-            <Button onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending || !form.invoiceId || !form.amount || !form.reason} className="bg-red-600 hover:bg-red-700 text-white">
-              {createMutation.isPending ? "Đang tạo..." : "Tạo Yêu Cầu"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </DashboardLayoutCustom>
   );
 }

@@ -2664,6 +2664,51 @@ export const appRouter = router({
         return { url };
       }),
 
+    updatePrimekeySettings: protectedProcedure
+      .input(z.object({
+        requireLoginToView: z.boolean().optional(),
+        showSoldCount: z.boolean().optional(),
+        allowProductReview: z.boolean().optional(),
+        telegramOrderChatId: z.string().optional(),
+        orderCodeType: z.string().optional(),
+        orderCodeLength: z.number().int().min(6).max(20).optional(),
+        orderCodePrefix: z.string().optional(),
+        siteAddress: z.string().optional(),
+        siteCopyright: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    updateSecuritySettings: protectedProcedure
+      .input(z.object({
+        bfMaxLoginAttempts: z.number().int().min(1).max(100).optional(),
+        bfMaxAccountAttempts: z.number().int().min(1).max(100).optional(),
+        bfMaxApiAttempts: z.number().int().min(1).max(200).optional(),
+        bfMax2faAttempts: z.number().int().min(1).max(100).optional(),
+        bfMaxOtpAttempts: z.number().int().min(1).max(100).optional(),
+        bfMaxTopupAttempts: z.number().int().min(1).max(100).optional(),
+        bfMaxPasswordResetAttempts: z.number().int().min(1).max(100).optional(),
+        bfMaxApiWhitelistAttempts: z.number().int().min(1).max(200).optional(),
+        adminPanelMaxWrongUrl: z.number().int().min(1).max(100).optional(),
+        adminSingleIp: z.boolean().optional(),
+        adminSingleDevice: z.boolean().optional(),
+        clientSingleDevice: z.boolean().optional(),
+        adminPanelPath: z.string().optional(),
+        showAdminPanelButton: z.boolean().optional(),
+        maxRegisterPerIp: z.number().int().min(1).max(10000).optional(),
+        sessionDuration: z.number().int().min(300).max(2592000).optional(),
+        cronJobSecret: z.string().optional(),
+        requireStrongPassword: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+
     // Upload banner for thank-you page
     uploadThankYouBanner: protectedProcedure
       .input(z.object({
@@ -4477,49 +4522,83 @@ export const appRouter = router({
 
   // ─── Refunds ─────────────────────────────────────────────────────────────
   refund: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    // Admin: list all refund requests
+    list: protectedProcedure.query(async () => {
       const { refunds } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
-      const { eq, desc } = await import("drizzle-orm");
+      const { desc } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
-      return drizzleDb.select().from(refunds).where(eq(refunds.userId, ctx.user.id)).orderBy(desc(refunds.createdAt));
+      return drizzleDb.select().from(refunds).orderBy(desc(refunds.createdAt));
     }),
-    create: protectedProcedure.input(z.object({
-      invoiceId: z.number(),
-      amount: z.number().min(0),
-      reason: z.string().min(1),
-    })).mutation(async ({ input, ctx }) => {
-      const { refunds } = await import("../drizzle/schema");
-      const { getDb } = await import("./db");
-      const drizzleDb = await getDb();
-      if (!drizzleDb) throw new Error("DB unavailable");
-      await drizzleDb.insert(refunds).values({ ...input, userId: ctx.user.id, amount: String(input.amount), status: "PENDING" });
-      return { success: true };
-    }),
+    // Admin: update refund status
     updateStatus: protectedProcedure.input(z.object({
       id: z.number(),
       status: z.enum(["PENDING", "APPROVED", "REJECTED", "PROCESSED"]),
       adminNote: z.string().optional(),
-    })).mutation(async ({ input, ctx }) => {
+    })).mutation(async ({ input }) => {
       const { refunds } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
-      const { eq, and } = await import("drizzle-orm");
+      const { eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
       const updates: any = { status: input.status, adminNote: input.adminNote || null };
       if (input.status === "PROCESSED") updates.processedAt = new Date();
-      await drizzleDb.update(refunds).set(updates).where(and(eq(refunds.id, input.id), eq(refunds.userId, ctx.user.id)));
+      await drizzleDb.update(refunds).set(updates).where(eq(refunds.id, input.id));
       return { success: true };
     }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
-      const { refunds } = await import("../drizzle/schema");
+    // Customer: create refund request using session token
+    customerCreate: publicProcedure.input(z.object({
+      token: z.string(),
+      invoiceId: z.number(),
+      amount: z.number().min(1),
+      reason: z.string().min(10),
+    })).mutation(async ({ input }) => {
+      const { customerSessions, customers, invoices: invoicesTable, refunds } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq, and } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
-      await drizzleDb.delete(refunds).where(and(eq(refunds.id, input.id), eq(refunds.userId, ctx.user.id)));
+      // Validate session
+      const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+      if (!session || session.expiresAt < new Date()) throw new Error("Phiên đăng nhập hết hạn");
+      // Get customer
+      const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+      if (!customer) throw new Error("Không tìm thấy tài khoản khách hàng");
+      // Verify invoice belongs to customer
+      const [invoice] = await drizzleDb.select().from(invoicesTable)
+        .where(and(eq(invoicesTable.id, input.invoiceId), eq(invoicesTable.customerId, customer.id))).limit(1);
+      if (!invoice) throw new Error("Không tìm thấy đơn hàng hoặc đơn hàng không thuộc về bạn");
+      // Only allow refund for FAILED or COMPLETED orders
+      if (!(["FAILED", "COMPLETED", "PAID"].includes(invoice.status || ""))) {
+        throw new Error("Chỉ có thể yêu cầu hoàn tiền cho đơn hàng thất bại hoặc đã hoàn thành");
+      }
+      // Check no existing pending refund for this invoice
+      const existing = await drizzleDb.select().from(refunds)
+        .where(and(eq(refunds.invoiceId, input.invoiceId), eq(refunds.status, "PENDING"))).limit(1);
+      if (existing.length > 0) throw new Error("Đã có yêu cầu hoàn tiền đang chờ xử lý cho đơn hàng này");
+      // Insert refund with customerId stored in userId field
+      await drizzleDb.insert(refunds).values({
+        invoiceId: input.invoiceId,
+        userId: customer.id,
+        amount: String(input.amount),
+        reason: input.reason,
+        status: "PENDING",
+      });
       return { success: true };
+    }),
+    // Customer: list own refund requests
+    customerList: publicProcedure.input(z.object({ token: z.string() })).query(async ({ input }) => {
+      const { customerSessions, customers, refunds } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+      if (!session || session.expiresAt < new Date()) return [];
+      const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+      if (!customer) return [];
+      return drizzleDb.select().from(refunds).where(eq(refunds.userId, customer.id)).orderBy(desc(refunds.createdAt));
     }),
   }),
 

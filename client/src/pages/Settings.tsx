@@ -44,20 +44,21 @@ const FONT_FAMILIES = [
   "Montserrat",
   "Nunito",
   "Poppins",
-  "Arial",
   "system-ui",
 ];
 
-// ─── Tab type ──────────────────────────────────────────────────────────────────
-type TabKey = "general" | "images" | "colors";
+// ─── Tab type ──────────────────────────────────────────────────────────────────────────────
+type TabKey = "general" | "images" | "colors" | "primekey" | "security";
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: "general", label: "Cài đặt chung",  icon: <SettingsIcon className="h-4 w-4" /> },
-  { key: "images",  label: "Hình ảnh",        icon: <ImageIcon className="h-4 w-4" /> },
-  { key: "colors",  label: "Màu sắc",          icon: <Palette className="h-4 w-4" /> },
+  { key: "general",  label: "Cài đặt chung",  icon: <SettingsIcon className="h-4 w-4" /> },
+  { key: "images",   label: "Hình ảnh",        icon: <ImageIcon className="h-4 w-4" /> },
+  { key: "colors",   label: "Màu sắc",          icon: <Palette className="h-4 w-4" /> },
+  { key: "primekey", label: "Primekey",        icon: <Layers className="h-4 w-4" /> },
+  { key: "security", label: "Bảo mật",         icon: <AlertTriangle className="h-4 w-4" /> },
 ];
 
-// ─── SettingRow helper ─────────────────────────────────────────────────────────
+// ─── SettingRow helper ──────────────────────────────────────────────────────────────────────────────
 function SettingRow({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 py-4 border-b border-border last:border-0">

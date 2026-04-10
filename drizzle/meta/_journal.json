@@ -225,6 +225,13 @@
       "when": 1775842154143,
       "tag": "0031_daily_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1775847649925,
+      "tag": "0032_giant_serpent_society",
+      "breakpoints": true
     }
   ]
 }

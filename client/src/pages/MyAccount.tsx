@@ -386,8 +386,8 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
                       entry.status === "success" ? "bg-green-100" : "bg-red-100"
                     }`}>
                       {entry.status === "success"
-                        ? <i className="fa fa-check text-green-600 text-sm" />
-                        : <i className="fa fa-times text-red-500 text-sm" />}
+                        ? <i className="fa fa-check text-green-600 text-xs" />
+                        : <i className="fa fa-times text-red-500 text-xs" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
@@ -510,14 +510,14 @@ function SecurityInlineSection({ token }: { token: string }) {
           onClick={() => setExpanded(expanded === "history" ? null : "history")}
           className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition text-left"
         >
-          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-            <Clock className="h-4 w-4 text-slate-500" />
+          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+            <i className="fa fa-history text-blue-600 text-sm" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-slate-700">Lịch sử đăng nhập</p>
             <p className="text-xs text-slate-400">Xem các lần đăng nhập gần đây</p>
           </div>
-          <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${expanded === "history" ? "rotate-90" : ""}`} />
+          <i className={`fa fa-chevron-right text-slate-400 text-xs transition-transform ${expanded === "history" ? "rotate-90" : ""}`} />
         </button>
         {expanded === "history" && (
           <div className="px-5 pb-4">
@@ -536,8 +536,8 @@ function SecurityInlineSection({ token }: { token: string }) {
                       entry.status === "success" ? "bg-green-100" : "bg-red-100"
                     }`}>
                       {entry.status === "success"
-                        ? <i className="fa fa-check text-green-600 text-sm" />
-                        : <i className="fa fa-times text-red-500 text-sm" />}
+                        ? <i className="fa fa-check text-green-600 text-xs" />
+                        : <i className="fa fa-times text-red-500 text-xs" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
@@ -564,14 +564,14 @@ function SecurityInlineSection({ token }: { token: string }) {
           onClick={() => setExpanded(expanded === "sessions" ? null : "sessions")}
           className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition text-left"
         >
-          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-            <Shield className="h-4 w-4 text-slate-500" />
+          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+            <i className="fa fa-laptop text-purple-600 text-sm" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-slate-700">Thiết bị đang đăng nhập</p>
             <p className="text-xs text-slate-400">Quản lý và thu hồi phiên trên thiết bị khác</p>
           </div>
-          <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${expanded === "sessions" ? "rotate-90" : ""}`} />
+          <i className={`fa fa-chevron-right text-slate-400 text-xs transition-transform ${expanded === "sessions" ? "rotate-90" : ""}`} />
         </button>
         {expanded === "sessions" && (
           <div className="px-5 pb-4">
@@ -594,7 +594,7 @@ function SecurityInlineSection({ token }: { token: string }) {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       s.isCurrent ? "bg-blue-100" : "bg-slate-100"
                     }`}>
-                      <Shield className={`h-4 w-4 ${s.isCurrent ? "text-blue-600" : "text-slate-400"}`} />
+                      <i className={`fa fa-desktop text-sm ${s.isCurrent ? "text-blue-600" : "text-slate-400"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -643,18 +643,18 @@ function NotificationPrefsSection({ token }: { token: string }) {
   };
 
   const notifItems = [
-    { key: "notifyOrderStatus", label: "Trạng thái đơn hàng", desc: "Nhận email khi đơn hàng được cập nhật trạng thái", icon: "\uD83D\uDCE6" },
-    { key: "notifyOnLogin", label: "Cảnh báo đăng nhập", desc: "Nhận email khi có đăng nhập mới vào tài khoản", icon: "\uD83D\uDD14" },
-    { key: "notifyNewProduct", label: "Sản phẩm mới", desc: "Nhận thông báo khi có sản phẩm mới được thêm", icon: "\u2728" },
-    { key: "notifyFlashSale", label: "Flash Sale", desc: "Nhận cảnh báo khi có chương trình flash sale", icon: "\u26A1" },
-    { key: "notifyPromotion", label: "Khuyến mãi & ưu đãi", desc: "Nhận email về mã giảm giá và chương trình ưu đãi", icon: "\uD83C\uDF81" },
+    { key: "notifyOrderStatus", label: "Trạng thái đơn hàng", desc: "Nhận email khi đơn hàng được cập nhật trạng thái", icon: "fa-box", color: "bg-blue-100 text-blue-600" },
+    { key: "notifyOnLogin", label: "Cảnh báo đăng nhập", desc: "Nhận email khi có đăng nhập mới vào tài khoản", icon: "fa-shield-alt", color: "bg-red-100 text-red-600" },
+    { key: "notifyNewProduct", label: "Sản phẩm mới", desc: "Nhận thông báo khi có sản phẩm mới được thêm", icon: "fa-star", color: "bg-yellow-100 text-yellow-600" },
+    { key: "notifyFlashSale", label: "Flash Sale", desc: "Nhận cảnh báo khi có chương trình flash sale", icon: "fa-bolt", color: "bg-orange-100 text-orange-600" },
+    { key: "notifyPromotion", label: "Khuyến mãi & ưu đãi", desc: "Nhận email về mã giảm giá và chương trình ưu đãi", icon: "fa-gift", color: "bg-purple-100 text-purple-600" },
   ];
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-green-50 to-emerald-50">
         <div className="w-8 h-8 rounded-xl bg-green-500 flex items-center justify-center">
-          <span className="text-white text-base">🔔</span>
+          <i className="fa fa-bell text-white text-sm" />
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-800">Cài đặt thông báo</h3>
@@ -662,11 +662,13 @@ function NotificationPrefsSection({ token }: { token: string }) {
         </div>
       </div>
       <div className="divide-y divide-slate-100">
-        {notifItems.map(item => {
+          {notifItems.map(item => {
           const isOn = !!(prefs as any)[item.key];
           return (
             <div key={item.key} className="flex items-center gap-3 px-5 py-3.5">
-              <span className="text-lg flex-shrink-0">{item.icon}</span>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                <i className={`fa ${item.icon} text-sm`} />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-700">{item.label}</p>
                 <p className="text-[11px] text-slate-400 mt-0.5">{item.desc}</p>
