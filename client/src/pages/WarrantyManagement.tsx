@@ -55,13 +55,12 @@ export default function WarrantyManagement() {
     <DashboardLayoutCustom>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Shield className="h-6 w-6 text-purple-500" />
-              Quản Lý Bảo Hành
-            </h1>
-            <p className="text-muted-foreground mt-1">Danh sách tất cả yêu cầu bảo hành</p>
+            <h1 className="ak-page-title">Quản Lý Bảo Hành</h1>
+            <p className="ak-page-subtitle">Danh sách sản phẩm đang trong thời hạn bảo hành</p>
           </div>
+        </div>
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

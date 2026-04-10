@@ -82,12 +82,12 @@ export default function LoyaltyAdmin() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Star className="h-6 w-6 text-yellow-500" /> Điểm Tích Lũy
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">Quản lý chương trình tích điểm và phần thưởng</p>
+            <h1 className="ak-page-title">Chương Trình Tích Điểm</h1>
+            <p className="ak-page-subtitle">Quản lý điểm thưởng và phần thưởng khách hàng</p>
           </div>
+        </div>
           {tab === "rewards" && <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700"><Plus className="h-4 w-4 mr-1.5" /> Thêm phần thưởng</Button>}
         </div>
 

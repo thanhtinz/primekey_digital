@@ -117,10 +117,12 @@ export default function AvatarGalleryAdmin() {
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Kho Ảnh Avatar</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý ảnh avatar để khách hàng lựa chọn trong trang cá nhân</p>
+            <h1 className="ak-page-title">Thư Viện Avatar</h1>
+            <p className="ak-page-subtitle">Quản lý bộ sưu tập avatar cho khách hàng</p>
           </div>
+        </div>
           <Badge variant="outline" className="text-sm px-3 py-1">
             <span className="text-teal-600 font-semibold">{activeCount}</span>
             <span className="text-gray-400 mx-1">/</span>

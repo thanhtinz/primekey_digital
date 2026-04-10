@@ -34,7 +34,7 @@ export function registerAuthRoutes(app: Express) {
       }
       // If input doesn't contain @, treat as username and append domain
       if (!loginEmail.includes("@")) {
-        loginEmail = `${loginEmail}@invoiceprime.com`;
+        loginEmail = `${loginEmail}@staff.local`;
       }
 
       const user = await authService.loginUser(loginEmail, password);

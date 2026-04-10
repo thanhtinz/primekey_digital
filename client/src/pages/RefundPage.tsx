@@ -50,13 +50,12 @@ export default function RefundPage() {
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <RotateCcw className="w-6 h-6 text-red-400" />
-              Hoàn Tiền (Refund)
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">Quản lý các yêu cầu hoàn tiền từ khách hàng</p>
+            <h1 className="ak-page-title">Quản Lý Hoàn Tiền</h1>
+            <p className="ak-page-subtitle">Xử lý yêu cầu hoàn tiền từ khách hàng</p>
           </div>
+        </div>
           <Button onClick={() => setDialogOpen(true)} className="bg-red-600 hover:bg-red-700 text-white gap-2">
             <Plus className="w-4 h-4" /> Tạo Yêu Cầu
           </Button>

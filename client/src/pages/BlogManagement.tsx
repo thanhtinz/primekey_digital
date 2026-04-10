@@ -78,10 +78,10 @@ export default function BlogManagement() {
   return (
     <DashboardLayoutCustom>
       <div className="p-4 md:p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <BookOpen className="h-6 w-6 text-blue-600" />
-            <h1 className="text-xl font-bold text-gray-900">Quản lý Blog</h1>
+        <div className="ak-page-header">
+          <div>
+            <h1 className="ak-page-title">Quản Lý Blog</h1>
+            <p className="ak-page-subtitle">Tạo và quản lý bài viết blog</p>
           </div>
           <div className="flex gap-2">
             <button

@@ -73,10 +73,12 @@ export default function FeedbacksAdmin() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Quản Lý Feedback</h1>
-            <p className="text-muted-foreground mt-1">Duyệt và quản lý đánh giá từ khách hàng</p>
+            <h1 className="ak-page-title">Quản Lý Feedback</h1>
+            <p className="ak-page-subtitle">Xem và xử lý phản hồi từ khách hàng</p>
           </div>
+        </div>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-1" />
             Làm mới

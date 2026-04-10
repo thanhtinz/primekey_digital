@@ -65,10 +65,12 @@ export default function WalletManagement() {
     <DashboardLayoutCustom>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold">Quản lý ví điện tử</h1>
-            <p className="text-muted-foreground text-sm mt-1">Xem lịch sử giao dịch và điều chỉnh số dư khách hàng</p>
+            <h1 className="ak-page-title">Quản Lý Ví Điện Tử</h1>
+            <p className="ak-page-subtitle">Theo dõi số dư và giao dịch ví của khách hàng</p>
           </div>
+        </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="w-4 h-4 mr-1" /> Làm mới

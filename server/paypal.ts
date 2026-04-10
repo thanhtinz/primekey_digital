@@ -95,7 +95,7 @@ export async function createPayPalPaymentLink(
         application_context: {
           return_url: data.returnUrl,
           cancel_url: data.cancelUrl,
-          brand_name: "Invoice Prime",
+          brand_name: "My Store",
           locale: "vi_VN",
           user_action: "PAY_NOW",
         },

@@ -43,12 +43,11 @@ export default function WarrantyRequestManagement() {
     <DashboardLayoutCustom>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Shield className="w-6 h-6 text-blue-400" />
-            Yêu Cầu Bảo Hành Online
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">Quản lý các yêu cầu bảo hành từ khách hàng</p>
+        <div className="ak-page-header">
+          <div>
+            <h1 className="ak-page-title">Yêu Cầu Bảo Hành</h1>
+            <p className="ak-page-subtitle">Xử lý yêu cầu bảo hành từ khách hàng</p>
+          </div>
         </div>
 
         {/* Stats */}

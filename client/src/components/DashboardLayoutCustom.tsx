@@ -55,7 +55,7 @@ const adminNavGroups = [
       { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
       { label: "Gửi Thông Báo", href: "/admin/notifications", icon: Bell },
       { label: "Avatar Gallery", href: "/admin/avatar-gallery", icon: Image },
-      { label: "Embed Widget", href: "/embed-widget", icon: Code },
+      { label: "Liên Hệ", href: "/contact-settings", icon: MessageSquare },
     ],
   },
   {

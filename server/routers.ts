@@ -3056,7 +3056,7 @@ export const appRouter = router({
         if (!ctx.user || ctx.user.role !== "admin") throw new Error("Forbidden");
         const bcrypt = await import("bcryptjs");
         const hashed = await bcrypt.hash(input.password, 10);
-        const email = `${input.username}@invoiceprime.com`;
+        const email = `${input.username}@staff.local`;
         await db.createStaff(email, hashed, input.name, input.role);
         await db.createActivityLog(ctx.user.id, "CREATE_STAFF", "user");
         return { success: true };

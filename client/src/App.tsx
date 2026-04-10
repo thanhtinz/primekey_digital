@@ -38,7 +38,7 @@ const ThankYou = lazy(() => import("./pages/ThankYou"));
 const TelegramSettings = lazy(() => import("./pages/TelegramSettings"));
 const WarrantyLookup = lazy(() => import("./pages/WarrantyLookup"));
 const ThankYouCustom = lazy(() => import("./pages/ThankYouCustom"));
-const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
+const ContactWidget = lazy(() => import("./pages/ContactWidget"));
 
 // Batch 4: New pages
 const WarrantySettingsPage = lazy(() => import("./pages/WarrantySettingsPage"));
@@ -249,7 +249,7 @@ function Router() {
         <Route path="/settings/telegram" component={() => isAdmin ? <TelegramSettings /> : <ForbiddenPage />} />
         <Route path="/settings/thank-you" component={() => isAdmin ? <ThankYouCustom /> : <ForbiddenPage />} />
 
-        <Route path="/embed-widget" component={() => isAdmin ? <EmbedWidget /> : <ForbiddenPage />} />
+        <Route path="/contact-settings" component={() => isAdmin ? <ContactWidget /> : <ForbiddenPage />} />
         {/* Batch 6 routes */}
         <Route path="/settings/categories" component={() => isAdmin ? <CategorySettings /> : <ForbiddenPage />} />
         <Route path="/settings/tags" component={() => isAdmin ? <TagSettings /> : <ForbiddenPage />} />

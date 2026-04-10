@@ -244,10 +244,12 @@ export default function InvoiceTemplates() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Mẫu Hóa Đơn</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Quản lý các mẫu hóa đơn của bạn</p>
+            <h1 className="ak-page-title">Mẫu Hóa Đơn</h1>
+            <p className="ak-page-subtitle">Tùy chỉnh giao diện hóa đơn</p>
           </div>
+        </div>
           <Button
             onClick={() => { resetForm(); setIsOpen(true); }}
             className="gap-2 bg-blue-600 hover:bg-blue-700"

@@ -57,13 +57,12 @@ export default function VATInvoicePage() {
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Receipt className="w-6 h-6 text-emerald-400" />
-              Hóa Đơn VAT
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">Quản lý yêu cầu xuất hóa đơn VAT từ khách hàng</p>
+            <h1 className="ak-page-title">Hóa Đơn VAT</h1>
+            <p className="ak-page-subtitle">Quản lý hóa đơn giá trị gia tăng</p>
           </div>
+        </div>
           <Button onClick={() => setDialogOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
             <Plus className="w-4 h-4" /> Tạo Yêu Cầu
           </Button>

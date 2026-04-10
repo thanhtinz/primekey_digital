@@ -94,12 +94,12 @@ export default function ReferralAdmin() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Users2 className="h-6 w-6 text-blue-600" /> Giới Thiệu & Hoa Hồng
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">Quản lý chương trình giới thiệu bạn bè và yêu cầu rút hoa hồng</p>
+            <h1 className="ak-page-title">Chương Trình Giới Thiệu</h1>
+            <p className="ak-page-subtitle">Quản lý hoa hồng và rút tiền giới thiệu</p>
           </div>
+        </div>
         </div>
 
         {/* KPI Cards */}

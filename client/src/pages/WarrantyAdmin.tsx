@@ -256,9 +256,11 @@ export default function WarrantyAdmin() {
   return (
     <DashboardLayoutCustom>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Quản Lý Bảo Hành</h1>
-          <p className="text-sm text-muted-foreground mt-1">Quản lý bảo hành sản phẩm và yêu cầu từ khách hàng</p>
+        <div className="ak-page-header">
+          <div>
+            <h1 className="ak-page-title">Quản Lý Bảo Hành</h1>
+            <p className="ak-page-subtitle">Quản lý bảo hành sản phẩm và yêu cầu từ khách hàng</p>
+          </div>
         </div>
         <Tabs defaultValue="warranties">
           <TabsList className="bg-gray-100">

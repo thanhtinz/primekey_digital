@@ -5,14 +5,61 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Building2, Bell, Shield, CreditCard, Loader2, Eye, EyeOff, ImageIcon, Upload, X, Globe } from "@/components/Icon";
+import { Save, Building2, Bell, Shield, CreditCard, Loader2, Eye, EyeOff, ImageIcon, Upload, X, Globe, Webhook, Check, AlertCircle, Copy, RefreshCw, CheckCircle2, XCircle, Send, Bot, ExternalLink, Receipt, Percent, Star, Users2, ShoppingBag, Heart, Trophy, BookOpen, Ticket, Wallet, MessageSquare, ToggleLeft, Tag, Plus, Trash2, Pencil } from "@/components/Icon";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 
+// FeatureFlags icons map
+const FEATURE_ICONS: Record<string, React.ElementType> = {
+  points: Star,
+  warranty: Shield,
+  referral: Users2,
+  flash_sale: ShoppingBag,
+  wishlist: Heart,
+  leaderboard: Trophy,
+  blog: BookOpen,
+  coupon: Ticket,
+  wallet: Wallet,
+  review: MessageSquare,
+};
+const CATEGORY_LABELS: Record<string, string> = {
+  loyalty: "Khách hàng thân thiết",
+  service: "Dịch vụ",
+  marketing: "Marketing & Khuyến mãi",
+  ux: "Trải nghiệm người dùng",
+  gamification: "Gamification",
+  content: "Nội dung",
+  payment: "Thanh toán",
+  general: "Chung",
+};
+
 export default function Settings() {
   const [, setLocation] = useLocation();
+
+  // PayOS state
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showChecksum, setShowChecksum] = useState(false);
+  const [payosSaving, setPayosSaving] = useState(false);
+  const [payosTesting, setPayosTesting] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "error">("idle");
+  const [payosForm, setPayosForm] = useState({ payosApiKey: "", payosClientId: "", payosChecksumKey: "" });
+  const webhookUrl = `${window.location.origin}/api/webhooks/payos`;
+
+  // Telegram state
+  const [telegramForm, setTelegramForm] = useState({ telegramBotToken: "", telegramChatId: "", telegramEnabled: false });
+  const [telegramSaving, setTelegramSaving] = useState(false);
+
+  // Tax state
+  const [taxForm, setTaxForm] = useState({ taxName: "VAT", taxRate: 10, isEnabled: false });
+  const [taxSaving, setTaxSaving] = useState(false);
+
+  // Feature flags state
+  const [loadingFlagKey, setLoadingFlagKey] = useState<string | null>(null);
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
@@ -49,6 +96,32 @@ export default function Settings() {
   const updateBrand = trpc.settings.updateBrand.useMutation();
   const utils = trpc.useUtils();
 
+  // PayOS queries
+  const { data: payosConfig } = trpc.paymentGateways.get.useQuery();
+  const updateGateway = trpc.paymentGateways.update.useMutation();
+  const testConnection = trpc.paymentGateways.testConnection.useMutation();
+
+  // Telegram queries
+  const saveTelegram = trpc.settingsExt.updateTelegram.useMutation({
+    onSuccess: () => { toast.success("Đã lưu cấu hình Telegram!"); setTelegramSaving(false); },
+    onError: (e: any) => { toast.error(e.message || "Lưu thất bại"); setTelegramSaving(false); },
+  });
+  const testTelegram = trpc.settingsExt.testTelegram.useMutation({
+    onSuccess: () => toast.success("Gửi tin nhắn test thành công!"),
+    onError: (e: any) => toast.error(e.message || "Test thất bại"),
+  });
+
+  // Tax queries
+  const { data: taxData } = trpc.tax.getSettings.useQuery();
+  const saveTax = trpc.tax.save.useMutation({
+    onSuccess: () => { toast.success("Đã lưu cấu hình thuế!"); setTaxSaving(false); },
+    onError: (e: any) => { toast.error(e.message || "Lưu thất bại"); setTaxSaving(false); },
+  });
+
+  // Feature flags queries
+  const { data: featureFlags, isLoading: flagsLoading, refetch: refetchFlags } = trpc.featureFlags.getAll.useQuery();
+  const updateFlag = trpc.featureFlags.update.useMutation();
+
   useEffect(() => {
     if (settingsData) {
       setCompanyData({
@@ -70,6 +143,54 @@ export default function Settings() {
       if ((settingsData as any).faviconUrl) setFaviconPreview((settingsData as any).faviconUrl);
     }
   }, [settingsData]);
+
+  // Load PayOS config
+  useEffect(() => {
+    if (payosConfig) {
+      setPayosForm({
+        payosApiKey: payosConfig.payosApiKey || "",
+        payosClientId: payosConfig.payosClientId || "",
+        payosChecksumKey: payosConfig.payosChecksumKey || "",
+      });
+    }
+  }, [payosConfig]);
+
+  // Load Telegram config
+  useEffect(() => {
+    if (settingsData) {
+      const s = settingsData as any;
+      setTelegramForm({
+        telegramBotToken: s.telegramBotToken || "",
+        telegramChatId: s.telegramChatId || "",
+        telegramEnabled: s.telegramEnabled ?? false,
+      });
+    }
+  }, [settingsData]);
+
+  // Load Tax config
+  useEffect(() => {
+    if (taxData) {
+      setTaxForm({
+        taxName: taxData.taxName || "VAT",
+        taxRate: Number(taxData.taxRate ?? 10),
+        isEnabled: taxData.isEnabled ?? false,
+      });
+    }
+  }, [taxData]);
+
+  // Feature flag toggle handler
+  const handleToggleFlag = async (key: string, enabled: boolean) => {
+    setLoadingFlagKey(key);
+    try {
+      await updateFlag.mutateAsync({ key, enabled });
+      await refetchFlags();
+      toast.success(`Đã ${enabled ? "bật" : "tắt"} tính năng thành công`);
+    } catch {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại");
+    } finally {
+      setLoadingFlagKey(null);
+    }
+  };
 
   // Apply favicon dynamically
   useEffect(() => {
@@ -232,11 +353,17 @@ export default function Settings() {
               <TabsTrigger value="notifications" className="gap-1.5 text-sm">
                 <Bell className="h-4 w-4" /> Thông Báo
               </TabsTrigger>
-              <TabsTrigger value="payments" className="gap-1.5 text-sm">
-                <CreditCard className="h-4 w-4" /> Thanh Toán
-              </TabsTrigger>
               <TabsTrigger value="security" className="gap-1.5 text-sm">
                 <Shield className="h-4 w-4" /> Bảo Mật
+              </TabsTrigger>
+              <TabsTrigger value="payos" className="gap-1.5 text-sm">
+                <CreditCard className="h-4 w-4" /> PayOS
+              </TabsTrigger>
+              <TabsTrigger value="telegram" className="gap-1.5 text-sm">
+                <Send className="h-4 w-4" /> Telegram
+              </TabsTrigger>
+              <TabsTrigger value="tax-features" className="gap-1.5 text-sm">
+                <Receipt className="h-4 w-4" /> Thuế & Tính năng
               </TabsTrigger>
             </TabsList>
           </div>
@@ -574,46 +701,6 @@ export default function Settings() {
           </TabsContent>
 
           {/* Payments Tab */}
-          <TabsContent value="payments">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card
-                className="shadow-sm border border-gray-100 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all"
-                onClick={() => setLocation("/settings/payos")}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                      <CreditCard className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">PayOS</h3>
-                      <p className="text-sm text-gray-500 mt-1">Cổng thanh toán PayOS - hỗ trợ QR Code, chuyển khoản ngân hàng</p>
-                      <span className="inline-block mt-2 text-xs text-blue-600 font-medium">Cấu hình →</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card
-                className="shadow-sm border border-gray-100 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all"
-                onClick={() => setLocation("/settings/paypal")}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                      <CreditCard className="h-6 w-6 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">PayPal</h3>
-                      <p className="text-sm text-gray-500 mt-1">Cổng thanh toán PayPal - hỗ trợ thẻ quốc tế, USD</p>
-                      <span className="inline-block mt-2 text-xs text-indigo-600 font-medium">Cấu hình →</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
           {/* Security Tab */}
           <TabsContent value="security">
             <Card className="shadow-sm border border-gray-100">
@@ -694,6 +781,352 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* PayOS Tab */}
+          <TabsContent value="payos">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <Card className="shadow-sm border border-gray-100">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-blue-600" />
+                    Thông Tin API PayOS
+                  </CardTitle>
+                  <CardDescription>Lấy thông tin từ PayOS Developer Dashboard</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Client ID</Label>
+                    <Input
+                      value={payosForm.payosClientId}
+                      onChange={(e) => setPayosForm({ ...payosForm, payosClientId: e.target.value })}
+                      placeholder="Nhập Client ID từ PayOS Dashboard"
+                      className="mt-1.5 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">API Key</Label>
+                    <div className="relative mt-1.5">
+                      <Input
+                        type={showApiKey ? "text" : "password"}
+                        value={payosForm.payosApiKey}
+                        onChange={(e) => setPayosForm({ ...payosForm, payosApiKey: e.target.value })}
+                        placeholder="Nhập API Key"
+                        className="pr-10 font-mono"
+                      />
+                      <button type="button" onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">API Key bí mật, không chia sẻ với ai</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Checksum Key</Label>
+                    <div className="relative mt-1.5">
+                      <Input
+                        type={showChecksum ? "text" : "password"}
+                        value={payosForm.payosChecksumKey}
+                        onChange={(e) => setPayosForm({ ...payosForm, payosChecksumKey: e.target.value })}
+                        placeholder="Nhập Checksum Key"
+                        className="pr-10 font-mono"
+                      />
+                      <button type="button" onClick={() => setShowChecksum(!showChecksum)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        {showChecksum ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Dùng để xác thực chữ ký webhook từ PayOS</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={async () => {
+                        setPayosSaving(true);
+                        try {
+                          await updateGateway.mutateAsync(payosForm);
+                          await utils.paymentGateways.get.invalidate();
+                          toast.success("Đã lưu cấu hình PayOS!");
+                        } catch { toast.error("Lưu thất bại"); }
+                        finally { setPayosSaving(false); }
+                      }}
+                      disabled={payosSaving}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {payosSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                      Lưu Cấu Hình
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        setPayosTesting(true);
+                        try {
+                          await updateGateway.mutateAsync(payosForm);
+                          const r = await testConnection.mutateAsync({ gateway: "payos" });
+                          r.success ? (setConnectionStatus("success"), toast.success(r.message || "Kết nối thành công!")) : (setConnectionStatus("error"), toast.error(r.message || "Kết nối thất bại"));
+                        } catch (e: any) { setConnectionStatus("error"); toast.error(e.message || "Lỗi kết nối"); }
+                        finally { setPayosTesting(false); }
+                      }}
+                      disabled={payosTesting}
+                    >
+                      {payosTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {connectionStatus !== "idle" && (
+                    <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                      connectionStatus === "success" ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"
+                    }`}>
+                      {connectionStatus === "success" ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                      {connectionStatus === "success" ? "Kết nối PayOS thành công" : "Kết nối thất bại, kiểm tra lại API"}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm border border-gray-100">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Webhook className="h-4 w-4 text-purple-600" />
+                    Webhook PayOS
+                  </CardTitle>
+                  <CardDescription>URL webhook để nhận thông báo thanh toán từ PayOS</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Webhook URL</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs font-mono text-gray-700 flex-1 break-all">{`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/payos`}</code>
+                      <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/payos`); toast.success("Đã sao chép!"); }}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-700">
+                      <strong>Hướng dẫn:</strong> Dán URL này vào mục "Webhook URL" trên PayOS Dashboard để nhận thông báo thanh toán tự động.
+                    </p>
+                  </div>
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-xs text-amber-700">Lấy Client ID, API Key và Checksum Key từ <a href="https://my.payos.vn" target="_blank" rel="noreferrer" className="underline font-medium">my.payos.vn</a> → Tích hợp → Thông tin tích hợp</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Telegram Tab */}
+          <TabsContent value="telegram">
+            <div className="max-w-2xl space-y-5">
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-blue-700">
+                    <Bot className="h-4 w-4" />
+                    Hướng dẫn cài đặt
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-blue-700 space-y-1.5">
+                  <p><strong>Bước 1:</strong> Mở Telegram, tìm @BotFather và gõ <code className="bg-blue-100 px-1 rounded">/newbot</code></p>
+                  <p><strong>Bước 2:</strong> Đặt tên bot, BotFather sẽ cấp <strong>Bot Token</strong></p>
+                  <p><strong>Bước 3:</strong> Nhắn tin cho bot, truy cập <code className="bg-blue-100 px-1 rounded">api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> để lấy <strong>Chat ID</strong></p>
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm border border-gray-100">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Send className="h-4 w-4 text-blue-600" />
+                    Cấu Hình Bot Telegram
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Bot Token *</Label>
+                    <Input
+                      type="password"
+                      placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+                      value={telegramForm.telegramBotToken}
+                      onChange={e => setTelegramForm(f => ({ ...f, telegramBotToken: e.target.value }))}
+                      className="mt-1.5 font-mono"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Token từ @BotFather</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Chat ID *</Label>
+                    <Input
+                      placeholder="-1001234567890 hoặc 123456789"
+                      value={telegramForm.telegramChatId}
+                      onChange={e => setTelegramForm(f => ({ ...f, telegramChatId: e.target.value }))}
+                      className="mt-1.5"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">ID của chat/group nhận thông báo</p>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">Bật thông báo Telegram</p>
+                      <p className="text-xs text-gray-500">Nhận thông báo khi có đơn mới, thanh toán</p>
+                    </div>
+                    <Switch
+                      checked={telegramForm.telegramEnabled}
+                      onCheckedChange={v => setTelegramForm(f => ({ ...f, telegramEnabled: v }))}
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => { setTelegramSaving(true); saveTelegram.mutate(telegramForm); }}
+                      disabled={telegramSaving}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {telegramSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                      Lưu Cấu Hình
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => testTelegram.mutate()}
+                      disabled={testTelegram.isPending || !telegramForm.telegramBotToken || !telegramForm.telegramChatId}
+                    >
+                      {testTelegram.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Tax & Features Tab */}
+          <TabsContent value="tax-features">
+            <div className="space-y-5">
+              {/* Tax Section */}
+              <Card className="shadow-sm border border-gray-100">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Receipt className="h-4 w-4 text-blue-600" />
+                    Cấu Hình Thuế
+                  </CardTitle>
+                  <CardDescription>Thuế sẽ được tự động tính vào tổng tiền khi thanh toán</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">Kích hoạt thuế</p>
+                      <p className="text-xs text-gray-500">Bật/tắt tính thuế khi thanh toán</p>
+                    </div>
+                    <Switch checked={taxForm.isEnabled} onCheckedChange={v => setTaxForm(f => ({ ...f, isEnabled: v }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Tên thuế</Label>
+                      <Input
+                        value={taxForm.taxName}
+                        onChange={(e) => setTaxForm(f => ({ ...f, taxName: e.target.value }))}
+                        placeholder="VD: VAT, GST"
+                        disabled={!taxForm.isEnabled}
+                        className="mt-1.5"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Tỷ lệ (%)</Label>
+                      <div className="relative mt-1.5">
+                        <Input
+                          type="number" min={0} max={100} step={0.1}
+                          value={taxForm.taxRate}
+                          onChange={(e) => setTaxForm(f => ({ ...f, taxRate: parseFloat(e.target.value) || 0 }))}
+                          className="pr-10"
+                          disabled={!taxForm.isEnabled}
+                        />
+                        <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+                  {taxForm.isEnabled && (
+                    <p className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg">
+                      Đơn hàng 100,000đ với thuế {taxForm.taxRate}% → Tổng: {(100000 * (1 + taxForm.taxRate / 100)).toLocaleString("vi-VN")}đ
+                    </p>
+                  )}
+                  <Button
+                    onClick={() => { setTaxSaving(true); saveTax.mutate(taxForm); }}
+                    disabled={taxSaving}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {taxSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                    Lưu Cấu Hình Thuế
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Feature Flags Section */}
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <ToggleLeft className="h-4 w-4 text-blue-600" />
+                  Quản Lý Tính Năng
+                </h3>
+                {flagsLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {(() => {
+                      const grouped: Record<string, typeof featureFlags> = {};
+                      if (featureFlags) {
+                        for (const flag of featureFlags) {
+                          const cat = flag.category || "general";
+                          if (!grouped[cat]) grouped[cat] = [];
+                          grouped[cat]!.push(flag);
+                        }
+                      }
+                      const CATEGORY_COLORS: Record<string, string> = {
+                        loyalty: "bg-yellow-100 text-yellow-800",
+                        service: "bg-blue-100 text-blue-800",
+                        marketing: "bg-pink-100 text-pink-800",
+                        ux: "bg-purple-100 text-purple-800",
+                        gamification: "bg-orange-100 text-orange-800",
+                        content: "bg-green-100 text-green-800",
+                        payment: "bg-teal-100 text-teal-800",
+                        general: "bg-slate-100 text-slate-800",
+                      };
+                      return Object.entries(grouped).map(([category, items]) => (
+                        <Card key={category} className="shadow-sm border border-gray-100">
+                          <CardHeader className="pb-2 pt-3 px-4">
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full w-fit ${CATEGORY_COLORS[category] || CATEGORY_COLORS.general}`}>
+                              {CATEGORY_LABELS[category] || category}
+                            </span>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-3 space-y-2">
+                            {(items || []).map((flag) => {
+                              const Icon = FEATURE_ICONS[flag.key] || ToggleLeft;
+                              const isUpdating = loadingFlagKey === flag.key;
+                              return (
+                                <div key={flag.key} className="flex items-center justify-between p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${flag.enabled ? "bg-blue-100" : "bg-gray-100"}`}>
+                                      <Icon className={`h-3.5 w-3.5 ${flag.enabled ? "text-blue-600" : "text-gray-400"}`} />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-1.5">
+                                        <p className="text-sm font-medium text-gray-800">{flag.label}</p>
+                                        <Badge variant={flag.enabled ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">
+                                          {flag.enabled ? "Đang bật" : "Đã tắt"}
+                                        </Badge>
+                                      </div>
+                                      {flag.description && <p className="text-xs text-gray-500">{flag.description}</p>}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {isUpdating && <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />}
+                                    <Switch
+                                      checked={flag.enabled}
+                                      onCheckedChange={(checked) => handleToggleFlag(flag.key, checked)}
+                                      disabled={isUpdating}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </CardContent>
+                        </Card>
+                      ));
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -89,13 +89,12 @@ export default function CategorySettings() {
       <div className="space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <FolderTree className="w-6 h-6 text-blue-500" />
-              Danh Mục Sản Phẩm
-            </h1>
-            <p className="text-gray-500 text-sm mt-0.5">Quản lý danh mục 2 cấp: danh mục lớn chứa danh mục nhỏ</p>
+            <h1 className="ak-page-title">Quản Lý Danh Mục</h1>
+            <p className="ak-page-subtitle">Tạo và quản lý danh mục sản phẩm</p>
           </div>
+        </div>
           <Button onClick={() => openCreate(null)} className="bg-blue-600 hover:bg-blue-700 gap-1.5" size="sm">
             <Plus className="w-4 h-4" /> Thêm Danh Mục Lớn
           </Button>

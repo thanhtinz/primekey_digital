@@ -39,10 +39,12 @@ export default function SpinWheelAdmin() {
     <DashboardLayoutCustom>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2"><RotateCcw className="w-6 h-6 text-purple-500" /> Cấu Hình Vòng Quay</h1>
-            <p className="text-gray-500 text-sm mt-1">Thiết lập vòng quay may mắn cho khách hàng</p>
+            <h1 className="ak-page-title">Vòng Quay May Mắn</h1>
+            <p className="ak-page-subtitle">Cấu hình vòng quay và phần thưởng</p>
           </div>
+        </div>
         </div>
 
         {/* Config */}

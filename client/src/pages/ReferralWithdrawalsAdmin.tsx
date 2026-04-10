@@ -63,8 +63,11 @@ export default function ReferralWithdrawalsAdmin() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Quản Lý Yêu Cầu Rút Thưởng</h1>
+      <div className="ak-page-header">
+        <div>
+          <h1 className="ak-page-title">Quản Lý Yêu Cầu Rút Thưởng</h1>
+          <p className="ak-page-subtitle">Xử lý yêu cầu rút hoa hồng giới thiệu</p>
+        </div>
         <Badge variant="outline" className="text-base px-3 py-1">
           {withdrawals.filter((w: any) => w.status === "pending").length} chờ duyệt
         </Badge>

@@ -104,13 +104,10 @@ export default function TagSettings() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto py-6 px-4">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-            <Tag className="w-5 h-5 text-blue-600" />
-          </div>
+        <div className="ak-page-header">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Quản lý Tag sản phẩm</h1>
-            <p className="text-sm text-gray-500">Tạo và quản lý các tag hiển thị trên sản phẩm</p>
+            <h1 className="ak-page-title">Quản Lý Tags</h1>
+            <p className="ak-page-subtitle">Tạo và quản lý các tag hiển thị trên sản phẩm</p>
           </div>
         </div>
 

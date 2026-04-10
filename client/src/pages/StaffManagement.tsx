@@ -44,13 +44,12 @@ export default function StaffManagement() {
     <DashboardLayoutCustom>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Users className="w-6 h-6 text-blue-400" />
-              Quản Lý Nhân Viên
-            </h1>
-            <p className="text-slate-400 mt-1">Tạo và quản lý tài khoản admin & nhân viên</p>
+            <h1 className="ak-page-title">Quản Lý Nhân Viên</h1>
+            <p className="ak-page-subtitle">Thêm và phân quyền tài khoản nhân viên</p>
           </div>
+        </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
@@ -67,7 +66,7 @@ export default function StaffManagement() {
                   <Label className="text-slate-300">Tên đăng nhập</Label>
                   <Input value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
                     placeholder="vd: nhanvien2" className="bg-slate-700 border-slate-600 text-white mt-1" />
-                  <p className="text-xs text-slate-400 mt-1">Email sẽ là: {form.username || "..."} @invoiceprime.com</p>
+                  <p className="text-xs text-slate-400 mt-1">Email sẽ là: {form.username || "..."} @staff.local</p>
                 </div>
                 <div>
                   <Label className="text-slate-300">Họ tên</Label>
@@ -120,7 +119,7 @@ export default function StaffManagement() {
                       {s.name || "—"}
                     </div>
                   </TableCell>
-                  <TableCell className="text-slate-300">{s.email?.replace("@invoiceprime.com", "")}</TableCell>
+                  <TableCell className="text-slate-300">{s.email?.replace("@staff.local", "")}</TableCell>
                   <TableCell>
                     <Select value={s.role} onValueChange={v => updateRoleMutation.mutate({ id: s.id, role: v as "user" | "admin" })}>
                       <SelectTrigger className="w-36 bg-slate-700 border-slate-600 text-white h-8 text-xs">

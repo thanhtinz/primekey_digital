@@ -35,10 +35,12 @@ export default function LoyaltyRewardsAdmin() {
     <DashboardLayoutCustom>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2"><Gift className="w-6 h-6 text-purple-500" /> Quản Lý Phần Thưởng</h1>
-            <p className="text-gray-500 text-sm mt-1">Tạo và quản lý các phần thưởng đổi điểm cho khách hàng</p>
+            <h1 className="ak-page-title">Phần Thưởng Tích Điểm</h1>
+            <p className="ak-page-subtitle">Quản lý danh sách phần thưởng đổi điểm</p>
           </div>
+        </div>
           <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Thêm phần thưởng</Button>
         </div>
 

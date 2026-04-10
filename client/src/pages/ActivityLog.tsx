@@ -39,13 +39,12 @@ export default function ActivityLog() {
     <DashboardLayoutCustom>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <History className="w-6 h-6 text-blue-400" />
-              Lịch Sử Hoạt Động
-            </h1>
-            <p className="text-slate-400 mt-1">Theo dõi mọi hành động trong hệ thống</p>
+            <h1 className="ak-page-title">Nhật Ký Hoạt Động</h1>
+            <p className="ak-page-subtitle">Theo dõi các thao tác trong hệ thống</p>
           </div>
+        </div>
         </div>
 
         <div className="relative">

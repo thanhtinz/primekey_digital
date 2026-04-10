@@ -134,13 +134,12 @@ export default function CouponSettings() {
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Tag className="h-6 w-6 text-blue-500" />
-              Mã Giảm Giá
-            </h1>
-            <p className="text-muted-foreground mt-1">Quản lý và theo dõi hiệu quả các chương trình giảm giá</p>
+            <h1 className="ak-page-title">Quản Lý Mã Giảm Giá</h1>
+            <p className="ak-page-subtitle">Tạo và quản lý các coupon khuyến mãi</p>
           </div>
+        </div>
           <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4 mr-2" />
             Tạo Mã Giảm Giá

@@ -140,15 +140,12 @@ export default function AnnouncementManagement() {
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
+          <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Megaphone className="w-6 h-6 text-primary" />
-              Quản lý Thông Báo
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Tạo banner và popup thông báo hiển thị trên trang khách hàng
-            </p>
+            <h1 className="ak-page-title">Quản Lý Thông Báo</h1>
+            <p className="ak-page-subtitle">Tạo và quản lý thông báo hiển thị cho khách hàng</p>
           </div>
+        </div>
           <Button onClick={openCreate} className="gap-2">
             <Plus className="w-4 h-4" />
             Tạo thông báo

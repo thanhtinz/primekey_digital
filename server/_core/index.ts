@@ -35,6 +35,9 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // ── Trust Proxy (required for rate-limit + correct IP behind reverse proxy) ──
+  app.set("trust proxy", 1);
+
   // ── Security Headers (helmet) ──
   app.use(helmet({
     contentSecurityPolicy: false, // Disabled to allow inline scripts/styles in SPA

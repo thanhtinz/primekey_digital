@@ -88,9 +88,11 @@ export default function AdminNotifications() {
   return (
     <DashboardLayoutCustom>
       <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gửi thông báo</h1>
-          <p className="text-muted-foreground text-sm mt-1">Gửi thông báo đến khách hàng về đơn hàng, khuyến mãi, v.v.</p>
+        <div className="ak-page-header">
+          <div>
+            <h1 className="ak-page-title">Thông Báo Hệ Thống</h1>
+            <p className="ak-page-subtitle">Quản lý thông báo đến admin</p>
+          </div>
         </div>
 
         <Card>
