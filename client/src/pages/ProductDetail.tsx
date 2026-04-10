@@ -417,9 +417,6 @@ export default function ProductDetail() {
                               )}
                             </div>
                           )}
-                          <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 justify-end hover:text-blue-600 transition-colors md:hidden">
-                            🛒 Order
-                          </button>
                         </div>
                       </div>
                     </div>
