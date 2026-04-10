@@ -855,6 +855,7 @@ export const banners = mysqlTable("banners", {
   linkUrl: varchar("linkUrl", { length: 500 }), // link khi click banner
   sortOrder: int("sortOrder").default(0),
   isActive: boolean("isActive").default(true),
+  targetPages: text("targetPages"), // JSON array: ["home","products","all"] etc.
   createdAt: timestamp("createdAt_bn").defaultNow().notNull(),
 });
 export type Banner = typeof banners.$inferSelect;
@@ -990,6 +991,7 @@ export const siteAnnouncements = mysqlTable("site_announcements", {
   type: mysqlEnum("sa_type", ["info", "success", "warning", "error"]).default("info"),
   isActive: boolean("isActive").default(true),
   showAsPopup: boolean("showAsPopup").default(false),
+  targetPages: text("targetPages"), // JSON array: ["home","products","all"] etc.
   startAt: timestamp("startAt").notNull().defaultNow(),
   endAt: timestamp("endAt"),
   createdAt: timestamp("createdAt_sa").defaultNow().notNull(),

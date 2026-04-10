@@ -11,6 +11,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import webhookRouter from "../webhooks";
+import { checkLicenseOnStartup, licenseMiddleware } from "../license";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -72,6 +73,10 @@ async function startServer() {
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
+  // ── License Check ──
+  // Apply license middleware to all API routes (skip webhooks + auth)
+  app.use("/api/trpc", licenseMiddleware);
+
   // Auth routes (login, logout, register)
   registerAuthRoutes(app);
   // OAuth callback disabled: using email/password auth instead
@@ -99,6 +104,9 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Check license on startup (non-blocking)
+  await checkLicenseOnStartup();
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);

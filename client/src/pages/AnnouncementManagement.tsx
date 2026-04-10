@@ -27,12 +27,25 @@ const TYPE_CONFIG: Record<AnnouncementType, { label: string; color: string; bg: 
   error: { label: "Khẩn cấp", color: "bg-red-100 text-red-700 border-red-200", bg: "bg-red-500", icon: <AlertCircle className="w-4 h-4" /> },
 };
 
+const PAGE_OPTIONS = [
+  { value: "all", label: "Tất cả các trang" },
+  { value: "home", label: "Trang chủ" },
+  { value: "products", label: "Trang sản phẩm" },
+  { value: "product-detail", label: "Chi tiết sản phẩm" },
+  { value: "cart", label: "Giỏ hàng" },
+  { value: "checkout", label: "Thanh toán" },
+  { value: "track-order", label: "Tra cứu đơn hàng" },
+  { value: "blog", label: "Blog" },
+  { value: "my-account", label: "Tài khoản" },
+];
+
 interface AnnouncementForm {
   title: string;
   content: string;
   type: AnnouncementType;
   isActive: boolean;
   showAsPopup: boolean;
+  targetPages: string[];
   startAt: string;
   endAt: string;
 }
@@ -44,6 +57,7 @@ const toLocalDatetimeString = (d: Date) => {
 
 const defaultAnnForm: AnnouncementForm = {
   title: "", content: "", type: "info", isActive: true, showAsPopup: false,
+  targetPages: ["all"],
   startAt: toLocalDatetimeString(new Date()), endAt: "",
 };
 
@@ -165,6 +179,7 @@ export default function AnnouncementManagement() {
     setAnnForm({
       title: a.title, content: a.content, type: a.type as AnnouncementType,
       isActive: a.isActive, showAsPopup: a.showAsPopup,
+      targetPages: a.targetPages ? (() => { try { return JSON.parse(a.targetPages); } catch { return ["all"]; } })() : ["all"],
       startAt: a.startAt ? toLocalDatetimeString(new Date(a.startAt)) : toLocalDatetimeString(new Date()),
       endAt: a.endAt ? toLocalDatetimeString(new Date(a.endAt)) : "",
     });
@@ -175,6 +190,7 @@ export default function AnnouncementManagement() {
     const payload = {
       title: annForm.title.trim(), content: annForm.content.trim(), type: annForm.type,
       isActive: annForm.isActive, showAsPopup: annForm.showAsPopup,
+      targetPages: JSON.stringify(annForm.targetPages),
       startAt: annForm.startAt ? new Date(annForm.startAt) : undefined,
       endAt: annForm.endAt ? new Date(annForm.endAt) : undefined,
     };
@@ -481,6 +497,35 @@ export default function AnnouncementManagement() {
                 <Label>Ngày kết thúc <span className="text-gray-400 text-xs">(tùy chọn)</span></Label>
                 <Input type="datetime-local" value={annForm.endAt} onChange={e => setAnnForm(f => ({ ...f, endAt: e.target.value }))} />
               </div>
+            </div>
+            {/* Target Pages */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Hiển thị trên trang</Label>
+              <div className="grid grid-cols-2 gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                {PAGE_OPTIONS.map(opt => (
+                  <label key={opt.value} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      checked={annForm.targetPages.includes(opt.value)}
+                      onChange={e => {
+                        if (opt.value === "all") {
+                          setAnnForm(f => ({ ...f, targetPages: e.target.checked ? ["all"] : [] }));
+                        } else {
+                          setAnnForm(f => ({
+                            ...f,
+                            targetPages: e.target.checked
+                              ? [...f.targetPages.filter(p => p !== "all"), opt.value]
+                              : f.targetPages.filter(p => p !== opt.value),
+                          }));
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <span className="text-gray-700">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400">Chọn "Tất cả các trang" để hiển thị ở mọi nơi</p>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 bg-gray-50">
               <div>

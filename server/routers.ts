@@ -7260,6 +7260,7 @@ export const appRouter = router({
       type: z.enum(["info", "success", "warning", "error"]).default("info"),
       isActive: z.boolean().default(true),
       showAsPopup: z.boolean().default(false),
+      targetPages: z.string().optional(),
       startAt: z.date().optional(),
       endAt: z.date().optional(),
     })).mutation(async ({ ctx, input }) => {
@@ -7277,6 +7278,7 @@ export const appRouter = router({
       type: z.enum(["info", "success", "warning", "error"]).optional(),
       isActive: z.boolean().optional(),
       showAsPopup: z.boolean().optional(),
+      targetPages: z.string().optional(),
       startAt: z.date().optional(),
       endAt: z.date().optional(),
     })).mutation(async ({ ctx, input }) => {

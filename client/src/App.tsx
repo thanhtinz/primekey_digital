@@ -18,6 +18,7 @@ const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
 const Customers = lazy(() => import("./pages/Customers"));
 const CustomerDetail = lazy(() => import("./pages/CustomerDetail"));
 const Products = lazy(() => import("./pages/Products"));
+const ProductConfig = lazy(() => import("./pages/ProductConfig"));
 const InvoiceTemplates = lazy(() => import("./pages/InvoiceTemplates"));
 const EditInvoiceTemplate = lazy(() => import("./pages/EditInvoiceTemplate"));
 const EditInvoice = lazy(() => import("./pages/EditInvoice"));
@@ -250,6 +251,7 @@ function Router() {
         <Route path="/customers/:id" component={() => isAdmin ? <CustomerDetail /> : <ForbiddenPage />} />
         <Route path="/customers" component={() => isAdmin ? <Customers /> : <ForbiddenPage />} />
         <Route path="/products" component={() => isAdmin ? <Products /> : <ForbiddenPage />} />
+        <Route path="/products/:id/config" component={() => isAdmin ? <ProductConfig /> : <ForbiddenPage />} />
         <Route path="/templates/:id/edit" component={() => isAdmin ? <EditInvoiceTemplate /> : <ForbiddenPage />} />
         <Route path="/templates" component={() => isAdmin ? <InvoiceTemplates /> : <ForbiddenPage />} />
         <Route path="/reports" component={() => isAdmin ? <Reports /> : <ForbiddenPage />} />

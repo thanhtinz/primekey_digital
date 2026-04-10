@@ -1811,3 +1811,30 @@ todo updated
 - [x] Thêm mục "Liên kết Telegram" trong tab Hồ sơ & Bảo mật (TelegramLinkSection)
 - [x] Đổi card "Nhận thông báo email" thành dropdown/accordion cho gọn
 - [x] Thêm card "Nhận thông báo Telegram" dạng dropdown/accordion
+
+## Session 2026-04-10 - License, ProductConfig, Announcements, Dark Mode
+
+### License Key System (thêm vào src)
+- [ ] Schema: thêm bảng licenseKeys (key, domain, plan, expiresAt, isActive, activatedAt)
+- [ ] Backend: middleware kiểm tra LICENSE_KEY env khi server khởi động
+- [ ] Backend: endpoint /api/license/verify để validate key với server
+- [ ] Frontend: hiển thị thông báo license hết hạn/không hợp lệ
+
+### Trang cấu hình sản phẩm riêng
+- [ ] Tạo ProductConfig.tsx - trang riêng thay thế popup cấu hình
+- [ ] Route /products/:id/config trong App.tsx
+- [ ] Thêm nút "Cấu hình" trong ProductDetail/ProductList dẫn đến trang mới
+- [ ] Bỏ popup cấu hình sản phẩm cũ
+
+### Announcements - chọn trang hiển thị
+- [ ] Schema: thêm cột displayPages (JSON array) vào announcements table
+- [ ] Backend: cập nhật create/update announcement để lưu displayPages
+- [ ] Frontend: thêm checkbox chọn trang trong form tạo/sửa announcement
+- [ ] Client: filter announcement theo trang hiện tại (pathname)
+
+### Redesign Dark Mode + màu sắc động
+- [ ] index.css: định nghĩa đầy đủ CSS variables cho light/dark mode
+- [ ] Thay toàn bộ hardcode màu trong client pages bằng CSS variables
+- [ ] GlobalBrandApplier: áp dụng themeColor từ settings vào --primary
+- [ ] Client pages: thêm dark: classes cho các component chính
+- [ ] ThemeContext: persist theme preference vào localStorage

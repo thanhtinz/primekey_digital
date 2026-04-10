@@ -164,6 +164,7 @@ const ICON_MAP: Record<string, string> = {
   Users2: "fa-solid fa-user-group",
   Wallet: "fa-solid fa-wallet",
   Webhook: "fa-solid fa-webhook",
+  Warehouse: "fa-solid fa-warehouse",
   Wrench: "fa-solid fa-wrench",
   X: "fa-solid fa-xmark",
   XCircle: "fa-solid fa-circle-xmark",
@@ -407,6 +408,7 @@ export const UserPlus = makeIcon("UserPlus");
 export const Users = makeIcon("Users");
 export const Users2 = makeIcon("Users2");
 export const Wallet = makeIcon("Wallet");
+export const Warehouse = makeIcon("Warehouse");
 export const Webhook = makeIcon("Webhook");
 export const Wrench = makeIcon("Wrench");
 export const X = makeIcon("X");

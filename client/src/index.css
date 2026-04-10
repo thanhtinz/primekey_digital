@@ -377,3 +377,90 @@ i[class*="fa-"].animate-spin {
 .ak-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
 .ak-page-title{font-size:1.375rem;font-weight:700;color:#1e293b;letter-spacing:-.01em}
 .ak-page-subtitle{font-size:.8125rem;color:#64748b;margin-top:.125rem}
+
+/* ===== DARK MODE OVERRIDES - CLIENT PAGES ===== */
+.dark .min-h-screen { background-color: var(--background); color: var(--foreground); }
+
+/* Backgrounds */
+.dark .bg-white { background-color: var(--card) !important; }
+.dark .bg-gray-50 { background-color: oklch(0.18 0.005 285.823) !important; }
+.dark .bg-gray-100 { background-color: oklch(0.22 0.006 285.885) !important; }
+.dark .bg-gray-200 { background-color: oklch(0.26 0.006 286.033) !important; }
+.dark .bg-slate-50 { background-color: oklch(0.18 0.005 285.823) !important; }
+.dark .bg-slate-100 { background-color: oklch(0.22 0.006 285.885) !important; }
+.dark .bg-slate-700 { background-color: oklch(0.35 0.015 250) !important; }
+.dark .bg-slate-800 { background-color: oklch(0.28 0.012 250) !important; }
+.dark .bg-slate-900 { background-color: oklch(0.20 0.010 250) !important; }
+
+/* Text */
+.dark .text-gray-900 { color: oklch(0.95 0.005 65) !important; }
+.dark .text-gray-800 { color: oklch(0.90 0.005 65) !important; }
+.dark .text-gray-700 { color: oklch(0.85 0.005 65) !important; }
+.dark .text-gray-600 { color: oklch(0.75 0.010 65) !important; }
+.dark .text-gray-500 { color: oklch(0.65 0.010 65) !important; }
+.dark .text-gray-400 { color: oklch(0.55 0.010 65) !important; }
+.dark .text-slate-900 { color: oklch(0.95 0.005 65) !important; }
+.dark .text-slate-800 { color: oklch(0.90 0.005 65) !important; }
+.dark .text-slate-700 { color: oklch(0.85 0.005 65) !important; }
+.dark .text-slate-600 { color: oklch(0.75 0.010 65) !important; }
+.dark .text-slate-500 { color: oklch(0.65 0.010 65) !important; }
+.dark .text-slate-400 { color: oklch(0.55 0.010 65) !important; }
+
+/* Borders */
+.dark .border-gray-100 { border-color: oklch(1 0 0 / 8%) !important; }
+.dark .border-gray-200 { border-color: oklch(1 0 0 / 12%) !important; }
+.dark .border-gray-300 { border-color: oklch(1 0 0 / 18%) !important; }
+.dark .border-slate-100 { border-color: oklch(1 0 0 / 8%) !important; }
+.dark .border-slate-200 { border-color: oklch(1 0 0 / 12%) !important; }
+
+/* Inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+.dark textarea,
+.dark select {
+  background-color: oklch(0.22 0.006 285.885) !important;
+  border-color: oklch(1 0 0 / 15%) !important;
+  color: oklch(0.90 0.005 65) !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: oklch(0.55 0.010 65) !important;
+}
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover { background-color: oklch(0.22 0.006 285.885) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: oklch(0.26 0.006 286.033) !important; }
+.dark .hover\:bg-slate-50:hover { background-color: oklch(0.22 0.006 285.885) !important; }
+
+/* ===== DARK MODE OVERRIDES - ADMIN PANEL (AdminKit) ===== */
+.dark .ak-card { background: oklch(0.21 0.006 285.885) !important; border-color: oklch(1 0 0 / 8%) !important; }
+.dark .ak-card-header { border-color: oklch(1 0 0 / 8%) !important; }
+.dark .ak-card-title { color: oklch(0.92 0.005 65) !important; }
+.dark .ak-card-body { background: oklch(0.21 0.006 285.885) !important; }
+.dark .ak-stat-card { background: oklch(0.21 0.006 285.885) !important; border-color: oklch(1 0 0 / 8%) !important; }
+.dark .ak-stat-value { color: oklch(0.92 0.005 65) !important; }
+.dark .ak-stat-label { color: oklch(0.65 0.010 65) !important; }
+.dark .ak-table thead tr { background: oklch(0.24 0.006 286.033) !important; border-color: oklch(1 0 0 / 8%) !important; }
+.dark .ak-table thead th { color: oklch(0.65 0.010 65) !important; }
+.dark .ak-table tbody tr { border-color: oklch(1 0 0 / 6%) !important; }
+.dark .ak-table tbody tr:hover { background: oklch(0.24 0.006 286.033) !important; }
+.dark .ak-table tbody td { color: oklch(0.85 0.005 65) !important; }
+.dark .ak-table-wrapper { border-color: oklch(1 0 0 / 8%) !important; }
+.dark .ak-tabs { background: oklch(0.24 0.006 286.033) !important; }
+.dark .ak-tab { color: oklch(0.65 0.010 65) !important; }
+.dark .ak-tab:hover { color: oklch(0.85 0.005 65) !important; }
+.dark .ak-tab.active { background: oklch(0.21 0.006 285.885) !important; color: oklch(0.92 0.005 65) !important; }
+.dark .ak-empty-icon { background: oklch(0.24 0.006 286.033) !important; }
+.dark .ak-empty-title { color: oklch(0.85 0.005 65) !important; }
+.dark .ak-empty-desc { color: oklch(0.55 0.010 65) !important; }
+.dark .ak-page-title { color: oklch(0.92 0.005 65) !important; }
+.dark .ak-page-subtitle { color: oklch(0.65 0.010 65) !important; }
+.dark .ak-badge-gray { background: oklch(0.28 0.006 286.033) !important; color: oklch(0.75 0.010 65) !important; }
+
+/* ===== BRAND COLOR UTILITIES ===== */
+.btn-brand-primary { background-color: var(--brand-primary) !important; color: white !important; }
+.btn-brand-primary:hover { opacity: 0.9 !important; }
+.text-brand-primary { color: var(--brand-primary) !important; }
+.bg-brand-primary { background-color: var(--brand-primary) !important; }
+.border-brand-primary { border-color: var(--brand-primary) !important; }
+.text-brand-secondary { color: var(--brand-secondary) !important; }
+.bg-brand-secondary { background-color: var(--brand-secondary) !important; }
