@@ -3824,6 +3824,7 @@ export const appRouter = router({
       startsAt: z.string().optional(),
       expiresAt: z.string().optional(),
       isActive: z.boolean().optional(),
+      productId: z.number().nullable().optional(),
     })).mutation(async ({ input, ctx }) => {
       const { coupons } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
@@ -3841,6 +3842,7 @@ export const appRouter = router({
         startsAt: input.startsAt ? new Date(input.startsAt) : null,
         expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
         isActive: input.isActive ?? true,
+        productId: input.productId ?? null,
       });
       return { success: true };
     }),
@@ -3857,6 +3859,7 @@ export const appRouter = router({
       startsAt: z.string().optional(),
       expiresAt: z.string().optional(),
       isActive: z.boolean().optional(),
+      productId: z.number().nullable().optional(),
     })).mutation(async ({ input, ctx }) => {
       const { coupons } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
@@ -3875,6 +3878,7 @@ export const appRouter = router({
       if (input.startsAt !== undefined) updates.startsAt = input.startsAt ? new Date(input.startsAt) : null;
       if (input.expiresAt !== undefined) updates.expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
       if (input.isActive !== undefined) updates.isActive = input.isActive;
+      if (input.productId !== undefined) updates.productId = input.productId;
       await drizzleDb.update(coupons).set(updates).where(eq(coupons.id, input.id));
       return { success: true };
     }),
@@ -7332,6 +7336,95 @@ export const appRouter = router({
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new Error("DB unavailable");
         await drizzleDb.delete(emailCampaigns).where(and(eq(emailCampaigns.id, input.id), eq(emailCampaigns.userId, ctx.user.id)));
+        return { success: true };
+      }),
+  }),
+
+  imageLibrary: router({
+    getFolders: protectedProcedure.query(async ({ ctx }) => {
+      const { imageFolders } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(imageFolders).where(eq(imageFolders.userId, ctx.user.id));
+    }),
+    createFolder: protectedProcedure
+      .input(z.object({ name: z.string().min(1), parentId: z.number().nullable() }))
+      .mutation(async ({ input, ctx }) => {
+        const { imageFolders } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.insert(imageFolders).values({ name: input.name, parentId: input.parentId ?? undefined, userId: ctx.user.id });
+        return { success: true };
+      }),
+    deleteFolder: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { imageFolders, imageFiles } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(imageFiles).where(and(eq(imageFiles.folderId, input.id), eq(imageFiles.userId, ctx.user.id)));
+        await drizzleDb.delete(imageFolders).where(and(eq(imageFolders.id, input.id), eq(imageFolders.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    getImages: protectedProcedure
+      .input(z.object({ folderId: z.number().nullable() }))
+      .query(async ({ input, ctx }) => {
+        const { imageFiles } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and, isNull } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        if (input.folderId === null) {
+          return drizzleDb.select().from(imageFiles).where(eq(imageFiles.userId, ctx.user.id));
+        }
+        return drizzleDb.select().from(imageFiles).where(and(eq(imageFiles.userId, ctx.user.id), eq(imageFiles.folderId, input.folderId)));
+      }),
+    uploadImage: protectedProcedure
+      .input(z.object({
+        folderId: z.number().nullable(),
+        filename: z.string(),
+        mimeType: z.string(),
+        size: z.number(),
+        base64Data: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { imageFiles } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { storagePut } = await import("./storage");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        // Convert base64 to buffer
+        const base64 = input.base64Data.split(",")[1] || input.base64Data;
+        const buffer = Buffer.from(base64, "base64");
+        const ext = input.filename.split(".").pop() || "jpg";
+        const fileKey = `images/${ctx.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        await drizzleDb.insert(imageFiles).values({
+          userId: ctx.user.id,
+          folderId: input.folderId ?? undefined,
+          filename: fileKey,
+          originalName: input.filename,
+          url,
+          fileKey,
+          mimeType: input.mimeType,
+          size: input.size,
+        });
+        return { url };
+      }),
+    deleteImages: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()) }))
+      .mutation(async ({ input, ctx }) => {
+        const { imageFiles } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and, inArray } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(imageFiles).where(and(eq(imageFiles.userId, ctx.user.id), inArray(imageFiles.id, input.ids)));
         return { success: true };
       }),
   }),

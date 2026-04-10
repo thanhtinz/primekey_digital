@@ -87,6 +87,16 @@ const WalletManagement = lazy(() => import("./pages/WalletManagement"));
 import { CustomerGuard } from "./components/CustomerGuard";
 import { FeatureGuard } from "./components/FeatureGuard";
 import { SupportWidget } from "./components/SupportWidget";
+import AffiliateConfig from "@/pages/AffiliateConfig";
+import AffiliateCommissions from "@/pages/AffiliateCommissions";
+import AffiliateWithdrawals from "@/pages/AffiliateWithdrawals";
+import LoyaltyConfig from "@/pages/LoyaltyConfig";
+import LoyaltyHistory from "@/pages/LoyaltyHistory";
+import LoyaltyRewards from "@/pages/LoyaltyRewards";
+import BlogCategories from "@/pages/BlogCategories";
+import BlogNewPost from "@/pages/BlogNewPost";
+import BlogPosts from "@/pages/BlogPosts";
+import ImageLibrary from "@/pages/ImageLibrary";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
 const RefundPage = lazy(() => import("./pages/RefundPage"));
 const SpinWheelPage = lazy(() => import("./pages/SpinWheelPage"));
@@ -285,6 +295,16 @@ function Router() {
         <Route path="/admin/referral" component={() => isAdmin ? <ReferralAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/loyalty" component={() => isAdmin ? <LoyaltyAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/flash-sale" component={() => isAdmin ? <FlashSaleAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/affiliate/config" component={() => isAdmin ? <AffiliateConfig /> : <ForbiddenPage />} />
+        <Route path="/admin/affiliate/commissions" component={() => isAdmin ? <AffiliateCommissions /> : <ForbiddenPage />} />
+        <Route path="/admin/affiliate/withdrawals" component={() => isAdmin ? <AffiliateWithdrawals /> : <ForbiddenPage />} />
+        <Route path="/admin/loyalty/config" component={() => isAdmin ? <LoyaltyConfig /> : <ForbiddenPage />} />
+        <Route path="/admin/loyalty/history" component={() => isAdmin ? <LoyaltyHistory /> : <ForbiddenPage />} />
+        <Route path="/admin/loyalty/rewards" component={() => isAdmin ? <LoyaltyRewards /> : <ForbiddenPage />} />
+        <Route path="/admin/blog/posts" component={() => isAdmin ? <BlogPosts /> : <ForbiddenPage />} />
+        <Route path="/admin/blog/new" component={() => isAdmin ? <BlogNewPost /> : <ForbiddenPage />} />
+        <Route path="/admin/blog/categories" component={() => isAdmin ? <BlogCategories /> : <ForbiddenPage />} />
+        <Route path="/admin/image-library" component={() => isAdmin ? <ImageLibrary /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

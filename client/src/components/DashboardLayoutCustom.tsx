@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet, Gift } from "@/components/Icon";
+import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet, Gift, Plus } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -41,15 +41,36 @@ const adminNavGroups = [
       { label: "Flash Sale", href: "/admin/flash-sale", icon: ShoppingBag },
       { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
       { label: "Mail Campaigns", href: "/admin/mail-campaigns", icon: Mail },
-      { label: "Giới Thiệu & Hoa Hồng", href: "/admin/referral", icon: Banknote },
-      { label: "Tích Điểm", href: "/admin/loyalty", icon: Star },
-      { label: "Vòng Quay May Mắn", href: "/admin/spin-wheel", icon: Gift },
+    ],
+  },
+  {
+    label: "Affiliate",
+    items: [
+      { label: "Cấu Hình", href: "/admin/affiliate/config", icon: Settings },
+      { label: "Nhật Ký Hoa Hồng", href: "/admin/affiliate/commissions", icon: Banknote },
+      { label: "Rút Tiền", href: "/admin/affiliate/withdrawals", icon: Wallet },
+    ],
+  },
+  {
+    label: "Tích Điểm",
+    items: [
+      { label: "Cấu Hình", href: "/admin/loyalty/config", icon: Settings },
+      { label: "Lịch Sử", href: "/admin/loyalty/history", icon: History },
+      { label: "Phần Thưởng", href: "/admin/loyalty/rewards", icon: Gift },
+      { label: "Vòng Quay", href: "/admin/spin-wheel", icon: RotateCcw },
+    ],
+  },
+  {
+    label: "Nạp Tiền",
+    items: [
+      { label: "Cấu Hình PayOS", href: "/settings/payos", icon: Settings },
+      { label: "Lịch Sử Nạp", href: "/wallet-management", icon: History },
+      { label: "Quản Lý Ví", href: "/wallet-management", icon: Wallet },
     ],
   },
   {
     label: "Vận Hành",
     items: [
-      { label: "Quản Lý Ví", href: "/wallet-management", icon: Wallet },
       { label: "Bảo Hành", href: "/admin/warranty", icon: Shield },
       { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
       { label: "Nhân Viên", href: "/staff", icon: Users },
@@ -58,10 +79,12 @@ const adminNavGroups = [
   {
     label: "Nội Dung",
     items: [
-      { label: "Blog", href: "/admin/blog", icon: FileText },
+      { label: "Tất Cả Bài Viết", href: "/admin/blog/posts", icon: FileText },
+      { label: "Viết Bài Mới", href: "/admin/blog/new", icon: Plus },
+      { label: "Chuyên Mục Blog", href: "/admin/blog/categories", icon: Tag },
+      { label: "Thư Viện Ảnh", href: "/admin/image-library", icon: Image },
       { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
       { label: "Gửi Thông Báo", href: "/admin/notifications", icon: Bell },
-      { label: "Avatar Gallery", href: "/admin/avatar-gallery", icon: Image },
       { label: "Liên Hệ", href: "/contact-settings", icon: MessageSquare },
     ],
   },

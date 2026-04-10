@@ -470,6 +470,7 @@ export const coupons = mysqlTable("coupons", {
   startsAt: timestamp("startsAt"),
   expiresAt: timestamp("expiresAt"),
   isActive: boolean("isActive").default(true),
+  productId: int("productId"), // null = apply to all products
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -977,3 +978,45 @@ export const blockedIps = mysqlTable("blocked_ips", {
   isActive: boolean("isActive").default(true).notNull(),
 });
 export type BlockedIp = typeof blockedIps.$inferSelect;
+
+// ─── Image Library - thư viện ảnh ────────────────────────────────────────────
+export const imageFolders = mysqlTable("image_folders", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  parentId: int("parentId"), // null = root folder
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ImageFolder = typeof imageFolders.$inferSelect;
+export type InsertImageFolder = typeof imageFolders.$inferInsert;
+
+export const imageFiles = mysqlTable("image_files", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  folderId: int("folderId"), // null = root
+  filename: varchar("filename", { length: 255 }).notNull(),
+  originalName: varchar("originalName", { length: 255 }).notNull(),
+  url: text("url").notNull(),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(),
+  mimeType: varchar("mimeType", { length: 100 }).notNull(),
+  size: int("size").notNull(), // bytes
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ImageFile = typeof imageFiles.$inferSelect;
+export type InsertImageFile = typeof imageFiles.$inferInsert;
+
+// ─── Referral Commissions - nhật ký hoa hồng ─────────────────────────────────
+export const referralCommissions = mysqlTable("referral_commissions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  referrerId: int("referrerId").notNull(), // customer who referred
+  referredCustomerId: int("referredCustomerId").notNull(), // customer who was referred
+  invoiceId: int("invoiceId"), // order that triggered commission
+  commissionAmount: decimal("commissionAmount", { precision: 15, scale: 2 }).notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "paid", "rejected"]).default("pending"),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ReferralCommission = typeof referralCommissions.$inferSelect;
+export type InsertReferralCommission = typeof referralCommissions.$inferInsert;

@@ -1635,3 +1635,12 @@ todo updated
 - [x] Xóa trang không dùng: QueuePage, Reminders, EmailCampaigns, TaxReportPage, DataBackup, AdvancedSearch, ImportExcel, RecurringInvoices, WeeklyReports
 - [x] Xóa routes tương ứng trong App.tsx
 - [x] Xóa lazy imports không dùng trong App.tsx
+
+## Phase: Thêm tính năng mới (Apr 10, 2026)
+- [x] Thêm trang Thư viện ảnh (ImageLibrary) với folder tree và upload
+- [x] Mã giảm giá: thêm trường chọn sản phẩm khi tạo mã
+- [x] Tách Affiliate thành 3 trang: Cấu hình, Nhật ký hoa hồng, Rút tiền
+- [x] Tích điểm: tách thành Cấu hình, Lịch sử, Phần thưởng, Vòng quay
+- [x] Blog: tách thành Chuyên mục, Viết bài mới, Tất cả bài viết
+- [x] Nạp tiền: tách thành mục riêng (Cấu hình PayOS, Lịch sử, Quản lý ví)
+- [x] Menu admin: phân mục rõ ràng với 10 nhóm

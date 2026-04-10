@@ -30,6 +30,7 @@ function formatShortDate(d: Date | string | null) {
 export default function CouponSettings() {
   const utils = trpc.useUtils();
   const { data: coupons = [], isLoading } = trpc.coupon.list.useQuery(undefined, { staleTime: 10_000 });
+  const { data: products = [] } = trpc.products.list.useQuery(undefined, { staleTime: 30_000 });
   const { data: statsData, isLoading: statsLoading } = trpc.coupon.stats.useQuery(undefined, { staleTime: 15_000 });
   const createMut = trpc.coupon.create.useMutation({
     onSuccess: () => { utils.coupon.list.invalidate(); utils.coupon.stats.invalidate(); setDialogOpen(false); resetForm(); toast.success("Tạo mã giảm giá thành công"); },
@@ -53,10 +54,11 @@ export default function CouponSettings() {
     code: "", description: "", discountType: "percent" as "percent" | "fixed",
     discountValue: 0, minOrderAmount: 0, maxDiscountAmount: 0,
     maxUses: 0, maxUsesPerCustomer: 1, startsAt: "", expiresAt: "", isActive: true,
+    productId: null as number | null,
   });
 
   const resetForm = () => {
-    setForm({ code: "", description: "", discountType: "percent", discountValue: 0, minOrderAmount: 0, maxDiscountAmount: 0, maxUses: 0, maxUsesPerCustomer: 1, startsAt: "", expiresAt: "", isActive: true });
+    setForm({ code: "", description: "", discountType: "percent", discountValue: 0, minOrderAmount: 0, maxDiscountAmount: 0, maxUses: 0, maxUsesPerCustomer: 1, startsAt: "", expiresAt: "", isActive: true, productId: null });
     setEditingId(null);
   };
 
@@ -71,6 +73,7 @@ export default function CouponSettings() {
       startsAt: c.startsAt ? new Date(c.startsAt).toISOString().slice(0, 16) : "",
       expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 16) : "",
       isActive: c.isActive ?? true,
+      productId: c.productId ?? null,
     });
     setDialogOpen(true);
   };
@@ -573,6 +576,21 @@ export default function CouponSettings() {
                   <Label>Hết hạn</Label>
                   <Input type="datetime-local" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))} />
                 </div>
+              </div>
+
+              {/* Giới hạn sản phẩm */}
+              <div>
+                <Label>Giới hạn cho sản phẩm (tuỳ chọn)</Label>
+                <Select value={form.productId ? String(form.productId) : "all"} onValueChange={v => setForm(f => ({ ...f, productId: v === "all" ? null : Number(v) }))}>
+                  <SelectTrigger><SelectValue placeholder="Áp dụng cho tất cả sản phẩm" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả sản phẩm</SelectItem>
+                    {(products as any[]).map((p: any) => (
+                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">Chọn sản phẩm để mã chỉ áp dụng cho sản phẩm đó</p>
               </div>
 
               <div className="flex items-center gap-3">
