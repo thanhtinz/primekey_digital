@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -190,41 +189,47 @@ export default function InvoiceHistory() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        {/* ── Page Header ── */}
+        <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Lịch Sử Hóa Đơn</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Quản lý tất cả hóa đơn của bạn</p>
+            <h1 className="ak-page-title">Lịch Sử Hóa Đơn</h1>
+            <p className="ak-page-subtitle">Quản lý tất cả hóa đơn của bạn</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
               <RefreshCw className="h-4 w-4" />
               <span className="hidden sm:inline">Làm mới</span>
             </Button>
-
+            <Button size="sm" onClick={() => setLocation("/invoices/new")} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Tạo Hóa Đơn</span>
+            </Button>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* ── Stats Cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: "Tổng HĐ", value: invoices.length, color: "text-gray-900" },
-            { label: "Chờ xác nhận", value: invoices.filter(i => i.status === "CREATED").length, color: "text-amber-600" },
-            { label: "Đang xử lý", value: invoices.filter(i => i.status === "PAID").length, color: "text-blue-600" },
-            { label: "Hoàn thành", value: invoices.filter(i => i.status === "COMPLETED").length, color: "text-emerald-600" },
-          ].map((stat, i) => (
-            <Card key={i} className="shadow-sm border border-gray-100">
-              <CardContent className="p-4 text-center">
-                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
-              </CardContent>
-            </Card>
-          ))}
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-gray-100"><FileText className="h-5 w-5 text-gray-600" /></div>
+            <div><div className="ak-stat-value">{invoices.length}</div><div className="ak-stat-label">Tổng hóa đơn</div></div>
+          </div>
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-amber-100"><FileText className="h-5 w-5 text-amber-500" /></div>
+            <div><div className="ak-stat-value text-amber-600">{invoices.filter(i => i.status === "CREATED").length}</div><div className="ak-stat-label">Chờ xác nhận</div></div>
+          </div>
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-blue-100"><FileText className="h-5 w-5 text-blue-500" /></div>
+            <div><div className="ak-stat-value text-blue-600">{invoices.filter(i => i.status === "PAID").length}</div><div className="ak-stat-label">Đang xử lý</div></div>
+          </div>
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-emerald-100"><CheckCircle className="h-5 w-5 text-emerald-500" /></div>
+            <div><div className="ak-stat-value text-emerald-600">{invoices.filter(i => i.status === "COMPLETED").length}</div><div className="ak-stat-label">Hoàn thành</div></div>
+          </div>
         </div>
 
-        {/* Filters */}
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4 space-y-3">
+        {/* ── Filters ── */}
+        <div className="ak-card">
+          <div className="ak-card-body space-y-3">
             {/* Row 1: Search by invoice number + status + currency */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
@@ -302,8 +307,8 @@ export default function InvoiceHistory() {
                 <span>Đang lọc theo sản phẩm: <strong>"{productSearch}"</strong> — {filteredInvoices.length} kết quả</span>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Bulk Actions Bar */}
         {someSelected && (
@@ -342,28 +347,18 @@ export default function InvoiceHistory() {
           </div>
         )}
 
-        {/* Table */}
-        <Card className="shadow-sm border border-gray-100">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">
-                {filteredInvoices.length} hóa đơn
-              </CardTitle>
-              {!someSelected && filteredInvoices.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleExportExcel}
-                  disabled={isExportingExcel}
-                  className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50"
-                >
-                  {isExportingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-                  <span className="hidden sm:inline">Xuất Excel</span>
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
+        {/* ── Table ── */}
+        <div className="ak-card">
+          <div className="ak-card-header">
+            <span className="ak-card-title">{filteredInvoices.length} hóa đơn</span>
+            {!someSelected && filteredInvoices.length > 0 && (
+              <Button size="sm" variant="outline" onClick={handleExportExcel} disabled={isExportingExcel}
+                className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50">
+                {isExportingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+                <span className="hidden sm:inline">Xuất Excel</span>
+              </Button>
+            )}
+          </div>
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -474,8 +469,7 @@ export default function InvoiceHistory() {
                 </table>
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       {/* View Invoice Dialog */}

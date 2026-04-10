@@ -175,26 +175,26 @@ export default function Reports() {
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* ── Page Header ── */}
+        <div className="ak-page-header">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-500" />
+            <h1 className="ak-page-title flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-indigo-500" />
               Báo Cáo & Phân Tích
             </h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 hidden sm:block">Tổng quan hiệu suất kinh doanh</p>
+            <p className="ak-page-subtitle">Tổng quan hiệu suất kinh doanh</p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-28 sm:w-36 h-8 sm:h-9 text-xs sm:text-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="3">3 tháng</SelectItem>
                 <SelectItem value="6">6 tháng</SelectItem>
                 <SelectItem value="12">12 tháng</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={isExportingExcel} className="gap-1.5 h-8 sm:h-9 text-xs sm:text-sm px-2.5 sm:px-3">
-              {isExportingExcel ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={isExportingExcel} className="gap-1.5">
+              {isExportingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Excel
             </Button>
           </div>

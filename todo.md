@@ -1623,3 +1623,15 @@ todo updated
 - [ ] Redesign Coupons theo AdminKit
 - [ ] Redesign Staff theo AdminKit
 - [ ] Redesign Settings theo AdminKit
+
+## Phase N: Redesign Admin + Gộp Settings + Dọn dẹp code
+- [ ] Redesign Dashboard.tsx theo AdminKit (KPI cards + charts đẹp hơn)
+- [ ] Redesign Customers.tsx theo AdminKit (table + search + actions)
+- [ ] Redesign Products.tsx theo AdminKit (table + search + actions)
+- [ ] Redesign InvoiceHistory.tsx theo AdminKit (table + filters + actions)
+- [ ] Redesign Reports.tsx theo AdminKit (charts + stats)
+- [ ] Gộp tất cả Settings vào AdminSettings.tsx với tabs
+- [ ] Cập nhật route /settings/* trong App.tsx trỏ về AdminSettings.tsx
+- [ ] Xóa trang không dùng: QueuePage, Reminders, EmailCampaigns, TaxReportPage, DataBackup, AdvancedSearch, ImportExcel, RecurringInvoices, WeeklyReports
+- [ ] Xóa routes tương ứng trong App.tsx
+- [ ] Xóa lazy imports không dùng trong App.tsx

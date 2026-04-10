@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -243,33 +242,42 @@ export default function Products() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        {/* ── Page Header ── */}
+        <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Sản Phẩm & Dịch Vụ</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{products.length} sản phẩm trong danh mục</p>
+            <h1 className="ak-page-title">Sản Phẩm & Dịch Vụ</h1>
+            <p className="ak-page-subtitle">{products.length} sản phẩm trong danh mục</p>
           </div>
           <Button onClick={() => { resetForm(); setSelectedParentId(null); setIsOpen(true); }} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
             <Plus className="h-4 w-4" /> Thêm Sản Phẩm
           </Button>
         </div>
 
-        {/* Search */}
-        <Card className="shadow-sm border border-gray-100">
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input placeholder="Tìm theo tên, mô tả..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
-            </div>
-          </CardContent>
-        </Card>
+        {/* ── Stats Cards ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-blue-100"><Package className="h-5 w-5 text-blue-600" /></div>
+            <div><div className="ak-stat-value">{products.length}</div><div className="ak-stat-label">Tổng sản phẩm</div></div>
+          </div>
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-amber-100"><Star className="h-5 w-5 text-amber-500" /></div>
+            <div><div className="ak-stat-value">{products.filter((p: any) => p.isFeatured).length}</div><div className="ak-stat-label">Nổi bật</div></div>
+          </div>
+          <div className="ak-stat-card hidden sm:flex">
+            <div className="ak-stat-icon bg-green-100"><Layers className="h-5 w-5 text-green-600" /></div>
+            <div><div className="ak-stat-value">{products.reduce((acc: number, p: any) => acc + (p.packages?.length || 0), 0)}</div><div className="ak-stat-label">Tổng gói</div></div>
+          </div>
+        </div>
 
-        {/* Products Table */}
-        <Card className="shadow-sm border border-gray-100">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">{filteredProducts.length} sản phẩm</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
+        {/* ── Search + Table ── */}
+        <div className="ak-card">
+          <div className="ak-card-header">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input placeholder="Tìm theo tên, mô tả..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 h-9 text-sm" />
+            </div>
+            <span className="text-sm text-gray-500">{filteredProducts.length} kết quả</span>
+          </div>
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -302,8 +310,8 @@ export default function Products() {
                       const pkgs = product.packages || [];
                       const isExpanded = expandedProduct === product.id;
                       return (
-                        <>
-                          <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                        <React.Fragment key={product.id}>
+                          <tr className="hover:bg-gray-50 transition-colors">
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-2.5">
                                 {product.imageUrl ? (
@@ -404,15 +412,14 @@ export default function Products() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </React.Fragment>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       {/* Add/Edit Dialog */}

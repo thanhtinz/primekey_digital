@@ -34,17 +34,10 @@ const EmailTemplateEditor = lazy(() => import("./pages/EmailTemplateEditor"));
 const StaffManagement = lazy(() => import("./pages/StaffManagement"));
 const ActivityLog = lazy(() => import("./pages/ActivityLog"));
 const ThankYou = lazy(() => import("./pages/ThankYou"));
-const Reminders = lazy(() => import("./pages/Reminders"));
-const EmailCampaigns = lazy(() => import("./pages/EmailCampaigns"));
 // New feature pages
-const RecurringInvoices = lazy(() => import("./pages/RecurringInvoices"));
 const TelegramSettings = lazy(() => import("./pages/TelegramSettings"));
-const ImportExcel = lazy(() => import("./pages/ImportExcel"));
 const WarrantyLookup = lazy(() => import("./pages/WarrantyLookup"));
 const ThankYouCustom = lazy(() => import("./pages/ThankYouCustom"));
-const DataBackup = lazy(() => import("./pages/DataBackup"));
-const AdvancedSearch = lazy(() => import("./pages/AdvancedSearch"));
-const WeeklyReports = lazy(() => import("./pages/WeeklyReports"));
 const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
 
 // Batch 4: New pages
@@ -64,7 +57,6 @@ const WarrantyRequestManagement = lazy(() => import("./pages/WarrantyRequestMana
 const FAQSettings = lazy(() => import("./pages/FAQSettings"));
 const FlashSaleSubscriberSettings = lazy(() => import("./pages/FlashSaleSubscriberSettings"));
 const VATInvoicePage = lazy(() => import("./pages/VATInvoicePage"));
-const TaxReportPage = lazy(() => import("./pages/TaxReportPage"));
 const ReferralSettings = lazy(() => import("./pages/ReferralSettings"));
 const BannerSettings = lazy(() => import("./pages/BannerSettings"));
 const TaxSettings = lazy(() => import("./pages/TaxSettings"));
@@ -94,7 +86,6 @@ import { FeatureGuard } from "./components/FeatureGuard";
 import { SupportWidget } from "./components/SupportWidget";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
 const RefundPage = lazy(() => import("./pages/RefundPage"));
-const QueuePage = lazy(() => import("./pages/QueuePage"));
 const SpinWheelPage = lazy(() => import("./pages/SpinWheelPage"));
 const SpinWheelAdmin = lazy(() => import("./pages/SpinWheelAdmin"));
 const LoyaltyRewardsAdmin = lazy(() => import("./pages/LoyaltyRewardsAdmin"));
@@ -254,15 +245,10 @@ function Router() {
         <Route path="/warranties" component={() => isAdmin ? <WarrantyManagement /> : <ForbiddenPage />} />
         <Route path="/staff" component={() => isAdmin ? <StaffManagement /> : <ForbiddenPage />} />
         <Route path="/activity-log" component={() => isAdmin ? <ActivityLog /> : <ForbiddenPage />} />
-        <Route path="/reminders" component={() => isAdmin ? <Reminders /> : <ForbiddenPage />} />
-        <Route path="/campaigns" component={() => isAdmin ? <EmailCampaigns /> : <ForbiddenPage />} />
-        <Route path="/recurring-invoices" component={() => isAdmin ? <RecurringInvoices /> : <ForbiddenPage />} />
-        <Route path="/import-excel" component={() => isAdmin ? <ImportExcel /> : <ForbiddenPage />} />
+
         <Route path="/settings/telegram" component={() => isAdmin ? <TelegramSettings /> : <ForbiddenPage />} />
         <Route path="/settings/thank-you" component={() => isAdmin ? <ThankYouCustom /> : <ForbiddenPage />} />
-        <Route path="/backup" component={() => isAdmin ? <DataBackup /> : <ForbiddenPage />} />
-        <Route path="/advanced-search" component={() => isAdmin ? <AdvancedSearch /> : <ForbiddenPage />} />
-        <Route path="/advanced-reports" component={() => isAdmin ? <WeeklyReports /> : <ForbiddenPage />} />
+
         <Route path="/embed-widget" component={() => isAdmin ? <EmbedWidget /> : <ForbiddenPage />} />
         {/* Batch 6 routes */}
         <Route path="/settings/categories" component={() => isAdmin ? <CategorySettings /> : <ForbiddenPage />} />
@@ -272,7 +258,7 @@ function Router() {
         <Route path="/settings/flash-sale-subscribers" component={() => isAdmin ? <FlashSaleSubscriberSettings /> : <ForbiddenPage />} />
         <Route path="/warranty-requests" component={() => isAdmin ? <WarrantyRequestManagement /> : <ForbiddenPage />} />
         <Route path="/vat-invoices" component={() => isAdmin ? <VATInvoicePage /> : <ForbiddenPage />} />
-        <Route path="/tax-report" component={() => isAdmin ? <TaxReportPage /> : <ForbiddenPage />} />
+
         <Route path="/settings/referral" component={() => isAdmin ? <ReferralSettings /> : <ForbiddenPage />} />
         <Route path="/admin/referral-withdrawals" component={() => isAdmin ? <ReferralWithdrawalsAdmin /> : <ForbiddenPage />} />
         <Route path="/settings/banners" component={() => isAdmin ? <BannerSettings /> : <ForbiddenPage />} />
@@ -285,7 +271,7 @@ function Router() {
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
         <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
-        <Route path="/queue" component={() => isAdmin ? <QueuePage /> : <ForbiddenPage />} />
+
         <Route path="/admin/spin-wheel" component={() => isAdmin ? <SpinWheelAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/loyalty-rewards" component={() => isAdmin ? <LoyaltyRewardsAdmin /> : <ForbiddenPage />} />
         {/* Merged admin pages */}

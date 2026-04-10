@@ -212,39 +212,31 @@ export default function Settings() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cài Đặt</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Quản lý thông tin công ty và tùy chọn hệ thống</p>
+        {/* ── Page Header ── */}
+        <div className="ak-page-header">
+          <div>
+            <h1 className="ak-page-title">Cài Đặt Hệ Thống</h1>
+            <p className="ak-page-subtitle">Quản lý thông tin công ty, thương hiệu và tích hợp</p>
+          </div>
         </div>
 
         <Tabs defaultValue="company" className="space-y-5">
           <div className="overflow-x-auto -mx-1 px-1">
             <TabsList className="bg-gray-100 p-1 rounded-lg flex-wrap h-auto gap-1 w-max min-w-full">
               <TabsTrigger value="company" className="gap-1.5 text-sm">
-                <Building2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Công Ty</span>
-                <span className="sm:hidden">CT</span>
+                <Building2 className="h-4 w-4" /> Công Ty
               </TabsTrigger>
               <TabsTrigger value="brand" className="gap-1.5 text-sm">
-                <Globe className="h-4 w-4" />
-                <span className="hidden sm:inline">Thương Hiệu</span>
-                <span className="sm:hidden">TH</span>
+                <Globe className="h-4 w-4" /> Thương Hiệu
               </TabsTrigger>
               <TabsTrigger value="notifications" className="gap-1.5 text-sm">
-                <Bell className="h-4 w-4" />
-                <span className="hidden sm:inline">Thông Báo</span>
-                <span className="sm:hidden">TB</span>
+                <Bell className="h-4 w-4" /> Thông Báo
               </TabsTrigger>
               <TabsTrigger value="payments" className="gap-1.5 text-sm">
-                <CreditCard className="h-4 w-4" />
-                <span className="hidden sm:inline">Thanh Toán</span>
-                <span className="sm:hidden">TT</span>
+                <CreditCard className="h-4 w-4" /> Thanh Toán
               </TabsTrigger>
               <TabsTrigger value="security" className="gap-1.5 text-sm">
-                <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Bảo Mật</span>
-                <span className="sm:hidden">BM</span>
+                <Shield className="h-4 w-4" /> Bảo Mật
               </TabsTrigger>
             </TabsList>
           </div>
