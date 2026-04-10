@@ -374,7 +374,7 @@ export default function ProductDetail() {
         {/* ===== PACKAGE LIST - Card style matching reference ===== */}
         {packages.length > 0 && (
           <div className="mt-3">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {packages.map((pkg: any) => {
                 const pkgDiscount = getDiscountPercent(pkg.price, pkg.originalPrice);
                 const isSelected = selectedPackageId === pkg.id;
@@ -382,10 +382,10 @@ export default function ProductDetail() {
                   <button
                     key={pkg.id}
                     onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                    className={`text-left bg-white rounded-2xl border-2 border-dashed p-3 transition-all shadow-sm hover:shadow-md flex flex-col md:flex-col gap-2 ${
+                    className={`text-left bg-white rounded-2xl border-2 p-3 transition-all shadow-sm hover:shadow-md flex flex-col md:flex-col gap-2 ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/30"
-                        : "border-gray-300 hover:border-blue-400"
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     {/* Mobile: Horizontal layout, Desktop: Vertical */}
@@ -406,8 +406,8 @@ export default function ProductDetail() {
                             <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
                           )}
                         </div>
-                        {/* Price */}
-                        <div className="text-right md:text-right mt-1 md:mt-0">
+                        {/* Price + Order Button */}
+                        <div className="text-right md:text-right mt-1 md:mt-0 flex flex-col md:flex-col gap-1 md:gap-2">
                           <div className="font-bold text-red-500 text-sm">{formatVND(pkg.price)}</div>
                           {pkg.originalPrice && (
                             <div className="flex items-center gap-1 justify-end">
@@ -417,6 +417,9 @@ export default function ProductDetail() {
                               )}
                             </div>
                           )}
+                          <button className="text-xs text-blue-500 font-semibold flex items-center gap-1 justify-end hover:text-blue-600 transition-colors md:hidden">
+                            🛒 Order
+                          </button>
                         </div>
                       </div>
                     </div>
