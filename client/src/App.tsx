@@ -39,6 +39,9 @@ const TelegramSettings = lazy(() => import("./pages/TelegramSettings"));
 const WarrantyLookup = lazy(() => import("./pages/WarrantyLookup"));
 const ThankYouCustom = lazy(() => import("./pages/ThankYouCustom"));
 const ContactWidget = lazy(() => import("./pages/ContactWidget"));
+const Automations = lazy(() => import("./pages/Automations"));
+const BlockIpAdmin = lazy(() => import("./pages/BlockIpAdmin"));
+const MailCampaigns = lazy(() => import("./pages/MailCampaigns"));
 
 // Batch 4: New pages
 const WarrantySettingsPage = lazy(() => import("./pages/WarrantySettingsPage"));
@@ -253,6 +256,9 @@ function Router() {
         {/* Batch 6 routes */}
         <Route path="/settings/categories" component={() => isAdmin ? <CategorySettings /> : <ForbiddenPage />} />
         <Route path="/settings/tags" component={() => isAdmin ? <TagSettings /> : <ForbiddenPage />} />
+        <Route path="/admin/automations" component={() => isAdmin ? <Automations /> : <ForbiddenPage />} />
+        <Route path="/admin/block-ip" component={() => isAdmin ? <BlockIpAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/mail-campaigns" component={() => isAdmin ? <MailCampaigns /> : <ForbiddenPage />} />
         <Route path="/settings/loyalty" component={() => isAdmin ? <LoyaltySettings /> : <ForbiddenPage />} />
         <Route path="/settings/faq" component={() => isAdmin ? <FAQSettings /> : <ForbiddenPage />} />
         <Route path="/settings/flash-sale-subscribers" component={() => isAdmin ? <FlashSaleSubscriberSettings /> : <ForbiddenPage />} />

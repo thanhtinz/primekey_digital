@@ -24,8 +24,15 @@ const adminNavGroups = [
       { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
       { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
       { label: "Khách Hàng", href: "/customers", icon: Users },
+    ],
+  },
+  {
+    label: "Danh Mục & Sản Phẩm",
+    items: [
       { label: "Sản Phẩm", href: "/products", icon: Package },
       { label: "Danh Mục", href: "/settings/categories", icon: Tag },
+      { label: "Tags Sản Phẩm", href: "/settings/tags", icon: Tag },
+      { label: "Đánh Giá KH", href: "/feedbacks", icon: MessageSquare },
     ],
   },
   {
@@ -33,10 +40,10 @@ const adminNavGroups = [
     items: [
       { label: "Flash Sale", href: "/admin/flash-sale", icon: ShoppingBag },
       { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
+      { label: "Mail Campaigns", href: "/admin/mail-campaigns", icon: Mail },
       { label: "Giới Thiệu & Hoa Hồng", href: "/admin/referral", icon: Banknote },
       { label: "Tích Điểm", href: "/admin/loyalty", icon: Star },
       { label: "Vòng Quay May Mắn", href: "/admin/spin-wheel", icon: Gift },
-      { label: "Đánh Giá KH", href: "/feedbacks", icon: MessageSquare },
     ],
   },
   {
@@ -62,6 +69,8 @@ const adminNavGroups = [
     label: "Hệ Thống",
     items: [
       { label: "Cài Đặt", href: "/settings", icon: Settings },
+      { label: "Tự Động Hoá", href: "/admin/automations", icon: Zap },
+      { label: "Block IP", href: "/admin/block-ip", icon: Shield },
       { label: "Lịch Sử HĐ", href: "/activity-log", icon: History },
     ],
   },

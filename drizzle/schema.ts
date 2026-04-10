@@ -950,3 +950,30 @@ export const avatarImages = mysqlTable("avatar_images", {
   createdAt: timestamp("createdAt_ai").defaultNow().notNull(),
 });
 export type AvatarImage = typeof avatarImages.$inferSelect;
+
+// ─── Automations - tự động hoá công việc ─────────────────────────────────────
+export const automations = mysqlTable("automations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  jobType: varchar("jobType", { length: 100 }).notNull(), // "delete_orders" | "delete_wallet_history" | "delete_inactive_users" | "delete_telegram_logs" | "clean_images" | "revenue_report_telegram"
+  intervalSeconds: bigint("intervalSeconds", { mode: "number" }).notNull().default(86400), // default 1 day
+  isActive: boolean("isActive").default(true).notNull(),
+  lastRunAt: timestamp("lastRunAt"),
+  nextRunAt: timestamp("nextRunAt"),
+  runCount: int("runCount").default(0),
+  createdAt: timestamp("createdAt_auto").defaultNow().notNull(),
+});
+export type Automation = typeof automations.$inferSelect;
+
+// ─── Blocked IPs - danh sách IP bị chặn ──────────────────────────────────────
+export const blockedIps = mysqlTable("blocked_ips", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  ipAddress: varchar("ipAddress", { length: 64 }).notNull(),
+  reason: varchar("reason", { length: 255 }),
+  blockedAt: timestamp("blockedAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt"), // null = permanent
+  isActive: boolean("isActive").default(true).notNull(),
+});
+export type BlockedIp = typeof blockedIps.$inferSelect;

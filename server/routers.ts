@@ -7108,5 +7108,232 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ── Automations Router ──
+  automation: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { automations } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(automations).where(eq(automations.userId, ctx.user.id));
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        jobType: z.string().min(1),
+        intervalSeconds: z.number().int().positive(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { automations } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const nextRun = new Date(Date.now() + input.intervalSeconds * 1000);
+        await drizzleDb.insert(automations).values({
+          userId: ctx.user.id,
+          name: input.name,
+          jobType: input.jobType,
+          intervalSeconds: input.intervalSeconds,
+          isActive: true,
+          nextRunAt: nextRun,
+        } as any);
+        return { success: true };
+      }),
+    toggle: protectedProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        const { automations } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.update(automations)
+          .set({ isActive: input.isActive } as any)
+          .where(and(eq(automations.id, input.id), eq(automations.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { automations } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(automations).where(and(eq(automations.id, input.id), eq(automations.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    runNow: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { automations } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [auto] = await drizzleDb.select().from(automations)
+          .where(and(eq(automations.id, input.id), eq(automations.userId, ctx.user.id))).limit(1);
+        if (!auto) throw new TRPCError({ code: "NOT_FOUND" });
+        // Update lastRunAt, runCount, nextRunAt
+        const nextRun = new Date(Date.now() + auto.intervalSeconds * 1000);
+        await drizzleDb.update(automations).set({
+          lastRunAt: new Date(),
+          runCount: (auto.runCount ?? 0) + 1,
+          nextRunAt: nextRun,
+        } as any).where(eq(automations.id, input.id));
+        return { success: true, jobType: auto.jobType };
+      }),
+  }),
+
+  // ── Block IP Router ──
+  blockIp: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { blockedIps } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(blockedIps)
+        .where(eq(blockedIps.userId, ctx.user.id))
+        .orderBy(desc(blockedIps.blockedAt));
+    }),
+    add: protectedProcedure
+      .input(z.object({
+        ipAddress: z.string().min(1),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { blockedIps } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.insert(blockedIps).values({
+          userId: ctx.user.id,
+          ipAddress: input.ipAddress,
+          reason: input.reason ?? null,
+          isActive: true,
+        } as any);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { blockedIps } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(blockedIps).where(and(eq(blockedIps.id, input.id), eq(blockedIps.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    deleteMany: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()) }))
+      .mutation(async ({ input, ctx }) => {
+        const { blockedIps } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { inArray, and, eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(blockedIps).where(and(inArray(blockedIps.id, input.ids), eq(blockedIps.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    cleanup: protectedProcedure.mutation(async ({ ctx }) => {
+      const { blockedIps } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, and, lt } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      const now = new Date();
+      const result = await drizzleDb.delete(blockedIps)
+        .where(and(eq(blockedIps.userId, ctx.user.id), lt(blockedIps.expiresAt, now)));
+      return { deleted: (result as any).affectedRows ?? 0 };
+    }),
+  }),
+  // ── Email Campaign Router ──
+  emailCampaign: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { emailCampaigns } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(emailCampaigns)
+        .where(eq(emailCampaigns.userId, ctx.user.id))
+        .orderBy(desc(emailCampaigns.createdAt));
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        subject: z.string().min(1),
+        htmlBody: z.string().min(1),
+        targetType: z.enum(["ALL", "PAID", "UNPAID", "CUSTOM"]).default("ALL"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { emailCampaigns } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.insert(emailCampaigns).values({
+          userId: ctx.user.id,
+          name: input.name,
+          subject: input.subject,
+          htmlBody: input.htmlBody,
+          targetType: input.targetType,
+          status: "DRAFT",
+          totalRecipients: 0,
+          sentCount: 0,
+          failedCount: 0,
+        });
+        return { success: true };
+      }),
+    send: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { emailCampaigns, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [campaign] = await drizzleDb.select().from(emailCampaigns)
+          .where(and(eq(emailCampaigns.id, input.id), eq(emailCampaigns.userId, ctx.user.id))).limit(1);
+        if (!campaign) throw new TRPCError({ code: "NOT_FOUND" });
+        // Get recipients
+        const allCustomers = await drizzleDb.select({ email: customers.email, name: customers.name })
+          .from(customers).where(eq(customers.userId, ctx.user.id));
+        let sent = 0;
+        for (const customer of allCustomers) {
+          try {
+            const html = campaign.htmlBody.replace(/\{\{name\}\}/g, customer.name ?? "Qu\u00fd kh\u00e1ch");
+            await sendEmail({
+              to: customer.email as string,
+              subject: campaign.subject,
+              html,
+              userId: ctx.user.id,
+            });
+            sent++;
+          } catch {}
+        }
+        await drizzleDb.update(emailCampaigns).set({
+          status: "SENT",
+          sentCount: sent,
+          totalRecipients: allCustomers.length,
+          sentAt: new Date(),
+        }).where(eq(emailCampaigns.id, input.id));
+        return { sent, total: allCustomers.length };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { emailCampaigns } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        await drizzleDb.delete(emailCampaigns).where(and(eq(emailCampaigns.id, input.id), eq(emailCampaigns.userId, ctx.user.id)));
+        return { success: true };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

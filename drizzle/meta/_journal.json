@@ -162,6 +162,13 @@
       "when": 1775753540998,
       "tag": "0022_curly_zombie",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1775829104033,
+      "tag": "0023_round_nightshade",
+      "breakpoints": true
     }
   ]
 }
