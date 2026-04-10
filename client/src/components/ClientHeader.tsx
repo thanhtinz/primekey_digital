@@ -276,19 +276,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
               <Search className="h-5 w-5" />
             </button>
 
-            {/* Gift / Coupons */}
-            {isEnabled("coupons") && (
-            <button
-              onClick={() => go("/coupons")}
-              className="p-2.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-              title="Kho mã giảm giá"
-            >
-              <Gift className="h-5 w-5" />
-            </button>
-            )}
 
-            {/* Dark/Light Mode Toggle */}
-            <ThemeSwitcher />
 
             {/* Cart Icon - always visible */}
             <button
@@ -439,6 +427,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                           <span>{item.label}</span>
                         </button>
                       ))}
+                      {/* Dark/Light Mode Toggle */}
+                      <ThemeSwitcherItem />
                     </div>
 
                     {isAdmin && (
@@ -681,21 +671,24 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   );
 }
 
-// Dark/Light Mode Switcher component
-function ThemeSwitcher() {
+// Dark/Light Mode Switcher - as dropdown menu item
+function ThemeSwitcherItem() {
   const { theme, toggleTheme } = useTheme();
   if (!toggleTheme) return null;
+  const isDark = theme === "dark";
   return (
     <button
       onClick={toggleTheme}
-      className="p-2.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-      title={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+      className="w-full flex items-center gap-3 px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-sm"
     >
-      {theme === "dark" ? (
-        <i className="fa-solid fa-sun h-5 w-5 text-yellow-300 text-base" />
-      ) : (
-        <i className="fa-solid fa-moon h-5 w-5 text-blue-300 text-base" />
-      )}
+      <div className="h-4 w-4 flex-shrink-0 flex items-center justify-center">
+        {isDark ? (
+          <i className="fa-solid fa-sun text-yellow-300 text-sm" />
+        ) : (
+          <i className="fa-solid fa-moon text-blue-300 text-sm" />
+        )}
+      </div>
+      <span>{isDark ? "Chế độ sáng" : "Chế độ tối"}</span>
     </button>
   );
 }

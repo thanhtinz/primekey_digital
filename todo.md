@@ -1786,28 +1786,28 @@ todo updated
 ## Session 2026-04-10 - Cải tiến toàn diện
 
 ### Dọn menu admin
-- [ ] Bỏ trang Hoàn Tiền (RefundPage) khỏi menu sidebar và routes
-- [ ] Bỏ trang Hóa đơn VAT khỏi menu sidebar và routes
-- [ ] Di chuyển link Bảo hành vào nhóm "Danh mục & Sản phẩm" trong sidebar
-- [ ] Di chuyển link Báo cáo lên nhóm "Bán hàng" trong sidebar
-- [ ] Đổi mục Liên hệ thành widget (floating button/panel) thay vì trang riêng
+- [x] Bỏ trang Hoàn Tiền (RefundPage) khỏi menu sidebar và routes
+- [x] Bỏ trang Hóa đơn VAT khỏi menu sidebar và routes
+- [x] Di chuyển link Bảo hành vào nhóm "Danh mục & Sản phẩm" trong sidebar
+- [x] Di chuyển link Báo cáo lên nhóm "Bán hàng" trong sidebar
+- [x] Đổi mục Liên hệ thành floating widget trong DashboardLayoutCustom
 
 ### Telegram Bot mở rộng
-- [ ] Thêm nhiều loại thông báo cho Admin Bot: đơn hàng cập nhật trạng thái, khách hàng mới, đánh giá mới, tồn kho thấp, nạp ví, flash sale sắp hết
-- [ ] Thêm nhiều loại thông báo cho User Bot: đơn hàng tạo, đơn hàng SHIPPING, đơn hàng COMPLETED, bảo hành, flash sale
-- [ ] UI: đổi notification settings thành dropdown/accordion cho gọn
+- [x] Thêm nhiều loại thông báo cho Admin Bot: đơn hàng cập nhật trạng thái, khách hàng mới, đánh giá mới, tồn kho thấp, nạp ví, flash sale sắp hết
+- [x] Thêm nhiều loại thông báo cho User Bot: đơn hàng tạo, đơn hàng SHIPPING, đơn hàng COMPLETED, bảo hành, flash sale
+- [x] UI: đổi notification settings thành dropdown/accordion cho gọn trong TelegramSettings.tsx
 
 ### Settings cập nhật
-- [ ] Bỏ nhóm "Thông báo & Thông tin" khỏi tab Primekey (đã bỏ telegramOrderChatId, còn địa chỉ và copyright)
-- [ ] Thêm tab/nhóm "Bật/Tắt tính năng" trong Settings: bật/tắt Blog, Bảng xếp hạng, Flash Sale, Đánh giá, Bảo hành, Ví điện tử, Giới thiệu bạn bè
-- [ ] Thêm cấu hình thuế trong Settings (tên thuế, tỷ lệ %, bật/tắt áp dụng tự động)
+- [x] Bỏ nhóm "Thông báo & Thông tin" khỏi tab Primekey
+- [x] Thêm tab "Bật/Tắt tính năng" trong Settings: bật/tắt Blog, Bảng xếp hạng, Flash Sale, Đánh giá, Bảo hành, Ví điện tử, Giới thiệu bạn bè
+- [x] Thêm tab "Thuế" trong Settings (tên thuế, tỷ lệ %, bật/tắt áp dụng tự động)
 
 ### Client theme đồng bộ
-- [ ] Client đọc themeColor/themeColor1 từ API settings và áp dụng CSS variables
-- [ ] Thêm dark/light mode toggle cho web client (tương thích với logo sáng/tối)
-- [ ] Logo client tự động chọn logo sáng/tối theo theme
+- [x] Client đọc themeColor/themeColor1 từ API settings và áp dụng CSS variables qua GlobalBrandApplier
+- [x] Thêm dark/light mode toggle cho web client (nút sun/moon trong ClientHeader)
+- [ ] Logo client tự động chọn logo sáng/tối theo theme (cần logoDarkUrl trong settings)
 
 ### MyAccount cập nhật
-- [ ] Thêm mục "Liên kết Telegram" trong tab Hồ sơ & Bảo mật
-- [ ] Đổi card "Nhận thông báo email" thành dropdown/accordion cho gọn
-- [ ] Thêm card "Nhận thông báo Telegram" dạng dropdown/accordion
+- [x] Thêm mục "Liên kết Telegram" trong tab Hồ sơ & Bảo mật (TelegramLinkSection)
+- [x] Đổi card "Nhận thông báo email" thành dropdown/accordion cho gọn
+- [x] Thêm card "Nhận thông báo Telegram" dạng dropdown/accordion

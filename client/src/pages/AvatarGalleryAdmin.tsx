@@ -10,6 +10,18 @@ import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 
 export default function AvatarGalleryAdmin() {
   const [uploading, setUploading] = useState(false);
+  const utils = trpc.useUtils();
+  const { data: settingsData } = trpc.settings.get.useQuery();
+  const settings = settingsData as any;
+  const featureEnabled = settings?.featureAvatarGallery !== false;
+
+  const toggleFeatureMutation = trpc.settings.updateFeaturesSettings.useMutation({
+    onSuccess: () => {
+      utils.settings.get.invalidate();
+      toast.success(featureEnabled ? "Đã tắt kho ảnh avatar" : "Đã bật kho ảnh avatar");
+    },
+    onError: (err) => toast.error(err.message),
+  });
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState("default");
   const [urlInput, setUrlInput] = useState("");
@@ -22,7 +34,6 @@ export default function AvatarGalleryAdmin() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useUtils();
   const { data: avatars = [], isLoading } = trpc.avatarImages.adminGetAll.useQuery();
 
   const uploadToGallery = trpc.avatarImages.uploadToGallery.useMutation({
@@ -153,6 +164,18 @@ export default function AvatarGalleryAdmin() {
             <span>{(avatars as any[]).length}</span>
             <span className="ml-1 text-gray-500">đang hiển thị</span>
           </Badge>
+          <button
+            onClick={() => toggleFeatureMutation.mutate({ featureAvatarGallery: !featureEnabled })}
+            disabled={toggleFeatureMutation.isPending}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              featureEnabled
+                ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400"
+            }`}
+          >
+            <i className={`fa-solid ${featureEnabled ? "fa-toggle-on" : "fa-toggle-off"} text-base`} />
+            {featureEnabled ? "Kho ảnh: Bật" : "Kho ảnh: Tắt"}
+          </button>
         </div>
       </div>
 

@@ -86,6 +86,8 @@ const adminNavGroups = [
       { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
       { label: "Tạo Trang", href: "/admin/page-builder", icon: Layers },
       { label: "Quản Lý Menu", href: "/admin/menu-manager", icon: Navigation },
+      { label: "Trang Cảm Ơn", href: "/settings/thank-you", icon: Heart },
+      { label: "Trang 404", href: "/settings/custom-404", icon: HelpCircle },
     ],
   },
   {

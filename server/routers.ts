@@ -2715,6 +2715,9 @@ export const appRouter = router({
 
     updateFeaturesSettings: protectedProcedure
       .input(z.object({
+        featureAvatarGallery: z.boolean().optional(),
+        featureThankYou: z.boolean().optional(),
+        featureCustom404: z.boolean().optional(),
         featureFlashSale: z.boolean().optional(),
         featureCoupons: z.boolean().optional(),
         featureAffiliate: z.boolean().optional(),
@@ -2743,6 +2746,21 @@ export const appRouter = router({
         taxNumber: z.string().max(50).optional(),
         taxCompanyName: z.string().max(255).optional(),
         taxAddress: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+    updateCustom404: protectedProcedure
+      .input(z.object({
+        custom404Title: z.string().max(255).optional(),
+        custom404Message: z.string().optional(),
+        custom404ButtonText: z.string().max(100).optional(),
+        custom404ButtonUrl: z.string().max(500).optional(),
+        custom404ImageUrl: z.string().optional(),
+        custom404BgColor: z.string().max(20).optional(),
+        custom404TextColor: z.string().max(20).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");

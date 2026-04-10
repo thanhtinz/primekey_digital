@@ -32,7 +32,19 @@ const GRADIENT_PRESETS = [
 ];
 
 export default function ThankYouCustom() {
+  const utils = trpc.useUtils();
   const { data: settings, refetch } = trpc.settings.get.useQuery();
+  const settingsAny = settings as any;
+  const featureThankYou = settingsAny?.featureThankYou !== false && settingsAny?.featureThankYou === true;
+
+  const toggleFeatureMutation = trpc.settings.updateFeaturesSettings.useMutation({
+    onSuccess: () => {
+      utils.settings.get.invalidate();
+      refetch();
+      toast.success(featureThankYou ? "Đã tắt trang cảm ơn" : "Đã bật trang cảm ơn");
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
   const [form, setForm] = useState({
     thankYouTitle: "Cảm Ơn Bạn Đã Thanh Toán!",
     thankYouMessage: "Đơn hàng của bạn đã được xác nhận. Chúng tôi sẽ liên hệ sớm nhất có thể.",
@@ -107,10 +119,30 @@ export default function ThankYouCustom() {
   return (
     <DashboardLayoutCustom>
       <div className="p-4 sm:p-6 max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Trang Cảm Ơn Tùy Chỉnh</h1>
-          <p className="text-muted-foreground text-sm mt-1">Tùy chỉnh nội dung trang cảm ơn sau khi khách hàng thanh toán</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Trang Cảm Ơn Tùy Chỉnh</h1>
+            <p className="text-muted-foreground text-sm mt-1">Tùy chỉnh nội dung trang cảm ơn sau khi khách hàng thanh toán</p>
+          </div>
+          <button
+            onClick={() => toggleFeatureMutation.mutate({ featureThankYou: !featureThankYou })}
+            disabled={toggleFeatureMutation.isPending}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex-shrink-0 ${
+              featureThankYou
+                ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400"
+            }`}
+          >
+            <i className={`fa-solid ${featureThankYou ? "fa-toggle-on" : "fa-toggle-off"} text-base`} />
+            {featureThankYou ? "Trang cảm ơn: Bật" : "Trang cảm ơn: Tắt"}
+          </button>
         </div>
+        {!featureThankYou && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-400">
+            <i className="fa-solid fa-triangle-exclamation mr-2" />
+            Trang cảm ơn đang tắt. Khi khách thanh toán xong sẽ chuyển thẳng về trang đơn hàng.
+          </div>
+        )}
 
         {/* Preview link */}
         <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-sm">

@@ -38,6 +38,7 @@ const ThankYou = lazy(() => import("./pages/ThankYou"));
 const TelegramSettings = lazy(() => import("./pages/TelegramSettings"));
 const WarrantyLookup = lazy(() => import("./pages/WarrantyLookup"));
 const ThankYouCustom = lazy(() => import("./pages/ThankYouCustom"));
+const Custom404Admin = lazy(() => import("./pages/Custom404Admin"));
 const ContactWidget = lazy(() => import("./pages/ContactWidget"));
 const Automations = lazy(() => import("./pages/Automations"));
 const BlockIpAdmin = lazy(() => import("./pages/BlockIpAdmin"));
@@ -267,6 +268,7 @@ function Router() {
 
         <Route path="/settings/telegram" component={() => isAdmin ? <TelegramSettings /> : <ForbiddenPage />} />
         <Route path="/settings/thank-you" component={() => isAdmin ? <ThankYouCustom /> : <ForbiddenPage />} />
+        <Route path="/settings/custom-404" component={() => isAdmin ? <Custom404Admin /> : <ForbiddenPage />} />
 
         <Route path="/contact-settings" component={() => isAdmin ? <ContactWidget /> : <ForbiddenPage />} />
         {/* Batch 6 routes */}
