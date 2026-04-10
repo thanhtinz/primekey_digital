@@ -477,11 +477,11 @@ export default function ProductDetail() {
             <span className="text-white font-medium truncate max-w-[160px]">{product.name}</span>
           </nav>
 
-          {/* Hero content: image + info */}
-          <div className="flex gap-5 items-start">
-            {/* Product image */}
-            <div className="flex-shrink-0 w-[180px] md:w-[220px]">
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden aspect-square flex items-center justify-center p-2">
+          {/* Hero content: mobile=stacked, desktop=side-by-side */}
+          <div className="flex flex-col md:flex-row gap-4 md:gap-5 items-start">
+            {/* Product image - full width on mobile, fixed width on desktop */}
+            <div className="w-full md:w-[220px] md:flex-shrink-0">
+              <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full md:aspect-square aspect-video flex items-center justify-center p-2">
                 {(product as any).imageUrl ? (
                   <img src={(product as any).imageUrl} alt={product.name} className="w-full h-full object-contain rounded-xl" />
                 ) : (
@@ -596,11 +596,9 @@ export default function ProductDetail() {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{pkg.name}</h4>
-                          {pkg.description && (
-                            <p className="text-xs text-teal-600 mt-0.5 flex items-center gap-1">
-                              <span>✓</span> {pkg.description}
-                            </p>
-                          )}
+                          <p className="text-xs text-teal-600 mt-0.5 flex items-center gap-1 font-medium">
+                            <ShoppingCart className="w-3 h-3" /> Order
+                          </p>
                         </div>
                         {/* Price + radio */}
                         <div className="flex items-center gap-2 flex-shrink-0">
