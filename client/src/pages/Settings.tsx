@@ -175,6 +175,43 @@ export default function Settings() {
   const [themeColor1, setThemeColor1] = useState("#0ab39c");
   const [colorSaving, setColorSaving] = useState(false);
 
+  // ── Primekey state ──
+  const [primekey, setPrimekey] = useState({
+    requireLoginToView: false,
+    showSoldCount: false,
+    allowProductReview: true,
+    telegramOrderChatId: "",
+    orderCodeType: "random",
+    orderCodeLength: 8,
+    orderCodePrefix: "",
+    siteAddress: "",
+    siteCopyright: "",
+  });
+  const [primekeySaving, setPrimekeySaving] = useState(false);
+
+  // ── Security state ──
+  const [security, setSecurity] = useState({
+    bfMaxLoginAttempts: 5,
+    bfMaxAccountAttempts: 10,
+    bfMaxApiAttempts: 20,
+    bfMax2faAttempts: 10,
+    bfMaxOtpAttempts: 10,
+    bfMaxTopupAttempts: 10,
+    bfMaxPasswordResetAttempts: 5,
+    bfMaxApiWhitelistAttempts: 20,
+    adminPanelMaxWrongUrl: 10,
+    adminSingleIp: false,
+    adminSingleDevice: false,
+    clientSingleDevice: false,
+    adminPanelPath: "",
+    showAdminPanelButton: true,
+    maxRegisterPerIp: 1000,
+    sessionDuration: 86400,
+    cronJobSecret: "",
+    requireStrongPassword: false,
+  });
+  const [securitySaving, setSecuritySaving] = useState(false);
+
   // ── Queries ──
   const { data: settingsData, isLoading } = trpc.settings.get.useQuery();
   const updateGeneral = trpc.settings.updateGeneral.useMutation();
@@ -182,6 +219,8 @@ export default function Settings() {
   const uploadBrandAsset = trpc.settings.uploadBrandAsset.useMutation();
   const uploadBrandAssetExtra = trpc.settings.uploadBrandAssetExtra.useMutation();
   const updateBrand = trpc.settings.updateBrand.useMutation();
+  const updatePrimekeySettings = trpc.settings.updatePrimekeySettings.useMutation();
+  const updateSecuritySettings = trpc.settings.updateSecuritySettings.useMutation();
   const utils = trpc.useUtils();
 
   useEffect(() => {
@@ -221,6 +260,39 @@ export default function Settings() {
     if (s.avatarImageUrl) setAvatarPreview(s.avatarImageUrl);
     if (s.themeColor) setThemeColor(s.themeColor);
     if (s.themeColor1) setThemeColor1(s.themeColor1);
+    // Primekey
+    setPrimekey({
+      requireLoginToView: s.requireLoginToView ?? false,
+      showSoldCount: s.showSoldCount ?? false,
+      allowProductReview: s.allowProductReview ?? true,
+      telegramOrderChatId: s.telegramOrderChatId || "",
+      orderCodeType: s.orderCodeType || "random",
+      orderCodeLength: s.orderCodeLength ?? 8,
+      orderCodePrefix: s.orderCodePrefix || "",
+      siteAddress: s.siteAddress || "",
+      siteCopyright: s.siteCopyright || "",
+    });
+    // Security
+    setSecurity({
+      bfMaxLoginAttempts: s.bfMaxLoginAttempts ?? 5,
+      bfMaxAccountAttempts: s.bfMaxAccountAttempts ?? 10,
+      bfMaxApiAttempts: s.bfMaxApiAttempts ?? 20,
+      bfMax2faAttempts: s.bfMax2faAttempts ?? 10,
+      bfMaxOtpAttempts: s.bfMaxOtpAttempts ?? 10,
+      bfMaxTopupAttempts: s.bfMaxTopupAttempts ?? 10,
+      bfMaxPasswordResetAttempts: s.bfMaxPasswordResetAttempts ?? 5,
+      bfMaxApiWhitelistAttempts: s.bfMaxApiWhitelistAttempts ?? 20,
+      adminPanelMaxWrongUrl: s.adminPanelMaxWrongUrl ?? 10,
+      adminSingleIp: s.adminSingleIp ?? false,
+      adminSingleDevice: s.adminSingleDevice ?? false,
+      clientSingleDevice: s.clientSingleDevice ?? false,
+      adminPanelPath: s.adminPanelPath || "",
+      showAdminPanelButton: s.showAdminPanelButton ?? true,
+      maxRegisterPerIp: s.maxRegisterPerIp ?? 1000,
+      sessionDuration: s.sessionDuration ?? 86400,
+      cronJobSecret: s.cronJobSecret || "",
+      requireStrongPassword: s.requireStrongPassword ?? false,
+    });
   }, [settingsData]);
 
   // Apply favicon
@@ -264,6 +336,28 @@ export default function Settings() {
     } catch (e: any) {
       toast.error(e.message || "Lưu thất bại");
     } finally { setColorSaving(false); }
+  };
+
+  const handleSavePrimekey = async () => {
+    setPrimekeySaving(true);
+    try {
+      await updatePrimekeySettings.mutateAsync(primekey);
+      await utils.settings.get.invalidate();
+      toast.success("Đã lưu cài đặt Primekey!");
+    } catch (e: any) {
+      toast.error(e.message || "Lưu thất bại");
+    } finally { setPrimekeySaving(false); }
+  };
+
+  const handleSaveSecurity = async () => {
+    setSecuritySaving(true);
+    try {
+      await updateSecuritySettings.mutateAsync(security);
+      await utils.settings.get.invalidate();
+      toast.success("Đã lưu cài đặt bảo mật!");
+    } catch (e: any) {
+      toast.error(e.message || "Lưu thất bại");
+    } finally { setSecuritySaving(false); }
   };
 
   const makeUploadHandler = (
@@ -769,6 +863,219 @@ export default function Settings() {
                   <Button onClick={handleSaveColors} disabled={colorSaving} className="gap-2 min-w-32">
                     {colorSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     {colorSaving ? "Đang lưu..." : "Lưu màu sắc"}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {/* ═══════════════════════════════════════════════════════════
+                TAB 4: PRIMEKEY
+            ═══════════════════════════════════════════════════════════ */}
+            {tab === "primekey" && (
+              <div className="space-y-5">
+                {/* Hiển thị */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-indigo-600" /> Tùy chọn hiển thị
+                    </CardTitle>
+                    <CardDescription>Kiểm soát những gì khách hàng thấy trên website</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SwitchRow label="Yêu cầu đăng nhập để xem" hint="Bắt buộc khách hàng đăng nhập mới xem được sản phẩm" checked={primekey.requireLoginToView} onCheckedChange={v => setPrimekey(p => ({ ...p, requireLoginToView: v }))} />
+                    <SwitchRow label="Hiển thị số lượng đã bán" hint="Hiển thị số lượng sản phẩm đã bán dưới mỗi sản phẩm" checked={primekey.showSoldCount} onCheckedChange={v => setPrimekey(p => ({ ...p, showSoldCount: v }))} />
+                    <SwitchRow label="Cho phép đánh giá sản phẩm" hint="Khách hàng có thể đánh giá và nhận xét sản phẩm" checked={primekey.allowProductReview} onCheckedChange={v => setPrimekey(p => ({ ...p, allowProductReview: v }))} />
+                  </CardContent>
+                </Card>
+
+                {/* Mã đơn hàng */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Code className="h-4 w-4 text-blue-600" /> Cài đặt mã đơn hàng
+                    </CardTitle>
+                    <CardDescription>Định dạng mã đơn hàng được tạo tự động</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SettingRow label="Kiểu mã" hint="random: ngẫu nhiên, sequential: tăng dần">
+                      <select
+                        value={primekey.orderCodeType}
+                        onChange={e => setPrimekey(p => ({ ...p, orderCodeType: e.target.value }))}
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                      >
+                        <option value="random">Random (ngẫu nhiên)</option>
+                        <option value="sequential">Sequential (tăng dần)</option>
+                        <option value="uuid">UUID</option>
+                      </select>
+                    </SettingRow>
+                    <SettingRow label="Độ dài mã" hint="Số ký tự của mã đơn hàng (6-20)">
+                      <Input
+                        type="number" min={6} max={20}
+                        value={primekey.orderCodeLength}
+                        onChange={e => setPrimekey(p => ({ ...p, orderCodeLength: Number(e.target.value) }))}
+                        className="max-w-32"
+                      />
+                    </SettingRow>
+                    <SettingRow label="Tiền tố mã" hint="Ký tự đứng trước mã đơn hàng (ví dụ: ORD-)">
+                      <Input
+                        value={primekey.orderCodePrefix}
+                        onChange={e => setPrimekey(p => ({ ...p, orderCodePrefix: e.target.value }))}
+                        placeholder="ORD-"
+                        className="max-w-48"
+                      />
+                    </SettingRow>
+                  </CardContent>
+                </Card>
+
+                {/* Telegram & Địa chỉ */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-emerald-600" /> Thông báo & Thông tin
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SettingRow label="Telegram Order Chat ID" hint="Chat ID để nhận thông báo đơn hàng qua Telegram">
+                      <Input
+                        value={primekey.telegramOrderChatId}
+                        onChange={e => setPrimekey(p => ({ ...p, telegramOrderChatId: e.target.value }))}
+                        placeholder="-100xxxxxxxxx"
+                      />
+                    </SettingRow>
+                    <SettingRow label="Địa chỉ cửa hàng">
+                      <Textarea
+                        value={primekey.siteAddress}
+                        onChange={e => setPrimekey(p => ({ ...p, siteAddress: e.target.value }))}
+                        placeholder="123 Đường ABC, Quận 1, TP.HCM"
+                        rows={2}
+                        className="resize-none"
+                      />
+                    </SettingRow>
+                    <SettingRow label="Copyright" hint="Nội dung copyright hiển thị ở footer">
+                      <Input
+                        value={primekey.siteCopyright}
+                        onChange={e => setPrimekey(p => ({ ...p, siteCopyright: e.target.value }))}
+                        placeholder="© 2024 Prime Shop. All rights reserved."
+                      />
+                    </SettingRow>
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSavePrimekey} disabled={primekeySaving} className="gap-2 min-w-32">
+                    {primekeySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {primekeySaving ? "Đang lưu..." : "Lưu Primekey"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════
+                TAB 5: BẢO MẬT
+            ═══════════════════════════════════════════════════════════ */}
+            {tab === "security" && (
+              <div className="space-y-5">
+                {/* Brute Force */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600" /> Giới hạn Brute Force
+                    </CardTitle>
+                    <CardDescription>Số lần thử tối đa trước khi bị khóa tạm thời</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    {([
+                      { key: "bfMaxLoginAttempts",          label: "Đăng nhập",            hint: "Số lần đăng nhập sai tối đa" },
+                      { key: "bfMaxAccountAttempts",        label: "Tài khoản",            hint: "Số lần thử tài khoản tối đa" },
+                      { key: "bfMaxApiAttempts",            label: "API",                  hint: "Số lần gọi API sai tối đa" },
+                      { key: "bfMax2faAttempts",            label: "2FA",                  hint: "Số lần nhập mã 2FA sai tối đa" },
+                      { key: "bfMaxOtpAttempts",            label: "OTP",                  hint: "Số lần nhập OTP sai tối đa" },
+                      { key: "bfMaxTopupAttempts",          label: "Nạp tiền",             hint: "Số lần thử nạp tiền sai tối đa" },
+                      { key: "bfMaxPasswordResetAttempts",  label: "Đặt lại mật khẩu",    hint: "Số lần yêu cầu reset password tối đa" },
+                      { key: "bfMaxApiWhitelistAttempts",   label: "API Whitelist",        hint: "Số lần thử API whitelist tối đa" },
+                    ] as { key: keyof typeof security; label: string; hint: string }[]).map(({ key, label, hint }) => (
+                      <SettingRow key={key} label={label} hint={hint}>
+                        <Input
+                          type="number" min={1} max={200}
+                          value={security[key] as number}
+                          onChange={e => setSecurity(s => ({ ...s, [key]: Number(e.target.value) }))}
+                          className="max-w-32"
+                        />
+                      </SettingRow>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Kiểm soát truy cập */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Info className="h-4 w-4 text-blue-600" /> Kiểm soát truy cập
+                    </CardTitle>
+                    <CardDescription>Giới hạn truy cập theo IP và thiết bị</CardDescription>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SettingRow label="Số URL sai tối đa (Admin Panel)" hint="Số lần nhập URL admin sai trước khi bị chặn">
+                      <Input
+                        type="number" min={1} max={100}
+                        value={security.adminPanelMaxWrongUrl}
+                        onChange={e => setSecurity(s => ({ ...s, adminPanelMaxWrongUrl: Number(e.target.value) }))}
+                        className="max-w-32"
+                      />
+                    </SettingRow>
+                    <SwitchRow label="Admin: Khóa theo IP" hint="Admin chỉ được đăng nhập từ 1 địa chỉ IP cố định" checked={security.adminSingleIp} onCheckedChange={v => setSecurity(s => ({ ...s, adminSingleIp: v }))} />
+                    <SwitchRow label="Admin: Khóa theo thiết bị" hint="Admin chỉ được đăng nhập từ 1 thiết bị cố định" checked={security.adminSingleDevice} onCheckedChange={v => setSecurity(s => ({ ...s, adminSingleDevice: v }))} />
+                    <SwitchRow label="Client: Khóa theo thiết bị" hint="Khách hàng chỉ được đăng nhập từ 1 thiết bị cố định" checked={security.clientSingleDevice} onCheckedChange={v => setSecurity(s => ({ ...s, clientSingleDevice: v }))} />
+                    <SettingRow label="Số đăng ký tối đa / IP" hint="Giới hạn số tài khoản đăng ký từ cùng 1 địa chỉ IP">
+                      <Input
+                        type="number" min={1} max={10000}
+                        value={security.maxRegisterPerIp}
+                        onChange={e => setSecurity(s => ({ ...s, maxRegisterPerIp: Number(e.target.value) }))}
+                        className="max-w-32"
+                      />
+                    </SettingRow>
+                  </CardContent>
+                </Card>
+
+                {/* Bảo mật khác */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Save className="h-4 w-4 text-violet-600" /> Bảo mật khác
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border">
+                    <SettingRow label="Đường dẫn Admin Panel" hint="Đổi đường dẫn mặc định /admin để tăng bảo mật">
+                      <Input
+                        value={security.adminPanelPath}
+                        onChange={e => setSecurity(s => ({ ...s, adminPanelPath: e.target.value }))}
+                        placeholder="admin"
+                      />
+                    </SettingRow>
+                    <SwitchRow label="Hiển thị nút Admin Panel" hint="Hiển thị nút truy cập Admin Panel trên trang chủ" checked={security.showAdminPanelButton} onCheckedChange={v => setSecurity(s => ({ ...s, showAdminPanelButton: v }))} />
+                    <SettingRow label="Thời gian phiên (giây)" hint="Thời gian session tồn tại (mặc định 86400 = 24 giờ)">
+                      <Input
+                        type="number" min={300} max={2592000}
+                        value={security.sessionDuration}
+                        onChange={e => setSecurity(s => ({ ...s, sessionDuration: Number(e.target.value) }))}
+                        className="max-w-48"
+                      />
+                    </SettingRow>
+                    <SettingRow label="Cron Job Secret" hint="Mã bí mật để xác thực cron job">
+                      <Input
+                        type="password"
+                        value={security.cronJobSecret}
+                        onChange={e => setSecurity(s => ({ ...s, cronJobSecret: e.target.value }))}
+                        placeholder="Nhập mã bí mật..."
+                      />
+                    </SettingRow>
+                    <SwitchRow label="Yêu cầu mật khẩu mạnh" hint="Bắt buộc mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt" checked={security.requireStrongPassword} onCheckedChange={v => setSecurity(s => ({ ...s, requireStrongPassword: v }))} />
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveSecurity} disabled={securitySaving} className="gap-2 min-w-32">
+                    {securitySaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {securitySaving ? "Đang lưu..." : "Lưu Bảo mật"}
                   </Button>
                 </div>
               </div>

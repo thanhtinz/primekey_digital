@@ -1743,20 +1743,20 @@ todo updated
 
 ## Session 2026-04-10 - Settings: Primekey & Bảo mật
 
-- [ ] Schema: thêm cột primekey settings (requireLoginToView, showSoldCount, allowReview, telegramOrderChatId, orderCodeType, orderCodeLength, orderCodePrefix, copyright)
-- [ ] Schema: thêm cột security settings (bruteForceMaxLogin, bruteForceMaxAccount, bruteForceMaxApi, bruteForceMax2FA, bruteForceMaxOTP, bruteForceMaxTopup, bruteForceMaxPasswordReset, bruteForceMaxApiWhitelist, adminPanelMaxWrongUrl, adminSingleIp, adminSingleDevice, clientSingleDevice, adminPanelPath, showAdminPanelButton, maxRegisterPerIp, sessionDuration, cronJobSecret, requireStrongPassword)
-- [ ] Migration: push schema changes to DB
-- [ ] Backend: procedure updatePrimekeySettings
-- [ ] Backend: procedure updateSecuritySettings
-- [ ] Frontend: thêm tab "Primekey" vào Settings.tsx với đầy đủ fields
-- [ ] Frontend: thêm tab "Bảo mật" vào Settings.tsx với 3 nhóm (Brute Force, Kiểm soát truy cập, Bảo mật khác)
+- [x] Schema: thêm cột primekey settings (requireLoginToView, showSoldCount, allowReview, telegramOrderChatId, orderCodeType, orderCodeLength, orderCodePrefix, copyright)
+- [x] Schema: thêm cột security settings (bruteForceMaxLogin, bruteForceMaxAccount, bruteForceMaxApi, bruteForceMax2FA, bruteForceMaxOTP, bruteForceMaxTopup, bruteForceMaxPasswordReset, bruteForceMaxApiWhitelist, adminPanelMaxWrongUrl, adminSingleIp, adminSingleDevice, clientSingleDevice, adminPanelPath, showAdminPanelButton, maxRegisterPerIp, sessionDuration, cronJobSecret, requireStrongPassword)
+- [x] Migration: push schema changes to DB
+- [x] Backend: procedure updatePrimekeySettings
+- [x] Backend: procedure updateSecuritySettings
+- [x] Frontend: thêm tab "Primekey" vào Settings.tsx với đầy đủ fields
+- [x] Frontend: thêm tab "Bảo mật" vào Settings.tsx với 3 nhóm (Brute Force, Kiểm soát truy cập, Bảo mật khác)
 
 ## Session 2026-04-10 - Fix Icon CSS & Logic Hoàn Tiền
 
-- [ ] MyAccount: thay icon thường bằng icon CSS trong mục Bảo mật (SecurityInlineSection)
-- [ ] MyAccount: thay icon thường bằng icon CSS trong mục Cài đặt thông báo (NotificationPrefsSection)
-- [ ] Logic hoàn tiền: chỉ cho phép tạo yêu cầu hoàn tiền khi sản phẩm không có thay đổi trạng thái hoặc đơn bị lỗi
-- [ ] Admin: ẩn nút "Tạo yêu cầu hoàn tiền" nếu đơn đã được xử lý bình thường
+- [x] MyAccount: thay icon thường bằng icon CSS trong mục Bảo mật (SecurityInlineSection) - đã dùng fa-* đầy đủ
+- [x] MyAccount: thay icon thường bằng icon CSS trong mục Cài đặt thông báo (NotificationPrefsSection) - đã dùng fa-* đầy đủ
+- [x] Logic hoàn tiền: chỉ cho phép tạo yêu cầu hoàn tiền khi đơn FAILED/PAID/COMPLETED (backend kiểm tra)
+- [x] Admin: ẩn nút "Tạo yêu cầu hoàn tiền" khỏi RefundPage.tsx - admin chỉ xem và duyệt
 
 ## Session 2026-04-10 (tiếp) - Logic Hoàn Tiền & Refactor
 
