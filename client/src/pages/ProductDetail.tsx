@@ -562,11 +562,11 @@ export default function ProductDetail() {
 
       {/* ===== MAIN CONTENT ===== */}
       <div className="max-w-6xl mx-auto px-4 py-5 pb-10">
-        {/* Always 2-column layout: left (main) + right (order info) */}
-        <div className="flex flex-row gap-3 md:gap-5 items-start">
+        {/* Desktop: 2-column layout. Mobile: single column */}
+        <div className="flex flex-col md:flex-row gap-5 items-start">
 
           {/* ===== LEFT COLUMN (main content) ===== */}
-          <div className="flex-1 min-w-0 space-y-3 min-w-0">
+          <div className="flex-1 min-w-0 space-y-3">
 
             {/* Package List */}
             {packages.length > 0 && (
@@ -695,6 +695,11 @@ export default function ProductDetail() {
               </div>
             )}
 
+
+            {/* Mobile: Order Info Card */}
+            <div className="md:hidden">
+              <OrderInfoCard />
+            </div>
 
             {/* ===== REVIEWS SECTION (full width, below left column) ===== */}
             <div id="reviews-section" className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -850,8 +855,8 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* ===== RIGHT COLUMN (sticky order info - always visible) ===== */}
-          <div className="w-[220px] md:w-[280px] flex-shrink-0 sticky top-24">
+          {/* ===== RIGHT COLUMN (sticky order info - desktop only) ===== */}
+          <div className="hidden md:block w-[280px] flex-shrink-0 sticky top-24">
             <OrderInfoCard />
           </div>
 
