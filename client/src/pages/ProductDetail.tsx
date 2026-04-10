@@ -612,9 +612,7 @@ export default function ProductDetail() {
                         {pkg.originalPrice && (
                           <div className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</div>
                         )}
-                        {pkgDiscount > 0 && (
-                          <span className="text-xs bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full font-medium">-{pkgDiscount}%</span>
-                        )}
+
                       </div>
                     </button>
                   );
