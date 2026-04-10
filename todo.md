@@ -1720,3 +1720,13 @@ todo updated
 - [x] Settings tab Cài đặt chung: SEO fields, contact, toggles, custom script/HTML
 - [x] Settings tab Hình ảnh: Logo Light/Dark, Favicon, Image, Avatar upload
 - [x] Settings tab Màu sắc: theme color picker, gradient presets, live preview
+
+## Session 2026-04-10 - Cập nhật nhiều tính năng
+
+- [x] MyAccount: cập nhật icon CSS cho tab Hồ Sơ và Bảo Mật (gradient, shadow, active style đẹp hơn)
+- [x] Fix referral: ẩn hoàn toàn khi tính năng referral bị tắt trong admin (useFeatureFlags trả false khi loading)
+- [x] Tự động redirect đến trang thanh toán PayOS sau khi tạo đơn hàng thành công
+- [x] Toast kho hàng kiểu mới: hiển thị "Kho hàng: X sản phẩm" với icon hộp màu xanh lá
+- [x] Inventory theo gói sản phẩm: mỗi gói có tồn kho riêng (query với packageId)
+- [x] Hiển thị "Liên hệ" thay vì giá khi sản phẩm không có gói nào (ProductCatalog, LandingPage)
+- [x] Thông báo email chỉ gửi khi người dùng đã bật notifyOrderStatus trong cài đặt thông báo

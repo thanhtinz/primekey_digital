@@ -5850,39 +5850,42 @@ export const appRouter = router({
         // paymentUrl stays empty - frontend will redirect to track-order
       }
 
-      // Send email to customer with payment link (same as admin manual invoice)
+      // Send email to customer with payment link (only if customer has notifyOrderStatus enabled)
       try {
-        const db = await import("./db");
-        const userSettings = await db.getUserSettings(owner.id);
-        const companyName = userSettings?.companyName || "Invoice Prime";
-        const paymentPageUrl = paymentUrl || `${input.origin}/pay/${createdInvoice.id}`;
-        const customTemplate = await db.getEmailTemplateByType(owner.id, "CREATED").catch(() => null);
-        const replaceVars = (str: string) => str
-          .replace(/{{customerName}}/g, customer.name || input.email)
-          .replace(/{{invoiceNumber}}/g, invoiceNumber)
-          .replace(/{{totalAmount}}/g, `${totalAmount.toLocaleString("vi-VN")} đ`)
-          .replace(/{{status}}/g, "Chờ thanh toán")
-          .replace(/{{trackUrl}}/g, `${input.origin}/track-order`)
-          .replace(/{{reviewUrl}}/g, "")
-          .replace(/{{companyName}}/g, companyName)
-          .replace(/{{paymentUrl}}/g, paymentPageUrl);
-        let html: string;
-        let subject: string;
-        if (customTemplate) {
-          html = replaceVars(customTemplate.htmlBody);
-          subject = replaceVars(customTemplate.subject);
-        } else {
-          html = generateInvoiceEmailHTML({
-            invoiceNumber,
-            customerName: customer.name || input.email,
-            totalAmount,
-            currency: "VND",
-            companyName,
-            paymentUrl: paymentPageUrl,
-          });
-          subject = `Hóa Đơn ${invoiceNumber} - Link Thanh Toán`;
+        const shouldSendEmail = !customer || customer.notifyOrderStatus !== false;
+        if (shouldSendEmail) {
+          const db = await import("./db");
+          const userSettings = await db.getUserSettings(owner.id);
+          const companyName = userSettings?.companyName || "Invoice Prime";
+          const paymentPageUrl = paymentUrl || `${input.origin}/pay/${createdInvoice.id}`;
+          const customTemplate = await db.getEmailTemplateByType(owner.id, "CREATED").catch(() => null);
+          const replaceVars = (str: string) => str
+            .replace(/{{customerName}}/g, customer.name || input.email)
+            .replace(/{{invoiceNumber}}/g, invoiceNumber)
+            .replace(/{{totalAmount}}/g, `${totalAmount.toLocaleString("vi-VN")} đ`)
+            .replace(/{{status}}/g, "Chờ thanh toán")
+            .replace(/{{trackUrl}}/g, `${input.origin}/track-order`)
+            .replace(/{{reviewUrl}}/g, "")
+            .replace(/{{companyName}}/g, companyName)
+            .replace(/{{paymentUrl}}/g, paymentPageUrl);
+          let html: string;
+          let subject: string;
+          if (customTemplate) {
+            html = replaceVars(customTemplate.htmlBody);
+            subject = replaceVars(customTemplate.subject);
+          } else {
+            html = generateInvoiceEmailHTML({
+              invoiceNumber,
+              customerName: customer.name || input.email,
+              totalAmount,
+              currency: "VND",
+              companyName,
+              paymentUrl: paymentPageUrl,
+            });
+            subject = `Hóa Đơn ${invoiceNumber} - Link Thanh Toán`;
+          }
+          await sendEmail({ to: input.email, subject, html, userId: owner.id });
         }
-        await sendEmail({ to: input.email, subject, html, userId: owner.id });
       } catch (emailErr) {
         console.error("[checkout.buyNow] Email error:", emailErr);
       }

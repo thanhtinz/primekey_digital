@@ -159,7 +159,9 @@ router.post("/payos", async (req, res) => {
         const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
 
         const recipientEmail = customer?.email;
-        if (recipientEmail) {
+        // Check customer notification preference before sending email
+        const shouldSendEmail = !customer || customer.notifyOrderStatus !== false;
+        if (recipientEmail && shouldSendEmail) {
           const emailHtml = generatePaymentConfirmationEmailHTML({
             invoiceNumber: invoice.invoiceNumber,
             customerName: customer?.name || "Khách Hàng",
@@ -176,6 +178,8 @@ router.post("/payos", async (req, res) => {
             userId: invoice.userId,
           });
           console.log(`[PayOS Webhook] Sent payment confirmation email to ${recipientEmail}`);
+        } else if (recipientEmail && !shouldSendEmail) {
+          console.log(`[PayOS Webhook] Skipped email for ${recipientEmail} (notifyOrderStatus=false)`);
         }
       } catch (emailErr) {
         console.error("[PayOS Webhook] Failed to send confirmation email:", emailErr);

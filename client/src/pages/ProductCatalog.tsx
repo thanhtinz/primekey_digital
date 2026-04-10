@@ -404,9 +404,13 @@ export default function ProductCatalog() {
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-gray-800 mb-1.5 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">{product.name}</h3>
                     <div className="mb-1">
-                      <span className="text-red-500 font-bold text-sm">
-                        {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
-                      </span>
+                      {(!product.packages || product.packages.length === 0) ? (
+                        <span className="text-red-600 font-bold text-sm">Liên hệ</span>
+                      ) : (
+                        <span className="text-red-500 font-bold text-sm">
+                          {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs mt-1">
                       <div className="flex items-center gap-0.5 text-amber-500">
@@ -452,9 +456,13 @@ export default function ProductCatalog() {
                     <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">{product.name}</h3>
                     {product.description && <p className="text-xs text-gray-500 mb-2 line-clamp-1">{product.description}</p>}
                     <div className="flex items-center justify-between">
-                      <span className="text-red-500 font-bold text-sm">
-                        {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
-                      </span>
+                      {(!product.packages || product.packages.length === 0) ? (
+                        <span className="text-red-600 font-bold text-sm">Liên hệ</span>
+                      ) : (
+                        <span className="text-red-500 font-bold text-sm">
+                          {formatVND(minPrice)}{hasMultiPrice ? ` ~ ${formatVND(maxPrice)}` : ""}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs mt-1.5">
                       <div className="flex items-center gap-0.5 text-amber-500">

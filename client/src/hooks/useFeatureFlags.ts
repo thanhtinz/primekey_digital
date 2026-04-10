@@ -10,9 +10,9 @@ export function useFeatureFlags() {
   });
 
   const isEnabled = (key: string): boolean => {
-    if (isLoading || !flags) return true; // Default to enabled while loading
+    if (isLoading || !flags) return false; // Default to disabled while loading to avoid flash
     const flag = flags.find((f) => f.key === key);
-    return flag ? flag.enabled : true; // Default to enabled if not found
+    return flag ? flag.enabled : true; // Default to enabled if not found in DB
   };
 
   return { isEnabled, isLoading, flags };

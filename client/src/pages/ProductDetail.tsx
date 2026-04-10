@@ -84,7 +84,7 @@ export default function ProductDetail() {
     { enabled: !!email && !!referralSettings?.isEnabled, staleTime: 300_000 }
   );
   const { data: inventoryCount } = trpc.inventory.countAvailable.useQuery(
-    { productId },
+    { productId, packageId: selectedPackageId || undefined },
     { enabled: !!productId }
   );
   const { data: relatedProducts = [] } = trpc.products.getRelated.useQuery(
@@ -126,7 +126,12 @@ export default function ProductDetail() {
   const buyNow = trpc.checkout.buyNow.useMutation({
     onSuccess: (data) => {
       if (data.paymentUrl) {
+        // Redirect to PayOS payment page
         window.location.href = data.paymentUrl;
+      } else if (data.invoiceId) {
+        // Redirect to internal payment page
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
+        setLocation(`/pay/${data.invoiceId}`);
       } else {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
         setLocation(`/track-order?invoice=${data.invoiceNumber}`);
@@ -432,28 +437,26 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Stock - warehouse type */}
+        {/* Stock - warehouse type: show inventory badge like the design */}
         {(product as any).inventoryType === "warehouse" && (
-          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${
+          <div className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 ${
             (inventoryCount?.count || 0) > 0
-              ? "bg-green-50 border border-green-200"
-              : "bg-red-50 border border-red-200"
+              ? "bg-emerald-50 border border-emerald-100"
+              : "bg-amber-50 border border-amber-100"
           }`}>
-            <span className="text-sm">{(inventoryCount?.count || 0) > 0 ? "🟢" : "🔴"}</span>
-            <span className={`text-xs font-medium ${
-              (inventoryCount?.count || 0) > 0 ? "text-green-700" : "text-red-700"
+            <span className="text-xl">📦</span>
+            <span className={`text-sm font-semibold ${
+              (inventoryCount?.count || 0) > 0 ? "text-emerald-700" : "text-amber-700"
             }`}>
-              {(inventoryCount?.count || 0) > 0
-                ? `Còn ${inventoryCount?.count} sản phẩm trong kho`
-                : "Hết hàng"}
+              Kho hàng: <strong>{(inventoryCount?.count || 0) > 0 ? `${inventoryCount?.count} sản phẩm` : "Hết hàng tạm thời"}</strong>
             </span>
           </div>
         )}
         {/* Stock - legacy field */}
         {(product as any).inventoryType !== "warehouse" && (product as any).stock !== undefined && (product as any).stock !== null && (
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-            <span className="text-green-600 text-sm">🟢</span>
-            <span className="text-xs text-green-700 font-medium">Kho hàng: {(product as any).stock} sản phẩm</span>
+          <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3">
+            <span className="text-xl">📦</span>
+            <span className="text-sm font-semibold text-emerald-700">Kho hàng: <strong>{(product as any).stock} sản phẩm</strong></span>
           </div>
         )}
 

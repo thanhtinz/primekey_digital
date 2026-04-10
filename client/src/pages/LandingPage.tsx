@@ -108,7 +108,9 @@ const ProductCard = React.memo(({ product, saleMap, navigate }: { product: any; 
             </div>
           ) : product.price ? (
             <div className="text-sm font-bold text-red-500">{formatPrice(product.price)}</div>
-          ) : null}
+          ) : (
+            <div className="text-sm font-bold text-red-600">Liên hệ</div>
+          )}
         </div>
         <div className="flex items-center gap-2 text-xs mt-1">
           <div className="flex items-center gap-0.5 text-amber-500">

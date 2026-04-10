@@ -859,13 +859,13 @@ export default function MyAccount() {
   const isAdmin = adminCheckData?.isAdmin === true;
 
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
-  const tabs: { id: TabType; label: string; icon: any; badge?: number }[] = [
-    { id: "overview", label: "Tổng quan", icon: BarChart3 },
-    { id: "orders", label: "Đơn hàng", icon: Package, badge: pendingOrders > 0 ? pendingOrders : undefined },
-    ...(isFeatureEnabled("points") ? [{ id: "points" as TabType, label: "Điểm", icon: Star }] : []),
-    ...(isFeatureEnabled("warranty") ? [{ id: "warranty" as TabType, label: "Bảo hành", icon: Shield }] : []),
-    ...(isFeatureEnabled("referral") ? [{ id: "referral" as TabType, label: "Giới thiệu", icon: Users2 }] : []),
-    { id: "profile", label: "Hồ sơ & Bảo mật", icon: User },
+  const tabs: { id: TabType; label: string; icon: any; badge?: number; color: string; activeColor: string }[] = [
+    { id: "overview", label: "Tổng quan", icon: BarChart3, color: "text-blue-500", activeColor: "bg-gradient-to-r from-blue-500 to-blue-600" },
+    { id: "orders", label: "Đơn hàng", icon: Package, badge: pendingOrders > 0 ? pendingOrders : undefined, color: "text-orange-500", activeColor: "bg-gradient-to-r from-orange-500 to-amber-500" },
+    ...(isFeatureEnabled("points") ? [{ id: "points" as TabType, label: "Điểm", icon: Star, color: "text-yellow-500", activeColor: "bg-gradient-to-r from-yellow-400 to-orange-400" }] : []),
+    ...(isFeatureEnabled("warranty") ? [{ id: "warranty" as TabType, label: "Bảo hành", icon: Shield, color: "text-teal-500", activeColor: "bg-gradient-to-r from-teal-500 to-emerald-500" }] : []),
+    ...(isFeatureEnabled("referral") ? [{ id: "referral" as TabType, label: "Giới thiệu", icon: Users2, color: "text-indigo-500", activeColor: "bg-gradient-to-r from-indigo-500 to-violet-500" }] : []),
+    { id: "profile", label: "Hồ sơ & Bảo mật", icon: User, color: "text-slate-500", activeColor: "bg-gradient-to-r from-slate-600 to-slate-700" },
   ];
 
   // Always fetch referral stats so code is consistent across all tabs
@@ -1028,20 +1028,20 @@ export default function MyAccount() {
         {/* ===== Tabs ===== */}
         <div className="overflow-x-auto -mx-4 px-4">
           <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 min-w-max">
-            {tabs.map(({ id, label, icon: Icon, badge }) => (
+            {tabs.map(({ id, label, icon: Icon, badge, color, activeColor }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition relative whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all relative whitespace-nowrap ${
                   activeTab === id
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                    ? `${activeColor} text-white shadow-md`
+                    : `text-slate-500 hover:text-slate-800 hover:bg-slate-50`
                 }`}
               >
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${activeTab === id ? "text-white" : color}`} />
                 {label}
                 {badge !== undefined && badge > 0 && (
-                  <span className={`ml-1 w-4.5 h-4.5 rounded-full text-[10px] flex items-center justify-center font-bold ${activeTab === id ? "bg-white text-blue-600" : "bg-red-500 text-white"}`}>
+                  <span className={`ml-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] flex items-center justify-center font-bold ${activeTab === id ? "bg-white/30 text-white" : "bg-red-500 text-white"}`}>
                     {badge > 99 ? "99+" : badge}
                   </span>
                 )}

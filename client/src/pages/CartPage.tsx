@@ -154,6 +154,10 @@ export default function CartPage() {
       } else if (data.paymentUrl) {
         // Đợi một chút để cache invalidation hoàn tất trước khi redirect
         setTimeout(() => { window.location.href = data.paymentUrl; }, 300);
+      } else if (data.invoiceId) {
+        // Redirect to internal payment page
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
+        setTimeout(() => navigate(`/pay/${data.invoiceId}`), 300);
       } else {
         toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
         setTimeout(() => navigate(`/track-order`), 2000);
