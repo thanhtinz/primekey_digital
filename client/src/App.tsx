@@ -99,6 +99,11 @@ const SpinWheelPage = lazy(() => import("./pages/SpinWheelPage"));
 const SpinWheelAdmin = lazy(() => import("./pages/SpinWheelAdmin"));
 const LoyaltyRewardsAdmin = lazy(() => import("./pages/LoyaltyRewardsAdmin"));
 const LoyaltyRewardsPage = lazy(() => import("./pages/LoyaltyRewardsPage"));
+// Merged admin pages
+const WarrantyAdmin = lazy(() => import("./pages/WarrantyAdmin"));
+const ReferralAdmin = lazy(() => import("./pages/ReferralAdmin"));
+const LoyaltyAdmin = lazy(() => import("./pages/LoyaltyAdmin"));
+const FlashSaleAdmin = lazy(() => import("./pages/FlashSaleAdmin"));
 // Public pages (no auth required)
 const TrackOrder = lazy(() => import("./pages/TrackOrder"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
@@ -283,6 +288,11 @@ function Router() {
         <Route path="/queue" component={() => isAdmin ? <QueuePage /> : <ForbiddenPage />} />
         <Route path="/admin/spin-wheel" component={() => isAdmin ? <SpinWheelAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/loyalty-rewards" component={() => isAdmin ? <LoyaltyRewardsAdmin /> : <ForbiddenPage />} />
+        {/* Merged admin pages */}
+        <Route path="/admin/warranty" component={() => isAdmin ? <WarrantyAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/referral" component={() => isAdmin ? <ReferralAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/loyalty" component={() => isAdmin ? <LoyaltyAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/flash-sale" component={() => isAdmin ? <FlashSaleAdmin /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

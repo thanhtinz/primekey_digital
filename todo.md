@@ -1600,3 +1600,26 @@ todo updated
 - [x] LandingPage: đổi "Tất cả sản phẩm" → "Sản phẩm nổi bật", tối đa 10 sản phẩm
 - [x] LandingPage: thêm card "Sản phẩm bán chạy" (lượt mua nhiều nhất)
 - [x] ProductDetail: thêm card "Lưu ý sản phẩm" hiển thị mô tả gói đang chọn, tự động cập nhật khi bấm gói khác
+
+## Phase Admin Redesign: AdminKit Style
+- [ ] Xây dựng AdminLayout mới (sidebar navy, header trắng) theo phong cách AdminKit
+- [ ] Redesign Dashboard, Orders, Products, Customers, Reports theo AdminKit
+- [ ] Redesign Wallet, Blog, Coupons, FlashSale, Warranty, Feedbacks, Referral, Staff theo AdminKit
+- [ ] Redesign Settings (gộp sub-settings), bỏ/gộp trang thừa
+- [ ] Dọn App.tsx: bỏ routes thừa, đảm bảo AdminLayout bao hết trang admin
+- [ ] Cập nhật menu sidebar: thêm Flash Sale Subscribers, Loyalty Rewards, Warranty Requests, Referral Withdrawals, Refunds, Spin Wheel, VAT Invoices
+- [ ] Tạo ReferralAdmin.tsx (gộp ReferralSettings + ReferralWithdrawalsAdmin)
+- [ ] Tạo LoyaltyAdmin.tsx (gộp LoyaltySettings + LoyaltyRewardsAdmin)
+- [ ] Tạo FlashSaleAdmin.tsx (gộp FlashSaleSettings + FlashSaleSubscriberSettings)
+- [ ] Cập nhật App.tsx routes cho các trang gộp mới
+- [ ] Redesign Dashboard theo AdminKit (cards trắng, shadow nhẹ, KPI đẹp)
+- [ ] Redesign Orders/Invoices theo AdminKit
+- [ ] Redesign Products theo AdminKit
+- [ ] Redesign Customers theo AdminKit
+- [ ] Redesign Reports theo AdminKit
+- [ ] Redesign WalletManagement theo AdminKit
+- [ ] Redesign Feedbacks theo AdminKit
+- [ ] Redesign Blog theo AdminKit
+- [ ] Redesign Coupons theo AdminKit
+- [ ] Redesign Staff theo AdminKit
+- [ ] Redesign Settings theo AdminKit

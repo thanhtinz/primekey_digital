@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet } from "@/components/Icon";
+import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet, Gift } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -20,81 +20,49 @@ const adminNavGroups = [
   {
     label: "Bán Hàng",
     items: [
-      { label: "Lịch Sử Đơn", href: "/invoices", icon: History },
-      { label: "Hóa Đơn Định Kỳ", href: "/recurring-invoices", icon: RefreshCw },
+      { label: "Đơn Hàng", href: "/invoices", icon: History },
+      { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
+      { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
       { label: "Khách Hàng", href: "/customers", icon: Users },
-      { label: "Import Excel", href: "/import-excel", icon: Upload },
-      { label: "Tìm Kiếm Nâng Cao", href: "/advanced-search", icon: SearchCode },
-    ],
-  },
-  {
-    label: "Sản Phẩm",
-    items: [
       { label: "Sản Phẩm", href: "/products", icon: Package },
       { label: "Danh Mục", href: "/settings/categories", icon: Tag },
-      { label: "Quản Lý Tag", href: "/settings/tags", icon: Tag },
-      { label: "Mẫu Hóa Đơn", href: "/templates", icon: FileStack },
     ],
   },
   {
-    label: "Khuyến Mãi & Marketing",
+    label: "Marketing",
     items: [
-      { label: "Flash Sale", href: "/settings/flash-sale", icon: ShoppingBag },
+      { label: "Flash Sale", href: "/admin/flash-sale", icon: ShoppingBag },
       { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
-      { label: "Giới Thiệu Bạn Bè", href: "/settings/referral", icon: Users2 },
-      { label: "Yêu Cầu Rút Thưởng", href: "/admin/referral-withdrawals", icon: Banknote },
-      { label: "Tích Điểm", href: "/settings/loyalty", icon: Star },
-      { label: "Banner Trang Chủ", href: "/settings/banners", icon: Image },
-      { label: "Kho Ảnh Avatar", href: "/admin/avatar-gallery", icon: User },
-      { label: "Email Campaigns", href: "/campaigns", icon: Megaphone },
-      { label: "ĐK Flash Sale", href: "/settings/flash-sale-subscribers", icon: MailCheck },
-    ],
-  },
-  {
-    label: "Bảo Hành & Hỗ Trợ",
-    items: [
-      { label: "Quản Lý Bảo Hành", href: "/warranties", icon: Shield },
-      { label: "Yêu Cầu BH", href: "/warranty-requests", icon: Wrench },
-      { label: "Cấu Hình BH", href: "/settings/warranty", icon: Shield },
-      { label: "FAQ / Hỏi Đáp", href: "/settings/faq", icon: HelpCircle },
+      { label: "Giới Thiệu & Hoa Hồng", href: "/admin/referral", icon: Banknote },
+      { label: "Tích Điểm", href: "/admin/loyalty", icon: Star },
+      { label: "Vòng Quay May Mắn", href: "/admin/spin-wheel", icon: Gift },
       { label: "Đánh Giá KH", href: "/feedbacks", icon: MessageSquare },
     ],
   },
   {
-    label: "Tài Chính & Báo Cáo",
+    label: "Vận Hành",
     items: [
-      { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
-      { label: "Báo Cáo Nâng Cao", href: "/advanced-reports", icon: TrendingUp },
-      { label: "Hóa Đơn VAT", href: "/vat-invoices", icon: Receipt },
-      { label: "Hoàn Tiền", href: "/refunds", icon: RotateCcw },
       { label: "Quản Lý Ví", href: "/wallet-management", icon: Wallet },
-      { label: "Báo Cáo Thuế", href: "/tax-report", icon: FileBarChart2 },
-      { label: "Cấu Hình Thuế", href: "/settings/tax", icon: Percent },
+      { label: "Bảo Hành", href: "/admin/warranty", icon: Shield },
+      { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
+      { label: "Nhân Viên", href: "/staff", icon: Users },
     ],
   },
   {
-    label: "Thanh Toán",
+    label: "Nội Dung",
     items: [
-      { label: "Cấu Hình PayOS", href: "/settings/payos", icon: Zap },
-      { label: "Cấu Hình PayPal", href: "/settings/paypal", icon: CreditCard },
+      { label: "Blog", href: "/admin/blog", icon: FileText },
+      { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
+      { label: "Gửi Thông Báo", href: "/admin/notifications", icon: Bell },
+      { label: "Avatar Gallery", href: "/admin/avatar-gallery", icon: Image },
+      { label: "Embed Widget", href: "/embed-widget", icon: Code },
     ],
   },
   {
     label: "Hệ Thống",
     items: [
-      { label: "Nhân Viên", href: "/staff", icon: Users },
-      { label: "Thông Báo Website", href: "/admin/notifications", icon: Bell },
-      { label: "Quản Lý Blog", href: "/admin/blog", icon: FileText },
-      { label: "Thông Báo Hệ Thống", href: "/admin/announcements", icon: Megaphone },
-      { label: "Nhắc Nhở", href: "/reminders", icon: Bell },
-      { label: "Lịch Sử HT", href: "/activity-log", icon: History },
-      { label: "Sao Lưu", href: "/backup", icon: Database },
       { label: "Cài Đặt", href: "/settings", icon: Settings },
-      { label: "Tính Năng", href: "/settings/features", icon: Zap },
-      { label: "SMTP", href: "/settings/smtp", icon: Mail },
-      { label: "Mẫu Email", href: "/settings/email-templates", icon: MessageSquare },
-      { label: "Telegram", href: "/settings/telegram", icon: Send },
-      { label: "Trang Cảm Ơn", href: "/settings/thank-you", icon: Heart },
+      { label: "Lịch Sử HĐ", href: "/activity-log", icon: History },
     ],
   },
 ];
@@ -213,37 +181,33 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         }}
         className={`
           ${isMobile ? "fixed" : "relative"}
-          w-64 h-full bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800
+          w-64 h-full bg-[#1e2a3b]
           text-white flex flex-col z-40 shadow-2xl flex-shrink-0
         `}
       >
-        {/* Logo */}
-        <div className="px-5 py-5 border-b border-slate-700/60">
+        {/* Logo - AdminKit style */}
+        <div className="px-4 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              {appLogo ? (
-                <img src={appLogo} alt={appName} className="h-9 max-w-[120px] rounded-lg object-contain" />
-              ) : (
-                <div className="h-9 px-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
-                  <span className="text-white font-bold text-sm">{appInitials}</span>
-                </div>
-              )}
-            </div>
-            {!appLogo && (
-              <div className="min-w-0">
-                <h1 className="font-bold text-base leading-tight truncate">{appName}</h1>
-                <p className="text-xs text-slate-400">Quản lý hóa đơn</p>
+            {appLogo ? (
+              <img src={appLogo} alt={appName} className="h-8 max-w-[110px] object-contain" />
+            ) : (
+              <div className="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+                <span className="text-white font-bold text-xs">{appInitials}</span>
               </div>
             )}
+            <div className="min-w-0">
+              <h1 className="font-semibold text-sm leading-tight truncate text-white">{appName}</h1>
+              <p className="text-[10px] text-slate-400 mt-0.5">Admin Panel</p>
+            </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-thin scrollbar-thumb-slate-700">
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-700">
           {navGroups.map((group, gi) => (
-            <div key={gi}>
+            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
               {group.label && (
-                <p className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
+                <p className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">
                   {group.label}
                 </p>
               )}
@@ -256,16 +220,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       key={item.href}
                       onClick={() => handleNavClick(item.href)}
                       className={`
-                        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm text-left
+                        w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all text-sm text-left relative
                         ${active
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-medium"
-                          : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-100"
+                          ? "bg-blue-600 text-white font-medium"
+                          : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                         }
                       `}
                     >
-                      <Icon className={`h-4 w-4 flex-shrink-0 ${active ? "text-white" : "text-slate-500"}`} />
+                      {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-blue-300 rounded-r-full" />}
+                      <Icon className={`h-4 w-4 flex-shrink-0 ${active ? "text-blue-100" : "text-slate-500"}`} />
                       <span className="flex-1 truncate">{item.label}</span>
-                      {active && <ChevronRight className="h-3 w-3 opacity-60" />}
                     </button>
                   );
                 })}
@@ -274,27 +238,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
         </nav>
 
-        {/* User & Logout */}
-        <div className="p-3 border-t border-slate-700/60 space-y-1">
+        {/* User & Logout - AdminKit bottom bar */}
+        <div className="p-3 border-t border-white/10">
           {user && (
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-800/60 mb-1">
-              <div className="h-7 w-7 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                <User className="h-3.5 w-3.5 text-blue-400" />
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-md mb-1 bg-white/5">
+              <div className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 text-white text-[10px] font-bold">
+                {(user.name || user.email || "U")[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-slate-200 truncate">{user.name || user.email}</p>
-                <p className="text-[10px] text-slate-500 truncate capitalize">{(user as any)?.role === "admin" ? "Admin" : "Nhân viên"}</p>
+                <p className="text-xs font-medium text-slate-200 truncate">{user.name || user.email?.split("@")[0]}</p>
+                <p className="text-[10px] text-slate-500">{(user as any)?.role === "admin" ? "Administrator" : "Staff"}</p>
               </div>
+              <button
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+                className="p-1 rounded hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-colors"
+                title="Đăng xuất"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
-          <button
-            onClick={handleLogout}
-            disabled={logoutMutation.isPending}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all text-sm"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>{logoutMutation.isPending ? "Đang đăng xuất..." : "Đăng Xuất"}</span>
-          </button>
         </div>
       </aside>
 
@@ -318,8 +282,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         }}
         className="flex-1 flex flex-col overflow-hidden min-w-0"
       >
-        {/* Header */}
-        <header className="bg-background border-b border-border shadow-sm sticky top-0 z-20 flex-shrink-0">
+        {/* Header - AdminKit style */}
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-20 flex-shrink-0 dark:bg-slate-900 dark:border-slate-700">
           <div className="flex items-center justify-between px-4 sm:px-6 h-14">
             <div className="flex items-center gap-3">
               <button
@@ -420,8 +384,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
+        {/* Page Content - AdminKit light gray bg */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-slate-800">
           {children}
         </main>
       </div>
