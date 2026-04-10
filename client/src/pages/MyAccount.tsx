@@ -627,6 +627,69 @@ function SecurityInlineSection({ token }: { token: string }) {
   );
 }
 
+// NotificationPrefsSection component
+function NotificationPrefsSection({ token }: { token: string }) {
+  const utils = trpc.useUtils();
+  const { data: meData } = trpc.customer.me.useQuery({ token }, { enabled: !!token });
+  const updateNotif = trpc.customer.updateNotificationPrefs.useMutation({
+    onSuccess: () => { utils.customer.me.invalidate(); toast.success("Cập nhật thông báo thành công"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const prefs = meData || {};
+
+  const handleToggle = (field: string, value: boolean) => {
+    updateNotif.mutate({ token, [field]: value });
+  };
+
+  const notifItems = [
+    { key: "notifyOrderStatus", label: "Trạng thái đơn hàng", desc: "Nhận email khi đơn hàng được cập nhật trạng thái", icon: "\uD83D\uDCE6" },
+    { key: "notifyOnLogin", label: "Cảnh báo đăng nhập", desc: "Nhận email khi có đăng nhập mới vào tài khoản", icon: "\uD83D\uDD14" },
+    { key: "notifyNewProduct", label: "Sản phẩm mới", desc: "Nhận thông báo khi có sản phẩm mới được thêm", icon: "\u2728" },
+    { key: "notifyFlashSale", label: "Flash Sale", desc: "Nhận cảnh báo khi có chương trình flash sale", icon: "\u26A1" },
+    { key: "notifyPromotion", label: "Khuyến mãi & ưu đãi", desc: "Nhận email về mã giảm giá và chương trình ưu đãi", icon: "\uD83C\uDF81" },
+  ];
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-green-50 to-emerald-50">
+        <div className="w-8 h-8 rounded-xl bg-green-500 flex items-center justify-center">
+          <span className="text-white text-base">🔔</span>
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-800">Cài đặt thông báo</h3>
+          <p className="text-[11px] text-slate-500">Chọn loại email bạn muốn nhận</p>
+        </div>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {notifItems.map(item => {
+          const isOn = !!(prefs as any)[item.key];
+          return (
+            <div key={item.key} className="flex items-center gap-3 px-5 py-3.5">
+              <span className="text-lg flex-shrink-0">{item.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-700">{item.label}</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">{item.desc}</p>
+              </div>
+              <button
+                onClick={() => handleToggle(item.key, !isOn)}
+                disabled={updateNotif.isPending}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                  isOn ? "bg-green-500" : "bg-slate-200"
+                }`}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  isOn ? "translate-x-5" : "translate-x-0"
+                }`} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile";
 
 export default function MyAccount() {
@@ -1414,7 +1477,7 @@ export default function MyAccount() {
         )}
 
         {/* ===== Tab: Referral ===== */}
-        {activeTab === "referral" && (
+        {activeTab === "referral" && isFeatureEnabled("referral") && (
           <div className="space-y-4">
             {/* Header */}
             <div className="bg-white border border-slate-200 rounded-xl p-5">
@@ -1823,7 +1886,10 @@ export default function MyAccount() {
               <SecurityInlineSection token={token!} />
             </div>
 
-            {/* ── Section 3: Tài khoản ── */}
+            {/* ── Section 3: Cài đặt thông báo ── */}
+            <NotificationPrefsSection token={token!} />
+
+            {/* ── Section 4: Tài khoản ── */}
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
               <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-red-50 to-rose-50">
                 <div className="w-8 h-8 rounded-xl bg-red-500 flex items-center justify-center">

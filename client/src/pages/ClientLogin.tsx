@@ -121,7 +121,7 @@ export default function ClientLogin() {
   const handleForgot = (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail.trim()) return;
-    forgotMutation.mutate({ email: forgotEmail.trim() });
+    forgotMutation.mutate({ email: forgotEmail.trim(), origin: window.location.origin });
   };
 
   const handleReset = (e: React.FormEvent) => {

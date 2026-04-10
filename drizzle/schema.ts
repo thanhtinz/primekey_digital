@@ -44,6 +44,12 @@ export const customers = mysqlTable("customers", {
   totpEnabled: boolean("totpEnabled").default(false), // 2FA enabled
   avatarUrl: text("avatarUrl"), // Avatar URL stored persistently
   customerRole: mysqlEnum("customerRole", ["customer", "vip", "wholesale", "partner"]).default("customer"),
+  // Notification preferences
+  notifyOnLogin: boolean("notifyOnLogin").default(false),
+  notifyNewProduct: boolean("notifyNewProduct").default(false),
+  notifyFlashSale: boolean("notifyFlashSale").default(false),
+  notifyPromotion: boolean("notifyPromotion").default(true),
+  notifyOrderStatus: boolean("notifyOrderStatus").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -89,8 +95,11 @@ export const productPackages = mysqlTable("product_packages", {
   id: int("id").autoincrement().primaryKey(),
   productId: int("productId").notNull(),
   name: varchar("name", { length: 255 }).notNull(), // Tên gói: "1 tháng", "3 tháng", "1 năm"
-  price: decimal("price", { precision: 15, scale: 2 }).notNull(),
+  price: decimal("price", { precision: 15, scale: 2 }).notNull(), // Giá khách thường
   originalPrice: decimal("originalPrice", { precision: 15, scale: 2 }), // Giá gốc (nếu có giảm giá)
+  priceVip: decimal("priceVip", { precision: 15, scale: 2 }), // Giá VIP
+  priceWholesale: decimal("priceWholesale", { precision: 15, scale: 2 }), // Giá Đại Lý
+  pricePartner: decimal("pricePartner", { precision: 15, scale: 2 }), // Giá Đối Tác
   description: text("description"), // Mô tả ngắn về gói
   warrantyMonths: int("warrantyMonths").default(0), // Thời hạn bảo hành theo gói
   sortOrder: int("sortOrder").default(0),

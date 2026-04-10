@@ -1658,3 +1658,53 @@ todo updated
 - [x] Quản Lý Ví đã có tính năng điều chỉnh số dư khách hàng (adminCredit)
 - [x] Bỏ nút Quay lại trong trang Cấu Hình PayOS
 - [x] Clean code PayPal: xóa PayPal logic khỏi testConnection trong routers.ts
+
+## Session 2026-04-10 - Hoàn thiện UI Admin
+
+- [x] Bỏ hoàn toàn tab Nhân Viên khỏi Customers.tsx (chỉ còn danh sách khách hàng)
+- [x] Cải thiện tab UI AnnouncementManagement.tsx: custom tab bar với active=bg-blue-600, badge count, icon
+- [x] Tách Blog thành 3 mục riêng trong menu sidebar: Tất Cả Bài Viết / Viết Bài Mới / Chuyên Mục
+- [x] Route /admin/blog → BlogPosts (thay vì BlogManagement)
+- [x] TypeScript 0 errors
+
+## Session 2026-04-10 - Cải thiện UI Mobile + Tính năng mới
+
+### Mobile Layout & Extensions
+- [x] Redesign Extensions.tsx cho mobile: card grid responsive, thêm config dialog trước khi bật tính năng
+- [x] Redesign RedisConsole.tsx cho mobile: layout gọn hơn, toolbar responsive
+- [x] Redesign AdminConsole.tsx cho mobile: layout gọn hơn, input full width
+
+### Settings Redesign
+- [x] Redesign Settings.tsx với 6 nhóm: Identity (tên, logo, favicon), Visuals (màu sắc, font, theme), Assets (ảnh, media), Storage (S3/CDN), System (SMTP, Telegram, PayOS), Danger (xóa data, reset)
+
+### Product Features
+- [x] Thêm nút Chia Sẻ cạnh nút Yêu Thích trong ProductDetail
+- [x] Fix ẩn tab Giới Thiệu (Referral) trong MyAccount khi tính năng referral bị tắt
+
+### Inventory Fix
+- [x] Fix kho hàng: chặn đặt hàng khi hết tồn kho (backend validate + frontend hiển thị "Hết hàng")
+- [x] ProductDetail: hiển thị badge "Hết hàng" và disable nút mua khi tồn kho = 0
+
+### Giá theo quyền hạn khách hàng
+- [x] Schema: thêm priceVip, priceWholesale, pricePartner vào bảng product_packages
+- [x] Migration: pnpm db:push cho schema mới
+- [x] Backend: procedure tạo/sửa package hỗ trợ 4 mức giá
+- [x] Backend: khi lấy giá gói, tự động chọn giá theo customerRole của khách đang đăng nhập
+- [x] Admin UI: form tạo/sửa gói sản phẩm thêm 3 trường giá VIP/Đại Lý/Đối Tác
+- [x] Client UI: ProductDetail hiển thị giá đúng theo quyền hạn khách hàng
+
+### Mail xác thực & Quên mật khẩu
+- [x] Backend: procedure gửi mail xác thực email khi đăng ký (token + link)
+- [x] Backend: procedure verify email token
+- [x] Backend: procedure gửi mail quên mật khẩu (reset token)
+- [x] Backend: procedure reset mật khẩu bằng token
+- [x] Frontend: trang /verify-email xử lý token xác thực
+- [x] Frontend: trang /reset-password xử lý token reset mật khẩu
+- [x] Frontend: ClientLogin thêm link "Quên mật khẩu?"
+- [x] Frontend: form quên mật khẩu (nhập email → gửi mail)
+
+### Cài đặt thông báo trong trang cá nhân
+- [x] Schema: thêm các cột notify vào bảng customers (notifyOnLogin, notifyNewProduct, notifyFlashSale, notifyOrderStatus, notifyPromotion)
+- [x] Migration: thêm cột vào DB
+- [x] Backend: procedure updateNotificationPrefs của customer
+- [x] Frontend: MyAccount thêm section "Cài đặt thông báo" với các toggle bật/tắt

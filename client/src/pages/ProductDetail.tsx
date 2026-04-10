@@ -539,6 +539,13 @@ export default function ProductDetail() {
                     </div>
                   )}
                   <button
+                    onClick={handleShare}
+                    className="w-11 h-11 backdrop-blur rounded-2xl flex items-center justify-center transition-all bg-white/20 hover:bg-white/30 relative"
+                    title="Chia sẻ sản phẩm"
+                  >
+                    {copied ? <CheckCircle className="w-5 h-5 text-green-300" /> : <Share2 className="w-5 h-5" />}
+                  </button>
+                  <button
                     onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui lòng đăng nhập"); }}
                     className={`w-11 h-11 backdrop-blur rounded-2xl flex items-center justify-center transition-all ${isInWishlist ? "bg-red-500" : "bg-white/20 hover:bg-white/30"}`}
                   >

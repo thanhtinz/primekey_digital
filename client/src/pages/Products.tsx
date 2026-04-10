@@ -14,13 +14,16 @@ interface PackageForm {
   name: string;
   price: string;
   originalPrice: string;
+  priceVip: string;
+  priceWholesale: string;
+  pricePartner: string;
   description: string;
   warrantyMonths: string;
   sortOrder: string;
   isActive: boolean;
 }
 
-const emptyPkg = (): PackageForm => ({ name: "", price: "", originalPrice: "", description: "", warrantyMonths: "0", sortOrder: "0", isActive: true });
+const emptyPkg = (): PackageForm => ({ name: "", price: "", originalPrice: "", priceVip: "", priceWholesale: "", pricePartner: "", description: "", warrantyMonths: "0", sortOrder: "0", isActive: true });
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -160,6 +163,9 @@ export default function Products() {
       name: p.name,
       price: String(parseFloat(p.price)),
       originalPrice: p.originalPrice ? String(parseFloat(p.originalPrice)) : "",
+      priceVip: p.priceVip ? String(parseFloat(p.priceVip)) : "",
+      priceWholesale: p.priceWholesale ? String(parseFloat(p.priceWholesale)) : "",
+      pricePartner: p.pricePartner ? String(parseFloat(p.pricePartner)) : "",
       description: p.description || "",
       warrantyMonths: String(p.warrantyMonths ?? 0),
       sortOrder: String(p.sortOrder ?? 0),
@@ -215,6 +221,9 @@ export default function Products() {
       name: pkg.name,
       price,
       originalPrice: pkg.originalPrice ? parseFloat(pkg.originalPrice) : undefined,
+      priceVip: pkg.priceVip ? parseFloat(pkg.priceVip) : undefined,
+      priceWholesale: pkg.priceWholesale ? parseFloat(pkg.priceWholesale) : undefined,
+      pricePartner: pkg.pricePartner ? parseFloat(pkg.pricePartner) : undefined,
       description: pkg.description || undefined,
       warrantyMonths: parseInt(pkg.warrantyMonths) || 0,
       sortOrder: parseInt(pkg.sortOrder) || 0,
@@ -664,6 +673,23 @@ export default function Products() {
                               <Label className="text-xs text-gray-500 flex items-center gap-1"><Shield className="h-3 w-3 text-blue-500" /> Bảo hành (tháng)</Label>
                               <Input type="number" min="0" value={pkg.warrantyMonths} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, warrantyMonths: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="0" />
                             </div>
+                            <div className="col-span-2 border-t border-dashed border-purple-200 pt-2">
+                              <p className="text-xs font-semibold text-purple-600 mb-1.5">✨ Giá theo quyền hạn (tùy chọn)</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <Label className="text-xs text-gray-500">Giá VIP (₫)</Label>
+                                  <Input type="number" value={pkg.priceVip} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, priceVip: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="VIP" />
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Đại Lý (₫)</Label>
+                                  <Input type="number" value={pkg.priceWholesale} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, priceWholesale: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="Wholesale" />
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-500">Đối Tác (₫)</Label>
+                                  <Input type="number" value={pkg.pricePartner} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, pricePartner: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="Partner" />
+                                </div>
+                              </div>
+                            </div>
                             <div className="col-span-2">
                               <Label className="text-xs text-gray-500">Mô tả gói</Label>
                               <Input value={pkg.description} onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, description: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="Mô tả ngắn..." />
@@ -712,6 +738,23 @@ export default function Products() {
                               <div>
                                 <Label className="text-xs text-gray-500 flex items-center gap-1"><Shield className="h-3 w-3 text-blue-500" /> Bảo hành (tháng)</Label>
                                 <Input type="number" min="0" value={pkg.warrantyMonths} onChange={e => setPackages(prev => prev.map((p, i) => i === absIdx ? { ...p, warrantyMonths: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="0" />
+                              </div>
+                              <div className="col-span-2 border-t border-dashed border-purple-200 pt-2">
+                                <p className="text-xs font-semibold text-purple-600 mb-1.5">✨ Giá theo quyền hạn (tùy chọn)</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Giá VIP (₫)</Label>
+                                    <Input type="number" value={pkg.priceVip} onChange={e => setPackages(prev => prev.map((p, i) => i === absIdx ? { ...p, priceVip: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="VIP" />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Đại Lý (₫)</Label>
+                                    <Input type="number" value={pkg.priceWholesale} onChange={e => setPackages(prev => prev.map((p, i) => i === absIdx ? { ...p, priceWholesale: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="Wholesale" />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Đối Tác (₫)</Label>
+                                    <Input type="number" value={pkg.pricePartner} onChange={e => setPackages(prev => prev.map((p, i) => i === absIdx ? { ...p, pricePartner: e.target.value } : p))} className="mt-1 h-8 text-sm" placeholder="Partner" />
+                                  </div>
+                                </div>
                               </div>
                               <div className="col-span-2">
                                 <Label className="text-xs text-gray-500">Mô tả gói</Label>

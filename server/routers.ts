@@ -1748,6 +1748,9 @@ export const appRouter = router({
         name: z.string(),
         price: z.number(),
         originalPrice: z.number().optional(),
+        priceVip: z.number().optional(),
+        priceWholesale: z.number().optional(),
+        pricePartner: z.number().optional(),
         description: z.string().optional(),
         warrantyMonths: z.number().min(0).optional(),
         sortOrder: z.number().optional(),
@@ -1766,6 +1769,9 @@ export const appRouter = router({
           name: input.name,
           price: String(input.price),
           originalPrice: input.originalPrice ? String(input.originalPrice) : null,
+          priceVip: input.priceVip ? String(input.priceVip) : null,
+          priceWholesale: input.priceWholesale ? String(input.priceWholesale) : null,
+          pricePartner: input.pricePartner ? String(input.pricePartner) : null,
           description: input.description,
           warrantyMonths: input.warrantyMonths ?? 0,
           sortOrder: input.sortOrder ?? 0,
@@ -1779,6 +1785,9 @@ export const appRouter = router({
         name: z.string().optional(),
         price: z.number().optional(),
         originalPrice: z.number().nullable().optional(),
+        priceVip: z.number().nullable().optional(),
+        priceWholesale: z.number().nullable().optional(),
+        pricePartner: z.number().nullable().optional(),
         description: z.string().optional(),
         warrantyMonths: z.number().min(0).optional(),
         sortOrder: z.number().optional(),
@@ -1791,10 +1800,13 @@ export const appRouter = router({
         if (!drizzleDb) throw new Error("DB unavailable");
         const { productPackages } = await import("../drizzle/schema");
         const { eq } = await import("drizzle-orm");
-        const { id, price, originalPrice, ...rest } = input;
+        const { id, price, originalPrice, priceVip, priceWholesale, pricePartner, ...rest } = input;
         const updateData: any = { ...rest };
         if (price !== undefined) updateData.price = String(price);
         if (originalPrice !== undefined) updateData.originalPrice = originalPrice !== null ? String(originalPrice) : null;
+        if (priceVip !== undefined) updateData.priceVip = priceVip !== null ? String(priceVip) : null;
+        if (priceWholesale !== undefined) updateData.priceWholesale = priceWholesale !== null ? String(priceWholesale) : null;
+        if (pricePartner !== undefined) updateData.pricePartner = pricePartner !== null ? String(pricePartner) : null;
         await drizzleDb.update(productPackages).set(updateData).where(eq(productPackages.id, id));
         return { success: true };
       }),
@@ -4743,6 +4755,37 @@ export const appRouter = router({
         }
         return { success: true };
       }),
+
+    updateNotificationPrefs: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        notifyOnLogin: z.boolean().optional(),
+        notifyNewProduct: z.boolean().optional(),
+        notifyFlashSale: z.boolean().optional(),
+        notifyPromotion: z.boolean().optional(),
+        notifyOrderStatus: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Session expired");
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) throw new Error("Không tìm thấy tài khoản");
+        const updates: any = {};
+        if (input.notifyOnLogin !== undefined) updates.notifyOnLogin = input.notifyOnLogin;
+        if (input.notifyNewProduct !== undefined) updates.notifyNewProduct = input.notifyNewProduct;
+        if (input.notifyFlashSale !== undefined) updates.notifyFlashSale = input.notifyFlashSale;
+        if (input.notifyPromotion !== undefined) updates.notifyPromotion = input.notifyPromotion;
+        if (input.notifyOrderStatus !== undefined) updates.notifyOrderStatus = input.notifyOrderStatus;
+        if (Object.keys(updates).length > 0) {
+          await drizzleDb.update(customers).set(updates).where(eq(customers.id, customer.id));
+        }
+        return { success: true };
+      }),
     uploadAvatar: publicProcedure
       .input(z.object({ token: z.string(), dataUrl: z.string() }))
       .mutation(async ({ input }) => {
@@ -4986,7 +5029,7 @@ export const appRouter = router({
       }),
     // Quên mật khẩu - gửi email reset
     forgotPassword: publicProcedure
-      .input(z.object({ email: z.string().email() }))
+      .input(z.object({ email: z.string().email(), origin: z.string().optional() }))
       .mutation(async ({ input }) => {
         const { customers } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
@@ -5016,7 +5059,7 @@ export const appRouter = router({
         try {
           const { sendEmail } = await import("./email");
           const companyName = owner.name || "Hệ thống";
-          const resetUrl = `${process.env.VITE_OAUTH_PORTAL_URL || ""}/client-login?resetToken=${resetToken}`;
+          const resetUrl = `${input.origin || process.env.VITE_OAUTH_PORTAL_URL || ""}/client-login?resetToken=${resetToken}`;
           await sendEmail({
             userId: owner.id,
             to: input.email,
@@ -5563,7 +5606,33 @@ export const appRouter = router({
       if (!pkg) throw new Error("Gói sản phẩm không tồn tại");
 
       const qty = input.quantity || 1;
-      const unitPrice = Number(pkg.price);
+
+      // Check inventory: block order if out of stock
+      if (product.inventoryType === "warehouse") {
+        const { productInventory: invTable } = await import("../drizzle/schema");
+        const invItems = await drizzleDb.select().from(invTable)
+          .where(and(eq(invTable.productId, input.productId), eq(invTable.status, "available")))
+          .limit(qty);
+        if (invItems.length < qty) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Sản phẩm đã hết hàng trong kho. Hiện chỉ còn ${invItems.length} sản phẩm.` });
+        }
+      }
+
+      // Determine price based on customer role
+      let unitPrice = Number(pkg.price);
+      if (input.customerToken) {
+        try {
+          const { customerSessions } = await import("../drizzle/schema");
+          const [sess] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.customerToken)).limit(1);
+          if (sess) {
+            const [cust] = await drizzleDb.select({ customerRole: customers.customerRole }).from(customers)
+              .where(and(eq(customers.userId, owner.id), eq(customers.email, sess.email))).limit(1);
+            if (cust?.customerRole === "vip" && pkg.priceVip) unitPrice = Number(pkg.priceVip);
+            else if (cust?.customerRole === "wholesale" && pkg.priceWholesale) unitPrice = Number(pkg.priceWholesale);
+            else if (cust?.customerRole === "partner" && pkg.pricePartner) unitPrice = Number(pkg.pricePartner);
+          }
+        } catch { /* use default price */ }
+      }
       const subtotal = unitPrice * qty;
 
       // Apply coupon if provided
@@ -5802,6 +5871,20 @@ export const appRouter = router({
       // Get owner
       const [owner] = await drizzleDb.select().from(users).limit(1);
       if (!owner) throw new Error("Hệ thống chưa được cấu hình");
+
+      // Check inventory for each item
+      const { products: productsTable2, productInventory: invTable2 } = await import("../drizzle/schema");
+      for (const item of input.items) {
+        const [prod] = await drizzleDb.select({ inventoryType: productsTable2.inventoryType }).from(productsTable2).where(eq(productsTable2.id, item.productId)).limit(1);
+        if (prod?.inventoryType === "warehouse") {
+          const invItems = await drizzleDb.select().from(invTable2)
+            .where(and(eq(invTable2.productId, item.productId), eq(invTable2.status, "available")))
+            .limit(item.quantity);
+          if (invItems.length < item.quantity) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: `Sản phẩm "${item.name}" đã hết hàng. Hiện chỉ còn ${invItems.length} sản phẩm.` });
+          }
+        }
+      }
 
       const subtotal = input.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 

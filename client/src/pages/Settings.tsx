@@ -341,35 +341,32 @@ export default function Settings() {
           </div>
         </div>
 
-        <Tabs defaultValue="company" className="space-y-5">
+        <Tabs defaultValue="identity" className="space-y-5">
           <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="bg-gray-100 p-1 rounded-lg flex-wrap h-auto gap-1 w-max min-w-full">
-              <TabsTrigger value="company" className="gap-1.5 text-sm">
-                <Building2 className="h-4 w-4" /> Công Ty
+            <TabsList className="bg-gray-100 p-1 rounded-lg flex-nowrap h-auto gap-1 w-max">
+              <TabsTrigger value="identity" className="gap-1.5 text-sm whitespace-nowrap">
+                <Building2 className="h-4 w-4" /> Identity
               </TabsTrigger>
-              <TabsTrigger value="brand" className="gap-1.5 text-sm">
-                <Globe className="h-4 w-4" /> Thương Hiệu
+              <TabsTrigger value="visuals" className="gap-1.5 text-sm whitespace-nowrap">
+                <Globe className="h-4 w-4" /> Visuals
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="gap-1.5 text-sm">
-                <Bell className="h-4 w-4" /> Thông Báo
+              <TabsTrigger value="assets" className="gap-1.5 text-sm whitespace-nowrap">
+                <ImageIcon className="h-4 w-4" /> Assets
               </TabsTrigger>
-              <TabsTrigger value="security" className="gap-1.5 text-sm">
-                <Shield className="h-4 w-4" /> Bảo Mật
+              <TabsTrigger value="storage" className="gap-1.5 text-sm whitespace-nowrap">
+                <Receipt className="h-4 w-4" /> Storage
               </TabsTrigger>
-              <TabsTrigger value="payos" className="gap-1.5 text-sm">
-                <CreditCard className="h-4 w-4" /> PayOS
+              <TabsTrigger value="system" className="gap-1.5 text-sm whitespace-nowrap">
+                <Shield className="h-4 w-4" /> System
               </TabsTrigger>
-              <TabsTrigger value="telegram" className="gap-1.5 text-sm">
-                <Send className="h-4 w-4" /> Telegram
-              </TabsTrigger>
-              <TabsTrigger value="tax-features" className="gap-1.5 text-sm">
-                <Receipt className="h-4 w-4" /> Thuế & Tính năng
+              <TabsTrigger value="danger" className="gap-1.5 text-sm whitespace-nowrap text-red-600 data-[state=active]:text-red-600">
+                <AlertCircle className="h-4 w-4" /> Danger
               </TabsTrigger>
             </TabsList>
           </div>
 
-          {/* Company Tab */}
-          <TabsContent value="company">
+          {/* Identity Tab */}
+          <TabsContent value="identity">
             <Card className="shadow-sm border border-gray-100">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -460,8 +457,8 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
-          {/* Brand Tab */}
-          <TabsContent value="brand">
+          {/* Visuals Tab */}
+          <TabsContent value="visuals">
             <div className="space-y-4">
               {/* Logo Card */}
               <Card className="shadow-sm border border-gray-100">
@@ -642,8 +639,8 @@ export default function Settings() {
             </div>
           </TabsContent>
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications">
+          {/* Assets Tab */}
+          <TabsContent value="assets">
             <Card className="shadow-sm border border-gray-100">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -700,9 +697,8 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
-          {/* Payments Tab */}
-          {/* Security Tab */}
-          <TabsContent value="security">
+          {/* Storage Tab */}
+          <TabsContent value="storage">
             <Card className="shadow-sm border border-gray-100">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -783,8 +779,9 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
-          {/* PayOS Tab */}
-          <TabsContent value="payos">
+          {/* System Tab - PayOS + Telegram */}
+          <TabsContent value="system">
+            <div className="space-y-5">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <Card className="shadow-sm border border-gray-100">
                 <CardHeader className="pb-4">
@@ -910,87 +907,54 @@ export default function Settings() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-          {/* Telegram Tab */}
-          <TabsContent value="telegram">
-            <div className="max-w-2xl space-y-5">
-              <Card className="border-blue-200 bg-blue-50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-blue-700">
-                    <Bot className="h-4 w-4" />
-                    Hướng dẫn cài đặt
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-blue-700 space-y-1.5">
-                  <p><strong>Bước 1:</strong> Mở Telegram, tìm @BotFather và gõ <code className="bg-blue-100 px-1 rounded">/newbot</code></p>
-                  <p><strong>Bước 2:</strong> Đặt tên bot, BotFather sẽ cấp <strong>Bot Token</strong></p>
-                  <p><strong>Bước 3:</strong> Nhắn tin cho bot, truy cập <code className="bg-blue-100 px-1 rounded">api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> để lấy <strong>Chat ID</strong></p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-sm border border-gray-100">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Send className="h-4 w-4 text-blue-600" />
-                    Cấu Hình Bot Telegram
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium">Bot Token *</Label>
-                    <Input
-                      type="password"
-                      placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
-                      value={telegramForm.telegramBotToken}
-                      onChange={e => setTelegramForm(f => ({ ...f, telegramBotToken: e.target.value }))}
-                      className="mt-1.5 font-mono"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Token từ @BotFather</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Chat ID *</Label>
-                    <Input
-                      placeholder="-1001234567890 hoặc 123456789"
-                      value={telegramForm.telegramChatId}
-                      onChange={e => setTelegramForm(f => ({ ...f, telegramChatId: e.target.value }))}
-                      className="mt-1.5"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">ID của chat/group nhận thông báo</p>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            {/* Telegram section inside System */}
+            <div className="max-w-2xl">
+              <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+                <Send className="h-4 w-4 text-blue-500" /> Telegram Bot
+              </h3>
+              <div className="space-y-4">
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardContent className="text-sm text-blue-700 space-y-1.5 pt-4">
+                    <p><strong>Bước 1:</strong> Mở Telegram, tìm @BotFather và gõ <code className="bg-blue-100 px-1 rounded">/newbot</code></p>
+                    <p><strong>Bước 2:</strong> Đặt tên bot, BotFather sẽ cấp <strong>Bot Token</strong></p>
+                    <p><strong>Bước 3:</strong> Nhắn tin cho bot, truy cập <code className="bg-blue-100 px-1 rounded">api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> để lấy <strong>Chat ID</strong></p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm border border-gray-100">
+                  <CardContent className="space-y-4 pt-4">
                     <div>
-                      <p className="text-sm font-medium">Bật thông báo Telegram</p>
-                      <p className="text-xs text-gray-500">Nhận thông báo khi có đơn mới, thanh toán</p>
+                      <Label className="text-sm font-medium">Bot Token *</Label>
+                      <Input type="password" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz" value={telegramForm.telegramBotToken} onChange={e => setTelegramForm(f => ({ ...f, telegramBotToken: e.target.value }))} className="mt-1.5 font-mono" />
                     </div>
-                    <Switch
-                      checked={telegramForm.telegramEnabled}
-                      onCheckedChange={v => setTelegramForm(f => ({ ...f, telegramEnabled: v }))}
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => { setTelegramSaving(true); saveTelegram.mutate(telegramForm); }}
-                      disabled={telegramSaving}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      {telegramSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                      Lưu Cấu Hình
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => testTelegram.mutate()}
-                      disabled={testTelegram.isPending || !telegramForm.telegramBotToken || !telegramForm.telegramChatId}
-                    >
-                      {testTelegram.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div>
+                      <Label className="text-sm font-medium">Chat ID *</Label>
+                      <Input placeholder="-1001234567890" value={telegramForm.telegramChatId} onChange={e => setTelegramForm(f => ({ ...f, telegramChatId: e.target.value }))} className="mt-1.5" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium">Bật thông báo Telegram</p>
+                        <p className="text-xs text-gray-500">Nhận thông báo khi có đơn mới</p>
+                      </div>
+                      <Switch checked={telegramForm.telegramEnabled} onCheckedChange={v => setTelegramForm(f => ({ ...f, telegramEnabled: v }))} />
+                    </div>
+                    <div className="flex gap-3">
+                      <Button onClick={() => { setTelegramSaving(true); saveTelegram.mutate(telegramForm); }} disabled={telegramSaving} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                        {telegramSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />} Lưu Cấu Hình
+                      </Button>
+                      <Button variant="outline" onClick={() => testTelegram.mutate()} disabled={testTelegram.isPending || !telegramForm.telegramBotToken || !telegramForm.telegramChatId}>
+                        {testTelegram.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
             </div>
           </TabsContent>
 
-          {/* Tax & Features Tab */}
-          <TabsContent value="tax-features">
+          {/* Danger Tab */}
+          <TabsContent value="danger">
             <div className="space-y-5">
               {/* Tax Section */}
               <Card className="shadow-sm border border-gray-100">
