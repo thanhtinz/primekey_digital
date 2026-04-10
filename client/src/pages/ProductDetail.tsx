@@ -516,9 +516,11 @@ export default function ProductDetail() {
 
             {/* Info */}
             <div className="flex-1 min-w-0 text-white">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
-                <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="mb-3">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
+                </div>
+                <div className="flex items-center justify-end gap-2">
                   {referralSettings?.isEnabled && (
                     <button
                       onClick={() => { if (!email) { toast.info("Vui lòng đăng nhập để lấy link giới thiệu"); return; } setShowAffiliatePopup(true); }}
