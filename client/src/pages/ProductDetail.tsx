@@ -38,6 +38,7 @@ export default function ProductDetail() {
   const { customer, isLoggedIn } = useCustomerAuth();
   const email = customer?.email || "";
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [showPackageDetails, setShowPackageDetails] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -381,10 +382,10 @@ export default function ProductDetail() {
                   <button
                     key={pkg.id}
                     onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                    className={`text-left bg-white rounded-2xl border-2 p-3 transition-all shadow-sm hover:shadow-md flex flex-col gap-2 ${
+                    className={`text-left bg-white rounded-2xl border-2 border-dashed p-3 transition-all shadow-sm hover:shadow-md flex flex-col gap-2 ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/30"
-                        : "border-gray-200 hover:border-blue-300"
+                        : "border-gray-300 hover:border-blue-400"
                     }`}
                   >
                     {/* Package thumbnail */}
@@ -532,6 +533,31 @@ export default function ProductDetail() {
               <Info className="w-4 h-4 text-blue-600" />
               Thông tin đặt hàng
             </h4>
+            {/* Quantity Selector */}
+            <div>
+              <label className="text-xs text-gray-500 mb-2 block font-medium">Số lượng</label>
+              <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 w-fit">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-8 h-8 flex items-center justify-center rounded-md bg-white border border-gray-200 hover:bg-gray-100 transition-colors"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-12 text-center border-0 bg-transparent font-semibold text-gray-800 focus:outline-none"
+                />
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-8 h-8 flex items-center justify-center rounded-md bg-white border border-gray-200 hover:bg-gray-100 transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
             {/* Custom Fields - merged here */}
             {(customFields as any[]).length > 0 && (
               <div className="space-y-3 pb-3 border-b border-gray-100">
