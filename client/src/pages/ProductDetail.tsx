@@ -373,7 +373,7 @@ export default function ProductDetail() {
         {/* ===== PACKAGE LIST - Card style matching reference ===== */}
         {packages.length > 0 && (
           <div className="mt-3">
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {packages.map((pkg: any) => {
                 const pkgDiscount = getDiscountPercent(pkg.price, pkg.originalPrice);
                 const isSelected = selectedPackageId === pkg.id;
@@ -381,55 +381,38 @@ export default function ProductDetail() {
                   <button
                     key={pkg.id}
                     onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                    className={`w-full text-left bg-white rounded-2xl border-2 p-4 transition-all shadow-sm hover:shadow-md ${
+                    className={`text-left bg-white rounded-2xl border-2 p-3 transition-all shadow-sm hover:shadow-md flex flex-col gap-2 ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/30"
                         : "border-gray-200 hover:border-blue-300"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Package thumbnail */}
-                      <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                        {(product as any).imageUrl ? (
-                          <img src={(product as any).imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Package className="w-8 h-8 text-gray-300" />
-                        )}
-                      </div>
-                      {/* Package info */}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{pkg.name}</h4>
-                        {pkg.description && (
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-1 mt-1">
-                          {(productTagList as any[]).length > 0
-                            ? (productTagList as any[]).map((tag: any) => (
-                                <span key={tag.id} className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>
-                                  {tag.icon && (tag.icon.startsWith('fa-') ? <i className={tag.icon} /> : <span>{tag.icon}</span>)}
-                                  {tag.name}
-                                </span>
-                              ))
-                            : (pkg.warrantyMonths ?? 0) > 0 && (
-                                <span className="text-xs text-blue-500 flex items-center gap-0.5">
-                                  <Shield className="w-3 h-3" /> BH {pkg.warrantyMonths}T
-                                </span>
-                              )
-                          }
+                    {/* Package thumbnail */}
+                    <div className="w-full aspect-square rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
+                      {(product as any).imageUrl ? (
+                        <img src={(product as any).imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-8 h-8 text-gray-300" />
+                      )}
+                    </div>
+                    {/* Package info */}
+                    <div className="min-w-0">
+                      <h4 className="font-semibold text-gray-800 text-xs leading-snug line-clamp-2">{pkg.name}</h4>
+                      {pkg.description && (
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
+                      )}
+                    </div>
+                    {/* Price */}
+                    <div className="text-right">
+                      <div className="font-bold text-red-500 text-sm">{formatVND(pkg.price)}</div>
+                      {pkg.originalPrice && (
+                        <div className="flex items-center gap-1 justify-end">
+                          <span className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</span>
+                          {pkgDiscount > 0 && (
+                            <span className="text-xs bg-red-100 text-red-500 px-1 rounded font-medium">-{pkgDiscount}%</span>
+                          )}
                         </div>
-                      </div>
-                      {/* Price */}
-                      <div className="text-right flex-shrink-0 ml-2">
-                        <div className="font-bold text-red-500 text-base">{formatVND(pkg.price)}</div>
-                        {pkg.originalPrice && (
-                          <div className="flex items-center gap-1 justify-end">
-                            <span className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</span>
-                            {pkgDiscount > 0 && (
-                              <span className="text-xs bg-red-100 text-red-500 px-1 rounded font-medium">-{pkgDiscount}%</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </button>
                 );
