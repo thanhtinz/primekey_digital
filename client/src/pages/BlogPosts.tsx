@@ -12,7 +12,7 @@ import { Plus, Search, Edit, Trash2, Loader2, FileText, Eye, EyeOff } from "@/co
 export default function BlogPosts() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
-  const { data: posts = [], isLoading, refetch } = trpc.blog.listPosts.useQuery({ page: 1, limit: 50 });
+  const { data: posts = [], isLoading, refetch } = trpc.blog.adminListPosts.useQuery();
 
   const deletePost = trpc.blog.deletePost.useMutation({
     onSuccess: () => { refetch(); toast.success("Đã xóa bài viết"); },

@@ -1708,3 +1708,7 @@ todo updated
 - [x] Migration: thêm cột vào DB
 - [x] Backend: procedure updateNotificationPrefs của customer
 - [x] Frontend: MyAccount thêm section "Cài đặt thông báo" với các toggle bật/tắt
+
+## Session 2026-04-10 - Redesign Nhật Ký Hoạt Động
+
+- [x] Redesign ActivityLog.tsx: timeline style, filter theo loại hành động, stats summary, mobile-friendly
