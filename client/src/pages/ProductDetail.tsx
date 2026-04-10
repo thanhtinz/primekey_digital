@@ -520,18 +520,20 @@ export default function ProductDetail() {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
                 </div>
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-2 pt-3">
                   {referralSettings?.isEnabled && (
-                    <button
-                      onClick={() => { if (!email) { toast.info("Vui lòng đăng nhập để lấy link giới thiệu"); return; } setShowAffiliatePopup(true); }}
-                      className="relative w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
-                      title="Chia sẻ kiếm tiền"
-                    >
-                      <i className="fa fa-hand-holding-usd text-white text-sm" />
-                      <span className="absolute -top-1.5 -right-1.5 bg-green-400 text-white text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
+                    <div className="relative">
+                      <button
+                        onClick={() => { if (!email) { toast.info("Vui lòng đăng nhập để lấy link giới thiệu"); return; } setShowAffiliatePopup(true); }}
+                        className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+                        title="Chia sẻ kiếm tiền"
+                      >
+                        <i className="fa fa-hand-holding-usd text-white text-sm" />
+                      </button>
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-400 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">
                         {referralSettings.rewardType === 'percentage' ? `${referralSettings.rewardAmount}%` : '+đ'}
                       </span>
-                    </button>
+                    </div>
                   )}
                   <button
                     onClick={handleShare}
