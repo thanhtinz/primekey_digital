@@ -58,6 +58,8 @@ export default function ProductDetail() {
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [payWithWallet, setPayWithWallet] = useState(false);
   const [showCouponInput, setShowCouponInput] = useState(false);
+  const [showAffiliatePopup, setShowAffiliatePopup] = useState(false);
+  const [affiliateLinkCopied, setAffiliateLinkCopied] = useState(false);
 
   const { data: product, isLoading } = trpc.products.getPublicById.useQuery(
     { id: productId },
@@ -76,6 +78,11 @@ export default function ProductDetail() {
   const { data: productReviews = [] } = trpc.products.getReviews.useQuery({ productId }, { enabled: !!productId });
   const { data: customFields = [] } = trpc.products.getCustomFields.useQuery({ productId }, { enabled: !!productId });
   const { data: wishlistItems = [] } = trpc.wishlist.list.useQuery({ email }, { enabled: !!email });
+  const { data: referralSettings } = trpc.referral.getSettings.useQuery(undefined, { staleTime: 300_000 });
+  const { data: myReferralCode } = trpc.referral.getMyCode.useQuery(
+    { email },
+    { enabled: !!email && !!referralSettings?.isEnabled, staleTime: 300_000 }
+  );
   const { data: relatedProducts = [] } = trpc.products.getRelated.useQuery(
     { productId, categoryId: product?.categoryId || undefined, limit: 8 },
     { enabled: !!productId && !!product }
@@ -127,6 +134,17 @@ export default function ProductDetail() {
   const avgRating = (productReviews as any[]).length > 0
     ? (productReviews as any[]).reduce((sum: number, r: any) => sum + r.rating, 0) / (productReviews as any[]).length
     : 0;
+
+  const handleCopyAffiliateLink = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setAffiliateLinkCopied(true);
+      toast.success("Đã sao chép link giới thiệu!");
+      setTimeout(() => setAffiliateLinkCopied(false), 2000);
+    } catch {
+      toast.error("Không thể sao chép link");
+    }
+  };
 
   const handleShare = async () => {
     try {
@@ -501,6 +519,18 @@ export default function ProductDetail() {
               <div className="flex items-start justify-between gap-3 mb-3">
                 <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {referralSettings?.isEnabled && (
+                    <button
+                      onClick={() => { if (!email) { toast.info("Vui lòng đăng nhập để lấy link giới thiệu"); return; } setShowAffiliatePopup(true); }}
+                      className="relative w-9 h-9 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+                      title="Chia sẻ kiếm tiền"
+                    >
+                      <i className="fa fa-hand-holding-usd text-white text-sm" />
+                      <span className="absolute -top-1.5 -right-1.5 bg-green-400 text-white text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
+                        {referralSettings.rewardType === 'percentage' ? `${referralSettings.rewardAmount}%` : '+đ'}
+                      </span>
+                    </button>
+                  )}
                   <button
                     onClick={handleShare}
                     className="w-9 h-9 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
@@ -891,6 +921,126 @@ export default function ProductDetail() {
 
         </div>
       </div>
+
+      {/* ===== AFFILIATE POPUP ===== */}
+      {showAffiliatePopup && referralSettings?.isEnabled && (() => {
+        const refCode = myReferralCode?.code || "";
+        const productUrl = typeof window !== 'undefined' ? `${window.location.origin}/product/${productId}?ref=${refCode}` : "";
+        const rewardLabel = referralSettings.rewardType === 'percentage'
+          ? `${referralSettings.rewardAmount}%`
+          : referralSettings.rewardType === 'fixed'
+          ? `${new Intl.NumberFormat('vi-VN').format(parseFloat(referralSettings.rewardAmount || '0'))}đ`
+          : `${referralSettings.rewardAmount} điểm`;
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setShowAffiliatePopup(false)}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="relative w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <i className="fa fa-hand-holding-usd text-white text-lg" />
+                  </div>
+                  <span className="text-white font-bold text-lg">Chia sẻ kiếm tiền</span>
+                </div>
+                <button onClick={() => setShowAffiliatePopup(false)} className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors">
+                  <span className="text-white font-bold text-sm">×</span>
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Reward info */}
+                <div className="bg-teal-50 border border-teal-100 rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-teal-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i className="fa fa-gift text-white" />
+                  </div>
+                  <p className="text-sm text-gray-700">
+                    Nhận ngay <span className="text-teal-600 font-bold text-base">{rewardLabel}</span> hoa hồng khi bạn bè mua hàng qua link của bạn!
+                  </p>
+                </div>
+
+                {/* Estimated commission per package */}
+                {packages.length > 0 && referralSettings.rewardType === 'percentage' && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <i className="fa fa-calculator text-gray-400" /> Hoa hồng dự kiến
+                    </p>
+                    <div className="space-y-1.5">
+                      {packages.map((pkg: any) => {
+                        const commission = Math.round(parseFloat(pkg.price) * parseFloat(referralSettings.rewardAmount || '0') / 100);
+                        return (
+                          <div key={pkg.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                            <span className="text-sm text-gray-600 truncate flex-1 mr-2">{pkg.name}</span>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <span className="text-xs text-gray-400">{new Intl.NumberFormat('vi-VN').format(parseFloat(pkg.price))}đ</span>
+                              <span className="text-gray-300">→</span>
+                              <span className="text-sm font-bold text-teal-600">+{new Intl.NumberFormat('vi-VN').format(commission)}đ</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Referral link */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <i className="fa fa-link text-gray-400" /> Link giới thiệu của bạn
+                  </p>
+                  {refCode ? (
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-600 truncate">
+                        {productUrl}
+                      </div>
+                      <button
+                        onClick={() => handleCopyAffiliateLink(productUrl)}
+                        className="w-10 h-10 flex-shrink-0 bg-teal-500 hover:bg-teal-600 text-white rounded-xl flex items-center justify-center transition-colors"
+                      >
+                        {affiliateLinkCopied ? <CheckCircle className="w-4 h-4" /> : <i className="fa fa-copy text-sm" />}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">Mã giới thiệu đang được tạo...</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1.5">Chia sẻ link này để nhận hoa hồng</p>
+                </div>
+
+                {/* Quick share */}
+                {refCode && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Chia sẻ nhanh</p>
+                    <div className="flex gap-2">
+                      {[
+                        { label: 'Facebook', color: 'bg-[#1877f2]', icon: 'fa-facebook-f', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}` },
+                        { label: 'Telegram', color: 'bg-[#2ca5e0]', icon: 'fa-telegram-plane', url: `https://t.me/share/url?url=${encodeURIComponent(productUrl)}&text=${encodeURIComponent(product?.name || '')}` },
+                        { label: 'Zalo', color: 'bg-[#0068ff]', icon: 'fa-comment', url: `https://zalo.me/share/url?url=${encodeURIComponent(productUrl)}` },
+                        { label: 'WhatsApp', color: 'bg-[#25d366]', icon: 'fa-whatsapp', url: `https://wa.me/?text=${encodeURIComponent((product?.name || '') + ' ' + productUrl)}` },
+                        { label: 'X', color: 'bg-black', icon: 'fa-twitter', url: `https://twitter.com/intent/tweet?url=${encodeURIComponent(productUrl)}&text=${encodeURIComponent(product?.name || '')}` },
+                      ].map(s => (
+                        <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer"
+                          className={`w-10 h-10 ${s.color} rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity`}
+                          title={s.label}
+                        >
+                          <i className={`fa ${s.icon} text-white text-sm`} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* View stats */}
+                <button
+                  onClick={() => { setShowAffiliatePopup(false); setLocation("/account?tab=referral"); }}
+                  className="w-full flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all"
+                >
+                  <i className="fa fa-chart-line text-sm" /> Xem thống kê hoa hồng
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <ClientFooter />
     </div>
