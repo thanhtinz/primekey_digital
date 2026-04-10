@@ -180,7 +180,6 @@ export default function Settings() {
     requireLoginToView: false,
     showSoldCount: false,
     allowProductReview: true,
-    telegramOrderChatId: "",
     orderCodeType: "random",
     orderCodeLength: 8,
     orderCodePrefix: "",
@@ -265,7 +264,6 @@ export default function Settings() {
       requireLoginToView: s.requireLoginToView ?? false,
       showSoldCount: s.showSoldCount ?? false,
       allowProductReview: s.allowProductReview ?? true,
-      telegramOrderChatId: s.telegramOrderChatId || "",
       orderCodeType: s.orderCodeType || "random",
       orderCodeLength: s.orderCodeLength ?? 8,
       orderCodePrefix: s.orderCodePrefix || "",
@@ -934,13 +932,6 @@ export default function Settings() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="divide-y divide-border">
-                    <SettingRow label="Telegram Order Chat ID" hint="Chat ID để nhận thông báo đơn hàng qua Telegram">
-                      <Input
-                        value={primekey.telegramOrderChatId}
-                        onChange={e => setPrimekey(p => ({ ...p, telegramOrderChatId: e.target.value }))}
-                        placeholder="-100xxxxxxxxx"
-                      />
-                    </SettingRow>
                     <SettingRow label="Địa chỉ cửa hàng">
                       <Textarea
                         value={primekey.siteAddress}

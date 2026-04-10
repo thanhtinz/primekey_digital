@@ -11,7 +11,7 @@ import { sendEmail, generateInvoiceEmailHTML, generatePaymentConfirmationEmailHT
 import crypto from "crypto";
 import { createPayOSPaymentLink, getPayOSPaymentStatus } from "./payos";
 
-// Telegram notification helper
+// Telegram notification helper (legacy - kept for compatibility)
 async function sendTelegramNotification(userId: number, message: string): Promise<void> {
   try {
     const settings = await db.getUserSettings(userId);
@@ -4585,6 +4585,23 @@ export const appRouter = router({
         reason: input.reason,
         status: "PENDING",
       });
+      // Notify admin via Telegram
+      void (async () => {
+        try {
+          const { notifyAdminRefund } = await import("./telegram");
+          // Get invoice owner
+          const [inv] = await drizzleDb.select({ userId: invoicesTable.userId }).from(invoicesTable).where(eq(invoicesTable.id, input.invoiceId)).limit(1);
+          if (inv) {
+            await notifyAdminRefund(inv.userId, {
+              id: 0,
+              customerName: customer.name || customer.email || "Khách hàng",
+              customerEmail: customer.email || "",
+              amount: input.amount,
+              reason: input.reason,
+            });
+          }
+        } catch {}
+      })();
       return { success: true };
     }),
     // Customer: list own refund requests
@@ -5969,8 +5986,21 @@ export const appRouter = router({
         console.error("[checkout.buyNow] Email error:", emailErr);
       }
 
-      // Send Telegram notification
-      void sendTelegramNotification(owner.id, `🛒 <b>Đơn hàng mới (Mua ngay)</b>\nMã: ${invoiceNumber}\nKhách: ${input.email}\nSP: ${product.name} - ${pkg.name}\nTổng: ${totalAmount.toLocaleString("vi-VN")}đ`);
+      // Send Telegram Admin notification
+      void (async () => {
+        try {
+          const { notifyAdminNewOrder } = await import("./telegram");
+          await notifyAdminNewOrder(owner.id, {
+            id: createdInvoice.id,
+            orderCode: invoiceNumber,
+            customerName: customer.name || input.email,
+            customerEmail: input.email,
+            totalAmount,
+            currency: "VND",
+            productName: `${product.name} - ${pkg.name}`,
+          });
+        } catch {}
+      })();
       // Create customer notification
       try {
         const { customerNotifications } = await import("../drizzle/schema");
@@ -6227,9 +6257,22 @@ export const appRouter = router({
         console.error("[checkout.cartCheckout] Email error:", emailErr);
       }
 
-      // Send Telegram notification
-      const itemNames = input.items.map(i => `${i.name} x${i.quantity}`).join(", ");
-      void sendTelegramNotification(owner.id, `🛒 <b>Đơn hàng mới (Giỏ hàng)</b>\nMã: ${invoiceNumber}\nKhách: ${input.email}\nSP: ${itemNames}\nTổng: ${totalAmount.toLocaleString("vi-VN")}đ`);
+      // Send Telegram Admin notification
+      void (async () => {
+        try {
+          const { notifyAdminNewOrder } = await import("./telegram");
+          const itemNames = input.items.map(i => `${i.name} x${i.quantity}`).join(", ");
+          await notifyAdminNewOrder(owner.id, {
+            id: createdInvoice.id,
+            orderCode: invoiceNumber,
+            customerName: customer.name || input.email,
+            customerEmail: input.email,
+            totalAmount,
+            currency: "VND",
+            productName: itemNames,
+          });
+        } catch {}
+      })();
       // Create customer notification
       try {
         const { customerNotifications } = await import("../drizzle/schema");
@@ -7978,6 +8021,136 @@ export const appRouter = router({
         if (input.packageId) conditions.push(eq(productInventory.packageId, input.packageId));
         const items = await drizzleDb.select().from(productInventory).where(and(...conditions));
         return { count: items.length };
+      }),
+  }),
+
+  // ─── Telegram Bot Management ────────────────────────────────────────────────────────────
+  telegramBot: router({
+    // Get config for a bot type (admin or user)
+    getConfig: protectedProcedure
+      .input(z.object({ botType: z.enum(["admin", "user"]) }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const config = await db.getTelegramBotConfig(ctx.user.id, input.botType);
+        // Never expose botToken in full - mask it
+        if (config?.botToken) {
+          return { ...config, botToken: config.botToken.slice(0, 8) + "..." + config.botToken.slice(-4) };
+        }
+        return config;
+      }),
+
+    // Save bot config
+    saveConfig: protectedProcedure
+      .input(z.object({
+        botType: z.enum(["admin", "user"]),
+        botToken: z.string().optional(),
+        chatId: z.string().optional(),
+        enabled: z.boolean().optional(),
+        notifyNewOrder: z.boolean().optional(),
+        notifyPayment: z.boolean().optional(),
+        notifyRefund: z.boolean().optional(),
+        notifyNewCustomer: z.boolean().optional(),
+        notifyLowStock: z.boolean().optional(),
+        notifyOrderStatus: z.boolean().optional(),
+        notifyOrderCreated: z.boolean().optional(),
+        notifyOrderPaid: z.boolean().optional(),
+        notifyOrderCompleted: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const { botType, botToken, ...rest } = input;
+        const updateData: any = { ...rest };
+        // Only update botToken if it's a full token (not masked)
+        if (botToken && !botToken.includes("...")) {
+          updateData.botToken = botToken;
+          // Fetch bot info to get username
+          const { getBotInfo } = await import("./telegram");
+          const info = await getBotInfo(botToken);
+          if (info.ok) updateData.botUsername = info.username;
+        }
+        const config = await db.upsertTelegramBotConfig(ctx.user.id, botType, updateData);
+        return { success: true, config };
+      }),
+
+    // Test bot - send a test message
+    testBot: protectedProcedure
+      .input(z.object({ botType: z.enum(["admin", "user"]), chatId: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const config = await db.getTelegramBotConfig(ctx.user.id, input.botType);
+        if (!config?.botToken) throw new TRPCError({ code: "BAD_REQUEST", message: "Chưa cấu hình Bot Token" });
+        const targetChatId = input.chatId || config.chatId;
+        if (!targetChatId) throw new TRPCError({ code: "BAD_REQUEST", message: "Chưa có Chat ID" });
+        const { sendTelegramMessage } = await import("./telegram");
+        const botLabel = input.botType === "admin" ? "Admin Bot" : "User Bot";
+        const ok = await sendTelegramMessage(config.botToken, targetChatId,
+          `✅ <b>Kết nối thành công!</b>\n\n` +
+          `🤖 ${botLabel} đã được cấu hình chính xác.\n` +
+          `🕐 ${new Date().toLocaleString("vi-VN")}`
+        );
+        if (!ok) throw new TRPCError({ code: "BAD_REQUEST", message: "Gửi tin nhắn thất bại. Kiểm tra lại Bot Token và Chat ID." });
+        return { success: true };
+      }),
+
+    // Set webhook for user bot
+    setWebhook: protectedProcedure
+      .input(z.object({ origin: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const config = await db.getTelegramBotConfig(ctx.user.id, "user");
+        if (!config?.botToken) throw new TRPCError({ code: "BAD_REQUEST", message: "Chưa cấu hình User Bot Token" });
+        const webhookUrl = `${input.origin}/api/webhooks/telegram/user/${ctx.user.id}`;
+        const { setTelegramWebhook } = await import("./telegram");
+        const ok = await setTelegramWebhook(config.botToken, webhookUrl);
+        if (!ok) throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể đặt webhook. Kiểm tra lại Bot Token." });
+        await db.upsertTelegramBotConfig(ctx.user.id, "user", { webhookSet: true });
+        return { success: true, webhookUrl };
+      }),
+
+    // Remove webhook
+    removeWebhook: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const config = await db.getTelegramBotConfig(ctx.user.id, "user");
+        if (!config?.botToken) throw new TRPCError({ code: "BAD_REQUEST", message: "Chưa cấu hình User Bot Token" });
+        const { deleteTelegramWebhook } = await import("./telegram");
+        await deleteTelegramWebhook(config.botToken);
+        await db.upsertTelegramBotConfig(ctx.user.id, "user", { webhookSet: false });
+        return { success: true };
+      }),
+
+    // Get subscribers list (user bot)
+    getSubscribers: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return db.getTelegramSubscribers(ctx.user.id);
+      }),
+
+    // Remove a subscriber
+    removeSubscriber: protectedProcedure
+      .input(z.object({ subscriberId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        await db.removeTelegramSubscriber(ctx.user.id, input.subscriberId);
+        return { success: true };
+      }),
+
+    // Send broadcast to all subscribers
+    broadcast: protectedProcedure
+      .input(z.object({ message: z.string().min(1).max(4096) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const config = await db.getTelegramBotConfig(ctx.user.id, "user");
+        if (!config?.botToken || !config.enabled) throw new TRPCError({ code: "BAD_REQUEST", message: "User Bot chưa được kích hoạt" });
+        const subscribers = await db.getTelegramSubscribers(ctx.user.id);
+        const active = subscribers.filter((s: any) => s.isActive);
+        const { sendTelegramMessage } = await import("./telegram");
+        let sent = 0;
+        for (const sub of active) {
+          const ok = await sendTelegramMessage(config.botToken, sub.chatId, input.message);
+          if (ok) sent++;
+        }
+        return { success: true, sent, total: active.length };
       }),
   }),
 });

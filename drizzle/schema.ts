@@ -1133,3 +1133,45 @@ export const productInventory = mysqlTable("product_inventory", {
 });
 export type ProductInventoryItem = typeof productInventory.$inferSelect;
 export type InsertProductInventoryItem = typeof productInventory.$inferInsert;
+
+// ─── Telegram Bot Config ──────────────────────────────────────────────────────
+export const telegramBotConfig = mysqlTable("telegram_bot_config", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  botType: mysqlEnum("botType", ["admin", "user"]).notNull(),
+  botToken: varchar("botToken", { length: 200 }),
+  botUsername: varchar("botUsername", { length: 100 }),
+  chatId: varchar("chatId", { length: 100 }),
+  enabled: boolean("enabled").default(false).notNull(),
+  webhookSet: boolean("webhookSet").default(false).notNull(),
+  // Notification settings for admin bot
+  notifyNewOrder: boolean("notifyNewOrder").default(true),
+  notifyPayment: boolean("notifyPayment").default(true),
+  notifyRefund: boolean("notifyRefund").default(true),
+  notifyNewCustomer: boolean("notifyNewCustomer").default(false),
+  notifyLowStock: boolean("notifyLowStock").default(false),
+  // Notification settings for user bot
+  notifyOrderStatus: boolean("notifyOrderStatus").default(true),
+  notifyOrderCreated: boolean("notifyOrderCreated").default(true),
+  notifyOrderPaid: boolean("notifyOrderPaid").default(true),
+  notifyOrderCompleted: boolean("notifyOrderCompleted").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TelegramBotConfig = typeof telegramBotConfig.$inferSelect;
+export type InsertTelegramBotConfig = typeof telegramBotConfig.$inferInsert;
+
+// ─── Telegram Subscribers (User Bot) ─────────────────────────────────────────
+export const telegramSubscribers = mysqlTable("telegram_subscribers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  customerId: int("customerId").notNull(),
+  chatId: varchar("chatId", { length: 100 }).notNull(),
+  username: varchar("username", { length: 100 }),
+  firstName: varchar("firstName", { length: 100 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  subscribedAt: timestamp("subscribedAt").defaultNow().notNull(),
+  lastInteraction: timestamp("lastInteraction"),
+});
+export type TelegramSubscriber = typeof telegramSubscribers.$inferSelect;
+export type InsertTelegramSubscriber = typeof telegramSubscribers.$inferInsert;

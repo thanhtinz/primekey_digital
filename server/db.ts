@@ -745,3 +745,72 @@ export async function getInvoicesByUserIdWithCustomer(userId: number) {
     .leftJoin(customers, eq(invoices.customerId, customers.id))
     .where(eq(invoices.userId, userId));
 }
+
+// ─── Telegram Bot Config helpers ──────────────────────────────────────────────
+export async function getTelegramBotConfig(userId: number, botType: "admin" | "user") {
+  const db = await getDb();
+  if (!db) return null;
+  const { telegramBotConfig } = await import("../drizzle/schema");
+  const { and, eq } = await import("drizzle-orm");
+  const rows = await db.select().from(telegramBotConfig)
+    .where(and(eq(telegramBotConfig.userId, userId), eq(telegramBotConfig.botType, botType)));
+  return rows[0] || null;
+}
+
+export async function upsertTelegramBotConfig(userId: number, botType: "admin" | "user", data: any) {
+  const db = await getDb();
+  if (!db) return null;
+  const { telegramBotConfig } = await import("../drizzle/schema");
+  const { and, eq } = await import("drizzle-orm");
+  const existing = await getTelegramBotConfig(userId, botType);
+  if (existing) {
+    await db.update(telegramBotConfig).set({ ...data, updatedAt: new Date() })
+      .where(and(eq(telegramBotConfig.userId, userId), eq(telegramBotConfig.botType, botType)));
+    return getTelegramBotConfig(userId, botType);
+  } else {
+    await db.insert(telegramBotConfig).values({ userId, botType, ...data });
+    return getTelegramBotConfig(userId, botType);
+  }
+}
+
+export async function getTelegramSubscribers(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { telegramSubscribers } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  return db.select().from(telegramSubscribers).where(eq(telegramSubscribers.userId, userId));
+}
+
+export async function upsertTelegramSubscriber(userId: number, customerId: number, chatId: string, data: any) {
+  const db = await getDb();
+  if (!db) return null;
+  const { telegramSubscribers } = await import("../drizzle/schema");
+  const { and, eq } = await import("drizzle-orm");
+  const rows = await db.select().from(telegramSubscribers)
+    .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.chatId, chatId)));
+  if (rows[0]) {
+    await db.update(telegramSubscribers).set({ ...data, lastInteraction: new Date() })
+      .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.chatId, chatId)));
+  } else {
+    await db.insert(telegramSubscribers).values({ userId, customerId, chatId, ...data });
+  }
+}
+
+export async function removeTelegramSubscriber(userId: number, subscriberId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const { telegramSubscribers } = await import("../drizzle/schema");
+  const { and, eq } = await import("drizzle-orm");
+  await db.delete(telegramSubscribers)
+    .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.id, subscriberId)));
+}
+
+export async function getTelegramSubscriberByChatId(userId: number, chatId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const { telegramSubscribers } = await import("../drizzle/schema");
+  const { and, eq } = await import("drizzle-orm");
+  const rows = await db.select().from(telegramSubscribers)
+    .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.chatId, chatId)));
+  return rows[0] || null;
+}

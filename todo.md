@@ -1768,3 +1768,17 @@ todo updated
 - [x] TrackOrder.tsx: thêm RefundDialog component với form nhập lý do và số tiền hoàn
 - [x] TrackOrder.tsx: chuyển sang render OrderDetail inline thay vì navigate (không mất context)
 - [x] Settings.tsx: xác nhận không còn lỗi syntax (Vite compile thành công)
+
+## Session 2026-04-10 - Hệ thống 2 Bot Telegram
+
+- [x] Schema: thêm bảng telegramBotConfig (id, userId, botType: admin|user, botToken, chatId, enabled, webhookUrl, createdAt, updatedAt)
+- [x] Schema: thêm bảng telegramSubscribers (id, userId, customerId, chatId, username, subscribedAt, isActive)
+- [x] Migration: push schema changes (tạo trực tiếp qua SQL)
+- [x] Backend: telegramBot router - saveBotConfig, getBotConfig, testBot, getSubscribers, removeSubscriber, broadcast
+- [x] Backend: webhook handler /api/webhooks/telegram/user/:userId để nhận tin nhắn từ user
+- [x] Backend: helper sendTelegramMessage(botToken, chatId, message) trong server/telegram.ts
+- [x] Backend: tích hợp gửi thông báo admin bot khi có đơn hàng mới, thanh toán, yêu cầu hoàn tiền
+- [x] Backend: tích hợp gửi thông báo user bot khi trạng thái đơn hàng thay đổi (PAID)
+- [x] Frontend: tạo trang TelegramBots.tsx (Extensions) - cấu hình 2 bot, test kết nối, xem subscribers, broadcast
+- [x] Frontend: bỏ telegramOrderChatId khỏi Settings tab Primekey
+- [x] Frontend: route /admin/extensions/telegram đã có trong App.tsx và sidebar

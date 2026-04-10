@@ -232,6 +232,13 @@
       "when": 1775847649925,
       "tag": "0032_giant_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1775855986178,
+      "tag": "0033_slimy_lenny_balinger",
+      "breakpoints": true
     }
   ]
 }

@@ -185,6 +185,31 @@ router.post("/payos", async (req, res) => {
         console.error("[PayOS Webhook] Failed to send confirmation email:", emailErr);
       }
 
+      // Notify Admin Bot: payment received
+      void (async () => {
+        try {
+          const { notifyAdminPayment, notifyUserOrderStatus } = await import("./telegram");
+          const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
+          const totalAmt = typeof invoice.totalAmount === "string" ? parseFloat(invoice.totalAmount) : (invoice.totalAmount as number);
+          await notifyAdminPayment(invoice.userId, {
+            id: invoice.id,
+            orderCode: invoice.invoiceNumber,
+            customerName: customer?.name || customer?.email || "Khách hàng",
+            totalAmount: totalAmt,
+            currency: invoice.currency || "VND",
+          });
+          // Notify User Bot: order paid
+          if (customer?.id) {
+            await notifyUserOrderStatus(invoice.userId, customer.id, {
+              orderCode: invoice.invoiceNumber,
+              status: "PAID",
+              totalAmount: totalAmt,
+              currency: invoice.currency || "VND",
+            });
+          }
+        } catch {}
+      })();
+
     } else if (isFailed && invoice.status === "CREATED") {
       console.log(`[PayOS Webhook] Invoice ${invoice.id} payment failed (orderCode: ${orderCode})`);
       await db.updateInvoice(invoice.id, { status: "FAILED" });
@@ -194,6 +219,20 @@ router.post("/payos", async (req, res) => {
 
   } catch (error) {
     console.error("[PayOS Webhook] Processing error:", error);
+  }
+});
+
+// ─── Telegram User Bot Webhook ───────────────────────────────────────────────
+// Telegram sends updates to: /api/webhooks/telegram/user/:userId
+router.post("/telegram/user/:userId", async (req, res) => {
+  res.json({ ok: true }); // Respond quickly to Telegram
+  try {
+    const userId = parseInt(req.params.userId);
+    if (!userId || isNaN(userId)) return;
+    const { handleUserBotUpdate } = await import("./telegram");
+    await handleUserBotUpdate(userId, req.body);
+  } catch (e) {
+    console.error("[Telegram Webhook] Error:", e);
   }
 });
 
