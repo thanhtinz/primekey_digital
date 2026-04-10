@@ -609,7 +609,7 @@ export default function ProductDetail() {
             )}
 
             {/* Chi tiết gói - hiển thị description của gói đang chọn */}
-            {packages.some((p: any) => !!p.description) && (
+            {packages.length > 0 && (
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
                 <button
                   onClick={() => setShowPackageDetails(!showPackageDetails)}
