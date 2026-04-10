@@ -4,9 +4,12 @@ import { trpc } from "@/lib/trpc";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Star, Zap, Package, ChevronRight, ShoppingCart, Heart, MessageSquare, ChevronDown, ChevronUp, Share2, CheckCircle, Phone, Mail, Loader2, Info, Pencil } from "@/components/Icon";
+import {
+  Star, Zap, Package, ChevronRight, ShoppingCart, Heart,
+  MessageSquare, ChevronDown, ChevronUp, Share2, CheckCircle,
+  Phone, Mail, Loader2, Pencil, Home, Layers
+} from "@/components/Icon";
 import { toast } from "sonner";
 
 const formatVND = (val: string | number | null | undefined) => {
@@ -52,12 +55,12 @@ export default function ProductDetail() {
   const [notes, setNotes] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [payWithWallet, setPayWithWallet] = useState(false);
+  const [showCouponInput, setShowCouponInput] = useState(false);
 
   const { data: product, isLoading } = trpc.products.getPublicById.useQuery(
     { id: productId },
     { enabled: !!productId, staleTime: 60_000 }
   );
-
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
   const { data: taxConfig } = trpc.tax.getPublic.useQuery(undefined, { staleTime: 300_000 });
   const taxRate = taxConfig?.isEnabled ? parseFloat(taxConfig.taxRate || "0") : 0;
@@ -112,7 +115,7 @@ export default function ProductDetail() {
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo! Kiểm tra email để nhận link thanh toán.`);
+        toast.success(`Đơn hàng ${data.invoiceNumber} đã được tạo!`);
         setLocation(`/track-order?invoice=${data.invoiceNumber}`);
       }
     },
@@ -169,12 +172,12 @@ export default function ProductDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-16 bg-gray-50">
+      <div className="min-h-screen bg-gray-50">
         <ClientHeader />
-        <div className="max-w-6xl mx-auto px-4 py-8 space-y-4 animate-pulse">
-          <div className="h-48 bg-gray-200 rounded-2xl" />
-          <div className="h-8 bg-gray-200 rounded w-3/4" />
-          <div className="h-32 bg-gray-200 rounded-2xl" />
+        <div className="max-w-5xl mx-auto px-4 pt-20 pb-10 space-y-4 animate-pulse">
+          <div className="h-56 bg-gray-200 rounded-2xl" />
+          <div className="h-8 bg-gray-200 rounded w-2/3" />
+          <div className="h-40 bg-gray-200 rounded-2xl" />
         </div>
       </div>
     );
@@ -182,14 +185,12 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="min-h-screen pt-16 bg-gray-50">
+      <div className="min-h-screen bg-gray-50">
         <ClientHeader />
-        <div className="text-center py-20">
+        <div className="text-center py-24">
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-700 mb-2">Không tìm thấy sản phẩm</h2>
-          <button onClick={() => setLocation("/catalog")} className="text-blue-600 hover:underline text-sm">
-            ← Quay lại danh sách
-          </button>
+          <button onClick={() => setLocation("/catalog")} className="text-blue-600 hover:underline text-sm">← Quay lại danh sách</button>
         </div>
       </div>
     );
@@ -204,10 +205,6 @@ export default function ProductDetail() {
     ? Math.min(...packages.map((p: any) => parseFloat(p.price)))
     : parseFloat(product.price || "0");
 
-  const displayPrice = selectedPackage ? parseFloat(selectedPackage.price) : minPrice;
-  const displayOriginalPrice = selectedPackage?.originalPrice ? parseFloat(selectedPackage.originalPrice) : null;
-  const discount = displayOriginalPrice ? getDiscountPercent(displayPrice, displayOriginalPrice) : 0;
-
   const categoryTags: { name: string; icon: string | null }[] = [];
   if (categoryInfo) {
     if (categoryInfo.parentName) categoryTags.push({ name: categoryInfo.parentName, icon: categoryInfo.parentIcon });
@@ -216,7 +213,6 @@ export default function ProductDetail() {
     categoryTags.push({ name: product.category, icon: null });
   }
 
-  // Compute order summary
   const basePrice = selectedPackage ? parseFloat(selectedPackage.price) : (packages.length === 1 ? parseFloat(packages[0]?.price || "0") : 0);
   const couponDiscount = appliedCoupon
     ? appliedCoupon.discountType === 'percentage'
@@ -228,100 +224,128 @@ export default function ProductDetail() {
   const totalPrice = afterCoupon + taxAmount;
   const hasOrderSummary = selectedPackage || packages.length === 1;
 
-  // ===== ORDER INFO CARD (shared between desktop sidebar and mobile bottom) =====
+  const handleBuyNow = () => {
+    if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+    if (!validateCustomFields()) return;
+    const pkgId = selectedPackage?.id || packages[0]?.id;
+    if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
+    buyNow.mutate({
+      email,
+      customerName: customer?.name || undefined,
+      productId,
+      packageId: pkgId,
+      quantity,
+      customFieldValues: getCustomFieldValues(),
+      couponCode: appliedCoupon?.code || couponCode || undefined,
+      notes: notes || undefined,
+      origin: window.location.origin,
+      payWithWallet: payWithWallet || undefined,
+      customerToken: payWithWallet ? (localStorage.getItem("customerToken") || undefined) : undefined,
+    });
+  };
+
+  const handleAddToCart = () => {
+    if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
+    if (!validateCustomFields()) return;
+    const pkgId = selectedPackage?.id || packages[0]?.id;
+    if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
+    addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: getCustomFieldValues() });
+  };
+
+  // ===== ORDER INFO CARD COMPONENT =====
   const OrderInfoCard = () => (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
-      {/* Quantity */}
-      <div>
-        <label className="text-xs text-gray-500 mb-2 block font-medium">Số lượng</label>
-        <div className="flex items-center justify-between bg-gray-50 rounded-xl p-1.5">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Quantity row */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <span className="text-sm font-semibold text-gray-700">Số lượng</span>
+        <div className="flex items-center gap-0">
           <button
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:bg-gray-100 transition-colors font-bold text-lg text-gray-600"
-          >
-            −
-          </button>
+            className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-l-xl bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-lg transition-colors"
+          >−</button>
           <input
-            type="number"
-            min="1"
-            value={quantity}
+            type="number" min="1" value={quantity}
             onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-            className="w-12 text-center border-0 bg-transparent font-semibold text-gray-800 focus:outline-none text-base"
+            className="w-14 h-10 text-center border-t border-b border-gray-200 bg-white font-semibold text-gray-800 focus:outline-none text-sm"
           />
           <button
             onClick={() => setQuantity(quantity + 1)}
-            className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-gray-200 hover:bg-gray-100 transition-colors font-bold text-lg text-gray-600"
-          >
-            +
-          </button>
+            className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-r-xl bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-lg transition-colors"
+          >+</button>
         </div>
       </div>
 
-      {/* Custom Fields */}
-      {(customFields as any[]).length > 0 && (
-        <div className="space-y-3 pb-3 border-b border-gray-100">
-          <p className="text-xs text-gray-400">Vui lòng điền đầy đủ thông tin đặt hàng</p>
-          {(customFields as any[]).map((f: any) => (
-            <div key={f.id}>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                {f.fieldName} <span className="text-red-500">*</span>
-              </label>
-              {f.fieldValue && <p className="text-xs text-gray-400 mb-1 italic">Gợi ý: {f.fieldValue}</p>}
-              <Input
-                placeholder={`Nhập ${f.fieldName.toLowerCase()}...`}
-                value={customFieldInputs[f.fieldName] || ""}
-                onChange={(e) => setCustomFieldInputs(prev => ({ ...prev, [f.fieldName]: e.target.value }))}
-                className={`text-sm ${showCustomFieldError && !customFieldInputs[f.fieldName] ? "border-red-400 ring-1 ring-red-200" : ""}`}
-              />
-              {showCustomFieldError && !customFieldInputs[f.fieldName] && (
-                <p className="text-xs text-red-500 mt-0.5">Vui lòng nhập {f.fieldName.toLowerCase()}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Coupon */}
-      <div>
-        <label className="text-xs text-gray-500 mb-1.5 block font-medium">Bạn có mã giảm giá?</label>
-        {appliedCoupon ? (
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-            <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
-            <span className="text-xs text-green-700 font-medium flex-1">
-              {appliedCoupon.code} — Giảm {appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `${new Intl.NumberFormat('vi-VN').format(appliedCoupon.discountValue)}₫`}
-            </span>
-            <button onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-red-500 hover:text-red-700">Hủy</button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <Input
-              placeholder="Nhập mã giảm giá"
-              value={couponCode}
-              onChange={e => setCouponCode(e.target.value.toUpperCase())}
-              className="text-sm h-9"
-              onKeyDown={e => { if (e.key === 'Enter') handleApplyCoupon(); }}
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 px-3 text-xs whitespace-nowrap"
-              onClick={handleApplyCoupon}
-              disabled={validatingCoupon || !couponCode.trim()}
-            >
-              {validatingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Áp dụng"}
-            </Button>
+      <div className="px-4 py-3 space-y-3">
+        {/* Custom Fields */}
+        {(customFields as any[]).length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-400">Vui lòng điền đầy đủ thông tin đặt hàng</p>
+            {(customFields as any[]).map((f: any) => (
+              <div key={f.id}>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  {f.fieldName} <span className="text-red-500">*</span>
+                </label>
+                {f.fieldValue && <p className="text-xs text-gray-400 mb-1 italic">Gợi ý: {f.fieldValue}</p>}
+                <Input
+                  placeholder={`Nhập ${f.fieldName.toLowerCase()}...`}
+                  value={customFieldInputs[f.fieldName] || ""}
+                  onChange={(e) => setCustomFieldInputs(prev => ({ ...prev, [f.fieldName]: e.target.value }))}
+                  className={`text-sm ${showCustomFieldError && !customFieldInputs[f.fieldName] ? "border-red-400" : ""}`}
+                />
+              </div>
+            ))}
           </div>
         )}
-      </div>
 
-      {/* Wallet payment */}
-      {walletBalance > 0 && (
+        {/* Coupon */}
         <div>
-          <label className="text-xs text-gray-500 mb-2 block font-medium">Phương thức thanh toán</label>
+          <button
+            onClick={() => setShowCouponInput(!showCouponInput)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm text-gray-600 flex items-center gap-2">
+              <span className="text-base">🎫</span> Bạn có mã giảm giá?
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showCouponInput ? "rotate-180" : ""}`} />
+          </button>
+          {showCouponInput && (
+            <div className="mt-2">
+              {appliedCoupon ? (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                  <span className="text-xs text-green-700 font-medium flex-1">
+                    {appliedCoupon.code} — Giảm {appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `${new Intl.NumberFormat('vi-VN').format(appliedCoupon.discountValue)}₫`}
+                  </span>
+                  <button onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-red-500">Hủy</button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nhập mã giảm giá"
+                    value={couponCode}
+                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                    className="text-sm h-9"
+                    onKeyDown={e => { if (e.key === 'Enter') handleApplyCoupon(); }}
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    disabled={validatingCoupon || !couponCode.trim()}
+                    className="h-9 px-3 text-xs whitespace-nowrap border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    {validatingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Áp dụng"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Wallet */}
+        {walletBalance > 0 && (
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setPayWithWallet(false)}
-              className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-sm transition-all ${!payWithWallet ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
+              className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-sm transition-all ${!payWithWallet ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600"}`}
             >
               <span className="text-base">🏦</span>
               <div className="text-left">
@@ -331,7 +355,7 @@ export default function ProductDetail() {
             </button>
             <button
               onClick={() => setPayWithWallet(true)}
-              className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-sm transition-all ${payWithWallet ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
+              className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-sm transition-all ${payWithWallet ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600"}`}
             >
               <span className="text-base">💰</span>
               <div className="text-left">
@@ -340,133 +364,113 @@ export default function ProductDetail() {
               </div>
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Notes */}
-      <div>
-        <label className="text-xs text-gray-500 mb-1 block">Ghi chú (tùy chọn)</label>
+        {/* Notes */}
         <textarea
-          placeholder="Nhập ghi chú..."
+          placeholder="Ghi chú (tùy chọn)"
           value={notes}
           onChange={e => setNotes(e.target.value)}
           rows={2}
-          className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-blue-400 transition-colors"
+          className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-blue-400 transition-colors placeholder:text-gray-400"
         />
-      </div>
 
-      {/* Order Summary */}
-      {hasOrderSummary && (
-        <div className="border-t border-dashed border-gray-200 pt-3 space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Tạm tính</span>
-            <span className="text-gray-700 font-medium">{formatVND(basePrice)}</span>
-          </div>
-          {couponDiscount > 0 && (
+        {/* Order Summary */}
+        {hasOrderSummary && (
+          <div className="border-t border-dashed border-gray-200 pt-3 space-y-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-green-600">Giảm giá ({appliedCoupon.code})</span>
-              <span className="text-green-600 font-medium">-{formatVND(couponDiscount)}</span>
+              <span className="text-gray-500">Tạm tính</span>
+              <span className="text-gray-700">{formatVND(basePrice)}</span>
             </div>
-          )}
-          {taxAmount > 0 && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">{taxName} ({taxRate}%)</span>
-              <span className="text-gray-700">{formatVND(taxAmount)}</span>
+            {couponDiscount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-green-600">Giảm giá</span>
+                <span className="text-green-600">-{formatVND(couponDiscount)}</span>
+              </div>
+            )}
+            {taxAmount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">{taxName} ({taxRate}%)</span>
+                <span className="text-gray-700">{formatVND(taxAmount)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-2 border-t border-dashed border-gray-200">
+              <span className="font-bold text-gray-800">Tổng cộng</span>
+              <span className="font-bold text-red-500 text-lg">{formatVND(totalPrice)}</span>
             </div>
-          )}
-          <div className="flex items-center justify-between border-t border-dashed border-gray-200 pt-2 mt-1">
-            <span className="font-bold text-gray-800">Tổng cộng</span>
-            <span className="font-bold text-red-500 text-lg">{formatVND(totalPrice)}</span>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Stock */}
-      {(product as any).stock !== undefined && (product as any).stock !== null && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
-          <span className="text-green-600 text-sm">🟢</span>
-          <span className="text-xs text-green-700 font-medium">Kho hàng: {(product as any).stock} sản phẩm</span>
-        </div>
-      )}
+        {/* Stock */}
+        {(product as any).stock !== undefined && (product as any).stock !== null && (
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
+            <span className="text-green-600 text-sm">🟢</span>
+            <span className="text-xs text-green-700 font-medium">Kho hàng: {(product as any).stock} sản phẩm</span>
+          </div>
+        )}
 
-      {/* Action Buttons */}
-      {isLoggedIn ? (
-        <div className="flex gap-2 pt-1">
-          <button
-            onClick={() => {
-              if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
-              if (!validateCustomFields()) return;
-              const pkgId = selectedPackage?.id || packages[0]?.id;
-              if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
-              addToCart.mutate({ email, productId, packageId: pkgId, customFieldValues: getCustomFieldValues() });
-            }}
-            className="flex items-center justify-center gap-2 flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-3 rounded-xl font-semibold text-sm transition-all active:scale-95"
-          >
-            <ShoppingCart className="w-4 h-4" />
-          </button>
-          <button
-            disabled={buyNow.isPending}
-            onClick={() => {
-              if (!selectedPackage && packages.length > 1) { toast.info("Vui lòng chọn gói"); return; }
-              if (!validateCustomFields()) return;
-              const pkgId = selectedPackage?.id || packages[0]?.id;
-              if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
-              buyNow.mutate({
-                email,
-                customerName: customer?.name || undefined,
-                productId,
-                packageId: pkgId,
-                quantity,
-                customFieldValues: getCustomFieldValues(),
-                couponCode: appliedCoupon?.code || couponCode || undefined,
-                notes: notes || undefined,
-                origin: window.location.origin,
-                payWithWallet: payWithWallet || undefined,
-                customerToken: payWithWallet ? (localStorage.getItem("customerToken") || undefined) : undefined,
-              });
-            }}
-            className="flex items-center justify-center gap-2 flex-[3] bg-gradient-to-r from-slate-700 to-slate-800 text-white py-3 px-4 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-60"
-          >
-            {buyNow.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            {buyNow.isPending ? "Đang xử lý..." : "Đăng nhập để mua"}
-          </button>
-        </div>
-      ) : (
+        {/* Action Buttons */}
+        {isLoggedIn ? (
+          <div className="flex gap-2">
+            <button
+              onClick={handleAddToCart}
+              className="w-11 h-11 flex items-center justify-center border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0"
+            >
+              <ShoppingCart className="w-5 h-5 text-gray-600" />
+            </button>
+            <button
+              disabled={buyNow.isPending}
+              onClick={handleBuyNow}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
+            >
+              {buyNow.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {buyNow.isPending ? "Đang xử lý..." : "Đặt hàng ngay"}
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={handleAddToCart}
+              className="w-11 h-11 flex items-center justify-center border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0"
+            >
+              <ShoppingCart className="w-5 h-5 text-gray-600" />
+            </button>
+            <button
+              onClick={() => setLocation("/login")}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all"
+            >
+              <Zap className="w-4 h-4" />
+              Đăng nhập để mua
+            </button>
+          </div>
+        )}
+
+        {/* View reviews */}
         <button
-          onClick={() => setLocation("/login")}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-slate-700 to-slate-800 text-white py-3 px-4 rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+          onClick={() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' })}
+          className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm hover:bg-gray-50 transition-colors"
         >
-          <Zap className="w-4 h-4" />
-          Đăng nhập để mua
+          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+          Xem chi tiết &amp; Đánh giá
         </button>
-      )}
-
-      {/* View detail & review */}
-      <button
-        onClick={() => { const el = document.getElementById('reviews-section'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-        className="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-600 py-2.5 px-4 rounded-xl text-sm hover:bg-gray-50 transition-colors"
-      >
-        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-        Xem chi tiết &amp; Đánh giá
-      </button>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-50">
+    <div className="min-h-screen bg-[#f5f6fa]">
       <ClientHeader />
 
       {/* ===== HERO SECTION ===== */}
-      <div className="bg-gradient-to-br from-teal-600 via-teal-500 to-cyan-500 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-        <div className="max-w-6xl mx-auto px-4 pt-3 pb-6">
+      <div className="bg-gradient-to-br from-teal-500 via-teal-400 to-cyan-400 pt-16">
+        <div className="max-w-5xl mx-auto px-4 pt-4 pb-6">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-white/70 mb-4 flex-wrap">
-            <button onClick={() => setLocation("/")} className="hover:text-white transition-colors">Trang chủ</button>
+          <nav className="flex items-center gap-1.5 text-xs text-white/70 mb-5 flex-wrap">
+            <button onClick={() => setLocation("/")} className="hover:text-white flex items-center gap-1">
+              <Home className="w-3 h-3" /> Trang chủ
+            </button>
             <ChevronRight className="w-3 h-3" />
-            <button onClick={() => setLocation("/catalog")} className="hover:text-white transition-colors">Sản phẩm</button>
+            <button onClick={() => setLocation("/catalog")} className="hover:text-white">Sản phẩm</button>
             {categoryInfo?.parentName && (
               <>
                 <ChevronRight className="w-3 h-3" />
@@ -474,40 +478,36 @@ export default function ProductDetail() {
               </>
             )}
             <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium truncate max-w-[160px]">{product.name}</span>
+            <span className="text-white font-medium truncate max-w-[200px]">{product.name}</span>
           </nav>
 
-          {/* Hero content: mobile=stacked, desktop=side-by-side */}
-          <div className="flex flex-col md:flex-row gap-4 md:gap-5 items-start">
-            {/* Product image - full width on mobile, fixed width on desktop */}
-            <div className="w-full md:w-[220px] md:flex-shrink-0">
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full md:aspect-square aspect-video flex items-center justify-center p-2">
+          {/* Hero: mobile = stacked, desktop = side by side */}
+          <div className="flex flex-col md:flex-row gap-5 items-start">
+            {/* Image */}
+            <div className="w-full md:w-52 md:flex-shrink-0">
+              <div className="bg-white rounded-2xl shadow-2xl overflow-hidden aspect-video md:aspect-square flex items-center justify-center">
                 {(product as any).imageUrl ? (
-                  <img src={(product as any).imageUrl} alt={product.name} className="w-full h-full object-contain rounded-xl" />
+                  <img src={(product as any).imageUrl} alt={product.name} className="w-full h-full object-contain p-2" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center">
-                    <Package className="w-16 h-16 text-gray-300" />
-                  </div>
+                  <Package className="w-16 h-16 text-gray-300" />
                 )}
               </div>
             </div>
 
-            {/* Product info */}
+            {/* Info */}
             <div className="flex-1 min-w-0 text-white">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <h1 className="text-xl md:text-2xl font-bold leading-tight flex-1">{product.name}</h1>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <h1 className="text-xl md:text-2xl font-bold leading-snug flex-1">{product.name}</h1>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={handleShare}
-                    className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
-                    title="Chia sẻ"
+                    className="w-9 h-9 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
                   >
                     {copied ? <CheckCircle className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => { if (email) toggleWishlist.mutate({ email, productId }); else toast.info("Vui lòng đăng nhập"); }}
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isInWishlist ? "bg-red-500 text-white" : "bg-white/20 hover:bg-white/30"}`}
-                    title={isInWishlist ? "Bỏ yêu thích" : "Yêu thích"}
+                    className={`w-9 h-9 backdrop-blur rounded-xl flex items-center justify-center transition-all ${isInWishlist ? "bg-red-500" : "bg-white/20 hover:bg-white/30"}`}
                   >
                     <Heart className={`w-4 h-4 ${isInWishlist ? "fill-white" : ""}`} />
                   </button>
@@ -515,45 +515,36 @@ export default function ProductDetail() {
               </div>
 
               {/* Rating */}
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <div className="flex items-center gap-0.5">
                   {[1,2,3,4,5].map(i => (
-                    <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-white/40"}`} />
+                    <Star key={i} className={`w-4 h-4 ${i <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-white/30"}`} />
                   ))}
                 </div>
                 <span className="text-sm font-semibold">{avgRating > 0 ? avgRating.toFixed(1) : "0.0"}</span>
                 <span className="text-sm text-white/70">({(productReviews as any[]).length} đánh giá)</span>
+                {totalSold > 0 && <span className="text-sm text-white/70">· Đã bán {totalSold}</span>}
               </div>
 
-              {/* Category tags */}
-              {categoryTags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {categoryTags.map((tag, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 rounded-full text-xs text-white">
-                      {tag.icon && <CategoryIcon icon={tag.icon} className="text-xs" />}
-                      {tag.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Product tags */}
-              {(productTagList as any[]).length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {(productTagList as any[]).map((tag: any) => (
-                    <span key={tag.id} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: tag.color || '#3b82f6' }}>
-                      {tag.icon && (tag.icon.startsWith("fa-") ? <i className={`${tag.icon}`} /> : <span>{tag.icon}</span>)}
-                      {tag.name}
-                    </span>
-                  ))}
-                </div>
-              )}
+              {/* Category + product tags */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {categoryTags.map((tag, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur rounded-xl text-sm font-medium text-white border border-white/20">
+                    {tag.icon && <CategoryIcon icon={tag.icon} className="text-sm" />}
+                    {tag.name}
+                  </span>
+                ))}
+                {(productTagList as any[]).map((tag: any) => (
+                  <span key={tag.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold text-white border border-white/20" style={{ backgroundColor: tag.color ? `${tag.color}99` : 'rgba(255,255,255,0.2)' }}>
+                    {tag.icon && (tag.icon.startsWith("fa-") ? <i className={tag.icon} /> : <span>{tag.icon}</span>)}
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
 
               {/* Short description */}
               {product.description && (
-                <p className="text-sm text-white/80 line-clamp-2 leading-relaxed">
-                  {product.description}
-                </p>
+                <p className="text-sm text-white/80 line-clamp-2 leading-relaxed">{product.description}</p>
               )}
             </div>
           </div>
@@ -561,64 +552,64 @@ export default function ProductDetail() {
       </div>
 
       {/* ===== MAIN CONTENT ===== */}
-      <div className="max-w-6xl mx-auto px-4 py-5 pb-10">
-        {/* Desktop: 2-column layout. Mobile: single column */}
+      <div className="max-w-5xl mx-auto px-4 py-5 pb-16">
+        {/* PC: 2 columns | Mobile: 1 column */}
         <div className="flex flex-col md:flex-row gap-5 items-start">
 
-          {/* ===== LEFT COLUMN (main content) ===== */}
-          <div className="flex-1 min-w-0 space-y-3">
+          {/* ===== LEFT COLUMN ===== */}
+          <div className="w-full md:flex-1 min-w-0 space-y-3">
 
             {/* Package List */}
             {packages.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {packages.map((pkg: any) => {
-                    const pkgDiscount = getDiscountPercent(pkg.price, pkg.originalPrice);
-                    const isSelected = selectedPackageId === pkg.id;
-                    return (
-                      <button
-                        key={pkg.id}
-                        onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                        className={`text-left bg-white rounded-2xl border-2 p-3 transition-all hover:shadow-md flex items-center gap-3 ${
-                          isSelected
-                            ? "border-purple-500 bg-purple-50/30 shadow-sm"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        {/* Thumbnail */}
-                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
-                          {(product as any).imageUrl ? (
-                            <img src={(product as any).imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <Package className="w-6 h-6 text-gray-300" />
-                          )}
-                        </div>
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-gray-800 text-sm leading-snug line-clamp-2">{pkg.name}</h4>
-                          <p className="text-xs text-teal-600 mt-0.5 flex items-center gap-1 font-medium">
-                            <ShoppingCart className="w-3 h-3" /> Order
-                          </p>
-                        </div>
-                        {/* Price + radio */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <div className="text-right">
-                            <div className="font-bold text-purple-600 text-sm whitespace-nowrap">{formatVND(pkg.price)}</div>
-                            {pkg.originalPrice && (
-                              <div className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</div>
-                            )}
-                            {pkgDiscount > 0 && (
-                              <span className="text-xs bg-red-100 text-red-500 px-1 rounded font-medium">-{pkgDiscount}%</span>
-                            )}
+              <div className="space-y-2">
+                {packages.map((pkg: any) => {
+                  const pkgDiscount = getDiscountPercent(pkg.price, pkg.originalPrice);
+                  const isSelected = selectedPackageId === pkg.id;
+                  return (
+                    <button
+                      key={pkg.id}
+                      onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
+                      className={`w-full text-left bg-white rounded-2xl border-2 p-3.5 transition-all flex items-center gap-3 shadow-sm hover:shadow-md ${
+                        isSelected ? "border-purple-500 shadow-purple-100" : "border-transparent hover:border-gray-200"
+                      }`}
+                    >
+                      {/* Thumbnail */}
+                      <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+                        {(product as any).imageUrl ? (
+                          <img src={(product as any).imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-6 h-6 text-gray-300" />
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-800 text-sm leading-snug">{pkg.name}</h4>
+                        {/* Product tags */}
+                        {(productTagList as any[]).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(productTagList as any[]).slice(0, 2).map((tag: any) => (
+                              <span key={tag.id} className="inline-flex items-center gap-0.5 text-xs font-medium" style={{ color: tag.color || '#0d9488' }}>
+                                {tag.icon && <span>{tag.icon}</span>} {tag.name}
+                              </span>
+                            ))}
                           </div>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? "border-purple-500 bg-purple-500" : "border-gray-300"}`}>
-                            {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                        )}
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-bold text-purple-600 text-sm whitespace-nowrap">{formatVND(pkg.price)}</div>
+                        {pkg.originalPrice && (
+                          <div className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</div>
+                        )}
+                        {pkgDiscount > 0 && (
+                          <span className="text-xs bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full font-medium">-{pkgDiscount}%</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -629,16 +620,16 @@ export default function ProductDetail() {
                   onClick={() => setShowPackageDetails(!showPackageDetails)}
                   className="w-full flex items-center justify-between p-4"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Package className="w-4 h-4 text-white" />
                     </div>
                     <div className="text-left">
-                      <p className="text-xs text-violet-600 font-semibold uppercase tracking-wide">Chi tiết gói</p>
+                      <p className="text-xs text-violet-500 font-semibold uppercase tracking-wide">Chi tiết gói</p>
                       <p className="text-sm font-semibold text-gray-800 line-clamp-1">{selectedPackage?.name || "Chọn gói để xem chi tiết"}</p>
                     </div>
                   </div>
-                  {showPackageDetails ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  {showPackageDetails ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
                 </button>
                 {showPackageDetails && (
                   <div className="px-4 pb-4 border-t border-gray-100 pt-3">
@@ -655,12 +646,12 @@ export default function ProductDetail() {
                   onClick={() => setShowFullDesc(!showFullDesc)}
                   className="w-full flex items-center justify-between p-4"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
                       <MessageSquare className="w-4 h-4 text-white" />
                     </div>
                     <div className="text-left">
-                      <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Giới thiệu</p>
+                      <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide">Giới thiệu</p>
                       <p className="text-sm font-semibold text-gray-800">Mô tả sản phẩm</p>
                     </div>
                   </div>
@@ -677,7 +668,7 @@ export default function ProductDetail() {
             {/* Contact info */}
             {((publicInfo as any)?.companyPhone || (publicInfo as any)?.companyEmail) && (
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Liên hệ tư vấn</p>
+                <p className="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">Liên hệ tư vấn</p>
                 <div className="flex flex-col gap-2">
                   {(publicInfo as any).companyPhone && (
                     <a href={`tel:${(publicInfo as any).companyPhone}`} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500">
@@ -693,16 +684,15 @@ export default function ProductDetail() {
               </div>
             )}
 
-
             {/* Mobile: Order Info Card */}
             <div className="md:hidden">
               <OrderInfoCard />
             </div>
 
-            {/* ===== REVIEWS SECTION (full width, below left column) ===== */}
-            <div id="reviews-section" className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* ===== REVIEWS ===== */}
+            <div id="reviews-section" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
                   <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                   Đánh giá sản phẩm
                 </h3>
@@ -721,18 +711,18 @@ export default function ProductDetail() {
                     </div>
                     <p className="text-xs text-gray-400 mt-1">{(productReviews as any[]).length} đánh giá</p>
                   </div>
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-1.5">
                     {[5,4,3,2,1].map(star => {
                       const count = (productReviews as any[]).filter((r: any) => r.rating === star).length;
                       const pct = (productReviews as any[]).length > 0 ? (count / (productReviews as any[]).length) * 100 : 0;
                       return (
                         <div key={star} className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600 w-3 text-right">{star}</span>
+                          <span className="text-sm text-gray-500 w-3 text-right">{star}</span>
                           <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 flex-shrink-0" />
                           <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
                           </div>
-                          <span className="text-sm text-gray-500 w-4 text-right">{count}</span>
+                          <span className="text-sm text-gray-400 w-4 text-right">{count}</span>
                         </div>
                       );
                     })}
@@ -742,16 +732,14 @@ export default function ProductDetail() {
                 {isLoggedIn ? (
                   <button
                     onClick={() => setShowReviewForm(!showReviewForm)}
-                    className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-red-400 text-red-500 font-semibold text-sm hover:bg-red-50 transition-colors"
+                    className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-red-400 text-red-500 font-semibold text-sm hover:bg-red-50 transition-colors"
                   >
                     <Pencil className="w-4 h-4" /> Viết đánh giá
                   </button>
                 ) : (
-                  <div className="mt-4 text-center py-2">
-                    <p className="text-sm text-gray-400">
-                      <button onClick={() => setLocation("/login")} className="text-blue-500 hover:underline font-medium">Đăng nhập</button> và mua hàng để đánh giá sản phẩm
-                    </p>
-                  </div>
+                  <p className="mt-4 text-center text-sm text-gray-400">
+                    <button onClick={() => setLocation("/login")} className="text-blue-500 hover:underline font-medium">Đăng nhập</button> và mua hàng để đánh giá
+                  </p>
                 )}
               </div>
 
@@ -771,17 +759,17 @@ export default function ProductDetail() {
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
                     rows={3}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors resize-none mb-3"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 resize-none mb-3"
                   />
                   <div className="flex gap-2">
                     <button
                       disabled={submitReview.isPending}
                       onClick={() => submitReview.mutate({ productId, customerEmail: email, customerName: customer?.name || undefined, rating: reviewRating, comment: reviewComment || undefined })}
-                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-1.5"
                     >
                       {submitReview.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Gửi đánh giá
                     </button>
-                    <button onClick={() => setShowReviewForm(false)} className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm rounded-xl transition-colors">Hủy</button>
+                    <button onClick={() => setShowReviewForm(false)} className="px-4 py-2.5 bg-gray-100 text-gray-500 text-sm rounded-xl">Hủy</button>
                   </div>
                 </div>
               )}
@@ -827,13 +815,22 @@ export default function ProductDetail() {
             {/* Related Products */}
             {relatedProducts.length > 0 && (
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <h3 className="text-base font-bold text-gray-900 mb-3">Sản phẩm liên quan</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {relatedProducts.map((p: any) => (
+                <div className="flex items-center gap-2 mb-4">
+                  <Layers className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">Sản phẩm liên quan</h3>
+                    <p className="text-xs text-gray-400">Các sản phẩm cùng chuyên mục có thể bạn quan tâm</p>
+                  </div>
+                  <button onClick={() => setLocation("/catalog")} className="ml-auto text-sm font-semibold text-white bg-[#1e3a5f] px-3 py-1.5 rounded-lg hover:bg-[#162d4a] transition-colors whitespace-nowrap">
+                    Xem tất cả →
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {relatedProducts.slice(0, 4).map((p: any) => (
                     <a
                       key={p.id}
                       href={`/product/${p.id}`}
-                      className="group bg-gray-50 rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                      className="group bg-gray-50 rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all"
                     >
                       <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
                         {p.imageUrl && (
@@ -853,8 +850,8 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* ===== RIGHT COLUMN (sticky order info - desktop only) ===== */}
-          <div className="hidden md:block w-[280px] flex-shrink-0 sticky top-24">
+          {/* ===== RIGHT COLUMN (desktop only, sticky) ===== */}
+          <div className="hidden md:block w-72 flex-shrink-0 sticky top-24 self-start">
             <OrderInfoCard />
           </div>
 
