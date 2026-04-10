@@ -484,22 +484,6 @@ export default function ProductDetail() {
       {/* ===== HERO SECTION ===== */}
       <div className="bg-gradient-to-br from-teal-500 via-teal-400 to-cyan-400 pt-16">
         <div className="max-w-5xl mx-auto px-4 pt-4 pb-6">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-white/70 mb-5 flex-wrap">
-            <button onClick={() => setLocation("/")} className="hover:text-white flex items-center gap-1">
-              <Home className="w-3 h-3" /> Trang chủ
-            </button>
-            <ChevronRight className="w-3 h-3" />
-            <button onClick={() => setLocation("/catalog")} className="hover:text-white">Sản phẩm</button>
-            {categoryInfo?.parentName && (
-              <>
-                <ChevronRight className="w-3 h-3" />
-                <span className="text-white/80">{categoryInfo.parentName}</span>
-              </>
-            )}
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium truncate max-w-[200px]">{product.name}</span>
-          </nav>
 
           {/* Hero: mobile = stacked, desktop = side by side */}
           <div className="flex flex-col md:flex-row gap-5 items-start">
