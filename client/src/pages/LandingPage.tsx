@@ -430,7 +430,7 @@ export default function LandingPage() {
                   </h2>
                   <p className="text-slate-500 text-sm mt-1">Những sản phẩm được mua nhiều nhất</p>
                 </div>
-                <Button onClick={() => navigate("/catalog")} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-5 gap-1.5 flex-shrink-0">
+                <Button onClick={() => navigate("/catalog")} className="bg-slate-800 hover:bg-slate-900 text-white rounded-xl px-5 gap-1.5 flex-shrink-0">
                   Xem tất cả <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
