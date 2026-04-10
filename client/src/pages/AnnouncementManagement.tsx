@@ -1,39 +1,33 @@
 /**
- * AnnouncementManagement - Quản lý thông báo banner & popup cho trang khách
- * Admin có thể tạo, chỉnh sửa, bật/tắt, xóa thông báo
+ * AnnouncementManagement - Quản lý thông báo & banner
+ * Gộp 2 tính năng: Thông Báo (popup/banner strip) + Banner (slideshow trang chủ)
  */
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Bell, Info, CheckCircle, AlertTriangle, AlertCircle, Megaphone } from "@/components/Icon";
+import { Plus, Pencil, Trash2, Bell, Info, CheckCircle, AlertTriangle, AlertCircle, Megaphone, ImageIcon, Upload, Link, ExternalLink, GripVertical } from "@/components/Icon";
 import { toast } from "sonner";
 
 type AnnouncementType = "info" | "success" | "warning" | "error";
 
-const TYPE_CONFIG: Record<AnnouncementType, { label: string; color: string; icon: React.ReactNode }> = {
-  info: { label: "Thông tin", color: "bg-blue-100 text-blue-700 border-blue-200", icon: <Info className="w-4 h-4" /> },
-  success: { label: "Thành công", color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: <CheckCircle className="w-4 h-4" /> },
-  warning: { label: "Cảnh báo", color: "bg-amber-100 text-amber-700 border-amber-200", icon: <AlertTriangle className="w-4 h-4" /> },
-  error: { label: "Khẩn cấp", color: "bg-red-100 text-red-700 border-red-200", icon: <AlertCircle className="w-4 h-4" /> },
+const TYPE_CONFIG: Record<AnnouncementType, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
+  info: { label: "Thông tin", color: "bg-blue-100 text-blue-700 border-blue-200", bg: "bg-blue-500", icon: <Info className="w-4 h-4" /> },
+  success: { label: "Thành công", color: "bg-emerald-100 text-emerald-700 border-emerald-200", bg: "bg-emerald-500", icon: <CheckCircle className="w-4 h-4" /> },
+  warning: { label: "Cảnh báo", color: "bg-amber-100 text-amber-700 border-amber-200", bg: "bg-amber-500", icon: <AlertTriangle className="w-4 h-4" /> },
+  error: { label: "Khẩn cấp", color: "bg-red-100 text-red-700 border-red-200", bg: "bg-red-500", icon: <AlertCircle className="w-4 h-4" /> },
 };
 
-const BANNER_BG: Record<AnnouncementType, string> = {
-  info: "bg-blue-600",
-  success: "bg-emerald-600",
-  warning: "bg-amber-500",
-  error: "bg-red-600",
-};
-
-interface FormState {
+interface AnnouncementForm {
   title: string;
   content: string;
   type: AnnouncementType;
@@ -43,261 +37,397 @@ interface FormState {
   endAt: string;
 }
 
-// Trả về datetime-local string theo giờ địa phương (không phải UTC)
 const toLocalDatetimeString = (d: Date) => {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// Parse datetime-local string (local time) thành Date object
-const parseDatetimeLocal = (s: string): Date => {
-  // datetime-local format: "YYYY-MM-DDTHH:mm" → interpreted as local time
-  return new Date(s);
+const defaultAnnForm: AnnouncementForm = {
+  title: "", content: "", type: "info", isActive: true, showAsPopup: false,
+  startAt: toLocalDatetimeString(new Date()), endAt: "",
 };
 
-const defaultForm: FormState = {
-  title: "",
-  content: "",
-  type: "info",
-  isActive: true,
-  showAsPopup: false,
-  startAt: toLocalDatetimeString(new Date()),
-  endAt: "",
-};
+// ─── Image Upload Field for Banners ──────────────────────────────────────────
+function ImageUploadField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [mode, setMode] = useState<"url" | "upload">("upload");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const uploadMutation = trpc.banner.uploadImage.useMutation();
 
-export default function AnnouncementManagement() {
-
-  const utils = trpc.useUtils();
-  const { data: announcements = [], isLoading } = trpc.announcement.list.useQuery();
-  const createMutation = trpc.announcement.create.useMutation({
-    onSuccess: () => { utils.announcement.list.invalidate(); toast.success("Đã tạo thông báo"); setDialogOpen(false); },
-    onError: (e) => toast.error(e.message),
-  });
-  const updateMutation = trpc.announcement.update.useMutation({
-    onSuccess: () => { utils.announcement.list.invalidate(); toast.success("Đã cập nhật"); setDialogOpen(false); },
-    onError: (e) => toast.error(e.message),
-  });
-  const deleteMutation = trpc.announcement.delete.useMutation({
-    onSuccess: () => { utils.announcement.list.invalidate(); toast.success("Đã xóa thông báo"); },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState<FormState>(defaultForm);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-
-  const openCreate = () => {
-    setEditingId(null);
-    setForm(defaultForm);
-    setDialogOpen(true);
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Ảnh quá lớn (tối đa 5MB)"); return; }
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = (ev.target?.result as string).split(",")[1];
+        const result = await uploadMutation.mutateAsync({ base64, mimeType: file.type, fileName: file.name });
+        onChange(result.url);
+        toast.success("Đã tải ảnh lên");
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi tải ảnh");
+      setUploading(false);
+    }
   };
 
-  const openEdit = (a: any) => {
-    setEditingId(a.id);
-    setForm({
-      title: a.title,
-      content: a.content,
-      type: a.type as AnnouncementType,
-      isActive: a.isActive,
-      showAsPopup: a.showAsPopup,
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Button type="button" variant={mode === "upload" ? "default" : "outline"} size="sm" onClick={() => setMode("upload")}>
+          <Upload className="w-3.5 h-3.5 mr-1.5" /> Tải lên
+        </Button>
+        <Button type="button" variant={mode === "url" ? "default" : "outline"} size="sm" onClick={() => setMode("url")}>
+          <Link className="w-3.5 h-3.5 mr-1.5" /> URL
+        </Button>
+      </div>
+      {mode === "upload" ? (
+        <div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          <div
+            className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
+            onClick={() => fileRef.current?.click()}
+          >
+            {value ? (
+              <div className="space-y-2">
+                <img src={value} alt="Preview" className="w-full max-h-36 object-cover rounded-lg mx-auto" onError={(e) => (e.currentTarget.style.display = "none")} />
+                <p className="text-xs text-gray-400">Click để đổi ảnh</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5 py-2">
+                <Upload className="w-7 h-7 text-gray-300 mx-auto" />
+                <p className="text-sm text-gray-400">{uploading ? "Đang tải lên..." : "Click để chọn ảnh (JPG, PNG — tối đa 5MB)"}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Input placeholder="https://example.com/banner.jpg" value={value} onChange={(e) => onChange(e.target.value)} />
+          {value && <img src={value} alt="Preview" className="w-full h-32 object-cover rounded-lg" onError={(e) => (e.currentTarget.style.display = "none")} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function AnnouncementManagement() {
+  const utils = trpc.useUtils();
+  const [activeTab, setActiveTab] = useState("announcements");
+
+  // Announcements
+  const { data: announcements = [], isLoading: annLoading } = trpc.announcement.list.useQuery();
+  const createAnnMutation = trpc.announcement.create.useMutation({
+    onSuccess: () => { utils.announcement.list.invalidate(); toast.success("Đã tạo thông báo"); setAnnDialogOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const updateAnnMutation = trpc.announcement.update.useMutation({
+    onSuccess: () => { utils.announcement.list.invalidate(); toast.success("Đã cập nhật"); setAnnDialogOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteAnnMutation = trpc.announcement.delete.useMutation({
+    onSuccess: () => { utils.announcement.list.invalidate(); toast.success("Đã xóa"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [annDialogOpen, setAnnDialogOpen] = useState(false);
+  const [editingAnnId, setEditingAnnId] = useState<number | null>(null);
+  const [annForm, setAnnForm] = useState<AnnouncementForm>(defaultAnnForm);
+  const [deleteAnnId, setDeleteAnnId] = useState<number | null>(null);
+
+  // Banners
+  const { data: banners = [], refetch: refetchBanners } = trpc.banner.list.useQuery();
+  const createBannerMutation = trpc.banner.create.useMutation({
+    onSuccess: () => { toast.success("Đã thêm banner"); setAddingBanner(false); setNewBanner({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0 }); refetchBanners(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const updateBannerMutation = trpc.banner.update.useMutation({
+    onSuccess: () => { toast.success("Đã cập nhật"); refetchBanners(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteBannerMutation = trpc.banner.delete.useMutation({
+    onSuccess: () => { toast.success("Đã xóa banner"); refetchBanners(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [addingBanner, setAddingBanner] = useState(false);
+  const [newBanner, setNewBanner] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0 });
+
+  // Announcement handlers
+  const openCreateAnn = () => { setEditingAnnId(null); setAnnForm(defaultAnnForm); setAnnDialogOpen(true); };
+  const openEditAnn = (a: any) => {
+    setEditingAnnId(a.id);
+    setAnnForm({
+      title: a.title, content: a.content, type: a.type as AnnouncementType,
+      isActive: a.isActive, showAsPopup: a.showAsPopup,
       startAt: a.startAt ? toLocalDatetimeString(new Date(a.startAt)) : toLocalDatetimeString(new Date()),
       endAt: a.endAt ? toLocalDatetimeString(new Date(a.endAt)) : "",
     });
-    setDialogOpen(true);
+    setAnnDialogOpen(true);
   };
-
-  const handleSubmit = () => {
-    if (!form.title.trim() || !form.content.trim()) {
-      toast.error("Vui lòng nhập tiêu đề và nội dung");
-      return;
-    }
+  const handleSubmitAnn = () => {
+    if (!annForm.title.trim() || !annForm.content.trim()) { toast.error("Vui lòng nhập tiêu đề và nội dung"); return; }
     const payload = {
-      title: form.title.trim(),
-      content: form.content.trim(),
-      type: form.type,
-      isActive: form.isActive,
-      showAsPopup: form.showAsPopup,
-      startAt: form.startAt ? new Date(form.startAt) : undefined,
-      endAt: form.endAt ? new Date(form.endAt) : undefined,
+      title: annForm.title.trim(), content: annForm.content.trim(), type: annForm.type,
+      isActive: annForm.isActive, showAsPopup: annForm.showAsPopup,
+      startAt: annForm.startAt ? new Date(annForm.startAt) : undefined,
+      endAt: annForm.endAt ? new Date(annForm.endAt) : undefined,
     };
-    if (editingId) {
-      updateMutation.mutate({ id: editingId, ...payload });
-    } else {
-      createMutation.mutate(payload);
-    }
+    if (editingAnnId) { updateAnnMutation.mutate({ id: editingAnnId, ...payload }); }
+    else { createAnnMutation.mutate(payload); }
   };
 
-  const toggleActive = (a: any) => {
-    updateMutation.mutate({ id: a.id, isActive: !a.isActive });
-  };
-
-  const activeCount = (announcements as any[]).filter((a: any) => a.isActive).length;
-  const popupCount = (announcements as any[]).filter((a: any) => a.showAsPopup && a.isActive).length;
+  const activeAnnCount = (announcements as any[]).filter((a: any) => a.isActive).length;
+  const activeBannerCount = (banners as any[]).filter((b: any) => b.isActive).length;
 
   return (
     <DashboardLayoutCustom>
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <div className="space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="ak-page-header">
+        <div className="ak-page-header">
           <div>
-            <h1 className="ak-page-title">Quản Lý Thông Báo</h1>
-            <p className="ak-page-subtitle">Tạo và quản lý thông báo hiển thị cho khách hàng</p>
+            <h1 className="ak-page-title">Thông Báo & Banner</h1>
+            <p className="ak-page-subtitle">Quản lý thông báo popup/strip và banner slideshow trang chủ</p>
+          </div>
+          {activeTab === "announcements" ? (
+            <Button onClick={openCreateAnn} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
+              <Plus className="w-4 h-4" /> Tạo Thông Báo
+            </Button>
+          ) : (
+            <Button onClick={() => setAddingBanner(true)} disabled={addingBanner} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
+              <Plus className="w-4 h-4" /> Thêm Banner
+            </Button>
+          )}
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-blue-100"><Bell className="h-5 w-5 text-blue-600" /></div>
+            <div><div className="ak-stat-value">{(announcements as any[]).length}</div><div className="ak-stat-label">Tổng thông báo</div></div>
+          </div>
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-green-100"><CheckCircle className="h-5 w-5 text-green-600" /></div>
+            <div><div className="ak-stat-value text-green-600">{activeAnnCount}</div><div className="ak-stat-label">Đang hiển thị</div></div>
+          </div>
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-purple-100"><ImageIcon className="h-5 w-5 text-purple-600" /></div>
+            <div><div className="ak-stat-value">{(banners as any[]).length}</div><div className="ak-stat-label">Tổng banner</div></div>
+          </div>
+          <div className="ak-stat-card">
+            <div className="ak-stat-icon bg-orange-100"><Megaphone className="h-5 w-5 text-orange-600" /></div>
+            <div><div className="ak-stat-value text-orange-600">{activeBannerCount}</div><div className="ak-stat-label">Banner đang bật</div></div>
           </div>
         </div>
-          <Button onClick={openCreate} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Tạo thông báo
-          </Button>
-        </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{(announcements as any[]).length}</p>
-                <p className="text-xs text-muted-foreground">Tổng thông báo</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{activeCount}</p>
-                <p className="text-xs text-muted-foreground">Đang hiển thị</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{popupCount}</p>
-                <p className="text-xs text-muted-foreground">Popup đang bật</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-white border border-gray-200 shadow-sm">
+            <TabsTrigger value="announcements" className="gap-1.5">
+              <Bell className="h-4 w-4" /> Thông Báo ({(announcements as any[]).length})
+            </TabsTrigger>
+            <TabsTrigger value="banners" className="gap-1.5">
+              <ImageIcon className="h-4 w-4" /> Banner ({(banners as any[]).length})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* List */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Danh sách thông báo</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground">Đang tải...</div>
-            ) : (announcements as any[]).length === 0 ? (
-              <div className="p-12 text-center">
-                <Megaphone className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">Chưa có thông báo nào</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">Tạo thông báo đầu tiên để hiển thị trên trang khách</p>
-                <Button onClick={openCreate} variant="outline" className="mt-4 gap-2">
-                  <Plus className="w-4 h-4" />
-                  Tạo ngay
-                </Button>
-              </div>
-            ) : (
-              <div className="divide-y">
-                {(announcements as any[]).map((a: any) => {
-                  const cfg = TYPE_CONFIG[a.type as AnnouncementType] || TYPE_CONFIG.info;
-                  const bgCls = BANNER_BG[a.type as AnnouncementType] || BANNER_BG.info;
-                  return (
-                    <div key={a.id} className="p-4 flex items-start gap-4 hover:bg-muted/30 transition-colors">
-                      {/* Preview strip */}
-                      <div className={`w-1.5 self-stretch rounded-full flex-shrink-0 ${bgCls}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="font-semibold text-sm">{a.title}</span>
-                          <Badge variant="outline" className={`text-xs gap-1 ${cfg.color}`}>
-                            {cfg.icon}
-                            {cfg.label}
-                          </Badge>
-                          {a.showAsPopup && (
-                            <Badge variant="outline" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
-                              Popup
-                            </Badge>
-                          )}
-                          {!a.isActive && (
-                            <Badge variant="outline" className="text-xs bg-gray-100 text-gray-500">
-                              Tắt
-                            </Badge>
-                          )}
+          {/* ── Announcements Tab ── */}
+          <TabsContent value="announcements" className="mt-4">
+            <div className="ak-card">
+              {annLoading ? (
+                <div className="p-10 text-center text-gray-400">Đang tải...</div>
+              ) : (announcements as any[]).length === 0 ? (
+                <div className="ak-empty">
+                  <div className="ak-empty-icon"><Megaphone className="h-6 w-6" /></div>
+                  <div className="ak-empty-title">Chưa có thông báo nào</div>
+                  <div className="ak-empty-desc">Tạo thông báo để hiển thị trên trang khách hàng</div>
+                  <Button onClick={openCreateAnn} size="sm" className="mt-3 gap-1.5 bg-blue-600 hover:bg-blue-700">
+                    <Plus className="w-4 h-4" /> Tạo ngay
+                  </Button>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {(announcements as any[]).map((a: any) => {
+                    const cfg = TYPE_CONFIG[a.type as AnnouncementType] || TYPE_CONFIG.info;
+                    return (
+                      <div key={a.id} className={`p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors ${!a.isActive ? "opacity-60" : ""}`}>
+                        {/* Color strip */}
+                        <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${cfg.bg}`} />
+                        {/* Type icon */}
+                        <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${cfg.color}`}>
+                          {cfg.icon}
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{a.content}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground/70">
-                          <span>Bắt đầu: {new Date(a.startAt).toLocaleDateString("vi-VN")}</span>
-                          {a.endAt && <span>Kết thúc: {new Date(a.endAt).toLocaleDateString("vi-VN")}</span>}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="font-semibold text-sm text-gray-900">{a.title}</span>
+                            <Badge variant="outline" className={`text-xs ${cfg.color}`}>{cfg.label}</Badge>
+                            {a.showAsPopup && (
+                              <Badge variant="outline" className="text-xs bg-purple-100 text-purple-700 border-purple-200">Popup</Badge>
+                            )}
+                            {!a.isActive && (
+                              <Badge variant="outline" className="text-xs bg-gray-100 text-gray-500">Tắt</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500 line-clamp-2">{a.content}</p>
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                            <span>Bắt đầu: {new Date(a.startAt).toLocaleDateString("vi-VN")}</span>
+                            {a.endAt && <span>Kết thúc: {new Date(a.endAt).toLocaleDateString("vi-VN")}</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Switch
+                            checked={a.isActive}
+                            onCheckedChange={() => updateAnnMutation.mutate({ id: a.id, isActive: !a.isActive })}
+                          />
+                          <button
+                            onClick={() => openEditAnn(a)}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteAnnId(a.id)}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <Switch
-                          checked={a.isActive}
-                          onCheckedChange={() => toggleActive(a)}
-                          title={a.isActive ? "Đang bật" : "Đang tắt"}
-                        />
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setDeleteConfirmId(a.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── Banners Tab ── */}
+          <TabsContent value="banners" className="mt-4 space-y-4">
+            {/* Add Banner Form */}
+            {addingBanner && (
+              <div className="ak-card p-5 border-2 border-blue-200">
+                <h3 className="font-semibold text-gray-900 mb-4">Banner Mới</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Ảnh Banner <span className="text-red-500">*</span></Label>
+                    <div className="mt-1.5">
+                      <ImageUploadField value={newBanner.imageUrl} onChange={(url) => setNewBanner(p => ({ ...p, imageUrl: url }))} />
                     </div>
-                  );
-                })}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Tiêu đề (tùy chọn)</Label>
+                      <Input placeholder="Tiêu đề banner" value={newBanner.title} onChange={(e) => setNewBanner(p => ({ ...p, title: e.target.value }))} className="mt-1.5" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Link khi click</Label>
+                      <Input placeholder="/catalog hoặc https://..." value={newBanner.linkUrl} onChange={(e) => setNewBanner(p => ({ ...p, linkUrl: e.target.value }))} className="mt-1.5" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => createBannerMutation.mutate(newBanner)} disabled={!newBanner.imageUrl || createBannerMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+                      {createBannerMutation.isPending ? "Đang lưu..." : "Lưu Banner"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setAddingBanner(false)}>Hủy</Button>
+                  </div>
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Banner List */}
+            {(banners as any[]).length === 0 && !addingBanner ? (
+              <div className="ak-card">
+                <div className="ak-empty">
+                  <div className="ak-empty-icon"><ImageIcon className="h-6 w-6" /></div>
+                  <div className="ak-empty-title">Chưa có banner nào</div>
+                  <div className="ak-empty-desc">Thêm banner để hiển thị slideshow trên trang chủ</div>
+                  <Button onClick={() => setAddingBanner(true)} size="sm" className="mt-3 gap-1.5 bg-blue-600 hover:bg-blue-700">
+                    <Plus className="w-4 h-4" /> Thêm Banner
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(banners as any[]).map((banner: any) => (
+                  <div key={banner.id} className={`ak-card p-4 flex gap-4 items-start ${!banner.isActive ? "opacity-60" : ""}`}>
+                    <GripVertical className="w-5 h-5 text-gray-300 mt-2 flex-shrink-0" />
+                    {banner.imageUrl ? (
+                      <img
+                        src={banner.imageUrl}
+                        alt={banner.title || "Banner"}
+                        className="w-28 h-18 object-cover rounded-lg flex-shrink-0 border border-gray-100"
+                        style={{ height: "72px" }}
+                        onError={(e) => (e.currentTarget.style.display = "none")}
+                      />
+                    ) : (
+                      <div className="w-28 h-18 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0" style={{ height: "72px" }}>
+                        <ImageIcon className="w-7 h-7 text-gray-300" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm">{banner.title || "Banner không có tiêu đề"}</p>
+                      {banner.linkUrl && (
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                          <ExternalLink className="w-3 h-3" />
+                          <span className="truncate">{banner.linkUrl}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 mt-2.5">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={banner.isActive ?? true}
+                            onCheckedChange={(checked) => updateBannerMutation.mutate({ id: banner.id, isActive: checked })}
+                          />
+                          <span className="text-xs text-gray-500">{banner.isActive ? "Hiển thị" : "Ẩn"}</span>
+                        </div>
+                        <button
+                          onClick={() => { if (confirm("Xóa banner này?")) deleteBannerMutation.mutate({ id: banner.id }); }}
+                          className="h-7 px-2 flex items-center gap-1 rounded-lg text-xs text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Xóa
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Create/Edit Announcement Dialog */}
+      <Dialog open={annDialogOpen} onOpenChange={setAnnDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Chỉnh sửa thông báo" : "Tạo thông báo mới"}</DialogTitle>
+            <DialogTitle>{editingAnnId ? "Chỉnh sửa thông báo" : "Tạo thông báo mới"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-1">
             <div className="space-y-1.5">
-              <Label>Tiêu đề <span className="text-destructive">*</span></Label>
+              <Label>Tiêu đề <span className="text-red-500">*</span></Label>
               <Input
                 placeholder="Ví dụ: Chào mừng bạn đến với ShopKey!"
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                value={annForm.title}
+                onChange={e => setAnnForm(f => ({ ...f, title: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Nội dung <span className="text-destructive">*</span></Label>
+              <Label>Nội dung <span className="text-red-500">*</span></Label>
               <Textarea
                 placeholder="Nội dung chi tiết của thông báo..."
-                value={form.content}
-                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                value={annForm.content}
+                onChange={e => setAnnForm(f => ({ ...f, content: e.target.value }))}
                 rows={3}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Loại thông báo</Label>
-                <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v as AnnouncementType }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={annForm.type} onValueChange={v => setAnnForm(f => ({ ...f, type: v as AnnouncementType }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="info">Thông tin (xanh)</SelectItem>
                     <SelectItem value="success">Thành công (xanh lá)</SelectItem>
@@ -308,10 +438,8 @@ export default function AnnouncementManagement() {
               </div>
               <div className="space-y-1.5">
                 <Label>Hiển thị dạng</Label>
-                <Select value={form.showAsPopup ? "popup" : "banner"} onValueChange={v => setForm(f => ({ ...f, showAsPopup: v === "popup" }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={annForm.showAsPopup ? "popup" : "banner"} onValueChange={v => setAnnForm(f => ({ ...f, showAsPopup: v === "popup" }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="banner">Banner (thanh trên đầu)</SelectItem>
                     <SelectItem value="popup">Popup (hộp thoại)</SelectItem>
@@ -322,54 +450,41 @@ export default function AnnouncementManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Ngày bắt đầu</Label>
-                <Input
-                  type="datetime-local"
-                  value={form.startAt}
-                  onChange={e => setForm(f => ({ ...f, startAt: e.target.value }))}
-                />
+                <Input type="datetime-local" value={annForm.startAt} onChange={e => setAnnForm(f => ({ ...f, startAt: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Ngày kết thúc <span className="text-muted-foreground text-xs">(tùy chọn)</span></Label>
-                <Input
-                  type="datetime-local"
-                  value={form.endAt}
-                  onChange={e => setForm(f => ({ ...f, endAt: e.target.value }))}
-                />
+                <Label>Ngày kết thúc <span className="text-gray-400 text-xs">(tùy chọn)</span></Label>
+                <Input type="datetime-local" value={annForm.endAt} onChange={e => setAnnForm(f => ({ ...f, endAt: e.target.value }))} />
               </div>
             </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 bg-gray-50">
               <div>
-                <p className="text-sm font-medium">Kích hoạt ngay</p>
-                <p className="text-xs text-muted-foreground">Thông báo sẽ hiển thị ngay sau khi lưu</p>
+                <p className="text-sm font-medium text-gray-900">Kích hoạt ngay</p>
+                <p className="text-xs text-gray-400">Thông báo sẽ hiển thị ngay sau khi lưu</p>
               </div>
-              <Switch
-                checked={form.isActive}
-                onCheckedChange={v => setForm(f => ({ ...f, isActive: v }))}
-              />
+              <Switch checked={annForm.isActive} onCheckedChange={v => setAnnForm(f => ({ ...f, isActive: v }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Hủy</Button>
-            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
-              {editingId ? "Lưu thay đổi" : "Tạo thông báo"}
+            <Button variant="outline" onClick={() => setAnnDialogOpen(false)}>Hủy</Button>
+            <Button onClick={handleSubmitAnn} disabled={createAnnMutation.isPending || updateAnnMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+              {editingAnnId ? "Lưu thay đổi" : "Tạo thông báo"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm Dialog */}
-      <Dialog open={deleteConfirmId !== null} onOpenChange={() => setDeleteConfirmId(null)}>
+      {/* Delete Announcement Confirm */}
+      <Dialog open={deleteAnnId !== null} onOpenChange={() => setDeleteAnnId(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">Bạn có chắc muốn xóa thông báo này? Hành động này không thể hoàn tác.</p>
+          <DialogHeader><DialogTitle>Xác nhận xóa</DialogTitle></DialogHeader>
+          <p className="text-sm text-gray-500">Bạn có chắc muốn xóa thông báo này? Hành động này không thể hoàn tác.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setDeleteAnnId(null)}>Hủy</Button>
             <Button
               variant="destructive"
-              onClick={() => { if (deleteConfirmId) { deleteMutation.mutate({ id: deleteConfirmId }); setDeleteConfirmId(null); } }}
-              disabled={deleteMutation.isPending}
+              onClick={() => { if (deleteAnnId) { deleteAnnMutation.mutate({ id: deleteAnnId }); setDeleteAnnId(null); } }}
+              disabled={deleteAnnMutation.isPending}
             >
               Xóa
             </Button>

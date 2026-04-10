@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet, Gift, Plus } from "@/components/Icon";
+import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet, Gift, Plus, ExternalLink } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -64,7 +64,7 @@ const adminNavGroups = [
     label: "Nạp Tiền",
     items: [
       { label: "Cấu Hình PayOS", href: "/settings/payos", icon: Settings },
-      { label: "Lịch Sử Nạp", href: "/wallet-management", icon: History },
+      { label: "Lịch Sử Nạp", href: "/admin/topup-history", icon: History },
       { label: "Quản Lý Ví", href: "/wallet-management", icon: Wallet },
     ],
   },
@@ -73,7 +73,6 @@ const adminNavGroups = [
     items: [
       { label: "Bảo Hành", href: "/admin/warranty", icon: Shield },
       { label: "Báo Cáo", href: "/reports", icon: BarChart3 },
-      { label: "Nhân Viên", href: "/staff", icon: Users },
     ],
   },
   {
@@ -95,6 +94,12 @@ const adminNavGroups = [
       { label: "Tự Động Hoá", href: "/admin/automations", icon: Zap },
       { label: "Block IP", href: "/admin/block-ip", icon: Shield },
       { label: "Lịch Sử HĐ", href: "/activity-log", icon: History },
+    ],
+  },
+  {
+    label: null,
+    items: [
+      { label: "Xem Trang Web", href: "__CLIENT__", icon: ExternalLink },
     ],
   },
 ];
@@ -186,14 +191,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [logoutMutation]);
 
   const handleNavClick = useCallback((href: string) => {
+    if (href === "__CLIENT__") {
+      window.open("/", "_blank");
+      return;
+    }
     setLocation(href);
     if (window.innerWidth < 1024) setSidebarOpen(false);
   }, [setLocation]);
-
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
-
   const isActive = (href: string) => {
+    if (href === "__CLIENT__") return false;
     if (href === "/settings") return location === "/settings";
     return location.startsWith(href);
   };

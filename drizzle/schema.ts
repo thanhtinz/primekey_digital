@@ -43,11 +43,11 @@ export const customers = mysqlTable("customers", {
   totpSecret: varchar("totpSecret", { length: 64 }), // TOTP secret for 2FA
   totpEnabled: boolean("totpEnabled").default(false), // 2FA enabled
   avatarUrl: text("avatarUrl"), // Avatar URL stored persistently
+  customerRole: mysqlEnum("customerRole", ["customer", "vip", "wholesale", "partner"]).default("customer"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
-export type Customer = typeof customers.$inferSelect;
+export type Customer = typeof customers.$inferSelect;;
 export type InsertCustomer = typeof customers.$inferInsert;
 
 // Product Categories table - danh mục 2 cấp (lớn và nhỏ)

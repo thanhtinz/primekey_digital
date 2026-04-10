@@ -48,7 +48,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const features = [
     { icon: <FileText className="h-5 w-5 text-blue-400" />, text: "Tạo hóa đơn chuyên nghiệp" },
     { icon: <TrendingUp className="h-5 w-5 text-green-400" />, text: "Theo dõi doanh thu realtime" },
-    { icon: <Shield className="h-5 w-5 text-purple-400" />, text: "Thanh toán qua PayOS & PayPal" },
+    { icon: <Shield className="h-5 w-5 text-purple-400" />, text: "Thanh toán qua PayOS" },
     { icon: <CheckCircle2 className="h-5 w-5 text-yellow-400" />, text: "Xuất PDF & gửi email tự động" },
   ];
 
@@ -77,7 +77,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             <span className="text-blue-400">thông minh & hiệu quả</span>
           </h2>
           <p className="text-slate-400 text-lg mb-10 leading-relaxed">
-            Tạo, gửi và theo dõi hóa đơn dễ dàng. Tích hợp thanh toán PayOS và PayPal.
+            Tạo, gửi và theo dõi hóa đơn dễ dàng. Tích hợp thanh toán PayOS.
           </p>
 
           <div className="space-y-4">

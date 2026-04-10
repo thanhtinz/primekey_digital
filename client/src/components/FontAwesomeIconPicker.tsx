@@ -171,7 +171,6 @@ const FA_ICONS = [
   { class: "fa-brands fa-shopify", label: "Shopify" },
   { class: "fa-brands fa-cc-visa", label: "Visa" },
   { class: "fa-brands fa-cc-mastercard", label: "Mastercard" },
-  { class: "fa-brands fa-paypal", label: "PayPal" },
 ];
 
 interface FontAwesomeIconPickerProps {

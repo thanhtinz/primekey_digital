@@ -176,6 +176,13 @@
       "when": 1775830083673,
       "tag": "0024_far_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1775833043477,
+      "tag": "0025_safe_sebastian_shaw",
+      "breakpoints": true
     }
   ]
 }

@@ -1274,9 +1274,25 @@ export const appRouter = router({
         await db.deleteCustomer(input.id);
         return { success: true };
       }),
+    updateRole: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        customerRole: z.enum(["customer", "vip", "wholesale", "partner"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user) throw new Error("Unauthorized");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const { customers: customersTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const customer = await db.getCustomerById(input.id);
+        if (!customer || customer.userId !== ctx.user.id) throw new Error("Customer not found");
+        await drizzleDb.update(customersTable).set({ customerRole: input.customerRole, updatedAt: new Date() } as any).where(eq(customersTable.id, input.id));
+        return { success: true };
+      }),
   }),
-
-  // Products
+  // Productss
   products: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
@@ -2057,9 +2073,6 @@ export const appRouter = router({
           payosApiKey: z.string().optional(),
           payosClientId: z.string().optional(),
           payosChecksumKey: z.string().optional(),
-          paypalClientId: z.string().optional(),
-          paypalSecret: z.string().optional(),
-          paypalMode: z.enum(["sandbox", "live"]).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -2081,7 +2094,7 @@ export const appRouter = router({
         return { success: true };
       }),
     testConnection: protectedProcedure
-      .input(z.object({ gateway: z.enum(["payos", "paypal"]) }))
+      .input(z.object({ gateway: z.enum(["payos"]) }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
         const config = await db.getPaymentGatewaysConfigByUserId(ctx.user.id);
@@ -2106,26 +2119,7 @@ export const appRouter = router({
             return { success: false, message: "Không thể kết nối đến PayOS" };
           }
         } else {
-          if (!config.paypalClientId || !config.paypalSecretKey) {
-            return { success: false, message: "Thiếu thông tin cấu hình PayPal" };
-          }
-          try {
-            const base = config.paypalMode === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
-            const creds = Buffer.from(`${config.paypalClientId}:${config.paypalSecretKey}`).toString("base64");
-            const res = await fetch(`${base}/v1/oauth2/token`, {
-              method: "POST",
-              headers: {
-                "Authorization": `Basic ${creds}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: "grant_type=client_credentials",
-              signal: AbortSignal.timeout(5000),
-            });
-            const ok = res.ok;
-            return { success: ok, message: ok ? "Kết nối PayPal thành công" : "Client ID hoặc Secret Key không hợp lệ" };
-          } catch {
-            return { success: false, message: "Không thể kết nối đến PayPal" };
-          }
+          return { success: false, message: "Cổng thanh toán không được hỗ trợ" };
         }
       }),
     testWebhook: protectedProcedure

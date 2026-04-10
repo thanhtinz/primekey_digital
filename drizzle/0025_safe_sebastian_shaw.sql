@@ -1,0 +1,1 @@
+ALTER TABLE `customers` ADD `customerRole` enum('customer','vip','wholesale','partner') DEFAULT 'customer';

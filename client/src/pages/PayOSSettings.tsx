@@ -5,14 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Save, Check, AlertCircle, Eye, EyeOff, ArrowLeft, Loader2, ExternalLink, Copy, Webhook, RefreshCw, CheckCircle2, XCircle } from "@/components/Icon";
+import { Save, Check, AlertCircle, Eye, EyeOff, Loader2, ExternalLink, Copy, Webhook, RefreshCw, CheckCircle2, XCircle } from "@/components/Icon";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
-
 export default function PayOSSettings() {
-  const [, setLocation] = useLocation();
   const [showApiKey, setShowApiKey] = useState(false);
   const [showChecksum, setShowChecksum] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -119,14 +116,10 @@ export default function PayOSSettings() {
     <DashboardLayout>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setLocation("/settings")} className="gap-1 text-gray-500">
-            <ArrowLeft className="h-4 w-4" />
-            Quay lại
-          </Button>
+        <div className="ak-page-header">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Cấu Hình PayOS</h1>
-            <p className="text-sm text-gray-500">Kết nối cổng thanh toán PayOS</p>
+            <h1 className="ak-page-title">Cấu Hình PayOS</h1>
+            <p className="ak-page-subtitle">Kết nối cổng thanh toán PayOS</p>
           </div>
         </div>
 
@@ -336,7 +329,7 @@ export default function PayOSSettings() {
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Lưu Cấu Hình
               </Button>
-              <Button variant="outline" onClick={() => setLocation("/settings")}>Hủy</Button>
+
             </div>
           </div>
 
