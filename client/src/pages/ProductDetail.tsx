@@ -215,7 +215,8 @@ export default function ProductDetail() {
     categoryTags.push({ name: product.category, icon: null });
   }
 
-  const basePrice = selectedPackage ? parseFloat(selectedPackage.price) : (packages.length === 1 ? parseFloat(packages[0]?.price || "0") : 0);
+  const unitPrice = selectedPackage ? parseFloat(selectedPackage.price) : (packages.length === 1 ? parseFloat(packages[0]?.price || "0") : 0);
+  const basePrice = unitPrice * quantity;
   const couponDiscount = appliedCoupon
     ? appliedCoupon.discountType === 'percentage'
       ? Math.round(basePrice * appliedCoupon.discountValue / 100)
@@ -380,6 +381,12 @@ export default function ProductDetail() {
         {/* Order Summary */}
         {hasOrderSummary && (
           <div className="border-t border-dashed border-gray-200 pt-3 space-y-1.5">
+            {quantity > 1 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-400">Đơn giá × {quantity}</span>
+                <span className="text-gray-500">{formatVND(unitPrice)} × {quantity}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">Tạm tính</span>
               <span className="text-gray-700">{formatVND(basePrice)}</span>
