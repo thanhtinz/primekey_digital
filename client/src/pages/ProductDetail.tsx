@@ -109,7 +109,23 @@ export default function ProductDetail() {
     onSuccess: () => {
       utils.cart.list.invalidate({ email });
       utils.cart.count.invalidate({ email });
-      toast.success("Đã thêm vào giỏ hàng!");
+      // Custom toast with inventory info
+      const count = inventoryCount?.count ?? 0;
+      const isWarehouse = (product as any)?.inventoryType === "warehouse";
+      if (isWarehouse) {
+        toast.custom(() => (
+          <div className="flex items-center gap-3 bg-white border border-emerald-200 rounded-2xl px-4 py-3 shadow-lg min-w-[260px]">
+            <i className="fa-solid fa-box text-xl text-emerald-600" />
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Đã thêm vào giỏ hàng!</p>
+              {count > 0 && <p className="text-xs text-slate-500">Kho hàng: <strong className="text-emerald-700">{count} sản phẩm</strong></p>}
+              {count === 0 && <p className="text-xs text-amber-600">Hết hàng tạm thời</p>}
+            </div>
+          </div>
+        ));
+      } else {
+        toast.success("Đã thêm vào giỏ hàng!");
+      }
     },
     onError: (err) => toast.error(err.message),
   });
@@ -444,7 +460,9 @@ export default function ProductDetail() {
               ? "bg-emerald-50 border border-emerald-100"
               : "bg-amber-50 border border-amber-100"
           }`}>
-            <span className="text-xl">📦</span>
+            <i className={`fa-solid fa-box text-lg ${
+              (inventoryCount?.count || 0) > 0 ? "text-emerald-600" : "text-amber-600"
+            }`} />
             <span className={`text-sm font-semibold ${
               (inventoryCount?.count || 0) > 0 ? "text-emerald-700" : "text-amber-700"
             }`}>
@@ -455,7 +473,7 @@ export default function ProductDetail() {
         {/* Stock - legacy field */}
         {(product as any).inventoryType !== "warehouse" && (product as any).stock !== undefined && (product as any).stock !== null && (
           <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3">
-            <span className="text-xl">📦</span>
+            <i className="fa-solid fa-box text-lg text-emerald-600" />
             <span className="text-sm font-semibold text-emerald-700">Kho hàng: <strong>{(product as any).stock} sản phẩm</strong></span>
           </div>
         )}

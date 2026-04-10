@@ -71,7 +71,6 @@ const WarrantyRequestPage = lazy(() => import("./pages/WarrantyRequestPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
-const BlogManagement = lazy(() => import("./pages/BlogManagement"));
 const AnnouncementManagement = lazy(() => import("./pages/AnnouncementManagement"));
 const AdminNotifications = lazy(() => import("./pages/AdminNotifications"));
 
@@ -98,7 +97,6 @@ import BlogNewPost from "@/pages/BlogNewPost";
 import BlogPosts from "@/pages/BlogPosts";
 import ImageLibrary from "@/pages/ImageLibrary";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
-const BlogHub = lazy(() => import("./pages/BlogHub"));
 const SystemStatus = lazy(() => import("./pages/SystemStatus"));
 const RedisConsole = lazy(() => import("./pages/RedisConsole"));
 const AdminConsole = lazy(() => import("./pages/AdminConsole"));
@@ -289,7 +287,6 @@ function Router() {
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
         <Route path="/admin/blog" component={() => isAdmin ? <BlogPosts /> : <ForbiddenPage />} />
-        {/* BlogManagement still available for legacy routes */}
         <Route path="/admin/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
         {/* Removed duplicate /announcements route - use /admin/announcements instead */}
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
@@ -311,10 +308,11 @@ function Router() {
         <Route path="/admin/loyalty/rewards" component={() => isAdmin ? <LoyaltyRewards /> : <ForbiddenPage />} />
         <Route path="/admin/blog/posts" component={() => isAdmin ? <BlogPosts /> : <ForbiddenPage />} />
         <Route path="/admin/blog/new" component={() => isAdmin ? <BlogNewPost /> : <ForbiddenPage />} />
+        <Route path="/admin/blog/edit/:id" component={() => isAdmin ? <BlogNewPost /> : <ForbiddenPage />} />
         <Route path="/admin/blog/categories" component={() => isAdmin ? <BlogCategories /> : <ForbiddenPage />} />
         <Route path="/admin/image-library" component={() => isAdmin ? <ImageLibrary /> : <ForbiddenPage />} />
         <Route path="/admin/topup-history" component={() => isAdmin ? <TopupHistory /> : <ForbiddenPage />} />
-        <Route path="/admin/blog-hub" component={() => isAdmin ? <BlogHub /> : <ForbiddenPage />} />
+        {/* BlogHub legacy route removed - use /admin/blog instead */}
         <Route path="/admin/system-status" component={() => isAdmin ? <SystemStatus /> : <ForbiddenPage />} />
         <Route path="/admin/redis" component={() => isAdmin ? <RedisConsole /> : <ForbiddenPage />} />
         <Route path="/admin/console" component={() => isAdmin ? <AdminConsole /> : <ForbiddenPage />} />

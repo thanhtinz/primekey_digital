@@ -1730,3 +1730,13 @@ todo updated
 - [x] Inventory theo gói sản phẩm: mỗi gói có tồn kho riêng (query với packageId)
 - [x] Hiển thị "Liên hệ" thay vì giá khi sản phẩm không có gói nào (ProductCatalog, LandingPage)
 - [x] Thông báo email chỉ gửi khi người dùng đã bật notifyOrderStatus trong cài đặt thông báo
+
+## Session 2026-04-10 - Audit, Clean, Icon CSS
+
+- [x] MyAccount: thay icon thường bằng icon CSS (fa-*) trong nội dung tab Hồ Sơ & Bảo Mật
+- [x] ProductDetail: toast kho hàng và hiển thị số lượng dùng icon CSS (fa-box)
+- [x] Audit: tìm frontend-only features chưa có backend procedure
+- [x] Audit: tìm features có backend nhưng frontend chưa kết nối
+- [x] Clean: xóa unused imports BlogManagement, BlogHub khỏi App.tsx
+- [x] Blog: thêm route /admin/blog/edit/:id + edit mode trong BlogNewPost.tsx
+- [x] Blog: thêm adminGetPost procedure trong blog router

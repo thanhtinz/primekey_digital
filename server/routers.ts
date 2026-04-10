@@ -7205,6 +7205,17 @@ export const appRouter = router({
         return { success: true };
       }),
     // Admin: list all posts (including unpublished)
+    adminGetPost: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const { blogPosts } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return null;
+        const [post] = await drizzleDb.select().from(blogPosts).where(eq(blogPosts.id, input.id)).limit(1);
+        return post || null;
+      }),
     adminListPosts: protectedProcedure.query(async ({ ctx }) => {
       const { blogPosts, blogCategories } = await import("../drizzle/schema");
       const { getDb } = await import("./db");

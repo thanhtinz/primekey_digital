@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,50 @@ import { Save, Loader2, ArrowLeft } from "@/components/Icon";
 
 export default function BlogNewPost() {
   const [, navigate] = useLocation();
+  // Match both /admin/blog/new and /admin/blog/edit/:id
+  const [matchEdit, paramsEdit] = useRoute("/admin/blog/edit/:id");
+  const editId = matchEdit ? Number((paramsEdit as any)?.id) : null;
+  const isEditMode = !!editId;
+
   const { data: categories = [] } = trpc.blog.listCategories.useQuery();
+  const { data: existingPost, isLoading: loadingPost } = trpc.blog.adminGetPost.useQuery(
+    { id: editId! },
+    { enabled: isEditMode && !!editId }
+  );
+
   const [form, setForm] = useState({
     title: "", slug: "", excerpt: "", content: "", coverImage: "", categoryId: "", isPublished: false,
   });
+  const [initialized, setInitialized] = useState(false);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (isEditMode && existingPost && !initialized) {
+      setForm({
+        title: (existingPost as any).title || "",
+        slug: (existingPost as any).slug || "",
+        excerpt: (existingPost as any).excerpt || "",
+        content: (existingPost as any).content || "",
+        coverImage: (existingPost as any).coverImage || "",
+        categoryId: (existingPost as any).categoryId ? String((existingPost as any).categoryId) : "",
+        isPublished: !!(existingPost as any).isPublished,
+      });
+      setInitialized(true);
+    }
+  }, [existingPost, isEditMode, initialized]);
 
   const createPost = trpc.blog.createPost.useMutation({
     onSuccess: () => {
       toast.success("Đã tạo bài viết");
-      navigate("/admin/blog/posts");
+      navigate("/admin/blog");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updatePost = trpc.blog.updatePost.useMutation({
+    onSuccess: () => {
+      toast.success("Đã cập nhật bài viết");
+      navigate("/admin/blog");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -37,23 +72,40 @@ export default function BlogNewPost() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error("Vui lòng nhập tiêu đề bài viết");
-    createPost.mutate({
+    const payload = {
       ...form,
       categoryId: form.categoryId ? parseInt(form.categoryId) : undefined,
-    });
+    };
+    if (isEditMode && editId) {
+      updatePost.mutate({ id: editId, ...payload });
+    } else {
+      createPost.mutate(payload);
+    }
   };
+
+  const isPending = createPost.isPending || updatePost.isPending;
+
+  if (isEditMode && loadingPost) {
+    return (
+      <DashboardLayoutCustom>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+        </div>
+      </DashboardLayoutCustom>
+    );
+  }
 
   return (
     <DashboardLayoutCustom>
       <div className="space-y-6 max-w-3xl">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/blog/posts")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/blog")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="ak-page-header">
             <div>
-              <h1 className="ak-page-title">Viết Bài Mới</h1>
-              <p className="ak-page-subtitle">Tạo bài viết mới cho blog</p>
+              <h1 className="ak-page-title">{isEditMode ? "Chỉnh Sửa Bài Viết" : "Viết Bài Mới"}</h1>
+              <p className="ak-page-subtitle">{isEditMode ? "Cập nhật nội dung bài viết" : "Tạo bài viết mới cho blog"}</p>
             </div>
           </div>
         </div>
@@ -137,12 +189,12 @@ export default function BlogNewPost() {
                   <Label>{form.isPublished ? "Đăng ngay" : "Lưu nháp"}</Label>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => navigate("/admin/blog/posts")}>
+                  <Button type="button" variant="outline" onClick={() => navigate("/admin/blog")}>
                     Hủy
                   </Button>
-                  <Button type="submit" disabled={createPost.isPending}>
-                    {createPost.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                    {form.isPublished ? "Đăng bài" : "Lưu nháp"}
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                    {isEditMode ? "Cập nhật" : (form.isPublished ? "Đăng bài" : "Lưu nháp")}
                   </Button>
                 </div>
               </div>

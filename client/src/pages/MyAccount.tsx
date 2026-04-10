@@ -308,7 +308,7 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
           <i className="fa-solid fa-chevron-left h-5 w-5 text-slate-600" />
         </button>
         <div>
-          <h2 className="text-base font-bold text-slate-800">Bảo mật tài khoản</h2>
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2"><i className="fa fa-shield-alt text-amber-500" /> Bảo mật tài khoản</h3>
           <p className="text-xs text-slate-500">Quản lý mật khẩu, phiên đăng nhập và lịch sử</p>
         </div>
       </div>
@@ -320,7 +320,7 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
             className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
               activeSection === s ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}>
-            {s === "overview" ? "🔒 Tổng quan" : s === "history" ? "📅 Lịch sử" : "📱 Thiết bị"}
+            {s === "overview" ? <><i className="fa fa-lock mr-1.5" />Tổng quan</> : s === "history" ? <><i className="fa fa-history mr-1.5" />Lịch sử</> : <><i className="fa fa-mobile-alt mr-1.5" />Thiết bị</>}
           </button>
         ))}
       </div>
@@ -331,7 +331,7 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
           {/* Change password */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex items-center gap-2">
-              <Lock className="h-4 w-4 text-slate-500" />
+              <i className="fa fa-key text-amber-500" />
               <h3 className="text-sm font-semibold text-slate-800">Đổi mật khẩu</h3>
             </div>
             <div className="p-4">
@@ -343,7 +343,7 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
           {/* Quick links */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
             <button onClick={() => setActiveSection("history")} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition text-left border-b border-slate-100">
-              <Clock className="h-5 w-5 text-slate-400" />
+              <i className="fa fa-history text-slate-400" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-slate-700">Lịch sử đăng nhập</p>
                 <p className="text-xs text-slate-400">Xem các lần đăng nhập gần đây</p>
@@ -351,7 +351,7 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
               <ChevronRight className="h-4 w-4 text-slate-400" />
             </button>
             <button onClick={() => setActiveSection("sessions")} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition text-left">
-              <Shield className="h-5 w-5 text-slate-400" />
+              <i className="fa fa-desktop text-slate-400" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-slate-700">Quản lý phiên đăng nhập</p>
                 <p className="text-xs text-slate-400">Xem và thu hồi phiên trên các thiết bị khác</p>
@@ -369,7 +369,7 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
             <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
           ) : !loginHistory || loginHistory.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
-              <Clock className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+              <i className="fa fa-history text-4xl text-slate-300 block mb-3" />
               <p className="text-sm text-slate-500">Chưa có lịch sử đăng nhập</p>
               <p className="text-xs text-slate-400 mt-1">Lịch sử sẽ xuất hiện sau lần đăng nhập tiếp theo</p>
             </div>
@@ -386,8 +386,8 @@ function SecurityTab({ token, onBack }: { token: string; onBack: () => void }) {
                       entry.status === "success" ? "bg-green-100" : "bg-red-100"
                     }`}>
                       {entry.status === "success"
-                        ? <CheckCircle className="h-4 w-4 text-green-600" />
-                        : <XCircle className="h-4 w-4 text-red-500" />}
+                        ? <i className="fa fa-check text-green-600 text-sm" />
+                        : <i className="fa fa-times text-red-500 text-sm" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
@@ -525,19 +525,19 @@ function SecurityInlineSection({ token }: { token: string }) {
               <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
             ) : !loginHistory || loginHistory.length === 0 ? (
               <div className="text-center py-6 text-slate-400">
-                <Clock className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <i className="fa fa-history text-3xl text-slate-300 block mb-2" />
                 <p className="text-sm">Chưa có lịch sử</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {loginHistory.map((entry: any) => (
                   <div key={entry.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
-                    <div className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                           <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       entry.status === "success" ? "bg-green-100" : "bg-red-100"
                     }`}>
                       {entry.status === "success"
-                        ? <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                        : <XCircle className="h-3.5 w-3.5 text-red-500" />}
+                        ? <i className="fa fa-check text-green-600 text-sm" />
+                        : <i className="fa fa-times text-red-500 text-sm" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
