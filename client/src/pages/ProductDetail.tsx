@@ -382,38 +382,43 @@ export default function ProductDetail() {
                   <button
                     key={pkg.id}
                     onClick={() => setSelectedPackageId(isSelected ? null : pkg.id)}
-                    className={`text-left bg-white rounded-2xl border-2 border-dashed p-3 transition-all shadow-sm hover:shadow-md flex flex-col gap-2 ${
+                    className={`text-left bg-white rounded-2xl border-2 border-dashed p-3 transition-all shadow-sm hover:shadow-md flex flex-col md:flex-col gap-2 ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/30"
                         : "border-gray-300 hover:border-blue-400"
                     }`}
                   >
-                    {/* Package thumbnail */}
-                    <div className="w-full aspect-square rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
-                      {(product as any).imageUrl ? (
-                        <img src={(product as any).imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Package className="w-8 h-8 text-gray-300" />
-                      )}
-                    </div>
-                    {/* Package info */}
-                    <div className="min-w-0">
-                      <h4 className="font-semibold text-gray-800 text-xs leading-snug line-clamp-2">{pkg.name}</h4>
-                      {pkg.description && (
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
-                      )}
-                    </div>
-                    {/* Price */}
-                    <div className="text-right">
-                      <div className="font-bold text-red-500 text-sm">{formatVND(pkg.price)}</div>
-                      {pkg.originalPrice && (
-                        <div className="flex items-center gap-1 justify-end">
-                          <span className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</span>
-                          {pkgDiscount > 0 && (
-                            <span className="text-xs bg-red-100 text-red-500 px-1 rounded font-medium">-{pkgDiscount}%</span>
+                    {/* Mobile: Horizontal layout, Desktop: Vertical */}
+                    <div className="flex md:flex-col gap-3 md:gap-2">
+                      {/* Package thumbnail */}
+                      <div className="w-16 h-16 md:w-full md:aspect-square rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+                        {(product as any).imageUrl ? (
+                          <img src={(product as any).imageUrl} alt={pkg.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-8 h-8 text-gray-300" />
+                        )}
+                      </div>
+                      {/* Package info + Price */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-gray-800 text-xs md:text-xs leading-snug line-clamp-2">{pkg.name}</h4>
+                          {pkg.description && (
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{pkg.description}</p>
                           )}
                         </div>
-                      )}
+                        {/* Price */}
+                        <div className="text-right md:text-right mt-1 md:mt-0">
+                          <div className="font-bold text-red-500 text-sm">{formatVND(pkg.price)}</div>
+                          {pkg.originalPrice && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <span className="text-xs text-gray-400 line-through">{formatVND(pkg.originalPrice)}</span>
+                              {pkgDiscount > 0 && (
+                                <span className="text-xs bg-red-100 text-red-500 px-1 rounded font-medium">-{pkgDiscount}%</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </button>
                 );
@@ -536,7 +541,7 @@ export default function ProductDetail() {
             {/* Quantity Selector */}
             <div>
               <label className="text-xs text-gray-500 mb-2 block font-medium">Số lượng</label>
-              <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 w-fit">
+              <div className="flex items-center justify-center gap-2 bg-gray-50 rounded-lg p-2 w-full">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="w-8 h-8 flex items-center justify-center rounded-md bg-white border border-gray-200 hover:bg-gray-100 transition-colors"
