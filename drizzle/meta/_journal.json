@@ -267,6 +267,13 @@
       "when": 1775861289643,
       "tag": "0037_grey_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1775861851682,
+      "tag": "0038_wide_hex",
+      "breakpoints": true
     }
   ]
 }

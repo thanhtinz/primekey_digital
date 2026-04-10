@@ -145,22 +145,24 @@ export default function ProductPackages() {
           <span className="text-gray-700 font-medium">Quản Lý Gói</span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <i className="fa-solid fa-layer-group text-blue-500" />
-              Quản Lý Gói Sản Phẩm
+              Quản Lý Gói
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">{product?.name} · {pkgList.length} gói</p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{product?.name} · {pkgList.length} gói</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/edit")} className="text-xs gap-1.5">
-              <i className="fa-solid fa-pen" /> Thông tin
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/edit")} className="text-xs gap-1.5 h-8">
+              <i className="fa-solid fa-pen" />
+              <span className="hidden sm:inline">Thông tin</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/fields")} className="text-xs gap-1.5">
-              <i className="fa-solid fa-sliders" /> Trường
+            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/fields")} className="text-xs gap-1.5 h-8">
+              <i className="fa-solid fa-sliders" />
+              <span className="hidden sm:inline">Trường</span>
             </Button>
-            <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 text-sm">
+            <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 text-xs h-8">
               <i className="fa-solid fa-plus" /> Thêm gói
             </Button>
           </div>

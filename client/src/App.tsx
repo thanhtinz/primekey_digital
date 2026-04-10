@@ -102,6 +102,7 @@ import BlogNewPost from "@/pages/BlogNewPost";
 import BlogPosts from "@/pages/BlogPosts";
 import ImageLibrary from "@/pages/ImageLibrary";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
+const BroadcastsAdmin = lazy(() => import("./pages/BroadcastsAdmin"));
 const SystemStatus = lazy(() => import("./pages/SystemStatus"));
 const RedisConsole = lazy(() => import("./pages/RedisConsole"));
 const AdminConsole = lazy(() => import("./pages/AdminConsole"));
@@ -301,6 +302,7 @@ function Router() {
         {/* Removed duplicate /announcements route - use /admin/announcements instead */}
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
         <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/broadcasts" component={() => isAdmin ? <BroadcastsAdmin /> : <ForbiddenPage />} />
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
 
         <Route path="/admin/spin-wheel" component={() => isAdmin ? <SpinWheelAdmin /> : <ForbiddenPage />} />

@@ -1877,3 +1877,18 @@ todo updated
 - [x] App.tsx: thêm routes /products/:id/edit, /packages, /fields
 - [x] DB schema: mở rộng productCustomFields với label/fieldType/placeholder/options/isRequired/isVisible
 - [x] Server routers: cập nhật createCustomField/updateCustomField/getCustomFields với schema mới
+
+## Checkpoint 2026-04-10 - Mobile & UX Improvements
+
+- [x] LicenseBanner: quản lý license key, phiên bản, cập nhật tự động, broadcasts từ DB
+- [x] Tạo bảng system_broadcasts trong DB
+- [x] Tạo router broadcasts (getActive, getAll, create, update, delete, toggle)
+- [x] Tạo trang BroadcastsAdmin để quản lý thông báo từ chủ src
+- [x] Thêm menu "Thông Báo Dashboard" vào sidebar
+- [x] Fix AvatarGallery: khi tắt feature, backend trả về mảng rỗng (không cho chọn avatar)
+- [x] Redesign AvatarGalleryAdmin mobile-friendly (grid responsive, upload zone, toggle rõ ràng)
+- [x] ThankYouCustom: mobile layout (flex-col trên mobile, header responsive)
+- [x] Custom404Admin: mobile layout (flex-col trên mobile, header responsive)
+- [x] ProductEdit: mobile layout (header, bottom buttons responsive)
+- [x] ProductPackages: mobile layout (header responsive, icon-only buttons trên mobile)
+- [x] ProductFields: mobile layout (header responsive, icon-only buttons trên mobile)

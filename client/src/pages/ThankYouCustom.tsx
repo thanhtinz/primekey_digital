@@ -198,23 +198,24 @@ export default function ThankYouCustom() {
     <DashboardLayoutCustom>
       <div className="flex flex-col" style={{ height: "calc(100vh - 60px)" }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 flex-shrink-0">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 border-b border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <i className="fa-solid fa-heart text-pink-500" />
               Trang Cảm Ơn Tùy Chỉnh
             </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tùy chỉnh trang cảm ơn sau khi khách hàng thanh toán</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 hidden sm:block">Tùy chỉnh trang cảm Ơn sau khi khách hàng thanh toán</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <a href="/thank-you" target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors">
-              <i className="fa-solid fa-arrow-up-right-from-square" /> Xem trang
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors">
+              <i className="fa-solid fa-arrow-up-right-from-square" />
+              <span className="hidden sm:inline">Xem trang</span>
             </a>
             <button
               onClick={() => toggleFeatureMutation.mutate({ featureThankYou: !featureThankYou })}
               disabled={toggleFeatureMutation.isPending}
-              className={"flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border " + (featureThankYou ? "bg-green-100 text-green-700 hover:bg-green-200 border-green-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200")}
+              className={"flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border " + (featureThankYou ? "bg-green-100 text-green-700 hover:bg-green-200 border-green-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200")}
             >
               <i className={"fa-solid text-sm " + (featureThankYou ? "fa-toggle-on text-green-600" : "fa-toggle-off")} />
               {featureThankYou ? "Đang bật" : "Đang tắt"}
@@ -234,9 +235,10 @@ export default function ThankYouCustom() {
         )}
 
         {/* Main layout */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
           {/* Left: Editor */}
-          <div className="w-full lg:w-[400px] flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto">
+          <div className="w-full lg:w-[400px] flex-shrink-0 flex flex-col border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto" style={{ maxHeight: "55vh", minHeight: 0 }}>
+            <style>{"@media (min-width: 1024px) { .thankyou-editor { max-height: none !important; } }"}</style>
             {/* Tabs */}
             <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
               {TABS.map(tab => (
@@ -422,7 +424,7 @@ export default function ThankYouCustom() {
           </div>
 
           {/* Right: Live Preview */}
-          <div className="flex-1 flex flex-col bg-gray-100 dark:bg-gray-800 overflow-hidden">
+          <div className="flex-1 flex flex-col bg-gray-100 dark:bg-gray-800 overflow-hidden" style={{ minHeight: "300px" }}>
             <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 <i className="fa-solid fa-eye text-blue-500" />

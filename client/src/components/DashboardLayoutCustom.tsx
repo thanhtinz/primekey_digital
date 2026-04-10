@@ -82,8 +82,9 @@ const adminNavGroups = [
   {
     label: "Nội Dung",
     items: [
-      { label: "Thư Viện Ảnh", href: "/admin/avatar-gallery", icon: Image },
+      { label: "Kho Avatar", href: "/admin/avatar-gallery", icon: Image },
       { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
+      { label: "Thông Báo Dashboard", href: "/admin/broadcasts", icon: Bell },
       { label: "Tạo Trang", href: "/admin/page-builder", icon: Layers },
       { label: "Quản Lý Menu", href: "/admin/menu-manager", icon: Navigation },
       { label: "Trang Cảm Ơn", href: "/settings/thank-you", icon: Heart },

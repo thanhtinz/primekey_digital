@@ -1236,3 +1236,18 @@ export const telegramSubscribers = mysqlTable("telegram_subscribers", {
 });
 export type TelegramSubscriber = typeof telegramSubscribers.$inferSelect;
 export type InsertTelegramSubscriber = typeof telegramSubscribers.$inferInsert;
+
+// ─── System Broadcasts (thông báo từ chủ src) ─────────────────────────────────
+export const systemBroadcasts = mysqlTable("system_broadcasts", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 20 }).default("info").notNull(), // info | warning | success | error
+  isActive: boolean("isActive").default(true).notNull(),
+  isPinned: boolean("isPinned").default(false).notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SystemBroadcast = typeof systemBroadcasts.$inferSelect;
+export type InsertSystemBroadcast = typeof systemBroadcasts.$inferInsert;

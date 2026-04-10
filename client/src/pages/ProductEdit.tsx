@@ -142,26 +142,28 @@ export default function ProductEdit() {
           <span className="text-gray-700 font-medium">Chỉnh Sửa</span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {formData.imageUrl ? (
-              <img src={formData.imageUrl} alt={formData.name} className="w-12 h-12 rounded-xl object-cover border border-gray-200" />
+              <img src={formData.imageUrl} alt={formData.name} className="w-10 h-10 rounded-xl object-cover border border-gray-200 flex-shrink-0" />
             ) : (
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                <i className="fa-solid fa-box text-blue-500 text-xl" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center flex-shrink-0">
+                <i className="fa-solid fa-box text-blue-500" />
               </div>
             )}
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{product.name}</h1>
-              <p className="text-sm text-gray-500">Chỉnh sửa thông tin cơ bản</p>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-gray-900 truncate">{product.name}</h1>
+              <p className="text-xs text-gray-500">Chỉnh sửa thông tin cơ bản</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/packages")} className="text-xs gap-1.5">
-              <i className="fa-solid fa-layer-group" /> Gói
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/packages")} className="text-xs gap-1.5 h-8">
+              <i className="fa-solid fa-layer-group" />
+              <span className="hidden sm:inline">Gói</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/fields")} className="text-xs gap-1.5">
-              <i className="fa-solid fa-sliders" /> Trường
+            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/fields")} className="text-xs gap-1.5 h-8">
+              <i className="fa-solid fa-sliders" />
+              <span className="hidden sm:inline">Trường</span>
             </Button>
           </div>
         </div>
@@ -267,17 +269,22 @@ export default function ProductEdit() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => navigate("/products")}>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Button variant="outline" onClick={() => navigate("/products")} className="sm:w-auto">
             <i className="fa-solid fa-arrow-left mr-2" /> Quay lại
           </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate("/products/" + productId + "/packages")} className="gap-1.5">
-              <i className="fa-solid fa-layer-group" /> Quản lý gói
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <Button variant="outline" onClick={() => navigate("/products/" + productId + "/packages")} className="gap-1.5 flex-1 sm:flex-none">
+              <i className="fa-solid fa-layer-group" />
+              <span>Gói</span>
             </Button>
-            <Button onClick={handleSave} disabled={updateProduct.isPending} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5">
+            <Button variant="outline" onClick={() => navigate("/products/" + productId + "/fields")} className="gap-1.5 flex-1 sm:flex-none">
+              <i className="fa-solid fa-sliders" />
+              <span>Trường</span>
+            </Button>
+            <Button onClick={handleSave} disabled={updateProduct.isPending} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 flex-1 sm:flex-none">
               {updateProduct.isPending ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-floppy-disk" />}
-              Lưu thay đổi
+              Lưu
             </Button>
           </div>
         </div>

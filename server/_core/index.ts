@@ -7,11 +7,18 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 // import { registerOAuthRoutes } from "./oauth"; // Disabled: using email/password auth instead
 import { registerAuthRoutes } from "./authRoutes";
-import { appRouter } from "../routers";
+import { appRouter, broadcastsRouter } from "../routers";
+import { router } from "./trpc";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import webhookRouter from "../webhooks";
 import { checkLicenseOnStartup, licenseMiddleware } from "../license";
+
+// Extend appRouter with broadcasts
+const fullRouter = router({
+  ...(appRouter as any)._def.record,
+  broadcasts: broadcastsRouter,
+});
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -87,7 +94,7 @@ async function startServer() {
   app.use(
     "/api/trpc",
     createExpressMiddleware({
-      router: appRouter,
+      router: fullRouter,
       createContext,
     })
   );

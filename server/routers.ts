@@ -7525,13 +7525,17 @@ export const appRouter = router({
   }),
   // ─── Avatar Images Router ──────────────────────────────────────────────────
   avatarImages: router({
-    // Public: get all active avatars
+    // Public: get all active avatars (respects featureAvatarGallery toggle)
     getAll: publicProcedure.query(async () => {
-      const { avatarImages } = await import("../drizzle/schema");
+      const { avatarImages, userSettings } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq, asc } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
+      // Check if feature is enabled
+      const settingsRows = await drizzleDb.select().from(userSettings).limit(1);
+      const settings = settingsRows[0] as any;
+      if (settings && settings.featureAvatarGallery === false) return [];
       return drizzleDb.select().from(avatarImages)
         .where(eq(avatarImages.isActive, true))
         .orderBy(asc(avatarImages.sortOrder), asc(avatarImages.id));
@@ -8307,4 +8311,95 @@ export const appRouter = router({
       }),
   }),
 });
-export type AppRouter = typeof appRouter;
+
+// ─── System Broadcasts Router ─────────────────────────────────────────────────
+export const broadcastsRouter = router({
+  // Public: get active broadcasts
+  getActive: publicProcedure.query(async () => {
+    const { systemBroadcasts } = await import("../drizzle/schema");
+    const { getDb } = await import("./db");
+    const { eq, and, or, isNull, gt } = await import("drizzle-orm");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) return [];
+    const now = new Date();
+    return drizzleDb.select().from(systemBroadcasts)
+      .where(and(
+        eq(systemBroadcasts.isActive, true),
+        or(isNull(systemBroadcasts.expiresAt), gt(systemBroadcasts.expiresAt, now))
+      ))
+      .orderBy(systemBroadcasts.isPinned, systemBroadcasts.createdAt);
+  }),
+  // Admin: get all broadcasts
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { systemBroadcasts } = await import("../drizzle/schema");
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) return [];
+    return drizzleDb.select().from(systemBroadcasts).orderBy(systemBroadcasts.createdAt);
+  }),
+  // Admin: create broadcast
+  create: protectedProcedure.input(z.object({
+    title: z.string().min(1).max(255),
+    message: z.string().min(1),
+    type: z.enum(["info", "warning", "success", "error"]).default("info"),
+    isPinned: z.boolean().optional(),
+    expiresAt: z.string().optional(), // ISO date string
+  })).mutation(async ({ input, ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { systemBroadcasts } = await import("../drizzle/schema");
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) throw new Error("DB unavailable");
+    await drizzleDb.insert(systemBroadcasts).values({
+      title: input.title,
+      message: input.message,
+      type: input.type,
+      isPinned: input.isPinned ?? false,
+      expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+    });
+    return { success: true };
+  }),
+  // Admin: update broadcast
+  update: protectedProcedure.input(z.object({
+    id: z.number(),
+    title: z.string().min(1).max(255).optional(),
+    message: z.string().min(1).optional(),
+    type: z.enum(["info", "warning", "success", "error"]).optional(),
+    isActive: z.boolean().optional(),
+    isPinned: z.boolean().optional(),
+    expiresAt: z.string().nullable().optional(),
+  })).mutation(async ({ input, ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { systemBroadcasts } = await import("../drizzle/schema");
+    const { getDb } = await import("./db");
+    const { eq } = await import("drizzle-orm");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) throw new Error("DB unavailable");
+    const { id, expiresAt, ...rest } = input;
+    const updates: any = { ...rest };
+    if (expiresAt !== undefined) updates.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    await drizzleDb.update(systemBroadcasts).set(updates).where(eq(systemBroadcasts.id, id));
+    return { success: true };
+  }),
+  // Admin: delete broadcast
+  delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { systemBroadcasts } = await import("../drizzle/schema");
+    const { getDb } = await import("./db");
+    const { eq } = await import("drizzle-orm");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) throw new Error("DB unavailable");
+    await drizzleDb.delete(systemBroadcasts).where(eq(systemBroadcasts.id, input.id));
+    return { success: true };
+  }),
+});
+
+// Merge into appRouter
+const appRouterWithBroadcasts = router({
+  ...appRouter._def.record,
+  broadcasts: broadcastsRouter,
+});
+
+export { appRouterWithBroadcasts as appRouterFull };
+export type AppRouter = typeof appRouterWithBroadcasts;
