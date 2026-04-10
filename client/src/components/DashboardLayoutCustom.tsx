@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet, Gift, Plus, ExternalLink } from "@/components/Icon";
+import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, BarChart3, Settings, Zap, CreditCard, ChevronRight, Bell, User, Moon, Sun, Mail, MessageSquare, Search, Megaphone, RefreshCw, Upload, Send, Heart, Database, SearchCode, TrendingUp, Code, Shield, ShoppingBag, Tag, Star, Wrench, Receipt, RotateCcw, FileBarChart2, HelpCircle, Users2, MailCheck, Image, Percent, Banknote, Wallet, Gift, Plus, ExternalLink, Puzzle, Activity, Terminal, Layers, Navigation, BookOpen, Headphones } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -30,17 +30,20 @@ const adminNavGroups = [
     label: "Danh Mục & Sản Phẩm",
     items: [
       { label: "Sản Phẩm", href: "/products", icon: Package },
+      { label: "Kho Hàng", href: "/admin/inventory", icon: Database },
       { label: "Danh Mục", href: "/settings/categories", icon: Tag },
       { label: "Tags Sản Phẩm", href: "/settings/tags", icon: Tag },
       { label: "Đánh Giá KH", href: "/feedbacks", icon: MessageSquare },
     ],
   },
   {
-    label: "Marketing",
+    label: "Hỗ Trợ & Marketing",
     items: [
       { label: "Flash Sale", href: "/admin/flash-sale", icon: ShoppingBag },
       { label: "Mã Giảm Giá", href: "/settings/coupons", icon: Zap },
       { label: "Mail Campaigns", href: "/admin/mail-campaigns", icon: Mail },
+      { label: "Ticket Hỗ Trợ", href: "/admin/tickets", icon: Headphones },
+      { label: "Thông Báo", href: "/admin/notifications", icon: Bell },
     ],
   },
   {
@@ -78,13 +81,12 @@ const adminNavGroups = [
   {
     label: "Nội Dung",
     items: [
-      { label: "Tất Cả Bài Viết", href: "/admin/blog/posts", icon: FileText },
-      { label: "Viết Bài Mới", href: "/admin/blog/new", icon: Plus },
-      { label: "Chuyên Mục Blog", href: "/admin/blog/categories", icon: Tag },
-      { label: "Thư Viện Ảnh", href: "/admin/image-library", icon: Image },
+      { label: "Blog", href: "/admin/blog-hub", icon: BookOpen },
+      { label: "Thư Viện Ảnh", href: "/admin/avatar-gallery", icon: Image },
       { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
-      { label: "Gửi Thông Báo", href: "/admin/notifications", icon: Bell },
       { label: "Liên Hệ", href: "/contact-settings", icon: MessageSquare },
+      { label: "Tạo Trang", href: "/admin/page-builder", icon: Layers },
+      { label: "Quản Lý Menu", href: "/admin/menu-manager", icon: Navigation },
     ],
   },
   {
@@ -94,6 +96,10 @@ const adminNavGroups = [
       { label: "Tự Động Hoá", href: "/admin/automations", icon: Zap },
       { label: "Block IP", href: "/admin/block-ip", icon: Shield },
       { label: "Lịch Sử HĐ", href: "/activity-log", icon: History },
+      { label: "Trạng Thái HT", href: "/admin/system-status", icon: Activity },
+      { label: "Redis", href: "/admin/redis", icon: Database },
+      { label: "Console", href: "/admin/console", icon: Terminal },
+      { label: "Tính Năng MR", href: "/admin/extensions", icon: Puzzle },
     ],
   },
   {

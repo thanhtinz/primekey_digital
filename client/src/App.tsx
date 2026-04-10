@@ -98,6 +98,15 @@ import BlogNewPost from "@/pages/BlogNewPost";
 import BlogPosts from "@/pages/BlogPosts";
 import ImageLibrary from "@/pages/ImageLibrary";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
+const BlogHub = lazy(() => import("./pages/BlogHub"));
+const SystemStatus = lazy(() => import("./pages/SystemStatus"));
+const RedisConsole = lazy(() => import("./pages/RedisConsole"));
+const AdminConsole = lazy(() => import("./pages/AdminConsole"));
+const Extensions = lazy(() => import("./pages/Extensions"));
+const TicketAdmin = lazy(() => import("./pages/TicketAdmin"));
+const PageBuilder = lazy(() => import("./pages/PageBuilder"));
+const MenuManager = lazy(() => import("./pages/MenuManager"));
+const InventoryManagement = lazy(() => import("./pages/InventoryManagement"));
 const RefundPage = lazy(() => import("./pages/RefundPage"));
 const SpinWheelPage = lazy(() => import("./pages/SpinWheelPage"));
 const SpinWheelAdmin = lazy(() => import("./pages/SpinWheelAdmin"));
@@ -305,6 +314,15 @@ function Router() {
         <Route path="/admin/blog/categories" component={() => isAdmin ? <BlogCategories /> : <ForbiddenPage />} />
         <Route path="/admin/image-library" component={() => isAdmin ? <ImageLibrary /> : <ForbiddenPage />} />
         <Route path="/admin/topup-history" component={() => isAdmin ? <TopupHistory /> : <ForbiddenPage />} />
+        <Route path="/admin/blog-hub" component={() => isAdmin ? <BlogHub /> : <ForbiddenPage />} />
+        <Route path="/admin/system-status" component={() => isAdmin ? <SystemStatus /> : <ForbiddenPage />} />
+        <Route path="/admin/redis" component={() => isAdmin ? <RedisConsole /> : <ForbiddenPage />} />
+        <Route path="/admin/console" component={() => isAdmin ? <AdminConsole /> : <ForbiddenPage />} />
+        <Route path="/admin/extensions" component={() => isAdmin ? <Extensions /> : <ForbiddenPage />} />
+        <Route path="/admin/tickets" component={() => isAdmin ? <TicketAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/page-builder" component={() => isAdmin ? <PageBuilder /> : <ForbiddenPage />} />
+        <Route path="/admin/menu-manager" component={() => isAdmin ? <MenuManager /> : <ForbiddenPage />} />
+        <Route path="/admin/inventory" component={() => isAdmin ? <InventoryManagement /> : <ForbiddenPage />} />
         <Route path="/"><Redirect to="/dashboard" /></Route>
         <Route component={() => (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">

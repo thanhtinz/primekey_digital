@@ -80,6 +80,11 @@ export default function OrderDetailPage() {
     { enabled: !!email && !!invoiceNumber, staleTime: 30_000 }
   );
 
+  const orderId = (order as any)?.id;
+  const { data: inventoryItems = [] } = trpc.inventory.getByOrder.useQuery(
+    { orderId: orderId || 0 },
+    { enabled: !!orderId }
+  );
   const exportPdfMutation = trpc.invoices.exportPdfForCustomer.useMutation({
     onSuccess: (data) => {
       const byteArray = Uint8Array.from(atob(data.buffer), c => c.charCodeAt(0));
@@ -271,15 +276,31 @@ export default function OrderDetailPage() {
             </h3>
             <div className="space-y-3">
               {(order.items as any[]).map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <Package className="h-5 w-5 text-blue-400" />
+                <div key={idx} className="bg-gray-50 rounded-xl p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <Package className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
+                      <p className="text-xs text-gray-500">{formatCurrency(item.unitPrice)} × {parseFloat(item.quantity)}</p>
+                    </div>
+                    <p className="text-sm font-bold text-gray-800 flex-shrink-0">{formatCurrency(item.totalAmount)}</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-500">{formatCurrency(item.unitPrice)} × {parseFloat(item.quantity)}</p>
-                  </div>
-                  <p className="text-sm font-bold text-gray-800 flex-shrink-0">{formatCurrency(item.totalAmount)}</p>
+                  {(inventoryItems as any[]).filter((inv: any) => inv.productId === item.productId).length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Thông tin sản phẩm</p>
+                      <div className="space-y-1.5">
+                        {(inventoryItems as any[]).filter((inv: any) => inv.productId === item.productId).map((inv: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-100">
+                            <span className="text-xs text-gray-400 flex-shrink-0">#{i + 1}</span>
+                            <span className="text-xs font-mono text-gray-800 flex-1 break-all">{inv.stockData}</span>
+                            <CopyButton text={inv.stockData || ""} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

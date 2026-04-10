@@ -1,233 +1,314 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Wallet, ArrowDownLeft, ArrowUpRight, Search, Plus, Minus, TrendingUp, Users, RefreshCw } from "@/components/Icon";
+import { Wallet, Search, Plus, Minus, Edit, Trash2, RefreshCw, ArrowUpRight, ArrowDownLeft } from "@/components/Icon";
 
-const TYPE_LABELS: Record<string, string> = {
-  topup: "Nạp tiền",
-  spend: "Thanh toán",
-  refund: "Hoàn tiền",
-  reward: "Thưởng",
-  withdrawal: "Rút tiền",
-};
+type ActionType = "add" | "subtract" | "set" | "reset";
 
-const TYPE_IS_CREDIT = (type: string) => ["topup", "refund", "reward"].includes(type);
+interface Customer {
+  id: number;
+  email: string;
+  name: string;
+  walletBalance?: number | null;
+}
 
 export default function WalletManagement() {
   const [searchEmail, setSearchEmail] = useState("");
-  const [creditEmail, setCreditEmail] = useState("");
-  const [creditAmount, setCreditAmount] = useState("");
-  const [creditDesc, setCreditDesc] = useState("");
-  const [showCreditForm, setShowCreditForm] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [action, setAction] = useState<ActionType>("add");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [showDialog, setShowDialog] = useState(false);
 
-  const { data: transactions = [], isLoading, refetch } = trpc.wallet.adminList.useQuery(
-    { limit: 200, email: searchEmail || undefined },
-    { staleTime: 30_000 }
+  const { data: customers = [], isLoading: loadingCustomers, refetch: refetchCustomers } = trpc.customers.adminSearch.useQuery(
+    { search: searchEmail },
+    { staleTime: 30_000, enabled: !!searchEmail }
   );
 
   const creditMutation = trpc.wallet.adminCredit.useMutation({
     onSuccess: (data) => {
-      toast.success(`Điều chỉnh thành công. Số dư mới: ${data.newBalance.toLocaleString("vi-VN")}đ`);
-      setCreditEmail("");
-      setCreditAmount("");
-      setCreditDesc("");
-      setShowCreditForm(false);
-      refetch();
+      toast.success(`Thành công! Số dư mới: ${Number(data.newBalance).toLocaleString("vi-VN")}đ`);
+      setAmount("");
+      setNote("");
+      setShowDialog(false);
+      setSelectedCustomer(null);
+      refetchCustomers();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const handleCredit = () => {
-    if (!creditEmail || !creditAmount) {
-      toast.error("Vui lòng nhập email và số tiền");
-      return;
-    }
-    const amount = parseFloat(creditAmount);
-    if (isNaN(amount)) {
+  const handleSearch = () => {
+    setSearchEmail(searchInput);
+  };
+
+  const openAction = (customer: Customer, actionType: ActionType) => {
+    setSelectedCustomer(customer);
+    setAction(actionType);
+    setAmount("");
+    setNote("");
+    setShowDialog(true);
+  };
+
+  const handleSubmit = () => {
+    if (!selectedCustomer) return;
+    const numAmount = parseFloat(amount);
+
+    if (action !== "reset" && (isNaN(numAmount) || numAmount < 0)) {
       toast.error("Số tiền không hợp lệ");
       return;
     }
-    creditMutation.mutate({ customerEmail: creditEmail, amount, description: creditDesc || undefined });
+
+    let finalAmount = numAmount;
+    let type: "topup" | "spend" | "reward" = "topup";
+
+    if (action === "subtract") {
+      finalAmount = -numAmount;
+      type = "spend";
+    } else if (action === "set") {
+      const currentBalance = Number(selectedCustomer.walletBalance ?? 0);
+      finalAmount = numAmount - currentBalance;
+      type = finalAmount >= 0 ? "topup" : "spend";
+    } else if (action === "reset") {
+      const currentBalance = Number(selectedCustomer.walletBalance ?? 0);
+      finalAmount = -currentBalance;
+      type = "spend";
+    } else {
+      type = "reward";
+    }
+
+    creditMutation.mutate({
+      customerEmail: selectedCustomer.email,
+      amount: finalAmount,
+      description: note || getActionLabel(action),
+    });
   };
 
-  // Stats
-  const totalTopup = (transactions as any[]).filter(t => t.type === "topup" && t.status === "completed").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const totalRefund = (transactions as any[]).filter(t => t.type === "refund" && t.status === "completed").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const totalSpend = (transactions as any[]).filter(t => t.type === "spend" && t.status === "completed").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const uniqueUsers = new Set((transactions as any[]).map(t => t.customerEmail)).size;
+  const getActionLabel = (a: ActionType) => {
+    switch (a) {
+      case "add": return "Cộng số dư";
+      case "subtract": return "Trừ số dư";
+      case "set": return "Đặt số dư";
+      case "reset": return "Xóa số dư";
+    }
+  };
+
+  const getActionColor = (a: ActionType) => {
+    switch (a) {
+      case "add": return "text-green-600";
+      case "subtract": return "text-red-600";
+      case "set": return "text-blue-600";
+      case "reset": return "text-orange-600";
+    }
+  };
+
+  const getActionIcon = (a: ActionType) => {
+    switch (a) {
+      case "add": return <Plus className="w-4 h-4" />;
+      case "subtract": return <Minus className="w-4 h-4" />;
+      case "set": return <Edit className="w-4 h-4" />;
+      case "reset": return <Trash2 className="w-4 h-4" />;
+    }
+  };
+
+  const customerList = customers as unknown as Customer[];
 
   return (
     <DashboardLayoutCustom>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="ak-page-header">
-          <div>
-            <h1 className="ak-page-title">Quản Lý Ví Điện Tử</h1>
-            <p className="ak-page-subtitle">Theo dõi số dư và giao dịch ví của khách hàng</p>
-          </div>
+      <div className="p-6 max-w-4xl mx-auto space-y-6">
+        <div className="ak-page-header">
+          <h1 className="ak-page-title">Quản Lý Ví</h1>
+          <p className="ak-page-subtitle">Điều chỉnh số dư ví của khách hàng</p>
         </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              <RefreshCw className="w-4 h-4 mr-1" /> Làm mới
-            </Button>
-            <Button size="sm" onClick={() => setShowCreditForm(!showCreditForm)}>
-              <Plus className="w-4 h-4 mr-1" /> Điều chỉnh số dư
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Tổng nạp", value: totalTopup, icon: ArrowDownLeft, color: "text-green-600" },
-            { label: "Tổng chi", value: totalSpend, icon: ArrowUpRight, color: "text-red-600" },
-            { label: "Hoàn tiền", value: totalRefund, icon: RefreshCw, color: "text-blue-600" },
-            { label: "Người dùng", value: uniqueUsers, icon: Users, color: "text-purple-600", isCount: true },
-          ].map(({ label, value, icon: Icon, color, isCount }) => (
-            <Card key={label}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <Icon className={`w-4 h-4 ${color}`} />
-                  <span className="text-xs text-muted-foreground">{label}</span>
-                </div>
-                <p className={`text-xl font-bold ${color}`}>
-                  {isCount ? value : `${(value as number).toLocaleString("vi-VN")}đ`}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Credit Form */}
-        {showCreditForm && (
-          <Card className="border-blue-200 bg-blue-50/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-blue-600" />
-                Điều chỉnh số dư khách hàng
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Input
-                  placeholder="Email khách hàng"
-                  value={creditEmail}
-                  onChange={(e) => setCreditEmail(e.target.value)}
-                />
-                <Input
-                  type="number"
-                  placeholder="Số tiền (âm để trừ)"
-                  value={creditAmount}
-                  onChange={(e) => setCreditAmount(e.target.value)}
-                />
-                <Input
-                  placeholder="Ghi chú (tùy chọn)"
-                  value={creditDesc}
-                  onChange={(e) => setCreditDesc(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleCredit}
-                  disabled={creditMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {creditMutation.isPending ? "Đang xử lý..." : "Xác nhận điều chỉnh"}
-                </Button>
-                <Button variant="outline" onClick={() => setShowCreditForm(false)}>Hủy</Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Nhập số âm (ví dụ: -50000) để trừ tiền. Nhập số dương để cộng tiền.
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Tìm theo email khách hàng..."
-            value={searchEmail}
-            onChange={(e) => setSearchEmail(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* Transactions Table */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Lịch sử giao dịch ({(transactions as any[]).length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Đang tải...</div>
-            ) : (transactions as any[]).length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <Wallet className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p>Chưa có giao dịch nào</p>
+          <CardContent className="p-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Tìm khách hàng theo email hoặc tên..."
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSearch()}
+                />
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/30">
-                      <th className="text-left p-3 font-medium text-muted-foreground">Email</th>
-                      <th className="text-left p-3 font-medium text-muted-foreground">Loại</th>
-                      <th className="text-right p-3 font-medium text-muted-foreground">Số tiền</th>
-                      <th className="text-right p-3 font-medium text-muted-foreground">Số dư sau</th>
-                      <th className="text-left p-3 font-medium text-muted-foreground">Mô tả</th>
-                      <th className="text-center p-3 font-medium text-muted-foreground">Trạng thái</th>
-                      <th className="text-right p-3 font-medium text-muted-foreground">Thời gian</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(transactions as any[]).map((tx) => (
-                      <tr key={tx.id} className="border-b hover:bg-muted/20 transition-colors">
-                        <td className="p-3 font-mono text-xs">{tx.customerEmail}</td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-1.5">
-                            <div className={`p-1 rounded-full ${TYPE_IS_CREDIT(tx.type) ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
-                              {TYPE_IS_CREDIT(tx.type) ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                            </div>
-                            <span>{TYPE_LABELS[tx.type] || tx.type}</span>
-                          </div>
-                        </td>
-                        <td className={`p-3 text-right font-semibold ${TYPE_IS_CREDIT(tx.type) ? "text-green-600" : "text-red-600"}`}>
-                          {TYPE_IS_CREDIT(tx.type) ? "+" : "-"}{parseFloat(tx.amount).toLocaleString("vi-VN")}đ
-                        </td>
-                        <td className="p-3 text-right text-muted-foreground">
-                          {tx.balanceAfter ? `${parseFloat(tx.balanceAfter).toLocaleString("vi-VN")}đ` : "-"}
-                        </td>
-                        <td className="p-3 text-muted-foreground max-w-[200px] truncate">{tx.description || "-"}</td>
-                        <td className="p-3 text-center">
-                          <Badge
-                            variant={tx.status === "completed" ? "default" : tx.status === "pending" ? "secondary" : "destructive"}
-                            className="text-xs"
-                          >
-                            {tx.status === "completed" ? "Hoàn thành" : tx.status === "pending" ? "Chờ xử lý" : "Thất bại"}
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-right text-xs text-muted-foreground">
-                          {new Date(tx.createdAt).toLocaleString("vi-VN")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              <Button onClick={handleSearch} disabled={!searchInput.trim()}>
+                <Search className="w-4 h-4 mr-1" /> Tìm
+              </Button>
+              {searchEmail && (
+                <Button variant="outline" onClick={() => { setSearchEmail(""); setSearchInput(""); }}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
+
+        {/* Results */}
+        {searchEmail && (
+          <div className="space-y-2">
+            {loadingCustomers ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">Đang tìm kiếm...</div>
+            ) : customerList.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">Không tìm thấy khách hàng nào</div>
+            ) : (
+              customerList.map(customer => (
+                <Card key={customer.id} className="hover:shadow-sm transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Wallet className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{customer.name || "Chưa đặt tên"}</p>
+                        <p className="text-xs text-muted-foreground">{customer.email}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-lg font-bold text-primary">
+                          {Number(customer.walletBalance ?? 0).toLocaleString("vi-VN")}đ
+                        </p>
+                        <p className="text-xs text-muted-foreground">Số dư hiện tại</p>
+                      </div>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-green-600 border-green-200 hover:bg-green-50"
+                          onClick={() => openAction(customer, "add")}
+                          title="Cộng tiền"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => openAction(customer, "subtract")}
+                          title="Trừ tiền"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          onClick={() => openAction(customer, "set")}
+                          title="Đặt số dư"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                          onClick={() => {
+                            if (confirm("Xóa toàn bộ số dư của " + customer.email + "?")) {
+                              openAction(customer, "reset");
+                            }
+                          }}
+                          title="Xóa số dư"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
+
+        {!searchEmail && (
+          <div className="text-center py-16 text-muted-foreground">
+            <Wallet className="w-14 h-14 mx-auto mb-4 opacity-20" />
+            <p className="font-medium">Tìm khách hàng để điều chỉnh số dư</p>
+            <p className="text-sm mt-1">Nhập email hoặc tên để bắt đầu</p>
+          </div>
+        )}
       </div>
+
+      {/* Action Dialog */}
+      <Dialog open={showDialog} onOpenChange={open => { if (!open) { setShowDialog(false); setSelectedCustomer(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className={"flex items-center gap-2 " + getActionColor(action)}>
+              {getActionIcon(action)}
+              {getActionLabel(action)}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedCustomer && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-sm font-medium">{selectedCustomer.name || selectedCustomer.email}</p>
+                <p className="text-xs text-muted-foreground">{selectedCustomer.email}</p>
+                <div className="flex items-center gap-1 mt-2">
+                  <Badge variant="outline" className="text-xs">
+                    Số dư: {Number(selectedCustomer.walletBalance ?? 0).toLocaleString("vi-VN")}đ
+                  </Badge>
+                </div>
+              </div>
+
+              {action !== "reset" && (
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">
+                    {action === "set" ? "Số dư mới (VNĐ)" : "Số tiền (VNĐ)"}
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="Nhập số tiền..."
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    autoFocus
+                  />
+                  {action === "set" && amount && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {parseFloat(amount) >= Number(selectedCustomer.walletBalance ?? 0)
+                        ? <span className="text-green-600 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> +{(parseFloat(amount) - Number(selectedCustomer.walletBalance ?? 0)).toLocaleString("vi-VN")}đ</span>
+                        : <span className="text-red-600 flex items-center gap-1"><ArrowDownLeft className="w-3 h-3" /> -{(Number(selectedCustomer.walletBalance ?? 0) - parseFloat(amount)).toLocaleString("vi-VN")}đ</span>
+                      }
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {action === "reset" && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
+                  Thao tác này sẽ xóa toàn bộ <strong>{Number(selectedCustomer.walletBalance ?? 0).toLocaleString("vi-VN")}đ</strong> trong ví của khách hàng.
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Ghi chú (tùy chọn)</label>
+                <Input
+                  placeholder="Lý do điều chỉnh..."
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowDialog(false); setSelectedCustomer(null); }}>Hủy</Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={creditMutation.isPending || (action !== "reset" && !amount)}
+            >
+              {creditMutation.isPending ? "Đang xử lý..." : getActionLabel(action)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayoutCustom>
   );
 }

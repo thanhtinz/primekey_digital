@@ -83,6 +83,10 @@ export default function ProductDetail() {
     { email },
     { enabled: !!email && !!referralSettings?.isEnabled, staleTime: 300_000 }
   );
+  const { data: inventoryCount } = trpc.inventory.countAvailable.useQuery(
+    { productId },
+    { enabled: !!productId }
+  );
   const { data: relatedProducts = [] } = trpc.products.getRelated.useQuery(
     { productId, categoryId: product?.categoryId || undefined, limit: 8 },
     { enabled: !!productId && !!product }
@@ -428,8 +432,25 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Stock */}
-        {(product as any).stock !== undefined && (product as any).stock !== null && (
+        {/* Stock - warehouse type */}
+        {(product as any).inventoryType === "warehouse" && (
+          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${
+            (inventoryCount?.count || 0) > 0
+              ? "bg-green-50 border border-green-200"
+              : "bg-red-50 border border-red-200"
+          }`}>
+            <span className="text-sm">{(inventoryCount?.count || 0) > 0 ? "🟢" : "🔴"}</span>
+            <span className={`text-xs font-medium ${
+              (inventoryCount?.count || 0) > 0 ? "text-green-700" : "text-red-700"
+            }`}>
+              {(inventoryCount?.count || 0) > 0
+                ? `Còn ${inventoryCount?.count} sản phẩm trong kho`
+                : "Hết hàng"}
+            </span>
+          </div>
+        )}
+        {/* Stock - legacy field */}
+        {(product as any).inventoryType !== "warehouse" && (product as any).stock !== undefined && (product as any).stock !== null && (
           <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
             <span className="text-green-600 text-sm">🟢</span>
             <span className="text-xs text-green-700 font-medium">Kho hàng: {(product as any).stock} sản phẩm</span>

@@ -1,4 +1,4 @@
-import { decimal, int, bigint, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, mediumtext } from "drizzle-orm/mysql-core";
+import { decimal, int, bigint, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, mediumtext, tinyint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -77,6 +77,7 @@ export const products = mysqlTable("products", {
   imageUrl: text("imageUrl"),
   notes: text("notes"),
   isFeatured: boolean("isFeatured").default(false),
+  inventoryType: mysqlEnum("inventoryType", ["manual", "warehouse"]).default("manual").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1020,3 +1021,44 @@ export const referralCommissions = mysqlTable("referral_commissions", {
 });
 export type ReferralCommission = typeof referralCommissions.$inferSelect;
 export type InsertReferralCommission = typeof referralCommissions.$inferInsert;
+
+// ─── Static Pages ─────────────────────────────────────────────────────────────
+export const staticPages = mysqlTable("static_pages", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  content: text("content"),
+  isPublished: tinyint("isPublished").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type StaticPage = typeof staticPages.$inferSelect;
+export type InsertStaticPage = typeof staticPages.$inferInsert;
+
+// ─── Menu Items ───────────────────────────────────────────────────────────────
+export const menuItems = mysqlTable("menu_items", {
+  id: int("id").autoincrement().primaryKey(),
+  label: varchar("label", { length: 255 }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  target: mysqlEnum("target", ["_self", "_blank"]).default("_self").notNull(),
+  order: int("order").default(0).notNull(),
+  isActive: tinyint("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MenuItem = typeof menuItems.$inferSelect;
+export type InsertMenuItem = typeof menuItems.$inferInsert;
+
+// ─── Product Inventory ────────────────────────────────────────────────────────
+export const productInventory = mysqlTable("product_inventory", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  packageId: int("packageId"),
+  stockData: text("stockData").notNull(), // JSON array of stock items
+  status: mysqlEnum("status", ["available", "used", "reserved"]).default("available").notNull(),
+  assignedOrderId: int("assignedOrderId"),
+  assignedAt: timestamp("assignedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProductInventoryItem = typeof productInventory.$inferSelect;
+export type InsertProductInventoryItem = typeof productInventory.$inferInsert;

@@ -1291,6 +1291,27 @@ export const appRouter = router({
         await drizzleDb.update(customersTable).set({ customerRole: input.customerRole, updatedAt: new Date() } as any).where(eq(customersTable.id, input.id));
         return { success: true };
       }),
+    adminSearch: protectedProcedure
+      .input(z.object({ search: z.string().min(1) }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user || ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { getDb } = await import("./db");
+        const { or, like } = await import("drizzle-orm");
+        const { customers: customersTable } = await import("../drizzle/schema");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        return drizzleDb.select({
+          id: customersTable.id,
+          email: customersTable.email,
+          name: customersTable.name,
+          walletBalance: customersTable.walletBalance,
+        }).from(customersTable)
+          .where(or(
+            like(customersTable.email, `%${input.search}%`),
+            like(customersTable.name, `%${input.search}%`)
+          ))
+          .limit(20);
+      }),
   }),
   // Productss
   products: router({
@@ -1553,6 +1574,7 @@ export const appRouter = router({
           categoryId: z.number().nullable().optional(),
           imageUrl: z.string().optional(),
           notes: z.string().optional(),
+          inventoryType: z.enum(["manual", "warehouse"]).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -1563,6 +1585,7 @@ export const appRouter = router({
           categoryId: input.categoryId || null,
           imageUrl: input.imageUrl,
           notes: input.notes,
+          inventoryType: input.inventoryType || "manual",
           userId: ctx.user.id,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -1579,6 +1602,7 @@ export const appRouter = router({
           categoryId: z.number().nullable().optional(),
           imageUrl: z.string().optional(),
           notes: z.string().optional(),
+          inventoryType: z.enum(["manual", "warehouse"]).optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
@@ -7420,6 +7444,220 @@ export const appRouter = router({
         if (!drizzleDb) throw new Error("DB unavailable");
         await drizzleDb.delete(imageFiles).where(and(eq(imageFiles.userId, ctx.user.id), inArray(imageFiles.id, input.ids)));
         return { success: true };
+      }),
+  }),
+
+  // ─── Static Pages ─────────────────────────────────────────────────────────
+  pages: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const { staticPages } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { desc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(staticPages).orderBy(desc(staticPages.createdAt));
+    }),
+    create: protectedProcedure
+      .input(z.object({ title: z.string().min(1), slug: z.string().min(1), content: z.string().default("") }))
+      .mutation(async ({ input }) => {
+        const { staticPages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [page] = await drizzleDb.insert(staticPages).values({ title: input.title, slug: input.slug, content: input.content, isPublished: 0 }).$returningId();
+        return page;
+      }),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), title: z.string().min(1).optional(), slug: z.string().min(1).optional(), content: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { staticPages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { id, ...data } = input;
+        await drizzleDb.update(staticPages).set(data).where(eq(staticPages.id, id));
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { staticPages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.delete(staticPages).where(eq(staticPages.id, input.id));
+        return { success: true };
+      }),
+    togglePublish: protectedProcedure
+      .input(z.object({ id: z.number(), isPublished: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const { staticPages } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.update(staticPages).set({ isPublished: input.isPublished ? 1 : 0 }).where(eq(staticPages.id, input.id));
+        return { success: true };
+      }),
+  }),
+
+  // ─── Menu Manager ─────────────────────────────────────────────────────────
+  menu: router({
+    list: protectedProcedure.query(async () => {
+      const { menuItems } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(menuItems).orderBy(asc(menuItems.order));
+    }),
+    create: protectedProcedure
+      .input(z.object({ label: z.string().min(1), url: z.string().min(1), target: z.enum(["_self", "_blank"]).default("_self") }))
+      .mutation(async ({ input }) => {
+        const { menuItems } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const allItems = await drizzleDb.select().from(menuItems);
+        const maxOrder = allItems.length > 0 ? Math.max(...allItems.map((i: any) => i.order)) : -1;
+        const [item] = await drizzleDb.insert(menuItems).values({ label: input.label, url: input.url, target: input.target, order: maxOrder + 1, isActive: 1 }).$returningId();
+        return item;
+      }),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), label: z.string().min(1).optional(), url: z.string().min(1).optional(), target: z.enum(["_self", "_blank"]).optional() }))
+      .mutation(async ({ input }) => {
+        const { menuItems } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { id, ...data } = input;
+        await drizzleDb.update(menuItems).set(data).where(eq(menuItems.id, id));
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { menuItems } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.delete(menuItems).where(eq(menuItems.id, input.id));
+        return { success: true };
+      }),
+    toggleActive: protectedProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const { menuItems } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.update(menuItems).set({ isActive: input.isActive ? 1 : 0 }).where(eq(menuItems.id, input.id));
+        return { success: true };
+      }),
+    reorder: protectedProcedure
+      .input(z.object({ id: z.number(), direction: z.enum(["up", "down"]) }))
+      .mutation(async ({ input }) => {
+        const { menuItems } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, asc } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const allItems = await drizzleDb.select().from(menuItems).orderBy(asc(menuItems.order));
+        const idx = allItems.findIndex((i: any) => i.id === input.id);
+        if (idx < 0) throw new TRPCError({ code: "NOT_FOUND" });
+        const swapIdx = input.direction === "up" ? idx - 1 : idx + 1;
+        if (swapIdx < 0 || swapIdx >= allItems.length) return { success: true };
+        const a = allItems[idx] as any;
+        const b = allItems[swapIdx] as any;
+        await drizzleDb.update(menuItems).set({ order: b.order }).where(eq(menuItems.id, a.id));
+        await drizzleDb.update(menuItems).set({ order: a.order }).where(eq(menuItems.id, b.id));
+        return { success: true };
+      }),
+    publicList: publicProcedure.query(async () => {
+      const { menuItems } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, asc } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return [];
+      return drizzleDb.select().from(menuItems).where(eq(menuItems.isActive, 1)).orderBy(asc(menuItems.order));
+    }),
+  }),
+
+  // ─── Product Inventory ────────────────────────────────────────────────────
+  inventory: router({
+    list: protectedProcedure
+      .input(z.object({ productId: z.number().optional(), packageId: z.number().optional(), status: z.string().optional(), page: z.number().default(1), limit: z.number().default(20) }))
+      .query(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and, desc } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { items: [], total: 0 };
+        const conditions = [];
+        if (input.productId) conditions.push(eq(productInventory.productId, input.productId));
+        if (input.packageId) conditions.push(eq(productInventory.packageId, input.packageId));
+        if (input.status) conditions.push(eq(productInventory.status, input.status as any));
+        const offset = (input.page - 1) * input.limit;
+        const items = await drizzleDb.select().from(productInventory)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(desc(productInventory.createdAt))
+          .limit(input.limit).offset(offset);
+        return { items, total: items.length };
+      }),
+    add: protectedProcedure
+      .input(z.object({ productId: z.number(), packageId: z.number().optional(), items: z.array(z.string()).min(1) }))
+      .mutation(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const rows = input.items.map(item => ({
+          productId: input.productId,
+          packageId: input.packageId ?? null,
+          stockData: item,
+          status: "available" as const,
+        }));
+        await drizzleDb.insert(productInventory).values(rows);
+        return { added: rows.length };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.delete(productInventory).where(eq(productInventory.id, input.id));
+        return { success: true };
+      }),
+    getByOrder: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        return drizzleDb.select().from(productInventory).where(eq(productInventory.assignedOrderId, input.orderId));
+      }),
+    countAvailable: publicProcedure
+      .input(z.object({ productId: z.number(), packageId: z.number().optional() }))
+      .query(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { count: 0 };
+        const conditions = [eq(productInventory.productId, input.productId), eq(productInventory.status, "available")];
+        if (input.packageId) conditions.push(eq(productInventory.packageId, input.packageId));
+        const items = await drizzleDb.select().from(productInventory).where(and(...conditions));
+        return { count: items.length };
       }),
   }),
 });

@@ -220,6 +220,10 @@ export default function InvoiceDetail() {
     { invoiceId },
     { enabled: !!invoiceId, staleTime: 30_000 }
   );
+  const { data: inventoryItems = [] } = trpc.inventory.getByOrder.useQuery(
+    { orderId: invoiceId || 0 },
+    { enabled: !!invoiceId }
+  );
   const { data: currentUser } = trpc.auth.me.useQuery(undefined, { staleTime: 60_000 });
 
   const deleteInvoice = trpc.invoices.delete.useMutation();
@@ -662,20 +666,40 @@ export default function InvoiceDetail() {
                           </tr>
                         </thead>
                         <tbody>
-                          {invoice.items.map((item: any, idx: number) => (
-                            <tr key={idx} className="border-b last:border-0 hover:bg-muted/20">
-                              <td className="px-4 py-2.5 font-medium">{item.name}</td>
-                              <td className="px-4 py-2.5 text-right text-muted-foreground">
-                                {typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity}
-                              </td>
-                              <td className="px-4 py-2.5 text-right text-muted-foreground">
-                                {formatCurrency(item.unitPrice, invoice.currency || "VND")}
-                              </td>
-                              <td className="px-4 py-2.5 text-right font-medium">
-                                {formatCurrency(item.totalAmount, invoice.currency || "VND")}
-                              </td>
-                            </tr>
-                          ))}
+                          {invoice.items.map((item: any, idx: number) => {
+                            const itemInventory = (inventoryItems as any[]).filter((inv: any) => inv.productId === item.productId);
+                            return (
+                              <>
+                                <tr key={idx} className="border-b last:border-0 hover:bg-muted/20">
+                                  <td className="px-4 py-2.5 font-medium">{item.name}</td>
+                                  <td className="px-4 py-2.5 text-right text-muted-foreground">
+                                    {typeof item.quantity === "string" ? parseFloat(item.quantity) : item.quantity}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right text-muted-foreground">
+                                    {formatCurrency(item.unitPrice, invoice.currency || "VND")}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right font-medium">
+                                    {formatCurrency(item.totalAmount, invoice.currency || "VND")}
+                                  </td>
+                                </tr>
+                                {itemInventory.length > 0 && (
+                                  <tr key={`inv-${idx}`} className="bg-blue-50/50">
+                                    <td colSpan={4} className="px-4 py-2">
+                                      <p className="text-[10px] font-semibold text-blue-500 uppercase tracking-wide mb-1.5">Sản phẩm từ kho</p>
+                                      <div className="space-y-1">
+                                        {itemInventory.map((inv: any, i: number) => (
+                                          <div key={i} className="flex items-center gap-2 bg-white rounded px-2 py-1.5 border border-blue-100">
+                                            <span className="text-xs text-gray-400">#{i + 1}</span>
+                                            <span className="text-xs font-mono text-gray-800 flex-1 break-all">{inv.stockData}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>

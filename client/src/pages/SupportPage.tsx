@@ -160,7 +160,7 @@ export default function SupportPage() {
               {submitted ? (
                 <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6 text-center">
                   <CheckCircle className="h-10 w-10 text-green-400 mx-auto mb-3" />
-                  <p className="font-semibold text-white">Ticket đã được gửi!</p>
+                  <p className="font-semibold text-gray-900">Ticket đã được gửi!</p>
                   <p className="text-sm text-gray-500 mt-1 mb-4">Chúng tôi sẽ phản hồi qua email sớm nhất có thể.</p>
                   <button
                     onClick={() => setSubmitted(false)}
@@ -198,7 +198,7 @@ export default function SupportPage() {
                   )}
                   {isLoggedIn && (
                     <div className="bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-500">
-                      Gửi với tư cách: <span className="text-white font-medium">{sessionData?.email}</span>
+                      Gửi với tư cách: <span className="text-gray-900 font-medium">{sessionData?.email}</span>
                     </div>
                   )}
                   <div>
@@ -217,7 +217,7 @@ export default function SupportPage() {
                     <select
                       value={form.priority}
                       onChange={e => setForm(f => ({ ...f, priority: e.target.value as any }))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500/50 transition-colors"
                     >
                       <option value="low">Thấp - Câu hỏi chung</option>
                       <option value="medium">Trung bình - Cần hỗ trợ</option>
@@ -257,7 +257,7 @@ export default function SupportPage() {
                       return (
                         <div key={ticket.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-3">
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className="text-sm font-medium text-white line-clamp-1">{ticket.subject}</p>
+                            <p className="text-sm font-medium text-gray-900 line-clamp-1">{ticket.subject}</p>
                             <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0 ${status.color}`}>
                               <StatusIcon className="h-3 w-3" />
                               {status.label}

@@ -170,6 +170,9 @@ const ICON_MAP: Record<string, string> = {
   XIcon: "fa-solid fa-xmark",
   Zap: "fa-solid fa-bolt",
   ZoomIn: "fa-solid fa-magnifying-glass-plus",
+  Puzzle: "fa-solid fa-puzzle-piece",
+  Terminal: "fa-solid fa-terminal",
+  Navigation: "fa-solid fa-compass",
 };
 
 export interface IconProps {
@@ -411,5 +414,7 @@ export const XCircle = makeIcon("XCircle");
 export const XIcon = makeIcon("XIcon");
 export const Zap = makeIcon("Zap");
 export const ZoomIn = makeIcon("ZoomIn");
-
+export const Puzzle = makeIcon("Puzzle");
+export const Terminal = makeIcon("Terminal");
+export const Navigation = makeIcon("Navigation");
 export default Icon;

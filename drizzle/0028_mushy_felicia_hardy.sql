@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `inventoryType` enum('manual','warehouse') DEFAULT 'manual' NOT NULL;

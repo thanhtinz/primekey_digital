@@ -1,0 +1,1 @@
+ALTER TABLE `static_pages` MODIFY COLUMN `content` text;

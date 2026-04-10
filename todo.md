@@ -1644,3 +1644,17 @@ todo updated
 - [x] Blog: tách thành Chuyên mục, Viết bài mới, Tất cả bài viết
 - [x] Nạp tiền: tách thành mục riêng (Cấu hình PayOS, Lịch sử, Quản lý ví)
 - [x] Menu admin: phân mục rõ ràng với 10 nhóm
+
+## Session 2026-04-10 - Cải thiện tính năng
+
+- [x] Cải thiện trang kho ảnh avatar: thêm filter category, bulk upload nhiều ảnh, preview modal, view mode grid/list, copy URL, select nhiều ảnh để bulk delete/toggle
+- [x] Bỏ trang Nhân Viên riêng, gộp vào tab trong trang Quản Lý Khách Hàng
+- [x] Thêm cột Phân Loại (customerRole) vào bảng khách hàng: Khách Thường / VIP / Đại Lý / Đối Tác
+- [x] Thêm field customerRole vào database schema và migration
+- [x] Thêm procedure customers.updateRole vào routers.ts
+- [x] Redesign trang Thông Báo & Banner: gộp 2 tính năng vào 1 trang với 2 tab đẹp hơn
+- [x] Thêm link "Xem Trang Web" vào menu admin (mở trang client trong tab mới)
+- [x] Tạo trang TopupHistory.tsx riêng cho Lịch Sử Nạp (xem danh sách, trạng thái, biến động tiền)
+- [x] Quản Lý Ví đã có tính năng điều chỉnh số dư khách hàng (adminCredit)
+- [x] Bỏ nút Quay lại trong trang Cấu Hình PayOS
+- [x] Clean code PayPal: xóa PayPal logic khỏi testConnection trong routers.ts
