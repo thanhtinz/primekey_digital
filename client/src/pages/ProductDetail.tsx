@@ -44,6 +44,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [showPackageDetails, setShowPackageDetails] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
@@ -607,61 +608,8 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Lưu ý sản phẩm - hiển thị mô tả gói đang chọn */}
-            {packages.length > 0 && (() => {
-              // Lấy mô tả từ gói đang chọn, hoặc gói đầu tiên nếu chưa chọn
-              const activePackage = selectedPackage || (packages.length === 1 ? packages[0] : null);
-              const packageDesc = activePackage?.description;
-              const hasAnyDesc = packages.some((p: any) => !!p.description);
-              if (!hasAnyDesc) return null;
-              return (
-                <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-amber-100">
-                  {/* Header - click để toggle */}
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i className="fa fa-exclamation-circle text-white text-sm" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-amber-600 font-semibold uppercase tracking-wide">Lưu ý</p>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {activePackage ? activePackage.name : "Chọn gói để xem lưu ý"}
-                        </p>
-                      </div>
-                    </div>
-                    {!activePackage && (
-                      <span className="text-xs text-amber-500 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
-                        Chưa chọn gói
-                      </span>
-                    )}
-                  </div>
-                  {/* Content */}
-                  <div className="px-4 py-3">
-                    {packageDesc ? (
-                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{packageDesc}</p>
-                    ) : activePackage ? (
-                      <p className="text-sm text-gray-400 italic">Gói này không có lưu ý đặc biệt.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {packages.filter((p: any) => !!p.description).map((p: any) => (
-                          <div key={p.id} className="flex items-start gap-2">
-                            <span className="text-amber-400 mt-0.5 flex-shrink-0">•</span>
-                            <div>
-                              <span className="text-xs font-semibold text-gray-600">{p.name}:</span>
-                              <span className="text-xs text-gray-500 ml-1 line-clamp-1">{p.description}</span>
-                            </div>
-                          </div>
-                        ))}
-                        <p className="text-xs text-amber-500 mt-2">Bấm vào gói để xem chi tiết lưu ý.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Chi tiết gói */}
-            {(product as any).notes && (
+            {/* Chi tiết gói - hiển thị description của gói đang chọn */}
+            {packages.some((p: any) => !!p.description) && (
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
                 <button
                   onClick={() => setShowPackageDetails(!showPackageDetails)}
@@ -679,6 +627,38 @@ export default function ProductDetail() {
                   {showPackageDetails ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
                 </button>
                 {showPackageDetails && (
+                  <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+                    {selectedPackage?.description ? (
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedPackage.description}</p>
+                    ) : selectedPackage ? (
+                      <p className="text-sm text-gray-400 italic">Gói này không có mô tả chi tiết.</p>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">Vui lòng chọn một gói để xem chi tiết.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Lưu ý sản phẩm - hiển thị notes của sản phẩm */}
+            {(product as any).notes && (
+              <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                <button
+                  onClick={() => setShowNotes(!showNotes)}
+                  className="w-full flex items-center justify-between p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <i className="fa fa-exclamation-circle text-white text-sm" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs text-amber-500 font-semibold uppercase tracking-wide">Lưu ý</p>
+                      <p className="text-sm font-semibold text-gray-800">Lưu ý sản phẩm</p>
+                    </div>
+                  </div>
+                  {showNotes ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                </button>
+                {showNotes && (
                   <div className="px-4 pb-4 border-t border-gray-100 pt-3">
                     <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{(product as any).notes}</p>
                   </div>
