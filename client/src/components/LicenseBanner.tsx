@@ -261,15 +261,22 @@ export default function LicenseBanner() {
                 {sysInfo.autoUpdate ? "Hệ thống sẽ tự động cập nhật." : "Bật cập nhật tự động để nhận ngay."}
               </p>
             </div>
-            {!sysInfo.autoUpdate && (
-              <Button
-                size="sm"
-                onClick={handleToggleAutoUpdate}
-                className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
-              >
-                Bật tự động
-              </Button>
-            )}
+            <div className="flex gap-1.5 flex-shrink-0">
+              {!sysInfo.autoUpdate && (
+                <Button
+                  size="sm"
+                  onClick={handleToggleAutoUpdate}
+                  className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Bật tự động
+                </Button>
+              )}
+              <a href="/admin/auto-update">
+                <Button size="sm" variant="outline" className="h-7 px-3 text-xs border-blue-300 text-blue-700 hover:bg-blue-50">
+                  Chi tiết
+                </Button>
+              </a>
+            </div>
           </div>
         )}
       </div>

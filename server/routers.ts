@@ -8395,11 +8395,251 @@ export const broadcastsRouter = router({
   }),
 });
 
-// Merge into appRouter
-const appRouterWithBroadcasts = router({
-  ...appRouter._def.record,
-  broadcasts: broadcastsRouter,
+// ───────────────────────────────────────────────────────────────────────────────
+// License Router - Quản lý license key
+// ───────────────────────────────────────────────────────────────────────────────
+export const licenseRouter = router({
+  // Lấy trạng thái license hiện tại
+  getStatus: publicProcedure.query(async () => {
+    const { getDb } = await import("./db");
+    const { userSettings } = await import("../drizzle/schema");
+    const db = await getDb();
+    if (!db) return { activated: false, licenseKey: null, plan: null, expiresAt: null, owner: null, domain: null };
+    const rows = await db.select({
+      licenseActivated: userSettings.licenseActivated,
+      licenseKey: userSettings.licenseKey,
+      licensePlan: userSettings.licensePlan,
+      licenseExpiresAt: userSettings.licenseExpiresAt,
+      licenseOwner: userSettings.licenseOwner,
+      licenseDomain: userSettings.licenseDomain,
+      licenseMessage: userSettings.licenseMessage,
+      licenseActivatedAt: userSettings.licenseActivatedAt,
+    }).from(userSettings).limit(1);
+    const s = rows[0];
+    if (!s) return { activated: false, licenseKey: null, plan: null, expiresAt: null, owner: null, domain: null };
+    return {
+      activated: s.licenseActivated ?? false,
+      licenseKey: s.licenseKey ? `${s.licenseKey.substring(0, 8)}...${s.licenseKey.slice(-4)}` : null,
+      plan: s.licensePlan,
+      expiresAt: s.licenseExpiresAt ? s.licenseExpiresAt.toISOString() : null,
+      owner: s.licenseOwner,
+      domain: s.licenseDomain,
+      message: s.licenseMessage,
+      activatedAt: s.licenseActivatedAt ? s.licenseActivatedAt.toISOString() : null,
+    };
+  }),
+
+  // Kích hoạt license key
+  activate: publicProcedure.input(z.object({
+    licenseKey: z.string().min(8, "License key phải có ít nhất 8 ký tự"),
+    domain: z.string().optional(),
+  })).mutation(async ({ input }) => {
+    const { getDb } = await import("./db");
+    const { userSettings } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database không khả dụng" });
+
+    // Xác thực license với server bên ngoài (nếu có)
+    const licenseServerUrl = process.env.LICENSE_SERVER_URL;
+    let licenseInfo: { valid: boolean; plan?: string; expiresAt?: string; owner?: string; message?: string } = {
+      valid: true, plan: "standard",
+    };
+
+    if (licenseServerUrl) {
+      try {
+        const domain = input.domain || process.env.APP_DOMAIN || "localhost";
+        const response = await fetch(`${licenseServerUrl}/api/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: input.licenseKey, domain }),
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({})) as any;
+          throw new TRPCError({ code: "BAD_REQUEST", message: data.message || "License key không hợp lệ" });
+        }
+        licenseInfo = await response.json() as typeof licenseInfo;
+        if (!licenseInfo.valid) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: licenseInfo.message || "License key không hợp lệ" });
+        }
+      } catch (err: any) {
+        if (err instanceof TRPCError) throw err;
+        // Nếu không kết nối được server → vẫn cho activate (offline mode)
+        console.warn("[License] Cannot reach license server, activating in offline mode");
+      }
+    }
+
+    // Lưu license vào DB
+    const rows = await db.select({ id: userSettings.id }).from(userSettings).limit(1);
+    const settingsId = rows[0]?.id;
+    const updateData: any = {
+      licenseKey: input.licenseKey,
+      licenseActivated: true,
+      licenseActivatedAt: new Date(),
+      licensePlan: licenseInfo.plan || "standard",
+      licenseOwner: licenseInfo.owner || null,
+      licenseDomain: input.domain || process.env.APP_DOMAIN || null,
+      licenseMessage: null,
+    };
+    if (licenseInfo.expiresAt) {
+      updateData.licenseExpiresAt = new Date(licenseInfo.expiresAt);
+    }
+
+    if (settingsId) {
+      await db.update(userSettings).set(updateData).where(eq(userSettings.id, settingsId));
+    } else {
+      await db.insert(userSettings).values(updateData);
+    }
+
+    return { success: true, plan: licenseInfo.plan || "standard", message: "Kích hoạt license thành công!" };
+  }),
+
+  // Hủy kích hoạt license (admin only)
+  deactivate: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { getDb } = await import("./db");
+    const { userSettings } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rows = await db.select({ id: userSettings.id }).from(userSettings).limit(1);
+    if (rows[0]) {
+      await db.update(userSettings).set({
+        licenseActivated: false,
+        licenseKey: null,
+        licenseActivatedAt: null,
+        licenseExpiresAt: null,
+        licensePlan: "standard",
+        licenseOwner: null,
+        licenseDomain: null,
+      }).where(eq(userSettings.id, rows[0].id));
+    }
+    return { success: true };
+  }),
 });
 
-export { appRouterWithBroadcasts as appRouterFull };
-export type AppRouter = typeof appRouterWithBroadcasts;
+// ─────────────────────────────────────────────────────────────────────────────
+// Auto-Update Router - Quản lý cập nhật từ GitHub
+// ─────────────────────────────────────────────────────────────────────────────
+export const updateRouter = router({
+  // Lấy trạng thái cập nhật
+  getStatus: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { getDb } = await import("./db");
+    const { userSettings } = await import("../drizzle/schema");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rows = await db.select({
+      githubRepo: userSettings.githubRepo,
+      githubBranch: userSettings.githubBranch,
+      githubToken: userSettings.githubToken,
+      githubWebhookSecret: userSettings.githubWebhookSecret,
+      autoUpdate: userSettings.autoUpdate,
+      currentVersion: userSettings.currentVersion,
+      latestVersion: userSettings.latestVersion,
+      updateAvailable: userSettings.updateAvailable,
+      lastUpdateCheck: userSettings.lastUpdateCheck,
+      lastUpdateAt: userSettings.lastUpdateAt,
+    }).from(userSettings).limit(1);
+    const s = rows[0];
+    if (!s) return {
+      githubRepo: null, githubBranch: "main", autoUpdate: false,
+      currentVersion: "1.0.0", latestVersion: null, updateAvailable: false,
+      lastUpdateCheck: null, lastUpdateAt: null, isUpdating: false, logs: [],
+    };
+    const { isUpdateInProgress, getUpdateLogs } = await import("./auto-update");
+    return {
+      githubRepo: s.githubRepo,
+      githubBranch: s.githubBranch || "main",
+      hasToken: !!s.githubToken,
+      hasWebhookSecret: !!s.githubWebhookSecret,
+      autoUpdate: s.autoUpdate ?? false,
+      currentVersion: s.currentVersion || "1.0.0",
+      latestVersion: s.latestVersion,
+      updateAvailable: s.updateAvailable ?? false,
+      lastUpdateCheck: s.lastUpdateCheck ? s.lastUpdateCheck.toISOString() : null,
+      lastUpdateAt: s.lastUpdateAt ? s.lastUpdateAt.toISOString() : null,
+      isUpdating: isUpdateInProgress(),
+      logs: getUpdateLogs().slice(0, 20),
+    };
+  }),
+
+  // Cấu hình GitHub repository
+  configure: protectedProcedure.input(z.object({
+    githubRepo: z.string().min(1, "Vui lòng nhập repo (owner/repo)"),
+    githubBranch: z.string().default("main"),
+    githubToken: z.string().optional(),
+    githubWebhookSecret: z.string().optional(),
+    autoUpdate: z.boolean().optional(),
+  })).mutation(async ({ input, ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { getDb } = await import("./db");
+    const { userSettings } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rows = await db.select({ id: userSettings.id }).from(userSettings).limit(1);
+    const updates: any = {
+      githubRepo: input.githubRepo,
+      githubBranch: input.githubBranch || "main",
+    };
+    if (input.githubToken !== undefined) updates.githubToken = input.githubToken || null;
+    if (input.githubWebhookSecret !== undefined) updates.githubWebhookSecret = input.githubWebhookSecret || null;
+    if (input.autoUpdate !== undefined) updates.autoUpdate = input.autoUpdate;
+    if (rows[0]) {
+      await db.update(userSettings).set(updates).where(eq(userSettings.id, rows[0].id));
+    }
+    return { success: true };
+  }),
+
+  // Kiểm tra phiên bản mới thủ công
+  checkNow: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { checkForUpdates } = await import("./auto-update");
+    const result = await checkForUpdates();
+    return result;
+  }),
+
+  // Cập nhật thủ công
+  updateNow: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { performUpdate } = await import("./auto-update");
+    const result = await performUpdate("manual");
+    return result;
+  }),
+
+  // Lấy webhook URL để cấu hình trong GitHub
+  getWebhookInfo: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+    const { getDb } = await import("./db");
+    const { userSettings } = await import("../drizzle/schema");
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rows = await db.select({ githubWebhookSecret: userSettings.githubWebhookSecret }).from(userSettings).limit(1);
+    return {
+      webhookUrl: "/api/webhooks/github-update",
+      hasSecret: !!(rows[0]?.githubWebhookSecret),
+      instructions: [
+        "1. Vào GitHub repo → Settings → Webhooks → Add webhook",
+        "2. Payload URL: https://your-domain.com/api/webhooks/github-update",
+        "3. Content type: application/json",
+        "4. Secret: Nhập Webhook Secret bạn đã cấu hình ở trên",
+        "5. Events: Chọn 'Just the push event'",
+        "6. Active: ✓ Tick vào",
+      ],
+    };
+  }),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full Router - Merge all sub-routers (MUST be at the end of file)
+// ─────────────────────────────────────────────────────────────────────────────
+const appRouterFull = router({
+  ...appRouter._def.record,
+  broadcasts: broadcastsRouter,
+  license: licenseRouter,
+  update: updateRouter,
+});
+export { appRouterFull };
+export type AppRouter = typeof appRouterFull;

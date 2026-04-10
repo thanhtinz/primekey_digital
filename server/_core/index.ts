@@ -7,18 +7,11 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 // import { registerOAuthRoutes } from "./oauth"; // Disabled: using email/password auth instead
 import { registerAuthRoutes } from "./authRoutes";
-import { appRouter, broadcastsRouter } from "../routers";
-import { router } from "./trpc";
+import { appRouterFull } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import webhookRouter from "../webhooks";
 import { checkLicenseOnStartup, licenseMiddleware } from "../license";
-
-// Extend appRouter with broadcasts
-const fullRouter = router({
-  ...(appRouter as any)._def.record,
-  broadcasts: broadcastsRouter,
-});
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -90,11 +83,11 @@ async function startServer() {
   // registerOAuthRoutes(app);
   // Webhook routes
   app.use("/api/webhooks", webhookRouter);
-  // tRPC API
+  // tRPC API - use the full router with all sub-routers
   app.use(
     "/api/trpc",
     createExpressMiddleware({
-      router: fullRouter,
+      router: appRouterFull,
       createContext,
     })
   );
@@ -114,6 +107,9 @@ async function startServer() {
 
   // Check license on startup (non-blocking)
   await checkLicenseOnStartup();
+  // Start GitHub update polling (checks for new versions every hour)
+  const { startUpdatePolling } = await import("../auto-update");
+  startUpdatePolling();
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);

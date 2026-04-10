@@ -1892,3 +1892,15 @@ todo updated
 - [x] ProductEdit: mobile layout (header, bottom buttons responsive)
 - [x] ProductPackages: mobile layout (header responsive, icon-only buttons trên mobile)
 - [x] ProductFields: mobile layout (header responsive, icon-only buttons trên mobile)
+
+## Feature: License Gate & Auto-Update via GitHub
+
+- [ ] License Gate: màn hình setup bắt buộc nhập license key khi deploy mới (chưa có license)
+- [ ] License validation: verify license key với server (hoặc offline hash check)
+- [ ] License Gate middleware: chặn toàn bộ app nếu chưa activate license
+- [ ] Auto-Update: polling GitHub releases API để kiểm tra phiên bản mới
+- [ ] Auto-Update: webhook endpoint nhận push event từ GitHub
+- [ ] Auto-Update: khi có phiên bản mới, tự động pull code và restart server
+- [ ] UI: trang License Setup (first-run wizard)
+- [ ] UI: trang quản lý license trong admin (activate, deactivate, renew)
+- [ ] UI: trang quản lý Auto-Update trong admin (enable/disable, xem logs)

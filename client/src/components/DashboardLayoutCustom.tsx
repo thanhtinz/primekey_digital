@@ -95,6 +95,7 @@ const adminNavGroups = [
     label: "Hệ Thống",
     items: [
       { label: "Cài Đặt", href: "/settings", icon: Settings },
+      { label: "Cập Nhật Tự Động", href: "/admin/auto-update", icon: RefreshCw },
       { label: "Tự Động Hoá", href: "/admin/automations", icon: Zap },
       { label: "Block IP", href: "/admin/block-ip", icon: Shield },
       { label: "Lịch Sử HĐ", href: "/activity-log", icon: History },

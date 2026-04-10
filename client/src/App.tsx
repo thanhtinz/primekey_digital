@@ -103,6 +103,8 @@ import BlogPosts from "@/pages/BlogPosts";
 import ImageLibrary from "@/pages/ImageLibrary";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
 const BroadcastsAdmin = lazy(() => import("./pages/BroadcastsAdmin"));
+const AutoUpdateAdmin = lazy(() => import("./pages/AutoUpdateAdmin"));
+const LicenseSetup = lazy(() => import("./pages/LicenseSetup"));
 const SystemStatus = lazy(() => import("./pages/SystemStatus"));
 const RedisConsole = lazy(() => import("./pages/RedisConsole"));
 const AdminConsole = lazy(() => import("./pages/AdminConsole"));
@@ -160,18 +162,38 @@ function isAlwaysPublic(path: string) {
 
 function Router() {
   const [location] = useLocation();
-
   // Use tRPC auth.me query - this uses credentials: "include" automatically
   const { data: user, isLoading } = trpc.auth.me.useQuery(undefined, {
     retry: false,
     staleTime: 30_000,
   });
-
+  // License gate check
+  const { data: licenseStatus } = trpc.license.getStatus.useQuery(undefined, {
+    staleTime: 300_000, // Cache 5 minutes
+    retry: false,
+  });
   const isAuthenticated = !!user;
   const isAdmin = user?.role === "admin";
-
   const handleLoginSuccess = () => {
     window.location.replace("/dashboard");
+  };
+  // License gate: if license not activated and user is admin, redirect to setup
+  // Only block admin routes, not public routes
+  if (
+    licenseStatus !== undefined &&
+    !licenseStatus.activated &&
+    !isAlwaysPublic(location) &&
+    location !== "/license-setup" &&
+    location !== "/login" &&
+    location !== "/register" &&
+    location !== "/verify-email" &&
+    location !== "/reset-password"
+  ) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <LicenseSetup onActivated={() => window.location.reload()} />
+      </Suspense>
+    );
   };
 
   // Always-public routes
@@ -303,6 +325,8 @@ function Router() {
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
         <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/broadcasts" component={() => isAdmin ? <BroadcastsAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/auto-update" component={() => isAdmin ? <AutoUpdateAdmin /> : <ForbiddenPage />} />
+        <Route path="/license-setup" component={() => <LicenseSetup onActivated={() => window.location.reload()} />} />
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
 
         <Route path="/admin/spin-wheel" component={() => isAdmin ? <SpinWheelAdmin /> : <ForbiddenPage />} />

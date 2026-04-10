@@ -236,4 +236,70 @@ router.post("/telegram/user/:userId", async (req, res) => {
   }
 });
 
+// ─── GitHub Auto-Update Webhook ─────────────────────────────────────────────
+// GitHub sends push events to: /api/webhooks/github-update
+router.post("/github-update", async (req, res) => {
+  try {
+    const signature = (req.headers["x-hub-signature-256"] as string) || "";
+    const payload = JSON.stringify(req.body);
+
+    // Get settings from DB
+    const drizzleDb = await db.getDb();
+    if (!drizzleDb) {
+      res.status(503).json({ error: "Database unavailable" });
+      return;
+    }
+    const { userSettings } = await import("../drizzle/schema");
+    const rows = await drizzleDb.select({
+      githubWebhookSecret: userSettings.githubWebhookSecret,
+      githubBranch: userSettings.githubBranch,
+      githubRepo: userSettings.githubRepo,
+      autoUpdate: userSettings.autoUpdate,
+    }).from(userSettings).limit(1);
+    const settings = rows[0];
+
+    // Verify signature if secret is set
+    if (settings?.githubWebhookSecret) {
+      const { verifyGithubSignature } = await import("./auto-update");
+      if (!verifyGithubSignature(payload, signature, settings.githubWebhookSecret)) {
+        console.warn("[GitHub Webhook] Invalid signature");
+        res.status(401).json({ error: "Invalid signature" });
+        return;
+      }
+    }
+
+    // Check if this is a push to the configured branch
+    const pushedBranch = (req.body?.ref as string)?.replace("refs/heads/", "");
+    const targetBranch = settings?.githubBranch || "main";
+    const pushedRepo = req.body?.repository?.full_name;
+
+    console.log(`[GitHub Webhook] Push event: ${pushedRepo} branch=${pushedBranch}`);
+
+    if (pushedBranch !== targetBranch) {
+      res.json({ message: `Push to ${pushedBranch}, watching ${targetBranch} - skipped` });
+      return;
+    }
+
+    if (!settings?.autoUpdate) {
+      res.json({ message: "Auto-update is disabled - webhook received but not acting" });
+      return;
+    }
+
+    // Respond immediately, then perform update in background
+    res.json({ message: "Update triggered", branch: pushedBranch });
+
+    // Perform update asynchronously
+    setTimeout(async () => {
+      const { performUpdate } = await import("./auto-update");
+      await performUpdate("webhook").catch((err: Error) => {
+        console.error("[GitHub Webhook] Update failed:", err.message);
+      });
+    }, 1000);
+
+  } catch (err: any) {
+    console.error("[GitHub Webhook] Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
