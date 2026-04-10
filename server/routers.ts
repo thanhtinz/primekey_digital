@@ -1866,13 +1866,25 @@ export const appRouter = router({
       const { eq, asc } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
-      return drizzleDb.select().from(productCustomFields).where(eq(productCustomFields.productId, input.productId)).orderBy(asc(productCustomFields.sortOrder));
+      const rows = await drizzleDb.select().from(productCustomFields).where(eq(productCustomFields.productId, input.productId)).orderBy(asc(productCustomFields.sortOrder));
+      return rows.map(r => ({
+        ...r,
+        options: r.options ? (() => { try { return JSON.parse(r.options as string); } catch { return []; } })() : [],
+      }));
     }),
     createCustomField: protectedProcedure.input(z.object({
       productId: z.number(),
-      fieldName: z.string().min(1),
+      fieldName: z.string().min(1).optional(),
       fieldValue: z.string().optional(),
       sortOrder: z.number().optional(),
+      // Extended fields
+      label: z.string().optional(),
+      fieldType: z.string().optional(),
+      placeholder: z.string().optional(),
+      description: z.string().optional(),
+      options: z.array(z.string()).optional(),
+      isRequired: z.boolean().optional(),
+      isVisible: z.boolean().optional(),
     })).mutation(async ({ input, ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
       const product = await db.getProductById(input.productId);
@@ -1881,7 +1893,20 @@ export const appRouter = router({
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
-      await drizzleDb.insert(productCustomFields).values({ productId: input.productId, fieldName: input.fieldName, fieldValue: input.fieldValue || null, sortOrder: input.sortOrder || 0 });
+      const fieldName = input.fieldName || input.label || "field";
+      await drizzleDb.insert(productCustomFields).values({
+        productId: input.productId,
+        fieldName,
+        fieldValue: input.fieldValue || null,
+        sortOrder: input.sortOrder || 0,
+        label: input.label || fieldName,
+        fieldType: input.fieldType || "text",
+        placeholder: input.placeholder || null,
+        description: input.description || null,
+        options: input.options ? JSON.stringify(input.options) : null,
+        isRequired: input.isRequired ?? false,
+        isVisible: input.isVisible ?? true,
+      });
       return { success: true };
     }),
     updateCustomField: protectedProcedure.input(z.object({
@@ -1889,6 +1914,14 @@ export const appRouter = router({
       fieldName: z.string().optional(),
       fieldValue: z.string().optional(),
       sortOrder: z.number().optional(),
+      // Extended fields
+      label: z.string().optional(),
+      fieldType: z.string().optional(),
+      placeholder: z.string().optional(),
+      description: z.string().optional(),
+      options: z.array(z.string()).optional(),
+      isRequired: z.boolean().optional(),
+      isVisible: z.boolean().optional(),
     })).mutation(async ({ input, ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
       const { productCustomFields } = await import("../drizzle/schema");
@@ -1896,8 +1929,10 @@ export const appRouter = router({
       const { eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
-      const { id, ...updates } = input;
-      await drizzleDb.update(productCustomFields).set(updates as any).where(eq(productCustomFields.id, id));
+      const { id, options, ...rest } = input;
+      const updates: any = { ...rest };
+      if (options !== undefined) updates.options = JSON.stringify(options);
+      await drizzleDb.update(productCustomFields).set(updates).where(eq(productCustomFields.id, id));
       return { success: true };
     }),
     deleteCustomField: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
@@ -2767,6 +2802,43 @@ export const appRouter = router({
         await db.upsertUserSettings(ctx.user.id, input);
         return { success: true };
       }),
+    // Lấy thông tin hệ thống cho Dashboard (license, version, update)
+    getSystemInfo: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { getCurrentLicense } = await import("./license");
+      const licenseInfo = getCurrentLicense();
+      const settings = await db.getUserSettings(ctx.user.id);
+      const APP_VERSION = process.env.APP_VERSION || "1.0.0";
+      const licenseKey = process.env.LICENSE_KEY || null;
+      // Check for updates (nếu có UPDATE_CHECK_URL)
+      let latestVersion: string | null = null;
+      let updateAvailable = false;
+      const updateCheckUrl = process.env.UPDATE_CHECK_URL;
+      if (updateCheckUrl) {
+        try {
+          const resp = await fetch(`${updateCheckUrl}/api/latest-version`, { signal: AbortSignal.timeout(5000) });
+          if (resp.ok) {
+            const data = await resp.json() as { version?: string };
+            latestVersion = data.version || null;
+            if (latestVersion && latestVersion !== APP_VERSION) updateAvailable = true;
+          }
+        } catch { /* ignore */ }
+      }
+      return {
+        appVersion: APP_VERSION,
+        appName: "Invoice Prime",
+        licenseKey: licenseKey ? `${licenseKey.substring(0, 8)}...` : null,
+        licenseValid: licenseInfo?.valid ?? true,
+        licensePlan: licenseInfo?.plan ?? "development",
+        licenseExpiresAt: licenseInfo?.expiresAt ?? null,
+        licenseMessage: licenseInfo?.message ?? null,
+        autoUpdate: settings?.autoUpdate ?? false,
+        updateAvailable,
+        latestVersion,
+        maintenanceMode: settings?.maintenanceMode ?? false,
+      };
+    }),
+
     // Upload banner for thank-you page
     uploadThankYouBanner: protectedProcedure
       .input(z.object({

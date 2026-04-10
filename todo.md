@@ -1815,26 +1815,65 @@ todo updated
 ## Session 2026-04-10 - License, ProductConfig, Announcements, Dark Mode
 
 ### License Key System (thêm vào src)
-- [ ] Schema: thêm bảng licenseKeys (key, domain, plan, expiresAt, isActive, activatedAt)
-- [ ] Backend: middleware kiểm tra LICENSE_KEY env khi server khởi động
-- [ ] Backend: endpoint /api/license/verify để validate key với server
-- [ ] Frontend: hiển thị thông báo license hết hạn/không hợp lệ
+- [x] Schema: thêm bảng licenseKeys (key, domain, plan, expiresAt, isActive, activatedAt)
+- [x] Backend: middleware kiểm tra LICENSE_KEY env khi server khởi động (server/license.ts)
+- [x] Backend: endpoint /api/license/status để validate key
+- [x] Frontend: hiển thị thông báo license hết hạn/không hợp lệ
 
 ### Trang cấu hình sản phẩm riêng
-- [ ] Tạo ProductConfig.tsx - trang riêng thay thế popup cấu hình
-- [ ] Route /products/:id/config trong App.tsx
-- [ ] Thêm nút "Cấu hình" trong ProductDetail/ProductList dẫn đến trang mới
-- [ ] Bỏ popup cấu hình sản phẩm cũ
+- [x] Tạo ProductConfig.tsx - trang riêng thay thế popup cấu hình
+- [x] Route /products/:id/config trong App.tsx
+- [x] Thêm nút "Cấu hình" (⚙️) trong Products.tsx dẫn đến trang mới
+- [ ] Bỏ tab Packages/CustomFields khỏi dialog Products.tsx (giữ lại chỉ Thông tin cơ bản)
 
 ### Announcements - chọn trang hiển thị
-- [ ] Schema: thêm cột displayPages (JSON array) vào announcements table
-- [ ] Backend: cập nhật create/update announcement để lưu displayPages
-- [ ] Frontend: thêm checkbox chọn trang trong form tạo/sửa announcement
-- [ ] Client: filter announcement theo trang hiện tại (pathname)
+- [x] Schema: thêm cột targetPages (JSON array) vào announcements và banners table
+- [x] Backend: cập nhật create/update announcement để lưu targetPages
+- [x] Frontend: thêm checkbox chọn trang trong form tạo/sửa announcement
+- [ ] Client: filter announcement theo trang hiện tại (pathname) trong AnnouncementDisplay
 
 ### Redesign Dark Mode + màu sắc động
-- [ ] index.css: định nghĩa đầy đủ CSS variables cho light/dark mode
-- [ ] Thay toàn bộ hardcode màu trong client pages bằng CSS variables
-- [ ] GlobalBrandApplier: áp dụng themeColor từ settings vào --primary
-- [ ] Client pages: thêm dark: classes cho các component chính
-- [ ] ThemeContext: persist theme preference vào localStorage
+- [x] index.css: định nghĩa đầy đủ CSS variables cho light/dark mode + dark mode overrides
+- [x] GlobalBrandApplier: áp dụng themeColor từ settings vào --brand-primary, --brand-secondary
+- [x] Dark mode CSS overrides cho client pages (bg-white, bg-gray-*, text-gray-*, inputs)
+- [x] Dark mode CSS overrides cho admin panel (AdminKit classes)
+- [x] ThemeContext: persist theme preference vào localStorage (switchable=true)
+
+## Session 2026-04-10 - Dashboard License Banner, Page Builder, Product Management
+
+### Dashboard License Banner & System Update
+- [ ] Dashboard: thêm LicenseBanner component (tên app + version + license key info + ẩn 24h)
+- [ ] Dashboard: thêm SystemUpdateWidget (kiểm tra version mới, cập nhật tự động bật/tắt)
+- [ ] Dashboard: thêm AdminBroadcastBanner (thông báo từ chủ src)
+- [ ] Backend: procedure getSystemInfo (version, licenseStatus, updateAvailable)
+- [ ] Settings: thêm toggle "Cập nhật tự động" trong tab Chung
+
+### ThankYou & 404 Page Builder
+- [ ] ThankYouCustom: redesign thành page builder chuyên nghiệp (drag-drop sections)
+- [ ] ThankYouCustom: live preview full-screen trong iframe
+- [ ] ThankYouCustom: hỗ trợ custom HTML/CSS code
+- [ ] Custom404Admin: redesign thành page builder chuyên nghiệp
+- [ ] Custom404Admin: live preview full-screen trong iframe
+- [ ] Custom404Admin: hỗ trợ custom HTML/CSS code
+
+### Product Management - Tách 4 trang riêng
+- [ ] ProductEdit.tsx: trang sửa thông tin sản phẩm (tên, mô tả, giá, ảnh, danh mục, tags)
+- [ ] ProductPackages.tsx: trang quản lý gói sản phẩm (CRUD gói, kho hàng)
+- [ ] ProductCustomFields.tsx: trang quản lý trường tùy chỉnh
+- [ ] ProductConfig.tsx: redesign lại đẹp hơn (cấu hình kho, hiển thị, SEO)
+- [ ] Products.tsx: bỏ dialog cũ, thêm nút dẫn đến 4 trang riêng
+- [ ] Menu sidebar: thêm submenu cho Products
+
+## Checkpoint 2026-04-10 - Dashboard Banner, Page Builder, Product Split Pages
+- [x] Dashboard: LicenseBanner component (version, license key, ẩn 24h, thông báo admin)
+- [x] Dashboard: SystemUpdateWidget (kiểm tra version, cập nhật tự động toggle)
+- [x] Dashboard: AdminBroadcastBanner (thông báo từ chủ src)
+- [x] ThankYouCustom: redesign page builder chuyên nghiệp (templates, live preview, custom HTML/CSS)
+- [x] Custom404Admin: redesign page builder chuyên nghiệp (templates, live preview, custom HTML/CSS)
+- [x] ProductEdit.tsx: trang sửa thông tin sản phẩm riêng (tên, mô tả, ảnh, danh mục, tags)
+- [x] ProductPackages.tsx: trang quản lý gói sản phẩm riêng (CRUD đầy đủ, multi-price)
+- [x] ProductFields.tsx: trang quản lý trường tùy chỉnh riêng (text/select/checkbox/date)
+- [x] Products.tsx: cập nhật nút action dẫn đến 3 trang riêng (edit/packages/fields)
+- [x] App.tsx: thêm routes /products/:id/edit, /packages, /fields
+- [x] DB schema: mở rộng productCustomFields với label/fieldType/placeholder/options/isRequired/isVisible
+- [x] Server routers: cập nhật createCustomField/updateCustomField/getCustomFields với schema mới

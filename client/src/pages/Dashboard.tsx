@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
+import LicenseBanner from "@/components/LicenseBanner";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -78,6 +79,9 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5 p-1">
+
+        {/* ── License Banner ── */}
+        <LicenseBanner />
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between">

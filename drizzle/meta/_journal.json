@@ -260,6 +260,13 @@
       "when": 1775859900405,
       "tag": "0036_military_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1775861289643,
+      "tag": "0037_grey_shooting_star",
+      "breakpoints": true
     }
   ]
 }

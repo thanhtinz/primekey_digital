@@ -392,10 +392,13 @@ export default function Products() {
                                 <Button variant="ghost" size="sm" onClick={() => toggleFeatured.mutate({ id: product.id, isFeatured: !(product as any).isFeatured })} className={`h-8 w-8 p-0 ${(product as any).isFeatured ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-500'}`} title={(product as any).isFeatured ? 'Bỏ nổi bật' : 'Đánh dấu nổi bật'}>
                                   <Star className={`h-4 w-4 ${(product as any).isFeatured ? 'fill-yellow-500' : ''}`} />
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => navigate(`/products/${product.id}/config`)} className="h-8 w-8 p-0 text-gray-500 hover:text-purple-600" title="Cấu hình sản phẩm">
-                                  <Settings2 className="h-4 w-4" />
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/products/${product.id}/packages`)} className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600" title="Quản lý gói">
+                                  <i className="fa-solid fa-layer-group text-xs" />
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleEdit(product)} className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600" title="Sửa">
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/products/${product.id}/fields`)} className="h-8 w-8 p-0 text-gray-500 hover:text-purple-600" title="Trường tùy chỉnh">
+                                  <i className="fa-solid fa-sliders text-xs" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/products/${product.id}/edit`)} className="h-8 w-8 p-0 text-gray-500 hover:text-green-600" title="Chỉnh sửa thông tin">
                                   <Edit className="h-4 w-4" />
                                 </Button>
                                 <Button variant="ghost" size="sm" onClick={() => handleDelete(product.id)} disabled={deletingId === product.id} className="h-8 w-8 p-0 text-gray-500 hover:text-red-600" title="Xóa">

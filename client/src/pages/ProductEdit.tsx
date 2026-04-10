@@ -1,0 +1,287 @@
+import { useState, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import DashboardLayout from "@/components/DashboardLayoutCustom";
+import { trpc } from "@/lib/trpc";
+
+export default function ProductEdit() {
+  const [, params] = useRoute("/products/:id/edit");
+  const [, navigate] = useLocation();
+  const productId = params ? parseInt(params.id) : null;
+
+  const { data: products = [], isLoading } = trpc.products.list.useQuery();
+  const { data: categories = [] } = trpc.categories.listProtected.useQuery();
+  const { data: allTags = [] } = trpc.productTags.list.useQuery();
+  const utils = trpc.useUtils();
+
+  const product = (products as any[]).find(p => p.id === productId);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    imageUrl: "",
+    notes: "",
+    categoryId: null as number | null,
+    inventoryType: "manual" as "manual" | "warehouse",
+  });
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const parentCategories = (categories as any[]).filter((c: any) => !c.parentId);
+  const getChildren = (parentId: number) => (categories as any[]).filter((c: any) => c.parentId === parentId);
+
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || "",
+        description: product.description || "",
+        imageUrl: product.imageUrl || "",
+        notes: product.notes || "",
+        categoryId: product.categoryId || null,
+        inventoryType: (product as any).inventoryType || "manual",
+      });
+      setSelectedTagIds((product.tags || []).map((t: any) => t.id));
+    }
+  }, [product?.id]);
+
+  const updateProduct = trpc.products.update.useMutation({
+    onSuccess: () => {
+      toast.success("Cập nhật sản phẩm thành công!");
+      utils.products.list.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Lỗi khi cập nhật"),
+  });
+
+  const assignTags = trpc.productTags.assignToProduct.useMutation({
+    onSuccess: () => utils.products.list.invalidate(),
+    onError: (err: any) => toast.error("Lỗi gán tag: " + (err.message || "")),
+  });
+
+  const uploadImageMut = trpc.products.uploadImage.useMutation({
+    onSuccess: (data) => {
+      setFormData(prev => ({ ...prev, imageUrl: data.url }));
+      toast.success("Upload ảnh thành công!");
+      setUploading(false);
+    },
+    onError: (err) => { toast.error("Lỗi upload: " + (err.message || "")); setUploading(false); },
+  });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Chỉ hỗ trợ file ảnh"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Ảnh tối đa 5MB"); return; }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      uploadImageMut.mutate({ dataUrl, fileName: file.name });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    if (!productId) return;
+    if (!formData.name.trim()) { toast.error("Vui lòng nhập tên sản phẩm"); return; }
+    await updateProduct.mutateAsync({
+      id: productId,
+      name: formData.name,
+      description: formData.description || undefined,
+      categoryId: formData.categoryId,
+      imageUrl: formData.imageUrl || undefined,
+      notes: formData.notes || undefined,
+      inventoryType: formData.inventoryType,
+    });
+    await assignTags.mutateAsync({ productId, tagIds: selectedTagIds });
+  };
+
+  const toggleTag = (tagId: number) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <i className="fa-solid fa-spinner fa-spin text-blue-500 text-2xl" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!product) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-2xl mx-auto py-16 text-center">
+          <i className="fa-solid fa-box-open text-gray-300 text-5xl mb-4 block" />
+          <h2 className="text-xl font-semibold text-gray-700">Không tìm thấy sản phẩm</h2>
+          <Button className="mt-4" onClick={() => navigate("/products")}>
+            <i className="fa-solid fa-arrow-left mr-2" /> Quay lại
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-3xl mx-auto space-y-6 p-4 sm:p-6">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <button onClick={() => navigate("/products")} className="hover:text-blue-600 transition-colors">
+            <i className="fa-solid fa-box mr-1" /> Sản Phẩm
+          </button>
+          <i className="fa-solid fa-chevron-right text-xs" />
+          <span className="text-gray-700 font-medium truncate max-w-[200px]">{product.name}</span>
+          <i className="fa-solid fa-chevron-right text-xs" />
+          <span className="text-gray-700 font-medium">Chỉnh Sửa</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {formData.imageUrl ? (
+              <img src={formData.imageUrl} alt={formData.name} className="w-12 h-12 rounded-xl object-cover border border-gray-200" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                <i className="fa-solid fa-box text-blue-500 text-xl" />
+              </div>
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{product.name}</h1>
+              <p className="text-sm text-gray-500">Chỉnh sửa thông tin cơ bản</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/packages")} className="text-xs gap-1.5">
+              <i className="fa-solid fa-layer-group" /> Gói
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/products/" + productId + "/fields")} className="text-xs gap-1.5">
+              <i className="fa-solid fa-sliders" /> Trường
+            </Button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <i className="fa-solid fa-circle-info text-blue-500" /> Thông Tin Cơ Bản
+            </h2>
+          </div>
+          <div className="p-6 space-y-5">
+            <div>
+              <Label className="text-sm font-medium">Ảnh Sản Phẩm</Label>
+              <div className="mt-2 flex items-start gap-4">
+                {formData.imageUrl ? (
+                  <div className="relative">
+                    <img src={formData.imageUrl} alt="preview" className="w-24 h-24 rounded-xl object-cover border border-gray-200" />
+                    <button onClick={() => setFormData(p => ({ ...p, imageUrl: "" }))}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs">
+                      <i className="fa-solid fa-times" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <i className="fa-solid fa-image text-gray-400 text-2xl" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <label className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors w-fit text-sm text-gray-700">
+                      {uploading ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-cloud-arrow-up" />}
+                      {uploading ? "Đang tải..." : "Tải ảnh lên"}
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                  </label>
+                  <p className="text-xs text-gray-400 mt-1">PNG, JPG tối đa 5MB</p>
+                  <Input placeholder="Hoặc nhập URL ảnh..." value={formData.imageUrl} onChange={e => setFormData(p => ({ ...p, imageUrl: e.target.value }))} className="text-xs h-8 mt-2" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Tên Sản Phẩm <span className="text-red-500">*</span></Label>
+              <Input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="Nhập tên sản phẩm..." className="mt-1.5" />
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Mô Tả</Label>
+              <Textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Mô tả sản phẩm..." rows={4} className="mt-1.5 resize-none" />
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Danh Mục</Label>
+              <select value={formData.categoryId || ""} onChange={e => setFormData(p => ({ ...p, categoryId: e.target.value ? parseInt(e.target.value) : null }))}
+                className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">-- Không có danh mục --</option>
+                {parentCategories.map((cat: any) => (
+                  <optgroup key={cat.id} label={cat.name}>
+                    <option value={cat.id}>{cat.name}</option>
+                    {getChildren(cat.id).map((child: any) => (
+                      <option key={child.id} value={child.id}>  ↳ {child.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Loại Kho Hàng</Label>
+              <div className="mt-1.5 flex gap-3">
+                {["manual", "warehouse"].map(type => (
+                  <label key={type} className={"flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all " + (formData.inventoryType === type ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300")}>
+                    <input type="radio" name="inventoryType" value={type} checked={formData.inventoryType === type} onChange={() => setFormData(p => ({ ...p, inventoryType: type as any }))} className="hidden" />
+                    <i className={"fa-solid text-lg " + (type === "manual" ? "fa-hand-pointer" : "fa-warehouse") + " " + (formData.inventoryType === type ? "text-blue-500" : "text-gray-400")} />
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{type === "manual" ? "Thủ Công" : "Kho Hàng"}</p>
+                      <p className="text-xs text-gray-500">{type === "manual" ? "Nhập kho thủ công" : "Quản lý tự động"}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Ghi Chú Nội Bộ</Label>
+              <Textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Ghi chú nội bộ (không hiển thị cho khách)..." rows={2} className="mt-1.5 resize-none" />
+            </div>
+
+            {(allTags as any[]).length > 0 && (
+              <div>
+                <Label className="text-sm font-medium">Nhãn (Tags)</Label>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  {(allTags as any[]).map((tag: any) => (
+                    <button key={tag.id} onClick={() => toggleTag(tag.id)}
+                      className={"px-3 py-1 rounded-full text-xs font-medium border transition-all " + (selectedTagIds.includes(tag.id) ? "bg-blue-100 border-blue-300 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300")}>
+                      {selectedTagIds.includes(tag.id) && <i className="fa-solid fa-check mr-1 text-xs" />}
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={() => navigate("/products")}>
+            <i className="fa-solid fa-arrow-left mr-2" /> Quay lại
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate("/products/" + productId + "/packages")} className="gap-1.5">
+              <i className="fa-solid fa-layer-group" /> Quản lý gói
+            </Button>
+            <Button onClick={handleSave} disabled={updateProduct.isPending} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5">
+              {updateProduct.isPending ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-floppy-disk" />}
+              Lưu thay đổi
+            </Button>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

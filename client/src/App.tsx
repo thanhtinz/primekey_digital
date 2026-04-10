@@ -19,6 +19,9 @@ const Customers = lazy(() => import("./pages/Customers"));
 const CustomerDetail = lazy(() => import("./pages/CustomerDetail"));
 const Products = lazy(() => import("./pages/Products"));
 const ProductConfig = lazy(() => import("./pages/ProductConfig"));
+const ProductEdit = lazy(() => import("./pages/ProductEdit"));
+const ProductPackages = lazy(() => import("./pages/ProductPackages"));
+const ProductFields = lazy(() => import("./pages/ProductFields"));
 const InvoiceTemplates = lazy(() => import("./pages/InvoiceTemplates"));
 const EditInvoiceTemplate = lazy(() => import("./pages/EditInvoiceTemplate"));
 const EditInvoice = lazy(() => import("./pages/EditInvoice"));
@@ -252,6 +255,9 @@ function Router() {
         <Route path="/customers" component={() => isAdmin ? <Customers /> : <ForbiddenPage />} />
         <Route path="/products" component={() => isAdmin ? <Products /> : <ForbiddenPage />} />
         <Route path="/products/:id/config" component={() => isAdmin ? <ProductConfig /> : <ForbiddenPage />} />
+        <Route path="/products/:id/edit" component={() => isAdmin ? <ProductEdit /> : <ForbiddenPage />} />
+        <Route path="/products/:id/packages" component={() => isAdmin ? <ProductPackages /> : <ForbiddenPage />} />
+        <Route path="/products/:id/fields" component={() => isAdmin ? <ProductFields /> : <ForbiddenPage />} />
         <Route path="/templates/:id/edit" component={() => isAdmin ? <EditInvoiceTemplate /> : <ForbiddenPage />} />
         <Route path="/templates" component={() => isAdmin ? <InvoiceTemplates /> : <ForbiddenPage />} />
         <Route path="/reports" component={() => isAdmin ? <Reports /> : <ForbiddenPage />} />

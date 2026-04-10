@@ -770,6 +770,14 @@ export const productCustomFields = mysqlTable("product_custom_fields", {
   fieldName: varchar("fieldName", { length: 255 }).notNull(),
   fieldValue: text("fieldValue"),
   sortOrder: int("sortOrder").default(0),
+  // Extended fields for advanced custom field management
+  label: varchar("label", { length: 255 }),
+  fieldType: varchar("fieldType", { length: 50 }).default("text"),
+  placeholder: varchar("placeholder", { length: 500 }),
+  description: text("description"),
+  options: text("options"), // JSON array of options for select type
+  isRequired: boolean("isRequired").default(false),
+  isVisible: boolean("isVisible").default(true),
 });
 export type ProductCustomField = typeof productCustomFields.$inferSelect;
 
