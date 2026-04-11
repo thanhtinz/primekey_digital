@@ -213,6 +213,7 @@ export default function InventoryAdmin() {
   // ── Dialogs ──────────────────────────────────────────────────────────────────
   const [viewItem, setViewItem] = useState<any>(null);
   const [editItem, setEditItem] = useState<any>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   // ── Data ─────────────────────────────────────────────────────────────────────
   const { data: stats, refetch: refetchStats } = trpc.inventory.stats.useQuery();
@@ -230,8 +231,11 @@ export default function InventoryAdmin() {
   // Products & packages for filter dropdowns
   const { data: productsData } = trpc.products.list.useQuery();
   const products = (productsData ?? []) as any[];
-
-  // ── Mutations ────────────────────────────────────────────────────────────────
+  // ── Mutations ──────────────────────────────────────────────────────────────────
+  const addMutation = trpc.inventory.add.useMutation({
+    onSuccess: ({ added }) => { toast.success(`Đã nhập ${added} mục vào kho`); setShowAddDialog(false); refetch(); refetchStats(); },
+    onError: (e) => toast.error(e.message),
+  });
   const deleteMutation = trpc.inventory.delete.useMutation({
     onSuccess: () => { toast.success("Đã xóa"); refetch(); refetchStats(); },
     onError: (e) => toast.error(e.message),
@@ -313,21 +317,32 @@ export default function InventoryAdmin() {
               <p className="text-xs text-gray-500">Quản lý toàn bộ mã kho, tài khoản và giá trị sản phẩm</p>
             </div>
           </div>
-          {someSelected && (
+          <div className="flex items-center gap-2">
             <Button
-              variant="destructive"
               size="sm"
-              onClick={() => {
-                if (confirm(`Xóa ${selected.size} mục đã chọn?`)) {
-                  bulkDeleteMutation.mutate({ ids: Array.from(selected) });
-                }
-              }}
-              disabled={bulkDeleteMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+              onClick={() => setShowAddDialog(true)}
             >
-              <Trash2 className="h-4 w-4 mr-1.5" />
-              Xóa {selected.size} mục
+              <Package className="h-4 w-4" />
+              <span className="hidden sm:inline">Nhập kho</span>
+              <span className="sm:hidden">+</span>
             </Button>
-          )}
+            {someSelected && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (confirm(`Xóa ${selected.size} mục đã chọn?`)) {
+                    bulkDeleteMutation.mutate({ ids: Array.from(selected) });
+                  }
+                }}
+                disabled={bulkDeleteMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                Xóa {selected.size} mục
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* ── Stats Cards ── */}
@@ -634,6 +649,117 @@ export default function InventoryAdmin() {
           onSaved={() => { refetch(); refetchStats(); }}
         />
       )}
+      {/* ── Add Dialog ── */}
+      <AddInventoryDialog
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        products={products}
+        onAdd={(productId, packageId, items) => addMutation.mutate({ productId, packageId, items })}
+        isPending={addMutation.isPending}
+      />
     </DashboardLayoutCustom>
+  );
+}
+// ─── AddInventoryDialog ──────────────────────────────────────────────────────────────────
+function AddInventoryDialog({
+  open, onClose, products, onAdd, isPending,
+}: {
+  open: boolean;
+  onClose: () => void;
+  products: any[];
+  onAdd: (productId: number, packageId: number | undefined, items: string[]) => void;
+  isPending: boolean;
+}) {
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedPackageId, setSelectedPackageId] = useState<string>("");
+  const [rawText, setRawText] = useState("");
+
+  const selectedProduct = products.find((p) => String(p.id) === selectedProductId);
+  const packages = selectedProduct?.packages ?? [];
+
+  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+
+  const handleSubmit = () => {
+    if (!selectedProductId) { toast.error("Vui lòng chọn sản phẩm"); return; }
+    if (lines.length === 0) { toast.error("Chưa có dữ liệu nào"); return; }
+    onAdd(
+      Number(selectedProductId),
+      selectedPackageId ? Number(selectedPackageId) : undefined,
+      lines,
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-blue-600" />
+            Nhập kho hàng
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          {/* Product select */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Sản phẩm <span className="text-red-500">*</span></Label>
+            <Select value={selectedProductId} onValueChange={(v) => { setSelectedProductId(v); setSelectedPackageId(""); }}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Chọn sản phẩm..." />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Package select */}
+          {packages.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Gói sản phẩm</Label>
+              <Select value={selectedPackageId} onValueChange={setSelectedPackageId}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Chọn gói (tùy chọn)..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {packages.map((pkg: any) => (
+                    <SelectItem key={pkg.id} value={String(pkg.id)}>{pkg.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* Bulk input */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">
+              Dữ liệu kho hàng
+              {lines.length > 0 && (
+                <span className="ml-2 text-xs font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  {lines.length} mục
+                </span>
+              )}
+            </Label>
+            <Textarea
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              rows={8}
+              className="font-mono text-xs resize-none"
+              placeholder={`Mỗi dòng là một mục kho hàng.\nVí dụ:\nTài khoản: abc@gmail.com | Mật khẩu: 123456\nTài khoản: xyz@gmail.com | Mật khẩu: 789012`}
+            />
+            <p className="text-xs text-gray-400">Mỗi dòng = 1 mục kho. Dòng trống sẽ bị bỏ qua.</p>
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={isPending}>Hủy</Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isPending || !selectedProductId || lines.length === 0}
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+          >
+            {isPending ? "Đang nhập..." : `Nhập ${lines.length > 0 ? lines.length + " mục" : "kho"}`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
