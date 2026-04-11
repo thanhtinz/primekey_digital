@@ -145,6 +145,8 @@ export default function LandingPage() {
   const { data: productsRaw } = trpc.products.listPublic.useQuery(undefined, { staleTime: 60_000, retry: false });
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
   const { data: bannersData = [] } = trpc.banner.getPublic.useQuery(undefined, { staleTime: 60_000 });
+  const { data: sideBannersRaw } = trpc.sideBanners.getPublic.useQuery(undefined, { staleTime: 60_000 });
+  const { data: miniBannersData = [] } = trpc.miniBanners.getPublic.useQuery(undefined, { staleTime: 60_000 });
   const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
   const { isEnabled } = useFeatureFlags();
 
@@ -153,6 +155,8 @@ export default function LandingPage() {
 
   const products: any[] = Array.isArray(productsRaw) ? productsRaw : (productsRaw as any)?.items ?? [];
   const categories: any[] = (categoriesData as any) ?? [];
+  const sideBanners: any[] = (sideBannersRaw as any) ?? [];
+  const miniBanners: any[] = (miniBannersData as any[]) ?? [];
 
   const navigate = (href: string) => { setLocation(href); };
 
@@ -210,20 +214,84 @@ export default function LandingPage() {
       <ClientHeader />
       {/* AnnouncementBanner is rendered globally in App.tsx */}
       <div className="pt-16 lg:pt-24 flex-1">
-        {/* ===== IMAGE BANNER CAROUSEL ===== */}
+        {/* ===== BANNER SECTION ===== */}
         {(bannersData as any[]).length > 0 && (
-          <div className="mx-4 mt-3 mb-2 relative overflow-hidden rounded-2xl" style={{maxWidth: "100%"}}>
+          <div className="mt-3 mb-2 px-4">
             <div className="max-w-7xl mx-auto">
-              <div className="relative rounded-2xl overflow-hidden" style={{height: "180px"}}>
+              {/* PC layout: side banner trái + carousel giữa + side banner phải */}
+              <div className="hidden lg:flex gap-3 items-stretch" style={{ minHeight: "240px" }}>
+                {/* Side banner trái */}
+                {sideBanners[0] ? (
+                  <a href={sideBanners[0].linkUrl || undefined}
+                    className="flex-shrink-0 w-[200px] rounded-2xl overflow-hidden block relative group">
+                    <img src={sideBanners[0].imageUrl} alt={sideBanners[0].title || ""}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      style={{ minHeight: "240px" }} />
+                    {sideBanners[0].title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                        <p className="text-white font-bold text-xs leading-tight">{sideBanners[0].title}</p>
+                        <span className="mt-1 inline-flex items-center gap-1 text-[10px] text-white/90 font-semibold">XEM NGAY <ChevronRight className="w-3 h-3" /></span>
+                      </div>
+                    )}
+                  </a>
+                ) : <div className="flex-shrink-0 w-[200px]" />}
+                {/* Main carousel giữa */}
+                <div className="flex-1 relative rounded-2xl overflow-hidden" style={{ minHeight: "240px" }}>
+                  {(bannersData as any[]).map((banner: any, idx: number) => (
+                    <a key={banner.id} href={banner.linkUrl || undefined}
+                      className={"absolute inset-0 transition-opacity duration-700 " + (idx === currentBannerIdx ? "opacity-100" : "opacity-0 pointer-events-none")}>
+                      <img src={banner.imageUrl} alt={banner.title || "Banner"} className="w-full h-full object-cover" />
+                      {banner.title && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                          <p className="text-white font-bold text-base">{banner.title}</p>
+                          {banner.subtitle && <p className="text-white/80 text-sm">{banner.subtitle}</p>}
+                        </div>
+                      )}
+                    </a>
+                  ))}
+                  {(bannersData as any[]).length > 1 && (
+                    <>
+                      <button onClick={() => setCurrentBannerIdx((currentBannerIdx - 1 + (bannersData as any[]).length) % (bannersData as any[]).length)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 transition-all shadow-md">
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button onClick={() => setCurrentBannerIdx((currentBannerIdx + 1) % (bannersData as any[]).length)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 transition-all shadow-md">
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        {(bannersData as any[]).map((_: any, idx: number) => (
+                          <button key={idx} onClick={() => setCurrentBannerIdx(idx)}
+                            className={"w-2 h-2 rounded-full transition-all " + (idx === currentBannerIdx ? "bg-white w-4" : "bg-white/50")} />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Side banner phải */}
+                {sideBanners[1] ? (
+                  <a href={sideBanners[1].linkUrl || undefined}
+                    className="flex-shrink-0 w-[200px] rounded-2xl overflow-hidden block relative group">
+                    <img src={sideBanners[1].imageUrl} alt={sideBanners[1].title || ""}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      style={{ minHeight: "240px" }} />
+                    {sideBanners[1].title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                        <p className="text-white font-bold text-xs leading-tight">{sideBanners[1].title}</p>
+                        <span className="mt-1 inline-flex items-center gap-1 text-[10px] text-white/90 font-semibold">XEM NGAY <ChevronRight className="w-3 h-3" /></span>
+                      </div>
+                    )}
+                  </a>
+                ) : <div className="flex-shrink-0 w-[200px]" />}
+              </div>
+              {/* Mobile layout: chỉ carousel */}
+              <div className="lg:hidden relative rounded-2xl overflow-hidden" style={{ height: "180px" }}>
                 {(bannersData as any[]).map((banner: any, idx: number) => (
-                  <a
-                    key={banner.id}
-                    href={banner.linkUrl || undefined}
-                    className={"absolute inset-0 transition-opacity duration-700 " + (idx === currentBannerIdx ? "opacity-100" : "opacity-0 pointer-events-none")}
-                  >
+                  <a key={banner.id} href={banner.linkUrl || undefined}
+                    className={"absolute inset-0 transition-opacity duration-700 " + (idx === currentBannerIdx ? "opacity-100" : "opacity-0 pointer-events-none")}>
                     <img src={banner.imageUrl} alt={banner.title || "Banner"} className="w-full h-full object-cover" />
                     {banner.title && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
                         <p className="text-white font-bold text-sm">{banner.title}</p>
                         {banner.subtitle && <p className="text-white/80 text-xs">{banner.subtitle}</p>}
                       </div>
@@ -232,30 +300,43 @@ export default function LandingPage() {
                 ))}
                 {(bannersData as any[]).length > 1 && (
                   <>
-                    <button
-                      onClick={() => setCurrentBannerIdx((currentBannerIdx - 1 + (bannersData as any[]).length) % (bannersData as any[]).length)}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 transition-all shadow-md"
-                      title="Banner trước"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
+                    <button onClick={() => setCurrentBannerIdx((currentBannerIdx - 1 + (bannersData as any[]).length) % (bannersData as any[]).length)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/70 rounded-full p-1.5 shadow">
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => setCurrentBannerIdx((currentBannerIdx + 1) % (bannersData as any[]).length)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 transition-all shadow-md"
-                      title="Banner tiếp theo"
-                    >
-                      <ChevronRight className="w-5 h-5" />
+                    <button onClick={() => setCurrentBannerIdx((currentBannerIdx + 1) % (bannersData as any[]).length)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/70 rounded-full p-1.5 shadow">
+                      <ChevronRight className="w-4 h-4" />
                     </button>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                      {(bannersData as any[]).map((_: any, idx: number) => (
+                        <button key={idx} onClick={() => setCurrentBannerIdx(idx)}
+                          className={"w-1.5 h-1.5 rounded-full transition-all " + (idx === currentBannerIdx ? "bg-white w-3" : "bg-white/50")} />
+                      ))}
+                    </div>
                   </>
                 )}
-                {(bannersData as any[]).length > 1 && (
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {(bannersData as any[]).map((_: any, idx: number) => (
-                      <button key={idx} onClick={() => setCurrentBannerIdx(idx)}
-                        className={"w-2 h-2 rounded-full transition-all " + (idx === currentBannerIdx ? "bg-white w-4" : "bg-white/50")} />
-                    ))}
-                  </div>
-                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ===== MINI BANNERS (4 ô dưới carousel) ===== */}
+        {miniBanners.length > 0 && (
+          <div className="mt-2 mb-2 px-4">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                {miniBanners.slice(0, 4).map((mb: any) => (
+                  <a key={mb.id} href={mb.linkUrl || undefined}
+                    className="relative rounded-xl overflow-hidden block group" style={{ height: "90px" }}>
+                    <img src={mb.imageUrl} alt={mb.title || ""}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    {mb.title && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
+                        <p className="text-white font-bold text-xs leading-tight">{mb.title}</p>
+                      </div>
+                    )}
+                  </a>
+                ))}
               </div>
             </div>
           </div>

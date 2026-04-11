@@ -172,6 +172,32 @@ export default function AnnouncementManagement() {
   const [addingBanner, setAddingBanner] = useState(false);
   const [newBanner, setNewBanner] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0 });
 
+  // Side Banners
+  const { data: sideBanners = [], refetch: refetchSideBanners } = trpc.sideBanners.list.useQuery();
+  const upsertSideBannerMutation = trpc.sideBanners.upsert.useMutation({
+    onSuccess: () => { toast.success("Đã lưu side banner"); refetchSideBanners(); setAddingSideBanner(false); setNewSideBanner({ position: "left", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true }); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteSideBannerMutation = trpc.sideBanners.delete.useMutation({
+    onSuccess: () => { toast.success("Đã xóa side banner"); refetchSideBanners(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [newSideBanner, setNewSideBanner] = useState({ position: "left" as "left" | "right", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
+  const [addingSideBanner, setAddingSideBanner] = useState(false);
+
+  // Mini Banners
+  const { data: miniBanners = [], refetch: refetchMiniBanners } = trpc.miniBanners.list.useQuery();
+  const upsertMiniBannerMutation = trpc.miniBanners.upsert.useMutation({
+    onSuccess: () => { toast.success("Đã lưu mini banner"); refetchMiniBanners(); setAddingMiniBanner(false); setNewMiniBanner({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true }); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteMiniBannerMutation = trpc.miniBanners.delete.useMutation({
+    onSuccess: () => { toast.success("Đã xóa mini banner"); refetchMiniBanners(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [newMiniBanner, setNewMiniBanner] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
+  const [addingMiniBanner, setAddingMiniBanner] = useState(false);
+
   // Announcement handlers
   const openCreateAnn = () => { setEditingAnnId(null); setAnnForm(defaultAnnForm); setAnnDialogOpen(true); };
   const openEditAnn = (a: any) => {
@@ -214,11 +240,19 @@ export default function AnnouncementManagement() {
             <Button onClick={openCreateAnn} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
               <Plus className="w-4 h-4" /> Tạo Thông Báo
             </Button>
-          ) : (
+          ) : activeTab === "banners" ? (
             <Button onClick={() => setAddingBanner(true)} disabled={addingBanner} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
               <Plus className="w-4 h-4" /> Thêm Banner
             </Button>
-          )}
+          ) : activeTab === "side-banners" ? (
+            <Button onClick={() => setAddingSideBanner(true)} disabled={addingSideBanner} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
+              <Plus className="w-4 h-4" /> Thêm Side Banner
+            </Button>
+          ) : activeTab === "mini-banners" ? (
+            <Button onClick={() => setAddingMiniBanner(true)} disabled={addingMiniBanner} className="gap-1.5 bg-blue-600 hover:bg-blue-700" size="sm">
+              <Plus className="w-4 h-4" /> Thêm Mini Banner
+            </Button>
+          ) : null}
         </div>
 
         {/* Stats Row */}
@@ -271,6 +305,36 @@ export default function AnnouncementManagement() {
             <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
               activeTab === "banners" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
             }`}>{(banners as any[]).length}</span>
+          </button>
+          <div className="w-px bg-gray-200" />
+          <button
+            onClick={() => setActiveTab("side-banners")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "side-banners"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>Side Banner</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "side-banners" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(sideBanners as any[]).length}</span>
+          </button>
+          <div className="w-px bg-gray-200" />
+          <button
+            onClick={() => setActiveTab("mini-banners")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "mini-banners"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>Mini Banner</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "mini-banners" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(miniBanners as any[]).length}</span>
           </button>
         </div>
 
@@ -436,6 +500,153 @@ export default function AnnouncementManagement() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* ── Side Banners Tab ── */}
+          <TabsContent value="side-banners" className="mt-4 space-y-4">
+            <div className="ak-card p-4">
+              <p className="text-sm text-gray-500 mb-4">ℹ️ Side banner hiển thị hai bên trái/phải của carousel chính trên màn hình PC. Mỗi vị trí chỉ hiển thị 1 banner.</p>
+              {addingSideBanner && (
+                <div className="border-2 border-blue-200 rounded-xl p-4 mb-4 space-y-3">
+                  <h3 className="font-semibold text-gray-900">Side Banner Mới</h3>
+                  <div>
+                    <Label className="text-sm font-medium">Vị trí</Label>
+                    <Select value={newSideBanner.position} onValueChange={v => setNewSideBanner(p => ({ ...p, position: v as "left" | "right" }))}>
+                      <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Bên trái</SelectItem>
+                        <SelectItem value="right">Bên phải</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Ảnh Banner <span className="text-red-500">*</span></Label>
+                    <div className="mt-1.5"><ImageUploadField value={newSideBanner.imageUrl} onChange={url => setNewSideBanner(p => ({ ...p, imageUrl: url }))} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm font-medium">Tiêu đề</Label>
+                      <Input placeholder="Tiêu đề (tùy chọn)" value={newSideBanner.title} onChange={e => setNewSideBanner(p => ({ ...p, title: e.target.value }))} className="mt-1.5" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Link khi click</Label>
+                      <Input placeholder="/catalog hoặc https://..." value={newSideBanner.linkUrl} onChange={e => setNewSideBanner(p => ({ ...p, linkUrl: e.target.value }))} className="mt-1.5" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => upsertSideBannerMutation.mutate(newSideBanner)} disabled={!newSideBanner.imageUrl || upsertSideBannerMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+                      {upsertSideBannerMutation.isPending ? "Đang lưu..." : "Lưu Side Banner"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setAddingSideBanner(false)}>Hủy</Button>
+                  </div>
+                </div>
+              )}
+              {(sideBanners as any[]).length === 0 && !addingSideBanner ? (
+                <div className="ak-empty">
+                  <div className="ak-empty-icon"><ImageIcon className="h-6 w-6" /></div>
+                  <div className="ak-empty-title">Chưa có side banner</div>
+                  <div className="ak-empty-desc">Thêm banner hiển thị hai bên carousel trên PC</div>
+                  <Button onClick={() => setAddingSideBanner(true)} size="sm" className="mt-3 gap-1.5 bg-blue-600 hover:bg-blue-700"><Plus className="w-4 h-4" /> Thêm</Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(sideBanners as any[]).map((sb: any) => (
+                    <div key={sb.id} className={`flex gap-4 items-start p-3 rounded-xl border border-gray-100 hover:bg-gray-50 ${!sb.isActive ? "opacity-60" : ""}`}>
+                      {sb.imageUrl ? (
+                        <img src={sb.imageUrl} alt={sb.title || ""} className="w-24 h-16 object-cover rounded-lg flex-shrink-0 border border-gray-100" onError={e => (e.currentTarget.style.display = "none")} />
+                      ) : (
+                        <div className="w-24 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0"><ImageIcon className="w-6 h-6 text-gray-300" /></div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm text-gray-900">{sb.title || "Side Banner"}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sb.position === "left" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                            {sb.position === "left" ? "Trái" : "Phải"}
+                          </span>
+                        </div>
+                        {sb.linkUrl && <p className="text-xs text-gray-400 truncate">{sb.linkUrl}</p>}
+                        <div className="flex items-center gap-3 mt-2">
+                          <Switch checked={sb.isActive ?? true} onCheckedChange={checked => upsertSideBannerMutation.mutate({ id: sb.id, position: sb.position, imageUrl: sb.imageUrl, title: sb.title, linkUrl: sb.linkUrl, isActive: checked })} />
+                          <span className="text-xs text-gray-500">{sb.isActive ? "Hiển thị" : "Ẩn"}</span>
+                          <button onClick={() => { if (confirm("Xóa side banner này?")) deleteSideBannerMutation.mutate({ id: sb.id }); }}
+                            className="h-7 px-2 flex items-center gap-1 rounded-lg text-xs text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" /> Xóa
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── Mini Banners Tab ── */}
+          <TabsContent value="mini-banners" className="mt-4 space-y-4">
+            <div className="ak-card p-4">
+              <p className="text-sm text-gray-500 mb-4">ℹ️ Mini banner hiển thị dưới carousel chính theo dạng lưới 4 ô. Tối đa 8 banner.</p>
+              {addingMiniBanner && (
+                <div className="border-2 border-blue-200 rounded-xl p-4 mb-4 space-y-3">
+                  <h3 className="font-semibold text-gray-900">Mini Banner Mới</h3>
+                  <div>
+                    <Label className="text-sm font-medium">Ảnh Banner <span className="text-red-500">*</span></Label>
+                    <div className="mt-1.5"><ImageUploadField value={newMiniBanner.imageUrl} onChange={url => setNewMiniBanner(p => ({ ...p, imageUrl: url }))} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm font-medium">Tiêu đề</Label>
+                      <Input placeholder="Tiêu đề (tùy chọn)" value={newMiniBanner.title} onChange={e => setNewMiniBanner(p => ({ ...p, title: e.target.value }))} className="mt-1.5" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Link khi click</Label>
+                      <Input placeholder="/catalog hoặc https://..." value={newMiniBanner.linkUrl} onChange={e => setNewMiniBanner(p => ({ ...p, linkUrl: e.target.value }))} className="mt-1.5" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Thứ tự hiển thị</Label>
+                    <Input type="number" placeholder="0" value={newMiniBanner.sortOrder} onChange={e => setNewMiniBanner(p => ({ ...p, sortOrder: parseInt(e.target.value) || 0 }))} className="mt-1.5 w-24" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => upsertMiniBannerMutation.mutate(newMiniBanner)} disabled={!newMiniBanner.imageUrl || upsertMiniBannerMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+                      {upsertMiniBannerMutation.isPending ? "Đang lưu..." : "Lưu Mini Banner"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setAddingMiniBanner(false)}>Hủy</Button>
+                  </div>
+                </div>
+              )}
+              {(miniBanners as any[]).length === 0 && !addingMiniBanner ? (
+                <div className="ak-empty">
+                  <div className="ak-empty-icon"><ImageIcon className="h-6 w-6" /></div>
+                  <div className="ak-empty-title">Chưa có mini banner</div>
+                  <div className="ak-empty-desc">Thêm mini banner hiển thị dưới carousel theo lưới 4 ô</div>
+                  <Button onClick={() => setAddingMiniBanner(true)} size="sm" className="mt-3 gap-1.5 bg-blue-600 hover:bg-blue-700"><Plus className="w-4 h-4" /> Thêm</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(miniBanners as any[]).map((mb: any) => (
+                    <div key={mb.id} className={`relative rounded-xl overflow-hidden border border-gray-100 group ${!mb.isActive ? "opacity-60" : ""}`}>
+                      {mb.imageUrl ? (
+                        <img src={mb.imageUrl} alt={mb.title || ""} className="w-full h-20 object-cover" onError={e => (e.currentTarget.style.display = "none")} />
+                      ) : (
+                        <div className="w-full h-20 bg-gray-100 flex items-center justify-center"><ImageIcon className="w-6 h-6 text-gray-300" /></div>
+                      )}
+                      {mb.title && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                          <p className="text-white text-xs font-bold leading-tight truncate">{mb.title}</p>
+                        </div>
+                      )}
+                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Switch checked={mb.isActive ?? true} onCheckedChange={checked => upsertMiniBannerMutation.mutate({ id: mb.id, imageUrl: mb.imageUrl, title: mb.title, linkUrl: mb.linkUrl, isActive: checked, sortOrder: mb.sortOrder })} />
+                        <button onClick={() => { if (confirm("Xóa mini banner?")) deleteMiniBannerMutation.mutate({ id: mb.id }); }}
+                          className="h-6 w-6 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

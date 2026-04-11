@@ -4996,6 +4996,10 @@ export const appRouter = router({
           notifyTelegramOrderStatus: customers.notifyTelegramOrderStatus,
           notifyTelegramPromotion: customers.notifyTelegramPromotion,
           notifyTelegramFlashSale: customers.notifyTelegramFlashSale,
+          notifyTelegramOrderPaid: customers.notifyTelegramOrderPaid,
+          notifyTelegramOrderShipping: customers.notifyTelegramOrderShipping,
+          notifyTelegramOrderCompleted: customers.notifyTelegramOrderCompleted,
+          notifyTelegramWarranty: customers.notifyTelegramWarranty,
         }).from(customers).where(eq(customers.email, session.email)).limit(1);
         const avatarUrl = (session as any).avatarUrl || (cust as any)?.avatarUrl || null;
         // If this is an admin session, also return role from users table
@@ -5038,6 +5042,10 @@ export const appRouter = router({
           notifyTelegramOrderStatus: normBool(cust?.notifyTelegramOrderStatus),
           notifyTelegramPromotion: normBool(cust?.notifyTelegramPromotion),
           notifyTelegramFlashSale: normBool(cust?.notifyTelegramFlashSale),
+          notifyTelegramOrderPaid: normBool(cust?.notifyTelegramOrderPaid),
+          notifyTelegramOrderShipping: normBool(cust?.notifyTelegramOrderShipping),
+          notifyTelegramOrderCompleted: normBool(cust?.notifyTelegramOrderCompleted),
+          notifyTelegramWarranty: normBool(cust?.notifyTelegramWarranty),
         };
       }),
 
@@ -5198,6 +5206,10 @@ export const appRouter = router({
         notifyTelegramOrderStatus: z.boolean().optional(),
         notifyTelegramPromotion: z.boolean().optional(),
         notifyTelegramFlashSale: z.boolean().optional(),
+        notifyTelegramOrderPaid: z.boolean().optional(),
+        notifyTelegramOrderShipping: z.boolean().optional(),
+        notifyTelegramOrderCompleted: z.boolean().optional(),
+        notifyTelegramWarranty: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
         const { customerSessions, customers } = await import("../drizzle/schema");
@@ -5218,6 +5230,10 @@ export const appRouter = router({
         if (input.notifyTelegramOrderStatus !== undefined) updates.notifyTelegramOrderStatus = input.notifyTelegramOrderStatus;
         if (input.notifyTelegramPromotion !== undefined) updates.notifyTelegramPromotion = input.notifyTelegramPromotion;
         if (input.notifyTelegramFlashSale !== undefined) updates.notifyTelegramFlashSale = input.notifyTelegramFlashSale;
+        if (input.notifyTelegramOrderPaid !== undefined) updates.notifyTelegramOrderPaid = input.notifyTelegramOrderPaid;
+        if (input.notifyTelegramOrderShipping !== undefined) updates.notifyTelegramOrderShipping = input.notifyTelegramOrderShipping;
+        if (input.notifyTelegramOrderCompleted !== undefined) updates.notifyTelegramOrderCompleted = input.notifyTelegramOrderCompleted;
+        if (input.notifyTelegramWarranty !== undefined) updates.notifyTelegramWarranty = input.notifyTelegramWarranty;
         if (Object.keys(updates).length > 0) {
           await drizzleDb.update(customers).set(updates).where(eq(customers.id, customer.id));
         }
@@ -8968,12 +8984,119 @@ const setupRouter = router({
     }),
 });
 
+// ─── Side Banners Router ─────────────────────────────────────────────────────
+const sideBannersRouter = router({
+  getPublic: publicProcedure.query(async () => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) return [];
+    const { sideBanners, users } = await import("../drizzle/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+    const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+    if (!owner) return [];
+    const left = await drizzleDb.select().from(sideBanners).where(and(eq(sideBanners.userId, owner.id), eq(sideBanners.position, "left"), eq(sideBanners.isActive, true))).orderBy(sideBanners.sortOrder).limit(1);
+    const right = await drizzleDb.select().from(sideBanners).where(and(eq(sideBanners.userId, owner.id), eq(sideBanners.position, "right"), eq(sideBanners.isActive, true))).orderBy(sideBanners.sortOrder).limit(1);
+    return [left[0] || null, right[0] || null].filter(Boolean);
+  }),
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) return [];
+    const { sideBanners } = await import("../drizzle/schema.js");
+    const { eq } = await import("drizzle-orm");
+    return drizzleDb.select().from(sideBanners).where(eq(sideBanners.userId, ctx.user.id)).orderBy(sideBanners.sortOrder);
+  }),
+  upsert: protectedProcedure.input(z.object({
+    id: z.number().optional(),
+    position: z.enum(["left", "right"]),
+    imageUrl: z.string(),
+    linkUrl: z.string().optional(),
+    title: z.string().optional(),
+    isActive: z.boolean().default(true),
+    sortOrder: z.number().default(0),
+  })).mutation(async ({ ctx, input }) => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const { sideBanners } = await import("../drizzle/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+    if (input.id) {
+      await drizzleDb.update(sideBanners).set({ ...input, userId: ctx.user.id, updatedAt: new Date() }).where(and(eq(sideBanners.id, input.id), eq(sideBanners.userId, ctx.user.id)));
+      return { success: true };
+    }
+    await drizzleDb.insert(sideBanners).values({ ...input, userId: ctx.user.id });
+    return { success: true };
+  }),
+  delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const { sideBanners } = await import("../drizzle/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+    await drizzleDb.delete(sideBanners).where(and(eq(sideBanners.id, input.id), eq(sideBanners.userId, ctx.user.id)));
+    return { success: true };
+  }),
+});
+
+//// ─── Mini Banners Router ──────────────────────────────────────────────
+const miniBannersRouter = router({
+  getPublic: publicProcedure.query(async () => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) return [];
+    const { miniBanners, users } = await import("../drizzle/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+    const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+    if (!owner) return [];
+    return drizzleDb.select().from(miniBanners).where(and(eq(miniBanners.userId, owner.id), eq(miniBanners.isActive, true))).orderBy(miniBanners.sortOrder).limit(8);
+  }),
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) return [];
+    const { miniBanners } = await import("../drizzle/schema.js");
+    const { eq } = await import("drizzle-orm");
+    return drizzleDb.select().from(miniBanners).where(eq(miniBanners.userId, ctx.user.id)).orderBy(miniBanners.sortOrder);
+  }),
+  upsert: protectedProcedure.input(z.object({
+    id: z.number().optional(),
+    imageUrl: z.string(),
+    linkUrl: z.string().optional(),
+    title: z.string().optional(),
+    isActive: z.boolean().default(true),
+    sortOrder: z.number().default(0),
+  })).mutation(async ({ ctx, input }) => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const { miniBanners } = await import("../drizzle/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+    if (input.id) {
+      await drizzleDb.update(miniBanners).set({ ...input, userId: ctx.user.id, updatedAt: new Date() }).where(and(eq(miniBanners.id, input.id), eq(miniBanners.userId, ctx.user.id)));
+      return { success: true };
+    }
+    await drizzleDb.insert(miniBanners).values({ ...input, userId: ctx.user.id });
+    return { success: true };
+  }),
+  delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const { miniBanners } = await import("../drizzle/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+    await drizzleDb.delete(miniBanners).where(and(eq(miniBanners.id, input.id), eq(miniBanners.userId, ctx.user.id)));
+    return { success: true };
+  }),
+});
+
 const appRouterFull = router({
   ...appRouter._def.record,
   broadcasts: broadcastsRouter,
   license: licenseRouter,
   update: updateRouter,
   setup: setupRouter,
+  sideBanners: sideBannersRouter,
+  miniBanners: miniBannersRouter,
 });
 export { appRouterFull };
 export type AppRouter = typeof appRouterFull;

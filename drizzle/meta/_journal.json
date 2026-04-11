@@ -309,6 +309,13 @@
       "when": 1775876174156,
       "tag": "0043_chilly_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1775884563906,
+      "tag": "0044_tranquil_quentin_quire",
+      "breakpoints": true
     }
   ]
 }

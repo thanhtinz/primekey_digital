@@ -2023,3 +2023,12 @@ todo updated
 
 - [x] Tăng cường bảo mật giấy phép: xóa default master key hardcode, xóa grace mode bypass, thêm rate limiting, thêm activation token v2 HMAC
 - [x] Redesign header PC: 2 tầng (tầng 1: Logo + Search + Icons, tầng 2: Nav + Hotline/Email), cập nhật pt-16 → lg:pt-24 cho tất cả trang client
+
+## Session 2026-04-11 - Redesign PC LandingPage + Side Banners + Telegram fix
+
+- [ ] DB schema: thêm bảng sideBanners (left/right, imageUrl, linkUrl, title, active) và miniBanners (imageUrl, linkUrl, title, order, active)
+- [ ] Backend: procedures sideBanners.list (public), sideBanners.create/update/delete (admin), miniBanners.list (public), miniBanners.create/update/delete (admin)
+- [ ] Redesign LandingPage PC: layout 3 cột (side banner trái + banner chính giữa + side banner phải) + 4 mini banners bên dưới (carousel trên mobile)
+- [ ] Admin: trang quản lý Side Banners (2 banner dọc 2 bên) với upload ảnh, link, bật/tắt
+- [ ] Admin: trang quản lý Mini Banners (4 ô banner nhỏ bên dưới) với upload ảnh, link, thứ tự, bật/tắt
+- [ ] Sửa lỗi Telegram User Bot: trang cài đặt thông báo client chỉ hiện 3 tính năng (Trạng thái đơn hàng, Flash Sale, Khuyến mãi) - cần thêm đủ các tính năng đã bật trong admin

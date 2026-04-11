@@ -58,6 +58,10 @@ export const customers = mysqlTable("customers", {
   notifyTelegramOrderStatus: boolean("notifyTelegramOrderStatus").default(true),
   notifyTelegramPromotion: boolean("notifyTelegramPromotion").default(false),
   notifyTelegramFlashSale: boolean("notifyTelegramFlashSale").default(false),
+  notifyTelegramOrderPaid: boolean("notifyTelegramOrderPaid").default(true),
+  notifyTelegramOrderShipping: boolean("notifyTelegramOrderShipping").default(true),
+  notifyTelegramOrderCompleted: boolean("notifyTelegramOrderCompleted").default(true),
+  notifyTelegramWarranty: boolean("notifyTelegramWarranty").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1276,3 +1280,35 @@ export const systemBroadcasts = mysqlTable("system_broadcasts", {
 });
 export type SystemBroadcast = typeof systemBroadcasts.$inferSelect;
 export type InsertSystemBroadcast = typeof systemBroadcasts.$inferInsert;
+
+
+// ─── Side Banners (2 banner dọc 2 bên trên PC) ────────────────────────────────
+export const sideBanners = mysqlTable("side_banners", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  position: varchar("position", { length: 10 }).notNull(), // "left" | "right"
+  imageUrl: text("imageUrl").notNull(),
+  linkUrl: varchar("linkUrl", { length: 500 }),
+  title: varchar("title", { length: 255 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SideBanner = typeof sideBanners.$inferSelect;
+export type InsertSideBanner = typeof sideBanners.$inferInsert;
+
+// ─── Mini Banners (4 ô banner nhỏ bên dưới banner chính) ──────────────────────
+export const miniBanners = mysqlTable("mini_banners", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  imageUrl: text("imageUrl").notNull(),
+  linkUrl: varchar("linkUrl", { length: 500 }),
+  title: varchar("title", { length: 255 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MiniBanner = typeof miniBanners.$inferSelect;
+export type InsertMiniBanner = typeof miniBanners.$inferInsert;

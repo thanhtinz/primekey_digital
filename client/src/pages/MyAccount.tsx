@@ -655,6 +655,10 @@ function NotificationPrefsSection({ token }: { token: string }) {
 
   const telegramItems = [
     { key: "notifyTelegramOrderStatus", label: "Trạng thái đơn hàng", desc: "Nhận Telegram khi đơn hàng được cập nhật", icon: "fa-box", color: "bg-blue-100 text-blue-600" },
+    { key: "notifyTelegramOrderPaid", label: "Thanh toán thành công", desc: "Nhận Telegram khi đơn hàng được thanh toán", icon: "fa-circle-check", color: "bg-green-100 text-green-600" },
+    { key: "notifyTelegramOrderShipping", label: "Đang giao hàng", desc: "Nhận Telegram khi đơn hàng chuyển sang giao hàng", icon: "fa-truck", color: "bg-cyan-100 text-cyan-600" },
+    { key: "notifyTelegramOrderCompleted", label: "Hoàn thành đơn hàng", desc: "Nhận Telegram khi đơn hàng hoàn thành", icon: "fa-flag-checkered", color: "bg-emerald-100 text-emerald-600" },
+    { key: "notifyTelegramWarranty", label: "Bảo hành", desc: "Nhận Telegram khi đơn hàng chuyển sang bảo hành", icon: "fa-shield-halved", color: "bg-teal-100 text-teal-600" },
     { key: "notifyTelegramFlashSale", label: "Flash Sale", desc: "Nhận Telegram khi có flash sale", icon: "fa-bolt", color: "bg-orange-100 text-orange-600" },
     { key: "notifyTelegramPromotion", label: "Khuyến mãi & ưu đãi", desc: "Nhận Telegram về mã giảm giá và ưu đãi", icon: "fa-gift", color: "bg-purple-100 text-purple-600" },
   ];
