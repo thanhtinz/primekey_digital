@@ -2045,3 +2045,9 @@ todo updated
 - [x] Frontend: MyAccount OrdersTab - khi load tab orders, nếu 2FA bật hiện modal OTP trước khi fetch đơn hàng
 - [x] Frontend: ProductDetail - khi chọn thanh toán bằng số dư, nếu 2FA bật hiện modal OTP trước khi submit
 - [x] Frontend: tạo component OtpModal dùng chung cho cả 3 luồng
+
+## Session 2026-04-11 - Thông báo bảo mật Telegram/Email
+
+- [x] Backend: gửi Telegram + Email cảnh báo khi đăng nhập mới (loginWithPassword thành công)
+- [x] Backend: gửi Telegram + Email cảnh báo khi 2FA bị tắt (disable2fa procedure)
+- [x] Nội dung cảnh báo: thời gian, email, hành động (login/disable2fa)

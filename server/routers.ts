@@ -5508,6 +5508,27 @@ export const appRouter = router({
             sessionToken: token,
           } as any);
         } catch {}
+        // Security alert: new login notification
+        try {
+          const _lt = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+          if (customer.telegramChatId) {
+            const { getTelegramBotConfig } = await import("./db");
+            const { users: _uTL } = await import("../drizzle/schema");
+            const [_oTL] = await drizzleDb.select({ id: _uTL.id }).from(_uTL).limit(1);
+            if (_oTL) {
+              const _bTL = await getTelegramBotConfig(_oTL.id, "user");
+              if (_bTL?.botToken) {
+                const { sendTelegramMessage } = await import("./telegram");
+                const _msgTL = "\u26a0\ufe0f *C\u1ea3nh b\u00e1o b\u1ea3o m\u1eadt*\n\nT\u00e0i kho\u1ea3n c\u1ee7a b\u1ea1n v\u1eeba \u0111\u0103ng nh\u1eadp m\u1edbi.\n\n\u23f0 Th\u1eddi gian: " + _lt + "\n\ud83d\udce7 Email: " + input.email + "\n\nN\u1ebfu kh\u00f4ng ph\u1ea3i b\u1ea1n, h\u00e3y \u0111\u1ed5i m\u1eadt kh\u1ea9u ngay!";
+                await sendTelegramMessage(_bTL.botToken, customer.telegramChatId, _msgTL);
+              }
+            }
+          }
+          const { users: _uEL } = await import("../drizzle/schema");
+          const [_oEL] = await drizzleDb.select({ id: _uEL.id }).from(_uEL).limit(1);
+          const _hL = `<div style="font-family:sans-serif;padding:20px;border:1px solid #e5e7eb;border-radius:8px"><h3 style="color:#dc2626">&#9888;&#65039; C&#7843;nh b&#225;o b&#7843;o m&#7853;t</h3><p>T&#224;i kho&#7843;n c&#7911;a b&#7841;n v&#7915;a &#273;&#259;ng nh&#7853;p m&#7899;i.</p><p><b>Th&#7901;i gian:</b> ${_lt}</p><p><b>Email:</b> ${input.email}</p><p style="color:#6b7280">N&#7871;u kh&#244;ng ph&#7843;i b&#7841;n, h&#227;y &#273;&#7893;i m&#7853;t kh&#7849;u ngay.</p></div>`;
+          await sendEmail({ to: input.email, subject: "&#9888;&#65039; C&#7843;nh b&#225;o: &#272;&#259;ng nh&#7853;p m&#7899;i v&#224;o t&#224;i kho&#7843;n", html: _hL, userId: _oEL?.id });
+        } catch {}
         return { token, name: customer.name, email: input.email, expiresAt };
       }),
     // Quên mật khẩu - gửi email reset
@@ -5713,6 +5734,27 @@ export const appRouter = router({
         const delta = totp.validate({ token: input.code, window: 1 });
         if (delta === null) throw new Error("Mã OTP không hợp lệ");
         await drizzleDb.update(customers).set({ totpEnabled: false, totpSecret: null } as any).where(eq(customers.id, customer.id));
+        // Security alert: 2FA disabled notification
+        try {
+          const _dt = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+          if (customer.telegramChatId) {
+            const { getTelegramBotConfig } = await import("./db");
+            const { users: _uTD } = await import("../drizzle/schema");
+            const [_oTD] = await drizzleDb.select({ id: _uTD.id }).from(_uTD).limit(1);
+            if (_oTD) {
+              const _bTD = await getTelegramBotConfig(_oTD.id, "user");
+              if (_bTD?.botToken) {
+                const { sendTelegramMessage } = await import("./telegram");
+                const _msgTD = "\ud83d\udd34 *C\u1ea3nh b\u00e1o b\u1ea3o m\u1eadt*\n\nX\u00e1c minh 2 b\u01b0\u1edbc (2FA) \u0111\u00e3 b\u1ecb *t\u1eaft* tr\u00ean t\u00e0i kho\u1ea3n c\u1ee7a b\u1ea1n.\n\n\u23f0 Th\u1eddi gian: " + _dt + "\n\n\u26a0\ufe0f N\u1ebfu kh\u00f4ng ph\u1ea3i b\u1ea1n, h\u00e3y b\u1eadt l\u1ea1i 2FA ngay!";
+                await sendTelegramMessage(_bTD.botToken, customer.telegramChatId, _msgTD);
+              }
+            }
+          }
+          const { users: _uED } = await import("../drizzle/schema");
+          const [_oED] = await drizzleDb.select({ id: _uED.id }).from(_uED).limit(1);
+          const _hD = `<div style="font-family:sans-serif;padding:20px;border:2px solid #dc2626;border-radius:8px"><h3 style="color:#dc2626">&#128308; C&#7843;nh b&#225;o: 2FA b&#7883; t&#7855;t</h3><p>X&#225;c minh 2 b&#432;&#7899;c (2FA) &#273;&#227; b&#7883; t&#7855;t tr&#234;n t&#224;i kho&#7843;n c&#7911;a b&#7841;n.</p><p><b>Th&#7901;i gian:</b> ${_dt}</p><p><b>Email:</b> ${customer.email}</p><p style="color:#dc2626;font-weight:600">N&#7871;u kh&#244;ng ph&#7843;i b&#7841;n, h&#227;y b&#7853;t l&#7841;i 2FA v&#224; &#273;&#7893;i m&#7853;t kh&#7849;u ngay!</p></div>`;
+          await sendEmail({ to: customer.email, subject: "&#128308; C&#7843;nh b&#225;o: X&#225;c minh 2 b&#432;&#7899;c (2FA) &#273;&#227; b&#7883; t&#7855;t", html: _hD, userId: _oED?.id });
+        } catch {}
         return { success: true };
       }),
     // Lấy trạng thái 2FA
