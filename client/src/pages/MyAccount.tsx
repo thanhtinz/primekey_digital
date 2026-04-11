@@ -1337,6 +1337,10 @@ export default function MyAccount() {
 
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
   const avatarGalleryEnabled = isFeatureEnabled("avatarGallery");
+  // showTelegramReminder from admin settings
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const showTelegramReminder = (publicInfo as any)?.showTelegramReminder ?? false;
+  const hasTelegramLinked = !!(customer as any)?.telegramChatId;
   const tabs: { id: TabType; label: string; icon: any; badge?: number; color: string; activeColor: string }[] = [
     { id: "overview", label: "Tổng quan", icon: BarChart3, color: "text-blue-500", activeColor: "bg-gradient-to-r from-blue-500 to-blue-600" },
     { id: "orders", label: "Đơn hàng", icon: Package, badge: pendingOrders > 0 ? pendingOrders : undefined, color: "text-orange-500", activeColor: "bg-gradient-to-r from-orange-500 to-amber-500" },
@@ -1414,8 +1418,23 @@ export default function MyAccount() {
   return (
     <div className="min-h-screen pt-16 lg:pt-24 bg-slate-50">
       <ClientHeader />
-
       <div className="max-w-3xl mx-auto px-4 py-5 space-y-4">
+        {/* ===== Telegram Reminder Banner ===== */}
+        {showTelegramReminder && !hasTelegramLinked && (
+          <div className="bg-sky-50 border border-sky-200 rounded-xl px-4 py-3 flex items-center gap-3">
+            <i className="fa-brands fa-telegram text-sky-500 text-xl flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-sky-800">Liên kết Telegram để nhận thông báo</p>
+              <p className="text-xs text-sky-600">Nhận thông báo đơn hàng, flash sale và ưu đãi qua Telegram ngay lập tức</p>
+            </div>
+            <button
+              onClick={() => setActiveTab("profile")}
+              className="flex-shrink-0 text-xs bg-sky-500 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-sky-600 transition"
+            >
+              Liên kết
+            </button>
+          </div>
+        )}
         {/* ===== Profile Hero ===== */}
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-5 text-white">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />

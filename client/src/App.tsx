@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { Loader2, ShieldAlert } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { MaintenanceModeGate } from "@/components/MaintenanceModeGate";
 
 // Lazy load all pages for code splitting
 const Login = lazy(() => import("./pages/Login"));
@@ -383,8 +384,10 @@ function GlobalBrandApplier() {
       }
       link.href = publicInfo.faviconUrl;
     }
-    if (publicInfo?.companyName) {
-      document.title = publicInfo.companyName;
+    // siteTitle takes priority over companyName for browser tab
+    const titleToUse = (publicInfo as any)?.siteTitle || publicInfo?.companyName;
+    if (titleToUse) {
+      document.title = titleToUse;
     }
     // Apply brand colors as CSS variables
     const root = document.documentElement;
@@ -430,8 +433,10 @@ function App() {
           <Toaster />
           <SetupGate>
             <GlobalBrandApplier />
-            <AnnouncementBanner />
-            <Router />
+            <MaintenanceModeGate>
+              <AnnouncementBanner />
+              <Router />
+            </MaintenanceModeGate>
           </SetupGate>
         </TooltipProvider>
       </ThemeProvider>

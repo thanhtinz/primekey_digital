@@ -52,6 +52,7 @@ export default function ClientLogin() {
   const [showNewPwd, setShowNewPwd] = useState(false);
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const requireStrongPassword = (publicInfo as any)?.requireStrongPassword ?? false;
   const { data: referrerInfo } = trpc.referral.getReferrerByCode.useQuery(
     { code: refCode },
     { enabled: !!refCode, staleTime: 60_000 }
@@ -123,6 +124,13 @@ export default function ClientLogin() {
     if (!regEmail.trim() || !regPassword || !regName.trim()) return;
     if (regPassword !== regConfirm) { toast.error("Mật khẩu xác nhận không khớp"); return; }
     if (regPassword.length < 6) { toast.error("Mật khẩu tối thiểu 6 ký tự"); return; }
+    if (requireStrongPassword) {
+      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
+      if (!strongPasswordRegex.test(regPassword)) {
+        toast.error("Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt");
+        return;
+      }
+    }
     registerMutation.mutate({
       email: regEmail.trim(),
       password: regPassword,

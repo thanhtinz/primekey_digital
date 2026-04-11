@@ -2593,6 +2593,18 @@ export const appRouter = router({
         custom404BgColor: userSettings.custom404BgColor,
         custom404TextColor: userSettings.custom404TextColor,
         custom404CustomHtml: userSettings.custom404CustomHtml,
+        // Additional public fields
+        siteTitle: userSettings.siteTitle,
+        hotline: userSettings.hotline,
+        fanpageUrl: userSettings.fanpageUrl,
+        copyrightFooter: userSettings.copyrightFooter,
+        maintenanceMode: userSettings.maintenanceMode,
+        showSlider: userSettings.showSlider,
+        showBanner: userSettings.showBanner,
+        showTelegramReminder: userSettings.showTelegramReminder,
+        showRecentlyViewed: userSettings.showRecentlyViewed,
+        showAvatar: userSettings.showAvatar,
+        requireStrongPassword: userSettings.requireStrongPassword,
       }).from(userSettings).limit(1);
       // Lấy logo từ default template (fallback nếu không có brand logo)
       const templateRows = await drizzleDb.select({
@@ -2706,6 +2718,8 @@ export const appRouter = router({
         siteKeywords: z.string().optional(),
         siteAuthor: z.string().optional(),
         siteTimezone: z.string().optional(),
+        companyEmail: z.string().email().optional().or(z.literal("")),
+        companyAddress: z.string().optional(),
         hotline: z.string().optional(),
         fanpageUrl: z.string().optional(),
         copyrightFooter: z.string().optional(),
@@ -5336,16 +5350,45 @@ export const appRouter = router({
         origin: z.string().optional(),
         referralCode: z.string().optional(), // mã giới thiệu từ ?ref=CODE
       }))
-      .mutation(async ({ input }) => {
-        const { customers, customerSessions } = await import("../drizzle/schema");
+      .mutation(async ({ input, ctx }) => {
+        const { customers, customerSessions, userSettings: userSettingsTable } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
-        const { eq, and } = await import("drizzle-orm");
+        const { eq, and, count } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new Error("DB unavailable");
         // Get owner
         const { users } = await import("../drizzle/schema");
         const [owner] = await drizzleDb.select().from(users).limit(1);
         if (!owner) throw new Error("Hệ thống chưa được cấu hình");
+        // Read owner security settings
+        const [ownerSettings] = await drizzleDb.select({
+          requireStrongPassword: userSettingsTable.requireStrongPassword,
+          maxRegisterPerIp: userSettingsTable.maxRegisterPerIp,
+          sessionDuration: userSettingsTable.sessionDuration,
+        }).from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
+        // Check requireStrongPassword
+        if (ownerSettings?.requireStrongPassword) {
+          const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
+          if (!strongPasswordRegex.test(input.password)) {
+            throw new Error("Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt");
+          }
+        }
+        // Check maxRegisterPerIp
+        const clientIp = (ctx as any)?.req?.headers?.["x-forwarded-for"]?.split(",")?.[0]?.trim() || (ctx as any)?.req?.socket?.remoteAddress || "unknown";
+        const maxPerIp = ownerSettings?.maxRegisterPerIp ?? 1000;
+        if (clientIp !== "unknown" && maxPerIp < 1000) {
+          try {
+            const { loginHistory } = await import("../drizzle/schema");
+            const [ipCount] = await drizzleDb.select({ cnt: count() }).from(loginHistory)
+              .where(and(eq((loginHistory as any).ipAddress, clientIp), eq((loginHistory as any).status, "register"))).limit(1);
+            if ((ipCount?.cnt ?? 0) >= maxPerIp) {
+              throw new Error("Đã đạt giới hạn đăng ký từ địa chỉ IP này");
+            }
+          } catch (e: any) {
+            if (e.message === "Đã đạt giới hạn đăng ký từ địa chỉ IP này") throw e;
+            // Ignore other errors (e.g., column not found)
+          }
+        }
         // Check if email already registered
         const [existing] = await drizzleDb.select({ id: customers.id, passwordHash: customers.passwordHash })
           .from(customers)
@@ -5386,7 +5429,9 @@ export const appRouter = router({
         } catch { /* ignore email errors */ }
         // Create session (allow login even before verification)
         const token = crypto.randomBytes(48).toString("hex");
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        // Use sessionDuration from settings (in seconds), default 30 days
+        const sessionDurationSec = ownerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
+        const expiresAt = new Date(Date.now() + sessionDurationSec * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: input.name, token, expiresAt });
          // Process referral code if provided
         if (input.referralCode) {
@@ -5431,14 +5476,13 @@ export const appRouter = router({
         password: z.string(),
       }))
       .mutation(async ({ input }) => {
-        const { customers, customerSessions, users } = await import("../drizzle/schema");
+         const { customers, customerSessions, users, userSettings: userSettingsTable } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
         const { eq, and } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new Error("DB unavailable");
         const bcrypt = await import("bcryptjs");
         const crypto = await import("crypto");
-
         // ── Check admin users table first ──────────────────────────────────────
         const [adminUser] = await drizzleDb.select().from(users).where(eq(users.email, input.email)).limit(1);
         if (adminUser) {
@@ -5446,7 +5490,9 @@ export const appRouter = router({
           if (!validAdmin) throw new Error("Email hoặc mật khẩu không đúng");
           // Create customer session with isAdminSession flag
           const token = crypto.randomBytes(48).toString("hex");
-          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          const [adminOwnerSettings] = await drizzleDb.select({ sessionDuration: userSettingsTable.sessionDuration }).from(userSettingsTable).where(eq(userSettingsTable.userId, adminUser.id)).limit(1);
+          const adminSessionDurationSec = adminOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
+          const expiresAt = new Date(Date.now() + adminSessionDurationSec * 1000);
           const name = adminUser.name || adminUser.email.split("@")[0];
           await drizzleDb.insert(customerSessions).values({
             email: adminUser.email,
@@ -5486,7 +5532,9 @@ export const appRouter = router({
         if (!valid) {
           // Increment login attempts
           const attempts = ((customer as any).loginAttempts || 0) + 1;
-          const MAX_ATTEMPTS = 5;
+          // Read bfMaxLoginAttempts from owner settings
+          const [ownerSettings] = await drizzleDb.select({ bfMaxLoginAttempts: userSettingsTable.bfMaxLoginAttempts }).from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
+          const MAX_ATTEMPTS = ownerSettings?.bfMaxLoginAttempts ?? 5;
           const LOCK_DURATION = 15 * 60 * 1000; // 15 minutes
           const updateData: any = { loginAttempts: attempts, updatedAt: new Date() };
           if (attempts >= MAX_ATTEMPTS) {
@@ -5512,7 +5560,9 @@ export const appRouter = router({
         }
         // Create session
         const token = crypto.randomBytes(48).toString("hex");
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const [loginOwnerSettings] = await drizzleDb.select({ sessionDuration: userSettingsTable.sessionDuration }).from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
+        const loginSessionDurationSec = loginOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
+        const expiresAt = new Date(Date.now() + loginSessionDurationSec * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token, expiresAt });
         // Record login history
         try {
@@ -5628,7 +5678,12 @@ export const appRouter = router({
         // Create new session
         const crypto = await import("crypto");
         const sessionToken = crypto.randomBytes(48).toString("hex");
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        // Read sessionDuration from owner settings
+        const { users: usersTable, userSettings: userSettingsTable2 } = await import("../drizzle/schema");
+        const [resetOwner] = await drizzleDb.select({ id: usersTable.id }).from(usersTable).limit(1);
+        const [resetOwnerSettings] = resetOwner ? await drizzleDb.select({ sessionDuration: userSettingsTable2.sessionDuration }).from(userSettingsTable2).where(eq(userSettingsTable2.userId, resetOwner.id)).limit(1) : [null];
+        const resetSessionDurationSec = resetOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
+        const expiresAt = new Date(Date.now() + resetSessionDurationSec * 1000);
         await drizzleDb.insert(customerSessions).values({ email: customer.email!, name: customer.name, token: sessionToken, expiresAt });
         return { success: true, token: sessionToken, name: customer.name, email: customer.email };
       }),
@@ -5908,7 +5963,12 @@ export const appRouter = router({
         // Delete temp session, create real session
         await drizzleDb.delete(customerSessions).where(eq(customerSessions.token, input.tempToken));
         const realToken = crypto.randomBytes(48).toString("hex");
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        // Read sessionDuration from owner settings
+        const { users: twoFaUsersTable, userSettings: twoFaUserSettingsTable } = await import("../drizzle/schema");
+        const [twoFaOwner] = await drizzleDb.select({ id: twoFaUsersTable.id }).from(twoFaUsersTable).limit(1);
+        const [twoFaOwnerSettings] = twoFaOwner ? await drizzleDb.select({ sessionDuration: twoFaUserSettingsTable.sessionDuration }).from(twoFaUserSettingsTable).where(eq(twoFaUserSettingsTable.userId, twoFaOwner.id)).limit(1) : [null];
+        const twoFaSessionDurationSec = twoFaOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
+        const expiresAt = new Date(Date.now() + twoFaSessionDurationSec * 1000);
         await drizzleDb.insert(customerSessions).values({ email: tempSession.email, name: tempSession.name, token: realToken, expiresAt });
         try {
           const { loginHistory } = await import("../drizzle/schema");

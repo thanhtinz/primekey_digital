@@ -152,6 +152,8 @@ export default function LandingPage() {
 
   const description = (publicInfo as any)?.description || (publicInfo as any)?.companyDescription;
   const companyName = publicInfo?.companyName || "";
+  const showSlider = (publicInfo as any)?.showSlider !== false; // default true
+  const showBanner = (publicInfo as any)?.showBanner !== false; // default true
 
   const products: any[] = Array.isArray(productsRaw) ? productsRaw : (productsRaw as any)?.items ?? [];
   const categories: any[] = (categoriesData as any) ?? [];
@@ -215,7 +217,7 @@ export default function LandingPage() {
       {/* AnnouncementBanner is rendered globally in App.tsx */}
       <div className="pt-16 lg:pt-24 flex-1">
         {/* ===== BANNER SECTION ===== */}
-        {(bannersData as any[]).length > 0 && (
+        {showBanner && (bannersData as any[]).length > 0 && (
           <div className="mt-3 mb-2 px-4">
             <div className="max-w-7xl mx-auto">
               {/* PC layout: side banner trái + carousel giữa + side banner phải */}
