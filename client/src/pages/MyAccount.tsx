@@ -786,6 +786,11 @@ function TelegramLinkSection({ token }: { token: string }) {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
 
+  const sendTestMutation = trpc.customer.sendTelegramTest.useMutation({
+    onSuccess: () => toast.success("✅ Đã gửi tin nhắn thử! Kiểm tra Telegram của bạn."),
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const unlinkMutation = trpc.customer.unlinkTelegram.useMutation({
     onSuccess: () => {
       utils.customer.me.invalidate();
@@ -874,6 +879,19 @@ function TelegramLinkSection({ token }: { token: string }) {
                 <span className="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-medium">Hoạt động</span>
               </div>
             </div>
+
+            {/* Nút gửi tin nhắn test */}
+            <button
+              onClick={() => sendTestMutation.mutate({ token })}
+              disabled={sendTestMutation.isPending}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 transition text-sm font-semibold disabled:opacity-50"
+            >
+              {sendTestMutation.isPending ? (
+                <><i className="fa-solid fa-spinner fa-spin text-xs" /> Đang gửi...</>
+              ) : (
+                <><i className="fa-brands fa-telegram text-xs" /> Gửi tin nhắn thử</>
+              )}
+            </button>
 
             {/* Nút hủy liên kết - nổi bật hơn */}
             {!showUnlinkConfirm ? (

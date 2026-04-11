@@ -2005,3 +2005,10 @@ todo updated
 - [x] Đồng bộ xóa Telegram subscriber từ admin: removeTelegramSubscriber trong db.ts cũng clear customers.telegramChatId
 - [x] Feature flags ProductDetail: ẩn nút/section mã giới thiệu khi referral flag tắt
 - [x] Realtime badge Telegram: thêm SSE endpoint /api/sse/telegram-link, client dùng EventSource thay polling 5s, fallback polling nếu SSE lỗi
+
+## Session 2026-04-11 - Sửa lỗi toggle thông báo + form đặt hàng
+
+- [x] Sửa lỗi toggle thông báo Email/Telegram trong MyAccount (NotificationsTab) không lưu được - customer.me thiếu notification pref fields
+- [x] Sửa lỗi form đặt hàng trong ProductDetail vẫn hiện mã giảm giá khi tắt feature flag - đã thêm couponFeatureEnabled
+- [x] Cải tiến: Nút "Gửi tin nhắn test" trong TelegramLinkSection - procedure sendTelegramTest + UI button
+- [x] Cải tiến: Trang quản lý subscriber Telegram trong admin - filter active/inactive, search, hiển thị email khách hàng

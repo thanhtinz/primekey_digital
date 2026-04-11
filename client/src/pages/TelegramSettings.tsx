@@ -319,12 +319,21 @@ function SubscribersPanel() {
     onError: (e: any) => toast.error(e.message),
   });
   const [broadcastMsg, setBroadcastMsg] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+  const [search, setSearch] = useState("");
   const broadcast = trpc.telegramBot.broadcast.useMutation({
     onSuccess: (d: any) => { toast.success(`Đã gửi đến ${d.sent}/${d.total} người`); setBroadcastMsg(""); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const activeCount = (subscribers as any[]).filter((s: any) => s.isActive).length;
+  const inactiveCount = (subscribers as any[]).length - activeCount;
+  const filteredSubs = (subscribers as any[]).filter((s: any) => {
+    const matchFilter = filter === "all" || (filter === "active" ? s.isActive : !s.isActive);
+    const q = search.toLowerCase();
+    const matchSearch = !q || (s.firstName || "").toLowerCase().includes(q) || (s.username || "").toLowerCase().includes(q) || (s.customerEmail || "").toLowerCase().includes(q) || (s.customerName || "").toLowerCase().includes(q);
+    return matchFilter && matchSearch;
+  });
 
   return (
     <Card className="shadow-sm">
@@ -345,6 +354,31 @@ function SubscribersPanel() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Search + Filter */}
+        {!isLoading && (subscribers as any[]).length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              placeholder="Tìm theo tên, @username, email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="flex-1 text-sm px-3 py-1.5 border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <div className="flex gap-1">
+              {(["all", "active", "inactive"] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`text-xs px-2.5 py-1.5 rounded-lg border transition ${
+                    filter === f ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {f === "all" ? `Tất cả (${(subscribers as any[]).length})` : f === "active" ? `Hoạt động (${activeCount})` : `Đã tắt (${inactiveCount})`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : (subscribers as any[]).length === 0 ? (
@@ -353,18 +387,23 @@ function SubscribersPanel() {
             <p className="text-sm">Chưa có khách hàng nào liên kết</p>
             <p className="text-xs mt-1">Khách hàng cần nhắn /start cho User Bot để liên kết</p>
           </div>
+        ) : filteredSubs.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <p className="text-sm">Không tìm thấy kết quả phù hợp</p>
+          </div>
         ) : (
           <div className="space-y-2">
-            {(subscribers as any[]).map((sub: any) => (
+            {filteredSubs.map((sub: any) => (
               <div key={sub.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/20">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${sub.isActive ? "bg-emerald-100" : "bg-slate-100"}`}>
                   <i className={`fa fa-user text-xs ${sub.isActive ? "text-emerald-600" : "text-slate-400"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{sub.firstName || "Khách hàng"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {sub.username ? `@${sub.username}` : `Chat ID: ${sub.chatId}`}
+                  <p className="text-sm font-semibold truncate">{sub.customerName || sub.firstName || "Khách hàng"}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {sub.customerEmail || (sub.username ? `@${sub.username}` : `Chat ID: ${sub.chatId}`)}
                   </p>
+                  {sub.username && <p className="text-[11px] text-muted-foreground/70">@{sub.username}</p>}
                 </div>
                 <Badge variant="outline" className={`text-[10px] flex-shrink-0 ${sub.isActive ? "text-emerald-600 border-emerald-300" : "text-slate-400"}`}>
                   {sub.isActive ? "Hoạt động" : "Đã tắt"}

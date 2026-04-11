@@ -776,9 +776,18 @@ export async function upsertTelegramBotConfig(userId: number, botType: "admin" |
 export async function getTelegramSubscribers(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  const { telegramSubscribers } = await import("../drizzle/schema");
+  const { telegramSubscribers, customers } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  return db.select().from(telegramSubscribers).where(eq(telegramSubscribers.userId, userId));
+  // Get subscribers
+  const subs = await db.select().from(telegramSubscribers).where(eq(telegramSubscribers.userId, userId));
+  // Enrich with customer info
+  const rows = await Promise.all(subs.map(async (sub) => {
+    if (!sub.customerId) return { ...sub, customerEmail: null, customerName: null };
+    const [cust] = await db.select({ email: customers.email, name: customers.name })
+      .from(customers).where(eq(customers.id, sub.customerId)).limit(1);
+    return { ...sub, customerEmail: cust?.email || null, customerName: cust?.name || null };
+  }));
+  return rows;
 }
 
 export async function upsertTelegramSubscriber(userId: number, customerId: number, chatId: string, data: any) {

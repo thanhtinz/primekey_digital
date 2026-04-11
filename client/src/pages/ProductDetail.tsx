@@ -81,6 +81,7 @@ export default function ProductDetail() {
   const { data: wishlistItems = [] } = trpc.wishlist.list.useQuery({ email }, { enabled: !!email });
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
   const referralFeatureEnabled = isFeatureEnabled("referral");
+  const couponFeatureEnabled = isFeatureEnabled("coupon");
   const { data: referralSettings } = trpc.referral.getSettings.useQuery(undefined, { staleTime: 300_000, enabled: referralFeatureEnabled });
   const { data: myReferralCode } = trpc.referral.getMyCode.useQuery(
     { email },
@@ -346,8 +347,8 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Coupon */}
-        <div>
+        {/* Coupon - only show when feature enabled */}
+        {couponFeatureEnabled && <div>
           <button
             onClick={() => setShowCouponInput(!showCouponInput)}
             className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors"
@@ -387,7 +388,7 @@ export default function ProductDetail() {
               )}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Wallet */}
         {walletBalance > 0 && (

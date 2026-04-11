@@ -4988,6 +4988,14 @@ export const appRouter = router({
           telegramChatId: customers.telegramChatId,
           telegramUsername: customers.telegramUsername,
           telegramLinkedAt: customers.telegramLinkedAt,
+          notifyOnLogin: customers.notifyOnLogin,
+          notifyNewProduct: customers.notifyNewProduct,
+          notifyFlashSale: customers.notifyFlashSale,
+          notifyPromotion: customers.notifyPromotion,
+          notifyOrderStatus: customers.notifyOrderStatus,
+          notifyTelegramOrderStatus: customers.notifyTelegramOrderStatus,
+          notifyTelegramPromotion: customers.notifyTelegramPromotion,
+          notifyTelegramFlashSale: customers.notifyTelegramFlashSale,
         }).from(customers).where(eq(customers.email, session.email)).limit(1);
         const avatarUrl = (session as any).avatarUrl || (cust as any)?.avatarUrl || null;
         // If this is an admin session, also return role from users table
@@ -5011,6 +5019,8 @@ export const appRouter = router({
         }
         // Always use name from customers table (persistent) so profile edits are reflected immediately
         const displayName = cust?.name || session.name;
+        // Normalize MySQL boolean fields (can be true/false, 1/0, or Buffer)
+        const normBool = (v: any) => v === true || v === 1 || v === '1' || (Buffer.isBuffer(v) && v[0] === 1);
         return {
           email: session.email,
           name: displayName,
@@ -5020,6 +5030,14 @@ export const appRouter = router({
           telegramChatId: cust?.telegramChatId || null,
           telegramUsername: cust?.telegramUsername || null,
           telegramLinkedAt: cust?.telegramLinkedAt || null,
+          notifyOnLogin: normBool(cust?.notifyOnLogin),
+          notifyNewProduct: normBool(cust?.notifyNewProduct),
+          notifyFlashSale: normBool(cust?.notifyFlashSale),
+          notifyPromotion: normBool(cust?.notifyPromotion),
+          notifyOrderStatus: normBool(cust?.notifyOrderStatus),
+          notifyTelegramOrderStatus: normBool(cust?.notifyTelegramOrderStatus),
+          notifyTelegramPromotion: normBool(cust?.notifyTelegramPromotion),
+          notifyTelegramFlashSale: normBool(cust?.notifyTelegramFlashSale),
         };
       }),
 
@@ -5783,6 +5801,34 @@ export const appRouter = router({
         const isAdminSession = rawAdminFlag === true || rawAdminFlag === 1 || rawAdminFlag === '1' ||
           (Buffer.isBuffer(rawAdminFlag) && rawAdminFlag[0] === 1);
         return { isAdmin: isAdminSession };
+      }),
+
+    // Gửi tin nhắn test Telegram cho khách hàng
+    sendTelegramTest: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Session expired");
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer) throw new Error("Không tìm thấy tài khoản");
+        if (!customer.telegramChatId) throw new Error("Bạn chưa liên kết Telegram");
+        // Lấy bot token từ config
+        const { getTelegramBotConfig } = await import("./db");
+        const { users } = await import("../drizzle/schema");
+        const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+        if (!owner) throw new Error("Hệ thống chưa cấu hình");
+        const config = await getTelegramBotConfig(owner.id, "user");
+        if (!config?.botToken) throw new Error("Bot Telegram chưa được cấu hình");
+        const { sendTelegramMessage } = await import("./telegram");
+        const name = customer.name || session.name || "bạn";
+        const text = `✅ *Tin nhắn thử nghiệm*\n\nXin chào *${name}*! Bot Telegram đã hoạt động đúng. Bạn sẽ nhận được thông báo đơn hàng tại đây.`;
+        await sendTelegramMessage(config.botToken, customer.telegramChatId, text);
+        return { success: true };
       }),
   }),
   // ─── Cartt ──────────────────────────────────────────────────────────────────
