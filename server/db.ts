@@ -815,10 +815,22 @@ export async function upsertTelegramSubscriber(userId: number, customerId: numbe
 export async function removeTelegramSubscriber(userId: number, subscriberId: number) {
   const db = await getDb();
   if (!db) return;
-  const { telegramSubscribers } = await import("../drizzle/schema");
+  const { telegramSubscribers, customers } = await import("../drizzle/schema");
   const { and, eq } = await import("drizzle-orm");
+  // Get subscriber info before deleting (to clear customers table)
+  const [sub] = await db.select({ customerId: telegramSubscribers.customerId })
+    .from(telegramSubscribers)
+    .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.id, subscriberId)));
   await db.delete(telegramSubscribers)
     .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.id, subscriberId)));
+  // Sync: clear telegramChatId from customers table so badge updates for client
+  if (sub?.customerId) {
+    await db.update(customers).set({
+      telegramChatId: null,
+      telegramUsername: null,
+      telegramLinkedAt: null,
+    }).where(eq(customers.id, sub.customerId));
+  }
 }
 
 export async function getTelegramSubscriberByChatId(userId: number, chatId: string) {

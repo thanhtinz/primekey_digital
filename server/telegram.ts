@@ -217,6 +217,13 @@ export async function handleUserBotUpdate(userId: number, update: any): Promise<
         `Bạn sẽ nhận thông báo khi đơn hàng có cập nhật.\n` +
         `Gửi /stop để hủy đăng ký.`
       );
+      // Push SSE event to browser tab waiting for link confirmation
+      if (customer.email) {
+        try {
+          const { notifyTelegramLinked } = await import("./sse");
+          notifyTelegramLinked(customer.email, username ?? undefined);
+        } catch (_) {}
+      }
     } else {
       await sendTelegramMessage(config.botToken, chatId,
         `Xin chào! Gửi email của bạn để liên kết tài khoản và nhận thông báo đơn hàng.\n\nGửi /stop để hủy đăng ký.`

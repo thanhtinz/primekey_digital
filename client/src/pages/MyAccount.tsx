@@ -798,26 +798,34 @@ function TelegramLinkSection({ token }: { token: string }) {
   const telegramChatId = (meData as any)?.telegramChatId;
   const telegramUsername = (meData as any)?.telegramUsername;
   const telegramLinkedAt = (meData as any)?.telegramLinkedAt;
+  const customerEmail = (meData as any)?.email || "";
   const botUsername = (botConfig as any)?.botUsername || "";
   const isLinked = !!telegramChatId;
   const botEnabled = !!(botConfig as any)?.enabled;
 
-  // Auto-refresh polling: khi chưa liên kết và đang polling, check mỗi 5s
+  // SSE: khi bấm "Mở Telegram Bot", subscribe SSE để nhận push event realtime
   useEffect(() => {
-    if (!isPolling || isLinked) return;
-    const interval = setInterval(() => {
-      refetchMe();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [isPolling, isLinked, refetchMe]);
-
-  // Dừng polling khi đã liên kết
-  useEffect(() => {
-    if (isLinked && isPolling) {
-      setIsPolling(false);
-      toast.success("🎉 Đã liên kết Telegram thành công!");
-    }
-  }, [isLinked, isPolling]);
+    if (!isPolling || isLinked || !customerEmail) return;
+    const sse = new EventSource(`/api/sse/telegram-link?email=${encodeURIComponent(customerEmail)}`);
+    sse.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.linked) {
+          sse.close();
+          setIsPolling(false);
+          refetchMe();
+          toast.success("🎉 Đã liên kết Telegram thành công!");
+        }
+      } catch (_) {}
+    };
+    sse.onerror = () => {
+      // SSE failed - fallback to polling 5s
+      sse.close();
+      const interval = setInterval(() => { refetchMe(); }, 5000);
+      return () => clearInterval(interval);
+    };
+    return () => sse.close();
+  }, [isPolling, isLinked, customerEmail, refetchMe]);
 
   if (!botEnabled) return null;
 

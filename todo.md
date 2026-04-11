@@ -1999,3 +1999,9 @@ todo updated
 
 - [x] Sửa lỗi Telegram: upsertTelegramSubscriber chỉ lưu vào telegramSubscribers table, không cập nhật customers.telegramChatId → đã sửa db.ts để sync cả 2 table
 - [x] Sửa lỗi Feature Flags: CartPage.tsx chưa dùng useFeatureFlags → đã thêm couponEnabled và referralEnabled, ẩn card khi tắt
+
+## Session 2026-04-11 - 3 cải tiến Telegram + ProductDetail
+
+- [x] Đồng bộ xóa Telegram subscriber từ admin: removeTelegramSubscriber trong db.ts cũng clear customers.telegramChatId
+- [x] Feature flags ProductDetail: ẩn nút/section mã giới thiệu khi referral flag tắt
+- [x] Realtime badge Telegram: thêm SSE endpoint /api/sse/telegram-link, client dùng EventSource thay polling 5s, fallback polling nếu SSE lỗi

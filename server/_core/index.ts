@@ -11,6 +11,7 @@ import { appRouterFull } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import webhookRouter from "../webhooks";
+import sseRouter from "../sse";
 import { checkLicenseOnStartup, licenseMiddleware } from "../license";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -83,6 +84,8 @@ async function startServer() {
   // registerOAuthRoutes(app);
   // Webhook routes
   app.use("/api/webhooks", webhookRouter);
+  // SSE routes (realtime push events)
+  app.use("/api/sse", sseRouter);
   // tRPC API - use the full router with all sub-routers
   app.use(
     "/api/trpc",

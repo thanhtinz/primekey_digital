@@ -11,6 +11,7 @@ import {
   Phone, Mail, Loader2, Pencil, Home, Layers
 } from "@/components/Icon";
 import { toast } from "sonner";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 const formatVND = (val: string | number | null | undefined) => {
   if (!val) return "0 ₫";
@@ -78,10 +79,12 @@ export default function ProductDetail() {
   const { data: productReviews = [] } = trpc.products.getReviews.useQuery({ productId }, { enabled: !!productId });
   const { data: customFields = [] } = trpc.products.getCustomFields.useQuery({ productId }, { enabled: !!productId });
   const { data: wishlistItems = [] } = trpc.wishlist.list.useQuery({ email }, { enabled: !!email });
-  const { data: referralSettings } = trpc.referral.getSettings.useQuery(undefined, { staleTime: 300_000 });
+  const { isEnabled: isFeatureEnabled } = useFeatureFlags();
+  const referralFeatureEnabled = isFeatureEnabled("referral");
+  const { data: referralSettings } = trpc.referral.getSettings.useQuery(undefined, { staleTime: 300_000, enabled: referralFeatureEnabled });
   const { data: myReferralCode } = trpc.referral.getMyCode.useQuery(
     { email },
-    { enabled: !!email && !!referralSettings?.isEnabled, staleTime: 300_000 }
+    { enabled: !!email && !!referralSettings?.isEnabled && referralFeatureEnabled, staleTime: 300_000 }
   );
   const { data: inventoryCount } = trpc.inventory.countAvailable.useQuery(
     { productId, packageId: selectedPackageId || undefined },
@@ -545,7 +548,7 @@ export default function ProductDetail() {
               <div className="flex items-start justify-between gap-3 mb-3">
                 <h1 className="text-xl md:text-2xl font-extrabold leading-snug flex-1 text-white drop-shadow-sm">{product.name}</h1>
                 <div className="flex items-start gap-2 flex-shrink-0 pt-1 -mr-1">
-                  {referralSettings?.isEnabled && (
+                  {referralFeatureEnabled && referralSettings?.isEnabled && (
                     <div className="relative">
                       <button
                         onClick={() => { if (!email) { toast.info("Vui lòng đăng nhập để lấy link giới thiệu"); return; } setShowAffiliatePopup(true); }}
@@ -986,7 +989,7 @@ export default function ProductDetail() {
       </div>
 
       {/* ===== AFFILIATE POPUP ===== */}
-      {showAffiliatePopup && referralSettings?.isEnabled && (() => {
+      {showAffiliatePopup && referralFeatureEnabled && referralSettings?.isEnabled && (() => {
         const refCode = myReferralCode?.code || "";
         const productUrl = typeof window !== 'undefined' ? `${window.location.origin}/product/${productId}?ref=${refCode}` : "";
         const rewardLabel = referralSettings.rewardType === 'percentage'
