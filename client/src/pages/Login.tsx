@@ -3,12 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, Loader2, Eye, EyeOff, FileText, TrendingUp, Shield, CheckCircle2, User } from "@/components/Icon";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 interface LoginProps {
   onLoginSuccess: () => void;
 }
 
 export default function Login({ onLoginSuccess }: LoginProps) {
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const appName = publicInfo?.companyName || "";
+  const appLogo = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo || null;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,12 +66,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         </div>
         
         <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-12">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <span className="text-white font-bold text-2xl">IP</span>
+            <div className="flex items-center gap-4 mb-12">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 overflow-hidden">
+              {appLogo ? <img src={appLogo} alt={appName} className="h-full w-full object-contain p-1" /> : <span className="text-white font-bold text-2xl">{appName.slice(0,2).toUpperCase() || "IP"}</span>}
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Invoice Prime</h1>
+              <h1 className="text-3xl font-bold text-white">{appName}</h1>
               <p className="text-blue-300 text-sm">Hệ thống quản lý hóa đơn</p>
             </div>
           </div>
@@ -98,10 +102,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold">IP</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center overflow-hidden">
+              {appLogo ? <img src={appLogo} alt={appName} className="h-full w-full object-contain p-0.5" /> : <span className="text-white font-bold">{appName.slice(0,2).toUpperCase() || "IP"}</span>}
             </div>
-            <h1 className="text-xl font-bold text-white">Invoice Prime</h1>
+            <h1 className="text-xl font-bold text-white">{appName}</h1>
           </div>
 
           {/* Card */}
@@ -177,7 +181,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           </div>
 
           <p className="text-center text-xs text-slate-600 mt-6">
-            © 2025 Invoice Prime. All rights reserved.
+            © {new Date().getFullYear()} {appName}. All rights reserved.
           </p>
         </div>
       </div>

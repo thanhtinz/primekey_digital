@@ -383,7 +383,7 @@ function GlobalBrandApplier() {
       link.href = publicInfo.faviconUrl;
     }
     if (publicInfo?.companyName) {
-      document.title = publicInfo.companyName + " - Hệ Thống Quản Lý Hóa Đơn";
+      document.title = publicInfo.companyName;
     }
     // Apply brand colors as CSS variables
     const root = document.documentElement;

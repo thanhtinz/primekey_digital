@@ -47,7 +47,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const logoUrlDark = (publicInfo as any)?.logoDarkUrl;
   // Auto-select logo based on current theme: use dark logo if available and in dark mode
   const logoUrl = (isDarkTheme && logoUrlDark) ? logoUrlDark : logoUrlLight;
-  const companyName = publicInfo?.companyName || "ShopKey";
+  const companyName = publicInfo?.companyName || "";
 
   const { token: ctxToken, isLoggedIn: ctxLoggedIn, logout: ctxLogout, customer: ctxCustomer } = useCustomerAuth();
   const token = ctxToken || "";

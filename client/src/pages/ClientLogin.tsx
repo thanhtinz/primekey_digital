@@ -49,7 +49,7 @@ export default function ClientLogin() {
     { enabled: !!refCode, staleTime: 60_000 }
   );
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
-  const appName = (publicInfo as any)?.companyName || "ShopKey";
+  const appName = (publicInfo as any)?.companyName || "";
 
   const handleSuccess = (data: { token: string; email: string | null; name?: string | null; role?: string | null }) => {
     login(data.token, data.email || "", data.role);

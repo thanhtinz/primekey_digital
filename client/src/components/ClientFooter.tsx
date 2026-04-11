@@ -16,8 +16,7 @@ export function ClientFooter() {
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
-  const appTitle = (import.meta as any).env?.VITE_APP_TITLE || "ShopKey";
-  const companyName = publicInfo?.companyName || appTitle;
+  const companyName = publicInfo?.companyName || "";
   const companyEmail = publicInfo?.companyEmail;
   const companyPhone = publicInfo?.companyPhone;
   const companyAddress = publicInfo?.companyAddress;

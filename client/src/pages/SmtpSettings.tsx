@@ -8,11 +8,13 @@ import { Mail, Save, TestTube, CheckCircle, AlertCircle, Eye, EyeOff, Info } fro
 import { toast } from "sonner";
 
 export default function SmtpSettings() {
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const defaultFromName = publicInfo?.companyName || "";
   const [host, setHost] = useState("smtp.gmail.com");
   const [port, setPort] = useState(587);
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
-  const [fromName, setFromName] = useState("Invoice Prime");
+  const [fromName, setFromName] = useState("");
   const [fromEmail, setFromEmail] = useState("");
   const [secure, setSecure] = useState(false);
   const [enabled, setEnabled] = useState(true);
@@ -30,7 +32,7 @@ export default function SmtpSettings() {
       setUser(config.user || "");
       // Don't set password - server never returns it for security
       // hasPassword flag tells us if password is already saved
-      setFromName(config.fromName || "Invoice Prime");
+      setFromName(config.fromName || defaultFromName);
       setFromEmail(config.fromEmail || "");
       setSecure(config.secure || false);
       setEnabled(config.enabled !== false);
@@ -195,7 +197,7 @@ export default function SmtpSettings() {
                     <Input
                       value={fromName}
                       onChange={(e) => setFromName(e.target.value)}
-                      placeholder="Invoice Prime"
+                      placeholder={defaultFromName || "Tên người gửi email"}
                     />
                   </div>
                   <div className="space-y-1">

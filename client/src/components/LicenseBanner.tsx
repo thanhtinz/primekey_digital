@@ -21,6 +21,7 @@ export default function LicenseBanner() {
   const { data: sysInfo, isLoading, refetch } = trpc.settings.getSystemInfo.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
   });
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
 
   // Fetch broadcasts from DB (using any cast since broadcasts is added dynamically)
   const { data: broadcasts = [] } = (trpc as any).broadcasts.getActive.useQuery(undefined, {
@@ -113,7 +114,7 @@ export default function LicenseBanner() {
           {/* App info */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-bold text-gray-900 text-sm">{sysInfo?.appName || "Invoice Prime"}</span>
+              <span className="font-bold text-gray-900 text-sm">{sysInfo?.appName || publicInfo?.companyName || ""}</span>
               <span className="text-xs font-mono bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-md border border-violet-200">
                 v{sysInfo?.appVersion || "1.0.0"}
               </span>

@@ -144,7 +144,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: invoices } = trpc.invoices.list.useQuery(undefined, { staleTime: 30_000 });
   const { data: customers } = trpc.customers.list.useQuery(undefined, { staleTime: 30_000 });
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
-  const appName = publicInfo?.companyName || "Invoice Prime";
+  const appName = publicInfo?.companyName || "";
   const appLogo = publicInfo?.logoUrl || null;
   const appInitials = appName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "IP";
 
