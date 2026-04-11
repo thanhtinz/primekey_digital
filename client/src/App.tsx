@@ -103,7 +103,6 @@ import BlogPosts from "@/pages/BlogPosts";
 import ImageLibrary from "@/pages/ImageLibrary";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
 const BroadcastsAdmin = lazy(() => import("./pages/BroadcastsAdmin"));
-const AutoUpdateAdmin = lazy(() => import("./pages/AutoUpdateAdmin"));
 const LicenseSetup = lazy(() => import("./pages/LicenseSetup"));
 const SystemStatus = lazy(() => import("./pages/SystemStatus"));
 const RedisConsole = lazy(() => import("./pages/RedisConsole"));
@@ -325,7 +324,6 @@ function Router() {
         <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
         <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/broadcasts" component={() => isAdmin ? <BroadcastsAdmin /> : <ForbiddenPage />} />
-        <Route path="/admin/auto-update" component={() => isAdmin ? <AutoUpdateAdmin /> : <ForbiddenPage />} />
         <Route path="/license-setup" component={() => <LicenseSetup onActivated={() => window.location.reload()} />} />
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
 

@@ -8565,35 +8565,7 @@ export const updateRouter = router({
     };
   }),
 
-  // Cấu hình GitHub repository
-  configure: protectedProcedure.input(z.object({
-    githubRepo: z.string().min(1, "Vui lòng nhập repo (owner/repo)"),
-    githubBranch: z.string().default("main"),
-    githubToken: z.string().optional(),
-    githubWebhookSecret: z.string().optional(),
-    autoUpdate: z.boolean().optional(),
-  })).mutation(async ({ input, ctx }) => {
-    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
-    const { getDb } = await import("./db");
-    const { userSettings } = await import("../drizzle/schema");
-    const { eq } = await import("drizzle-orm");
-    const db = await getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-    const rows = await db.select({ id: userSettings.id }).from(userSettings).limit(1);
-    const updates: any = {
-      githubRepo: input.githubRepo,
-      githubBranch: input.githubBranch || "main",
-    };
-    if (input.githubToken !== undefined) updates.githubToken = input.githubToken || null;
-    if (input.githubWebhookSecret !== undefined) updates.githubWebhookSecret = input.githubWebhookSecret || null;
-    if (input.autoUpdate !== undefined) updates.autoUpdate = input.autoUpdate;
-    if (rows[0]) {
-      await db.update(userSettings).set(updates).where(eq(userSettings.id, rows[0].id));
-    }
-    return { success: true };
-  }),
-
-  // Kiểm tra phiên bản mới thủ công
+   // Kiểm tra phiên bản mới thủ công
   checkNow: protectedProcedure.mutation(async ({ ctx }) => {
     if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
     const { checkForUpdates } = await import("./auto-update");
@@ -8609,27 +8581,6 @@ export const updateRouter = router({
     return result;
   }),
 
-  // Lấy webhook URL để cấu hình trong GitHub
-  getWebhookInfo: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
-    const { getDb } = await import("./db");
-    const { userSettings } = await import("../drizzle/schema");
-    const db = await getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-    const rows = await db.select({ githubWebhookSecret: userSettings.githubWebhookSecret }).from(userSettings).limit(1);
-    return {
-      webhookUrl: "/api/webhooks/github-update",
-      hasSecret: !!(rows[0]?.githubWebhookSecret),
-      instructions: [
-        "1. Vào GitHub repo → Settings → Webhooks → Add webhook",
-        "2. Payload URL: https://your-domain.com/api/webhooks/github-update",
-        "3. Content type: application/json",
-        "4. Secret: Nhập Webhook Secret bạn đã cấu hình ở trên",
-        "5. Events: Chọn 'Just the push event'",
-        "6. Active: ✓ Tick vào",
-      ],
-    };
-  }),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

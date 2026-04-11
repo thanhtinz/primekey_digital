@@ -218,7 +218,7 @@ export default function LicenseBanner() {
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-gray-700">Cập nhật tự động</p>
                   <p className="text-xs text-gray-400 truncate">
-                    {sysInfo?.autoUpdate ? "Đang bật — tự cập nhật khi có phiên bản mới" : "Đang tắt — cần cập nhật thủ công"}
+                    {sysInfo?.autoUpdate ? "Đang bật — tự cập nhật khi có push lên GitHub" : "Đang tắt — webhook GitHub sẽ không trigger update"}
                   </p>
                 </div>
               </div>
@@ -258,25 +258,18 @@ export default function LicenseBanner() {
                 Có phiên bản mới: v{sysInfo.latestVersion}
               </p>
               <p className="text-xs text-blue-600">
-                {sysInfo.autoUpdate ? "Hệ thống sẽ tự động cập nhật." : "Bật cập nhật tự động để nhận ngay."}
+                {sysInfo.autoUpdate ? "Hệ thống sẽ tự động cập nhật khi có push lên GitHub." : "Bật để tự động cập nhật khi có push lên GitHub."}
               </p>
             </div>
-            <div className="flex gap-1.5 flex-shrink-0">
-              {!sysInfo.autoUpdate && (
-                <Button
-                  size="sm"
-                  onClick={handleToggleAutoUpdate}
-                  className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Bật tự động
-                </Button>
-              )}
-              <a href="/admin/auto-update">
-                <Button size="sm" variant="outline" className="h-7 px-3 text-xs border-blue-300 text-blue-700 hover:bg-blue-50">
-                  Chi tiết
-                </Button>
-              </a>
-            </div>
+            {!sysInfo.autoUpdate && (
+              <Button
+                size="sm"
+                onClick={handleToggleAutoUpdate}
+                className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+              >
+                Bật tự động
+              </Button>
+            )}
           </div>
         )}
       </div>
