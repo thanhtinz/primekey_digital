@@ -2051,3 +2051,11 @@ todo updated
 - [x] Backend: gửi Telegram + Email cảnh báo khi đăng nhập mới (loginWithPassword thành công)
 - [x] Backend: gửi Telegram + Email cảnh báo khi 2FA bị tắt (disable2fa procedure)
 - [x] Nội dung cảnh báo: thời gian, email, hành động (login/disable2fa)
+
+## Session 2026-04-11 - Redesign tabs + Fix backend settings
+
+- [ ] Redesign tab navigation trong AnnouncementManagement (xấu trên mobile)
+- [ ] Backend: áp dụng requireLoginToView vào products.listPublic và getPublicById
+- [ ] Backend: áp dụng showSoldCount vào listPublic (ẩn soldCount nếu tắt)
+- [ ] Backend: áp dụng allowProductReview vào review procedures
+- [ ] Backend: áp dụng orderCodeType/Length/Prefix vào buyNow procedure

@@ -1449,15 +1449,23 @@ export const appRouter = router({
 
     // Public: lấy sản phẩm của owner (single-tenant, userId=1) kèm packages + category
     listPublic: publicProcedure
-      .input(z.object({ categoryId: z.number().optional() }).optional())
-      .query(async ({ input }) => {
+      .input(z.object({ categoryId: z.number().optional(), customerToken: z.string().optional() }).optional())
+      .query(async ({ input, ctx }) => {
         const { getDb } = await import("./db");
         const drizzleDb = await getDb();
         if (!drizzleDb) return [];
-        const { products: productsTable, productPackages, productCategories, users, productTags, productTagMappings, productReviews, invoiceItems, invoices } = await import("../drizzle/schema");
+        const { products: productsTable, productPackages, productCategories, users, productTags, productTagMappings, productReviews, invoiceItems, invoices, userSettings: userSettingsTable } = await import("../drizzle/schema");
         const { eq, and, inArray, avg, count, sum, sql } = await import("drizzle-orm");
         const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
         if (!owner) return [];
+        // Check requireLoginToView setting
+        const [ownerSettings] = await drizzleDb.select().from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
+        if (ownerSettings?.requireLoginToView) {
+          // Check if customer is logged in via session cookie or customerToken
+          const isLoggedIn = !!(ctx as any).customer || !!(ctx as any).customerSession;
+          if (!isLoggedIn && !input?.customerToken) return { requiresLogin: true, products: [] } as any;
+        }
+        const _showSoldCount = ownerSettings?.showSoldCount ?? false;
         const conditions: any[] = [eq(productsTable.userId, owner.id)];
         if (input?.categoryId) conditions.push(eq(productsTable.categoryId, input.categoryId));
         const productRows = await drizzleDb.select().from(productsTable).where(and(...conditions)).orderBy(productsTable.createdAt);
@@ -1530,7 +1538,7 @@ export const appRouter = router({
           tags: allTagMappings.filter((m: any) => m.productId === p.id).map((m: any) => allTagsList.find((t: any) => t.id === m.tagId)).filter(Boolean),
           avgRating: reviewStats.find(r => r.productId === p.id)?.avgRating || 0,
           reviewCount: reviewStats.find(r => r.productId === p.id)?.reviewCount || 0,
-          soldCount: soldStats.find((s: any) => s.productId === p.id)?.soldCount || 0,
+          soldCount: _showSoldCount ? (soldStats.find((s: any) => s.productId === p.id)?.soldCount || 0) : undefined,
         }));
       }),
     // Public: lấy 1 sản phẩm kèm packages theo id
@@ -1986,10 +1994,17 @@ export const appRouter = router({
       comment: z.string().optional(),
       invoiceId: z.number().optional(),
     })).mutation(async ({ input }) => {
-      const { productReviews } = await import("../drizzle/schema");
+      const { productReviews, users, userSettings: userSettingsTable } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
+      // Check allowProductReview setting
+      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (owner) {
+        const [settings] = await drizzleDb.select().from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
+        if (settings && settings.allowProductReview === false) throw new Error("Tính năng đánh giá sản phẩm hiện đang tắt");
+      }
       await drizzleDb.insert(productReviews).values({ productId: input.productId, customerEmail: input.customerEmail, customerName: input.customerName || null, rating: input.rating, comment: input.comment || null, invoiceId: input.invoiceId || null, isApproved: false });
       return { success: true };
     }),
@@ -6210,7 +6225,7 @@ export const appRouter = router({
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
-      const { products: productsTable, productPackages, customers, invoices, invoiceItems, users, paymentGatewaysConfig, coupons, couponUsages } = await import("../drizzle/schema");
+      const { products: productsTable, productPackages, customers, invoices, invoiceItems, users, paymentGatewaysConfig, coupons, couponUsages, userSettings } = await import("../drizzle/schema");
       const { eq, and, sql } = await import("drizzle-orm");
 
       // Get owner (first user)
@@ -6297,8 +6312,21 @@ export const appRouter = router({
         } as any);
         [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
       }
-      // Generate invoice number
-      const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+      // Generate invoice number using owner's orderCode settings
+      const [_ocSettings] = await drizzleDb.select().from(userSettings).where(eq(userSettings.userId, owner.id)).limit(1);
+      const _ocType = _ocSettings?.orderCodeType || "random";
+      const _ocLength = _ocSettings?.orderCodeLength || 8;
+      const _ocPrefix = _ocSettings?.orderCodePrefix || "";
+      let _ocBody: string;
+      if (_ocType === "sequential") {
+        const [lastInv] = await drizzleDb.select({ invoiceNumber: invoices.invoiceNumber }).from(invoices).where(eq(invoices.userId, owner.id)).orderBy(sql`id DESC`).limit(1);
+        const lastNum = lastInv ? parseInt(lastInv.invoiceNumber.replace(/[^0-9]/g, "")) || 0 : 0;
+        _ocBody = String(lastNum + 1).padStart(_ocLength, "0");
+      } else {
+        const _chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        _ocBody = Array.from({ length: _ocLength }, () => _chars[Math.floor(Math.random() * _chars.length)]).join("");
+      }
+      const invoiceNumber = `${_ocPrefix}${_ocBody}`;
       const orderCode = Date.now() % 9007199254740991;
       // Create invoice
       await drizzleDb.insert(invoices).values({
