@@ -84,12 +84,7 @@ export default function LicenseBanner() {
     return { color: "text-emerald-700", bg: "bg-emerald-100", border: "border-emerald-200", label: "Hợp lệ" };
   };
 
-  const getPlanLabel = () => {
-    if (isDevMode) return "Development";
-    const plan = sysInfo?.licensePlan || "standard";
-    const labels: Record<string, string> = { standard: "Standard", pro: "Pro", enterprise: "Enterprise", lifetime: "Lifetime" };
-    return labels[plan] || plan.charAt(0).toUpperCase() + plan.slice(1);
-  };
+  const getPlanLabel = () => isDevMode ? "Development" : "Giấy phép hợp lệ";
 
   const licenseStatus = getLicenseStatus();
 
@@ -137,9 +132,7 @@ export default function LicenseBanner() {
               <span className={`text-xs font-medium ${licenseStatus.color}`}>
                 {isDevMode ? "Chế độ phát triển" : `Giấy phép ${licenseStatus.label}`}
               </span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-md border ${licenseStatus.bg} ${licenseStatus.color} ${licenseStatus.border}`}>
-                {getPlanLabel()}
-              </span>
+
               {sysInfo?.licenseExpiresAt && !isDevMode && (
                 <span className="text-xs text-gray-400 flex items-center gap-0.5">
                   <Calendar className="h-3 w-3" />
@@ -187,10 +180,7 @@ export default function LicenseBanner() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div className="p-2.5 rounded-lg bg-white border border-gray-100 text-center">
-                <div className="text-xs text-gray-400 mb-0.5">Gói</div>
-                <div className="text-sm font-semibold text-gray-800">{getPlanLabel()}</div>
-              </div>
+
               <div className="p-2.5 rounded-lg bg-white border border-gray-100 text-center">
                 <div className="text-xs text-gray-400 mb-0.5">Trạng thái</div>
                 <div className={`text-sm font-semibold ${licenseValid ? "text-emerald-600" : "text-red-600"}`}>

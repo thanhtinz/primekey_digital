@@ -6,14 +6,13 @@
  * Options:
  *   --email    Email đăng ký (bắt buộc)
  *   --domain   Domain được cấp phép (bắt buộc)
- *   --plan     Gói: standard | pro | enterprise (mặc định: standard)
  *   --days     Số ngày hiệu lực (0 = vĩnh viễn, mặc định: 365)
  *   --owner    Tên chủ sở hữu (tùy chọn)
  *   --key      LICENSE_MASTER_KEY (hoặc set env var)
  *
  * Ví dụ:
  *   LICENSE_MASTER_KEY=my-secret node scripts/generate-license.mjs \
- *     --email user@example.com --domain example.com --plan pro --days 365
+ *     --email user@example.com --domain example.com --days 365
  */
 
 import crypto from "crypto";
@@ -72,7 +71,6 @@ const getArg = (name) => {
 
 const email = getArg("email");
 const domain = getArg("domain");
-const plan = getArg("plan") || "standard";
 const days = parseInt(getArg("days") || "365", 10);
 const owner = getArg("owner") || "";
 const masterKey = getArg("key") || process.env.LICENSE_MASTER_KEY;
@@ -80,7 +78,7 @@ const masterKey = getArg("key") || process.env.LICENSE_MASTER_KEY;
 if (!email || !domain) {
   console.error("❌ Thiếu tham số bắt buộc: --email và --domain");
   console.error("\nCách dùng:");
-  console.error("  node scripts/generate-license.mjs --email user@example.com --domain example.com --plan pro --days 365");
+  console.error("  node scripts/generate-license.mjs --email user@example.com --domain example.com --days 365");
   process.exit(1);
 }
 
@@ -100,7 +98,7 @@ const payloadStr = [
   KEY_VERSION,
   normalizedEmail,
   normalizedDomain,
-  plan,
+  "license",
   expiresAt.toString(),
   issuedAt.toString(),
   owner,
@@ -119,7 +117,7 @@ const tokenPayload = {
   v: KEY_VERSION,
   e: normalizedEmail,
   d: normalizedDomain,
-  p: plan,
+  p: "license",
   exp: expiresAt,
   iat: issuedAt,
   o: owner,
@@ -140,14 +138,14 @@ console.log("  INVOICE PRIME - LICENSE KEY GENERATOR");
 console.log("=".repeat(60));
 console.log(`\n📧 Email:          ${normalizedEmail}`);
 console.log(`🌐 Domain:         ${normalizedDomain}`);
-console.log(`📦 Gói:            ${plan.toUpperCase()}`);
+console.log(`📋 Loại:           Giấy phép`);
 console.log(`👤 Chủ sở hữu:    ${owner || "(không có)"}`);
 console.log(`📅 Ngày cấp:       ${new Date(issuedAt).toLocaleString("vi-VN")}`);
 console.log(`⏰ Hết hạn:        ${expiresAt === 0 ? "Vĩnh viễn" : new Date(expiresAt).toLocaleString("vi-VN")}`);
 console.log("\n" + "-".repeat(60));
 console.log(`\n🔑 LICENSE KEY:\n\n   ${licenseKey}\n`);
 console.log("-".repeat(60));
-console.log(`\n🔐 ACTIVATION TOKEN (lưu vào DB):\n`);
+console.log(`\n🔐 ACTIVATION TOKEN (cấp cho user):\n`);
 console.log(`   ${activationToken}\n`);
 console.log("=".repeat(60));
 console.log("\n⚠️  Lưu ý bảo mật:");

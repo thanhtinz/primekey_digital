@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
-  CheckCircle2, Key, Shield, Zap, Star, AlertCircle, Loader2,
-  ArrowRight, Lock, ChevronDown, ChevronUp, Mail, Globe, FileKey
+  CheckCircle2, Key, Shield, AlertCircle, Loader2,
+  ChevronDown, ChevronUp, Globe, FileKey
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,35 +14,15 @@ interface LicenseSetupProps {
   onActivated: () => void;
 }
 
-const PLANS = [
-  {
-    id: "standard",
-    name: "Standard",
-    color: "bg-blue-500",
-    textColor: "text-blue-600",
-    borderColor: "border-blue-200",
-    bgColor: "bg-blue-50",
-    features: ["Quản lý hóa đơn cơ bản", "Tối đa 500 hóa đơn/tháng", "1 cổng thanh toán", "Email thông báo", "Hỗ trợ qua email"],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    color: "bg-purple-500",
-    textColor: "text-purple-600",
-    borderColor: "border-purple-200",
-    bgColor: "bg-purple-50",
-    popular: true,
-    features: ["Tất cả tính năng Standard", "Hóa đơn không giới hạn", "Nhiều cổng thanh toán", "Kho avatar & thư viện ảnh", "Telegram bot", "Tùy chỉnh giao diện", "Hỗ trợ ưu tiên"],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    color: "bg-amber-500",
-    textColor: "text-amber-600",
-    borderColor: "border-amber-200",
-    bgColor: "bg-amber-50",
-    features: ["Tất cả tính năng Pro", "Multi-tenant", "API tùy chỉnh", "SLA 99.9%", "Hỗ trợ 24/7", "Onboarding riêng"],
-  },
+const FEATURES = [
+  "Quản lý hóa đơn không giới hạn",
+  "Nhiều cổng thanh toán (PayOS, PayPal, v.v.)",
+  "Kho avatar & thư viện ảnh",
+  "Tích hợp Telegram bot",
+  "Tùy chỉnh trang cảm ơn & 404",
+  "Quản lý sản phẩm & gói dịch vụ",
+  "Báo cáo & thống kê chi tiết",
+  "Cập nhật tự động qua GitHub",
 ];
 
 export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
@@ -53,11 +32,9 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
   const [domain, setDomain] = useState(window.location.hostname);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [step, setStep] = useState<"intro" | "activate" | "success">("intro");
-  const [activatedPlan, setActivatedPlan] = useState<string | null>(null);
 
   const activateMutation = trpc.license.activate.useMutation({
     onSuccess: (data) => {
-      setActivatedPlan(data.plan);
       setStep("success");
       toast.success(data.message || "Kích hoạt license thành công!");
       setTimeout(() => {
@@ -70,19 +47,10 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
   });
 
   const handleActivate = () => {
-    if (!licenseKey.trim()) {
-      toast.error("Vui lòng nhập license key");
-      return;
-    }
-    if (!email.trim()) {
-      toast.error("Vui lòng nhập email đăng ký");
-      return;
-    }
+    if (!licenseKey.trim()) { toast.error("Vui lòng nhập license key"); return; }
+    if (!email.trim()) { toast.error("Vui lòng nhập email đăng ký"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      toast.error("Email không hợp lệ");
-      return;
-    }
+    if (!emailRegex.test(email.trim())) { toast.error("Email không hợp lệ"); return; }
     activateMutation.mutate({
       licenseKey: licenseKey.trim(),
       email: email.trim(),
@@ -91,7 +59,6 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
     });
   };
 
-  // Format license key input: auto-insert dashes
   const handleLicenseKeyChange = (val: string) => {
     const clean = val.toUpperCase().replace(/[^A-Z0-9]/g, "");
     const parts: string[] = [];
@@ -101,8 +68,8 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
     setLicenseKey(parts.join("-"));
   };
 
+  // Success screen
   if (step === "success") {
-    const plan = PLANS.find(p => p.id === activatedPlan) || PLANS[0];
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -110,11 +77,8 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
             <CheckCircle2 className="w-12 h-12 text-green-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Kích hoạt thành công!</h1>
-          <p className="text-gray-500 mb-4">Hệ thống đang được khởi động với gói <strong>{plan.name}</strong></p>
-          <Badge className={`${plan.color} text-white px-4 py-1.5 text-sm`}>
-            {plan.name} Plan
-          </Badge>
-          <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400">
+          <p className="text-gray-500 mb-6">Hệ thống Invoice Prime đã được kích hoạt và sẵn sàng sử dụng.</p>
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <Loader2 className="w-4 h-4 animate-spin" />
             Đang chuyển hướng...
           </div>
@@ -123,11 +87,11 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
     );
   }
 
+  // Activate form
   if (step === "activate") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
               <Key className="w-8 h-8 text-white" />
@@ -138,10 +102,9 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
 
           <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
             <CardContent className="pt-6 space-y-4">
-              {/* Email field */}
+              {/* Email */}
               <div className="space-y-2">
-                <Label className="text-slate-300 text-sm flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5" />
+                <Label className="text-slate-300 text-sm">
                   Email đăng ký <span className="text-red-400">*</span>
                 </Label>
                 <Input
@@ -150,15 +113,13 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="email@example.com"
                   className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 text-sm h-11 focus:border-blue-500"
-                  onKeyDown={(e) => e.key === "Enter" && handleActivate()}
                 />
                 <p className="text-xs text-slate-500">Email phải khớp với email đã đăng ký mua license</p>
               </div>
 
-              {/* License Key field */}
+              {/* License Key */}
               <div className="space-y-2">
-                <Label className="text-slate-300 text-sm flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5" />
+                <Label className="text-slate-300 text-sm">
                   License Key <span className="text-red-400">*</span>
                 </Label>
                 <Input
@@ -166,12 +127,11 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
                   onChange={(e) => handleLicenseKeyChange(e.target.value)}
                   placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
                   className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 font-mono text-sm h-11 focus:border-blue-500 tracking-wider"
-                  onKeyDown={(e) => e.key === "Enter" && handleActivate()}
                   maxLength={29}
                 />
               </div>
 
-              {/* Activation Token field */}
+              {/* Activation Token */}
               <div className="space-y-2">
                 <Label className="text-slate-300 text-sm flex items-center gap-1.5">
                   <FileKey className="w-3.5 h-3.5" />
@@ -232,13 +192,12 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
                 </div>
               )}
 
-              {/* Security notice */}
               <div className="flex items-start gap-2 p-3 bg-blue-500/5 border border-blue-500/15 rounded-lg">
                 <Shield className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-blue-300 font-medium mb-0.5">Bảo mật 3 lớp</p>
                   <p className="text-xs text-slate-500">
-                    Xác thực đồng thời: Email đăng ký + License Key + Domain + Chữ ký HMAC-SHA256
+                    Xác thực: Email đăng ký + License Key + Domain + Chữ ký HMAC-SHA256
                   </p>
                 </div>
               </div>
@@ -267,84 +226,68 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
     );
   }
 
-  // Intro step
+  // Intro screen
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-      {/* Hero */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/30">
-            <Lock className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl">
+        {/* Logo & Title */}
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl shadow-blue-500/30">
+            <Shield className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-3">Invoice Prime</h1>
-          <p className="text-slate-400 text-lg max-w-md mx-auto">
-            Hệ thống quản lý hóa đơn chuyên nghiệp. Vui lòng kích hoạt license để bắt đầu sử dụng.
-          </p>
-          {/* Security badges */}
-          <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
-            <span className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-700">
-              <Shield className="w-3 h-3 text-green-400" />
-              HMAC-SHA256
-            </span>
-            <span className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-700">
-              <Mail className="w-3 h-3 text-blue-400" />
-              Email Binding
-            </span>
-            <span className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-700">
-              <Globe className="w-3 h-3 text-purple-400" />
-              Domain Lock
-            </span>
-          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Invoice Prime</h1>
+          <p className="text-slate-400 text-base">Hệ thống quản lý hóa đơn chuyên nghiệp</p>
         </div>
 
-        {/* Plans */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl mb-8">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={`relative p-5 rounded-2xl border ${plan.borderColor} ${plan.bgColor} text-left`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-purple-600 text-white text-xs px-3">
-                    <Star className="w-3 h-3 mr-1 fill-current" />
-                    Phổ biến
-                  </Badge>
-                </div>
-              )}
-              <div className={`w-8 h-8 ${plan.color} rounded-lg flex items-center justify-center mb-3`}>
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <h3 className={`font-bold text-base mb-3 ${plan.textColor}`}>{plan.name}</h3>
-              <ul className="space-y-1.5">
-                {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                    <CheckCircle2 className={`w-3.5 h-3.5 ${plan.textColor} mt-0.5 flex-shrink-0`} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
+        {/* License Required Notice */}
+        <Card className="bg-amber-500/10 border-amber-500/30 mb-6">
+          <CardContent className="p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-amber-300 font-medium text-sm">Yêu cầu giấy phép</p>
+              <p className="text-amber-400/70 text-xs mt-0.5">
+                Hệ thống này yêu cầu giấy phép hợp lệ để sử dụng. Vui lòng nhập license key được cấp sau khi mua.
+              </p>
             </div>
-          ))}
+          </CardContent>
+        </Card>
+
+        {/* Features */}
+        <Card className="bg-slate-800/50 border-slate-700 mb-6">
+          <CardContent className="p-6">
+            <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
+              <Key className="w-4 h-4 text-blue-400" />
+              Tính năng bao gồm trong giấy phép
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {FEATURES.map((feature, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span className="text-slate-300 text-sm">{feature}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* CTA */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button
+            onClick={() => setStep("activate")}
+            size="lg"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 h-12"
+          >
+            <Key className="w-5 h-5 mr-2" />
+            Nhập License Key
+          </Button>
         </div>
 
-        <Button
-          onClick={() => setStep("activate")}
-          size="lg"
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 h-12 text-base font-medium shadow-lg shadow-blue-500/25"
-        >
-          Kích hoạt License
-          <ArrowRight className="w-5 h-5 ml-2" />
-        </Button>
-
-        <p className="mt-4 text-slate-500 text-sm">
-          Đã có license key? Nhấn nút trên để nhập và kích hoạt ngay.
+        <p className="text-center text-slate-600 text-xs mt-6">
+          Chưa có license?{" "}
+          <a href="mailto:support@example.com" className="text-blue-400 hover:underline">
+            Liên hệ để mua license
+          </a>
         </p>
-      </div>
-
-      {/* Footer */}
-      <div className="p-4 text-center border-t border-slate-800">
-        <p className="text-slate-600 text-xs">Invoice Prime © 2024 · Cần hỗ trợ? Liên hệ nhà cung cấp của bạn</p>
       </div>
     </div>
   );

@@ -6,36 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
-  Key, Shield, CheckCircle2, XCircle, AlertTriangle, Crown,
+  Key, Shield, XCircle, AlertTriangle,
   Calendar, Globe, User, Copy, RefreshCw, Loader2, Info,
-  Award, Zap, Package, Lock, Clock, Star,
-  ShieldCheck, ShieldX
+  Lock, Clock, ShieldCheck, ShieldX
 } from "@/components/Icon";
 import DashboardLayoutCustom from "@/components/DashboardLayoutCustom";
-
-const PLAN_CONFIG: Record<string, {
-  label: string; color: string; bgColor: string; borderColor: string;
-  icon: React.ReactNode; features: string[]; badge: string;
-}> = {
-  standard: {
-    label: "Standard", color: "text-blue-700", bgColor: "bg-blue-50",
-    borderColor: "border-blue-200", badge: "bg-blue-100 text-blue-700",
-    icon: <Package className="h-5 w-5 text-blue-600" />,
-    features: ["Quản lý hóa đơn cơ bản", "Tối đa 500 hóa đơn/tháng", "1 người dùng", "Hỗ trợ email"],
-  },
-  pro: {
-    label: "Pro", color: "text-purple-700", bgColor: "bg-purple-50",
-    borderColor: "border-purple-200", badge: "bg-purple-100 text-purple-700",
-    icon: <Zap className="h-5 w-5 text-purple-600" />,
-    features: ["Không giới hạn hóa đơn", "Tối đa 5 người dùng", "Báo cáo nâng cao", "Tích hợp PayOS & PayPal", "Hỗ trợ ưu tiên"],
-  },
-  enterprise: {
-    label: "Enterprise", color: "text-amber-700", bgColor: "bg-amber-50",
-    borderColor: "border-amber-200", badge: "bg-amber-100 text-amber-700",
-    icon: <Crown className="h-5 w-5 text-amber-600" />,
-    features: ["Không giới hạn mọi thứ", "Người dùng không giới hạn", "API tùy chỉnh", "SLA 99.9%", "Hỗ trợ 24/7 qua hotline"],
-  },
-};
 
 function StatusBadge({ activated, expiresAt }: { activated: boolean; expiresAt?: string | null }) {
   if (!activated) return (
@@ -102,15 +77,13 @@ export default function LicenseAdmin() {
     });
   };
 
-  const plan = status?.plan || "standard";
-  const planConfig = PLAN_CONFIG[plan] || PLAN_CONFIG.standard;
   const daysLeft = status?.expiresAt
     ? Math.ceil((new Date(status.expiresAt).getTime() - Date.now()) / 86400000)
     : null;
 
   return (
     <DashboardLayoutCustom>
-      <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
+      <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -133,16 +106,19 @@ export default function LicenseAdmin() {
         ) : (
           <>
             {/* Status Card */}
-            <Card className={`border-2 ${status?.activated ? planConfig.borderColor : "border-red-200"}`}>
+            <Card className={`border-2 ${status?.activated ? "border-emerald-200" : "border-red-200"}`}>
               <CardContent className="p-5 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${status?.activated ? planConfig.bgColor : "bg-red-50"}`}>
-                    {status?.activated ? planConfig.icon : <ShieldX className="h-7 w-7 text-red-500" />}
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${status?.activated ? "bg-emerald-50" : "bg-red-50"}`}>
+                    {status?.activated
+                      ? <ShieldCheck className="h-7 w-7 text-emerald-600" />
+                      : <ShieldX className="h-7 w-7 text-red-500" />
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <h2 className="text-lg font-bold text-gray-900">
-                        {status?.activated ? `Gói ${planConfig.label}` : "Chưa có giấy phép"}
+                        {status?.activated ? "Giấy phép hợp lệ" : "Chưa có giấy phép"}
                       </h2>
                       <StatusBadge activated={status?.activated ?? false} expiresAt={status?.expiresAt} />
                     </div>
@@ -216,7 +192,7 @@ export default function LicenseAdmin() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 bg-emerald-50 rounded-lg px-3 py-2">
-                            <Star className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <ShieldCheck className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
                               <p className="text-xs text-gray-500">Thời hạn</p>
                               <p className="text-sm font-medium text-emerald-700">Vĩnh viễn</p>
@@ -226,7 +202,7 @@ export default function LicenseAdmin() {
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500 mt-1">
-                        Hệ thống chưa được kích hoạt. Nhập license key để bắt đầu sử dụng đầy đủ tính năng.
+                        Hệ thống chưa được kích hoạt. Nhập license key để bắt đầu sử dụng.
                       </p>
                     )}
                   </div>
@@ -262,7 +238,7 @@ export default function LicenseAdmin() {
               </CardContent>
             </Card>
 
-            {/* Activate Form */}
+            {/* Activate / Change Form */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -272,7 +248,7 @@ export default function LicenseAdmin() {
                 <CardDescription>
                   {status?.activated
                     ? "Nhập license key mới để thay thế license hiện tại"
-                    : "Nhập license key được cung cấp khi mua để kích hoạt hệ thống"}
+                    : "Nhập thông tin license được cung cấp để kích hoạt hệ thống"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -363,48 +339,6 @@ export default function LicenseAdmin() {
                 </Button>
               </CardContent>
             </Card>
-
-            {/* Plan Comparison */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <Award className="h-4 w-4 text-gray-500" /> So sánh các gói
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {Object.entries(PLAN_CONFIG).map(([key, cfg]) => {
-                  const isCurrentPlan = status?.activated && plan === key;
-                  return (
-                    <div
-                      key={key}
-                      className={`rounded-xl border-2 p-4 transition-all ${
-                        isCurrentPlan
-                          ? `${cfg.borderColor} ${cfg.bgColor}`
-                          : "border-gray-100 bg-white hover:border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          {cfg.icon}
-                          <span className="font-semibold text-gray-900">{cfg.label}</span>
-                        </div>
-                        {isCurrentPlan && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.badge}`}>
-                            Hiện tại
-                          </span>
-                        )}
-                      </div>
-                      <ul className="space-y-1.5">
-                        {cfg.features.map((f, i) => (
-                          <li key={i} className="flex items-start gap-1.5 text-xs text-gray-600">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* Info Box */}
             <div className="flex gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
