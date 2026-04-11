@@ -132,16 +132,22 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
     const prices = product.packages.map((pkg: any) => parseFloat(pkg.price)).filter((v: number) => !isNaN(v) && v > 0);
     if (prices.length === 0) return "Liên hệ";
     const min = Math.min(...prices);
-    return min.toLocaleString("vi-VN") + "₫";
+    const max = Math.max(...prices);
+    if (min === max) return min.toLocaleString("vi-VN") + "₫";
+    return min.toLocaleString("vi-VN") + "₫ ~ " + max.toLocaleString("vi-VN") + "₫";
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSearch = () => {
     if (searchQuery.trim()) {
       setShowSuggestions(false);
       go(`/catalog?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
     }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    doSearch();
   };
 
   const handleSuggestionClick = (productId: number) => {
@@ -299,7 +305,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                       <button
                         key={product.id}
                         type="button"
-                        onClick={() => handleSuggestionClick(product.id)}
+                        onMouseDown={e => { e.preventDefault(); handleSuggestionClick(product.id); }}
                         className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/8 transition-colors text-left"
                       >
                         {product.imageUrl ? (
@@ -316,7 +322,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                       </button>
                     ))}
                     <button
-                      type="submit"
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); doSearch(); }}
                       className="w-full flex items-center gap-2 px-3 py-2.5 border-t border-white/10 text-xs text-white/50 hover:bg-white/5 transition-colors"
                     >
                       <Search className="w-3.5 h-3.5" />
@@ -565,7 +572,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                       <button
                         key={product.id}
                         type="button"
-                        onClick={() => handleSuggestionClick(product.id)}
+                        onMouseDown={e => { e.preventDefault(); handleSuggestionClick(product.id); }}
                         className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/8 transition-colors text-left"
                       >
                         {product.imageUrl ? (
@@ -582,7 +589,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                       </button>
                     ))}
                     <button
-                      type="submit"
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); doSearch(); }}
                       className="w-full flex items-center gap-2 px-3 py-2.5 border-t border-white/10 text-xs text-white/50 hover:bg-white/5 transition-colors"
                     >
                       <Search className="w-3.5 h-3.5" />
