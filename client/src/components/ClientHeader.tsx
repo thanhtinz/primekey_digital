@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Menu, X, Search, Bell, Gift, User, Home, Package, CreditCard, BookOpen, ChevronRight, ChevronDown, Settings, LogOut, Wallet, ShoppingCart, LayoutGrid, Star, Ticket, Tag, HelpCircle, MessageSquare, Trophy } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { FontAwesomeIcon, isFontAwesomeIcon } from "@/components/FontAwesomeIconPicker";
@@ -187,10 +188,14 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   };
 
   const handleLogout = () => {
-    ctxLogout();
     setAvatarOpen(false);
     setMenuOpen(false);
-    navigate("/");
+    toast.success("Đã đăng xuất thành công", { duration: 2000 });
+    // Delay navigate slightly so toast has time to render before page transition
+    setTimeout(() => {
+      ctxLogout();
+      navigate("/");
+    }, 300);
   };
 
   return (
