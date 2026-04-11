@@ -2015,9 +2015,9 @@ todo updated
 
 ## Session 2026-04-11 - Bảo mật giấy phép + Redesign header PC
 
-- [ ] Bảo mật giấy phép: phân tích lỗ hổng bypass, tăng cường validation server-side
-- [ ] Redesign header PC: tách 2 tầng (top bar logo+search+icons, nav bar danh mục+hotline+email)
-- [ ] Redesign banner PC: banner lớn full-width + mini banner 4 ô bên dưới
+- [x] Bảo mật giấy phép: phân tích lỗ hổng bypass, tăng cường validation server-side
+- [x] Redesign header PC: tách 2 tầng (top bar logo+search+icons, nav bar danh mục+hotline+email)
+- [x] Redesign banner PC: banner lớn full-width + mini banner 4 ô bên dưới
 
 ## Session 2026-04-11 - Bảo mật giấy phép và Redesign Header PC
 
@@ -2026,9 +2026,9 @@ todo updated
 
 ## Session 2026-04-11 - Redesign PC LandingPage + Side Banners + Telegram fix
 
-- [ ] DB schema: thêm bảng sideBanners (left/right, imageUrl, linkUrl, title, active) và miniBanners (imageUrl, linkUrl, title, order, active)
-- [ ] Backend: procedures sideBanners.list (public), sideBanners.create/update/delete (admin), miniBanners.list (public), miniBanners.create/update/delete (admin)
-- [ ] Redesign LandingPage PC: layout 3 cột (side banner trái + banner chính giữa + side banner phải) + 4 mini banners bên dưới (carousel trên mobile)
-- [ ] Admin: trang quản lý Side Banners (2 banner dọc 2 bên) với upload ảnh, link, bật/tắt
-- [ ] Admin: trang quản lý Mini Banners (4 ô banner nhỏ bên dưới) với upload ảnh, link, thứ tự, bật/tắt
-- [ ] Sửa lỗi Telegram User Bot: trang cài đặt thông báo client chỉ hiện 3 tính năng (Trạng thái đơn hàng, Flash Sale, Khuyến mãi) - cần thêm đủ các tính năng đã bật trong admin
+- [x] DB schema: thêm bảng sideBanners (left/right, imageUrl, linkUrl, title, active) và miniBanners (imageUrl, linkUrl, title, order, active)
+- [x] Backend: procedures sideBanners.list (public), sideBanners.create/update/delete (admin), miniBanners.list (public), miniBanners.create/update/delete (admin)
+- [x] Redesign LandingPage PC: layout 3 cột (side banner trái + banner chính giữa + side banner phải) + 4 mini banners bên dưới (carousel trên mobile)
+- [x] Admin: trang quản lý Side Banners (2 banner dọc 2 bên) với upload ảnh, link, bật/tắt
+- [x] Admin: trang quản lý Mini Banners (4 ô banner nhỏ bên dưới) với upload ảnh, link, thứ tự, bật/tắt
+- [x] Sửa lỗi Telegram User Bot: trang cài đặt thông báo client chỉ hiện 3 tính năng (Trạng thái đơn hàng, Flash Sale, Khuyến mãi) - đã thêm đủ 7 tính năng
