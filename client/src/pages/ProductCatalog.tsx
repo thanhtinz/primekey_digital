@@ -30,6 +30,13 @@ export default function ProductCatalog() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filtersApplied, setFiltersApplied] = useState(false);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
+
+  // Sync search state with URL param ?q= when URL changes (e.g. navigating from header search)
+  useEffect(() => {
+    const p = new URLSearchParams(searchParams);
+    const q = p.get("q") || "";
+    setSearch(q);
+  }, [searchParams]);
   const { data: productsRaw = [], isLoading } = trpc.products.listPublic.useQuery(undefined);
   const { data: allTags = [] } = trpc.productTags.list.useQuery(undefined, { staleTime: 60_000 });
   const { data: categoriesData } = trpc.categories.list.useQuery(undefined, { staleTime: 60_000 });
@@ -179,10 +186,15 @@ export default function ProductCatalog() {
         <div className="max-w-6xl mx-auto bg-gradient-to-r from-slate-700 via-slate-600 to-teal-600 rounded-2xl px-6 py-6 text-white">
           <div className="flex items-center gap-2 mb-2">
             <ShoppingBag className="h-6 w-6" />
-            <h1 className="text-2xl sm:text-3xl font-bold">Tất cả sản phẩm</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              {search ? `Kết quả tìm kiếm` : `Tất cả sản phẩm`}
+            </h1>
           </div>
           <p className="text-white/80 text-sm sm:text-base">
-            Khám phá bộ sưu tập sản phẩm chất lượng cao được chọn lọc dành riêng cho bạn
+            {search
+              ? <>Đang hiển thị kết quả cho: <span className="font-semibold text-white">&ldquo;{search}&rdquo;</span></>
+              : `Khám phá bộ sưu tập sản phẩm chất lượng cao được chọn lọc dành riêng cho bạn`
+            }
           </p>
         </div>
       </div>
@@ -330,7 +342,19 @@ export default function ProductCatalog() {
         {/* ===== TOOLBAR ===== */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-gray-500">
-            <span className="font-bold text-gray-800">{filtered.length}</span> sản phẩm
+            {search ? (
+              <>
+                <span className="font-bold text-gray-800">{filtered.length}</span> kết quả cho &ldquo;<span className="text-blue-600 font-medium">{search}</span>&rdquo;
+                <button
+                  onClick={() => { setSearch(""); setLocation("/catalog"); }}
+                  className="ml-2 text-xs text-red-500 hover:text-red-700 underline"
+                >
+                  Xóa tìm kiếm
+                </button>
+              </>
+            ) : (
+              <><span className="font-bold text-gray-800">{filtered.length}</span> sản phẩm</>
+            )}
           </p>
           <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
             <button onClick={() => setViewMode("grid")}

@@ -115,12 +115,39 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Live search: fetch all public products once, filter client-side
+  const { data: allProductsRaw = [] } = trpc.products.listPublic.useQuery(undefined, { staleTime: 300_000 });
+  const allProducts: any[] = Array.isArray(allProductsRaw) ? allProductsRaw : [];
+
+  // Live search suggestions (debounced, min 2 chars)
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestions = searchQuery.trim().length >= 2
+    ? allProducts
+        .filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || p.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+        .slice(0, 6)
+    : [];
+
+  const formatSuggestPrice = (product: any) => {
+    if (!product.packages || product.packages.length === 0) return "Liên hệ";
+    const prices = product.packages.map((pkg: any) => parseFloat(pkg.price)).filter((v: number) => !isNaN(v) && v > 0);
+    if (prices.length === 0) return "Liên hệ";
+    const min = Math.min(...prices);
+    return min.toLocaleString("vi-VN") + "₫";
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      go(`/catalog?search=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSuggestions(false);
+      go(`/catalog?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
     }
+  };
+
+  const handleSuggestionClick = (productId: number) => {
+    setShowSuggestions(false);
+    setSearchQuery("");
+    go(`/product/${productId}`);
   };
 
   const formatBalance = (v: number) => {
@@ -260,10 +287,43 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
                   placeholder="Tìm kiếm sản phẩm..."
                   className="w-full bg-white/8 border border-white/10 rounded-full pl-10 pr-4 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:border-blue-500/50 focus:bg-white/12 transition-all"
                 />
+                {/* Live search dropdown */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                    {suggestions.map((product: any) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => handleSuggestionClick(product.id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/8 transition-colors text-left"
+                      >
+                        {product.imageUrl ? (
+                          <img src={product.imageUrl} alt={product.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                            <Package className="w-4 h-4 text-white/40" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white truncate">{product.name}</p>
+                          <p className="text-xs text-blue-400 font-medium">{formatSuggestPrice(product)}</p>
+                        </div>
+                      </button>
+                    ))}
+                    <button
+                      type="submit"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 border-t border-white/10 text-xs text-white/50 hover:bg-white/5 transition-colors"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      Xem tất cả kết quả cho &ldquo;{searchQuery}&rdquo;
+                    </button>
+                  </div>
+                )}
               </div>
             </form>
           </div>
@@ -492,11 +552,44 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
                   placeholder="Tìm kiếm sản phẩm..."
                   autoFocus
                   className="w-full bg-white/8 border border-white/10 rounded-full pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-blue-500/50 transition-all"
                 />
+                {/* Mobile live search dropdown */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                    {suggestions.map((product: any) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => handleSuggestionClick(product.id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/8 transition-colors text-left"
+                      >
+                        {product.imageUrl ? (
+                          <img src={product.imageUrl} alt={product.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                            <Package className="w-4 h-4 text-white/40" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white truncate">{product.name}</p>
+                          <p className="text-xs text-blue-400 font-medium">{formatSuggestPrice(product)}</p>
+                        </div>
+                      </button>
+                    ))}
+                    <button
+                      type="submit"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 border-t border-white/10 text-xs text-white/50 hover:bg-white/5 transition-colors"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      Xem tất cả kết quả cho &ldquo;{searchQuery}&rdquo;
+                    </button>
+                  </div>
+                )}
               </div>
             </form>
           </div>

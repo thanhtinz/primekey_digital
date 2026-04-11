@@ -1965,3 +1965,10 @@ todo updated
 - [x] ProductCatalog: bỏ tag % flash sale trên card sản phẩm
 - [x] ProductCatalog: sửa hiển thị "Chưa có đánh giá" khi chưa có đánh giá (không ẩn hẳn)
 - [x] Thêm email thông báo khi admin reply ticket (kiểm tra cài đặt thông báo email của user trước khi gửi)
+
+## Session 2026-04-11 - Sửa tìm kiếm header
+
+- [ ] ClientHeader: khi submit search form, chuyển đến /products?q=<keyword>
+- [ ] ClientHeader: thêm dropdown gợi ý sản phẩm khi gõ (live search)
+- [ ] ProductCatalog: đọc ?q= từ URL và áp dụng filter search ngay khi load trang
+- [ ] ProductCatalog: khi URL có ?q=, hiển thị kết quả tìm kiếm với heading "Kết quả tìm kiếm: <keyword>"
