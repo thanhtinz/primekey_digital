@@ -5746,7 +5746,7 @@ export const appRouter = router({
               if (_bTD?.botToken) {
                 const { sendTelegramMessage } = await import("./telegram");
                 const _msgTD = "\ud83d\udd34 *C\u1ea3nh b\u00e1o b\u1ea3o m\u1eadt*\n\nX\u00e1c minh 2 b\u01b0\u1edbc (2FA) \u0111\u00e3 b\u1ecb *t\u1eaft* tr\u00ean t\u00e0i kho\u1ea3n c\u1ee7a b\u1ea1n.\n\n\u23f0 Th\u1eddi gian: " + _dt + "\n\n\u26a0\ufe0f N\u1ebfu kh\u00f4ng ph\u1ea3i b\u1ea1n, h\u00e3y b\u1eadt l\u1ea1i 2FA ngay!";
-                await sendTelegramMessage(_bTD.botToken, customer.telegramChatId, _msgTD);
+                await sendTelegramMessage(_bTD.botToken, customer.telegramChatId!, _msgTD);
               }
             }
           }
