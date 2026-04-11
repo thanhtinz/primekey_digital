@@ -5350,6 +5350,13 @@ export const appRouter = router({
             console.error("[register] Referral error:", refErr);
           }
         }
+        // Notify admin via Telegram: new customer registered
+        void (async () => {
+          try {
+            const { notifyAdminNewCustomer } = await import("./telegram");
+            await notifyAdminNewCustomer(owner.id, { name: input.name, email: input.email });
+          } catch { /* silent */ }
+        })();
         return { token, name: input.name, email: input.email, expiresAt, needsVerification: true };
       }),
     // Đăng nhập bằng email + mật khẩu
