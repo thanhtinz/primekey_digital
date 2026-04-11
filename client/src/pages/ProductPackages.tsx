@@ -26,12 +26,13 @@ interface PackageForm {
   warrantyMonths: string;
   sortOrder: string;
   isActive: boolean;
+  deliveryType: "manual" | "warehouse";
 }
 
 const emptyPkg = (sortOrder = 0): PackageForm => ({
   name: "", price: "", originalPrice: "", priceVip: "", priceWholesale: "",
   pricePartner: "", description: "", warrantyMonths: "0",
-  sortOrder: String(sortOrder), isActive: true,
+  sortOrder: String(sortOrder), isActive: true, deliveryType: "manual",
 });
 
 export default function ProductPackages() {
@@ -63,6 +64,7 @@ export default function ProductPackages() {
         warrantyMonths: String(p.warrantyMonths ?? 0),
         sortOrder: String(p.sortOrder ?? 0),
         isActive: p.isActive !== false,
+        deliveryType: (p.deliveryType === "warehouse" ? "warehouse" : "manual") as "manual" | "warehouse",
       }));
       setPkgList(pkgs);
     }
@@ -111,6 +113,7 @@ export default function ProductPackages() {
       warrantyMonths: parseInt(form.warrantyMonths) || 0,
       sortOrder: parseInt(form.sortOrder) || 0,
       isActive: form.isActive,
+      deliveryType: form.deliveryType,
     };
     const editingPkg = editingIdx !== null ? pkgList[editingIdx] : null;
     if (editingPkg?.id) {
@@ -189,8 +192,8 @@ export default function ProductPackages() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-gray-900 truncate">{pkg.name}</h3>
                       {!pkg.isActive && <Badge variant="secondary" className="text-xs">Ẩn</Badge>}
-                      {pkg.originalPrice && parseFloat(pkg.originalPrice) > parseFloat(pkg.price) && (
-                        <Badge className="text-xs bg-red-100 text-red-600 border-red-200">Giảm giá</Badge>
+                      {(pkg as any).deliveryType === "warehouse" && (
+                        <Badge className="text-xs bg-green-100 text-green-600 border-green-200">Kho tự động</Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
@@ -279,6 +282,21 @@ export default function ProductPackages() {
             <div>
               <Label className="text-sm">Mô Tả Gói</Label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả ngắn về gói này..." rows={2} className="mt-1 resize-none" />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Loại Giao Hàng</Label>
+              <div className="flex gap-2 mt-1.5">
+                <button type="button" onClick={() => setForm(f => ({ ...f, deliveryType: "manual" }))}
+                  className={`flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-all text-left ${form.deliveryType === "manual" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>
+                  <div className="font-semibold">Thủ Công</div>
+                  <div className="text-xs opacity-70 mt-0.5">Admin giao tay sau khi mua</div>
+                </button>
+                <button type="button" onClick={() => setForm(f => ({ ...f, deliveryType: "warehouse" }))}
+                  className={`flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-all text-left ${form.deliveryType === "warehouse" ? "border-green-500 bg-green-50 text-green-700" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"}`}>
+                  <div className="font-semibold">Kho Tự Động</div>
+                  <div className="text-xs opacity-70 mt-0.5">Hệ thống lấy từ kho hàng</div>
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <button onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
