@@ -1951,3 +1951,10 @@ todo updated
 ### Trang chi tiết sản phẩm
 - [x] Redesign card sản phẩm liên quan (related products)
 - [x] Thêm badge "Đã mua hàng ✓" cho khách hàng đã mua khi họ đánh giá sản phẩm
+
+## Session 2026-04-11 - Card sản phẩm & Ticket client
+
+- [x] Card sản phẩm liên quan: hiện giá khoảng min~max cho sản phẩm có nhiều gói
+- [x] Trang tất cả sản phẩm (Catalog.tsx): sửa rating không hiện 5 sao khi chưa có đánh giá
+- [x] Trang tất cả sản phẩm (Catalog.tsx): sửa tag "Liên hệ" hiện màu đỏ đúng như ảnh
+- [x] Thêm trang/tab quản lý ticket hỗ trợ cho người dùng trong MyAccount

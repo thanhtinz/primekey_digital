@@ -859,14 +859,175 @@ function TelegramLinkSection({ token }: { token: string }) {
   );
 }
 
-type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "profile";
+type TabType = "overview" | "orders" | "points" | "warranty" | "referral" | "support" | "profile";
+
+// ─── SupportTab Component ────────────────────────────────────────────────────
+function SupportTab({ token, email, name }: { token: string; email: string; name: string }) {
+  const [showForm, setShowForm] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const utils = trpc.useUtils();
+
+  const { data: tickets = [], isLoading } = trpc.support.listMyTickets.useQuery(
+    { token },
+    { enabled: !!token, staleTime: 30_000 }
+  );
+
+  const createTicket = trpc.support.createTicket.useMutation({
+    onSuccess: () => {
+      toast.success("Ticket đã được gửi thành công!");
+      setShowForm(false);
+      setSubject(""); setMessage(""); setPriority("medium");
+      utils.support.listMyTickets.invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const statusMap: Record<string, { label: string; color: string }> = {
+    open: { label: "Chờ xử lý", color: "bg-amber-100 text-amber-700" },
+    in_progress: { label: "Đang xử lý", color: "bg-blue-100 text-blue-700" },
+    resolved: { label: "Đã giải quyết", color: "bg-green-100 text-green-700" },
+    closed: { label: "Đã đóng", color: "bg-slate-100 text-slate-500" },
+  };
+
+  const priorityMap: Record<string, { label: string; color: string }> = {
+    low: { label: "Thấp", color: "text-slate-500" },
+    medium: { label: "Trung bình", color: "text-amber-600" },
+    high: { label: "Cao", color: "text-red-600" },
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subject.trim() || !message.trim()) return;
+    createTicket.mutate({ token, customerEmail: email, customerName: name, subject, message, priority });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-cyan-50 to-blue-50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500 flex items-center justify-center">
+              <Phone className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Ticket Hỗ Trợ</h3>
+              <p className="text-[11px] text-slate-500">Gửi yêu cầu hỗ trợ và theo dõi trạng thái</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowForm(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-semibold rounded-lg transition"
+          >
+            <span>+</span> Tạo ticket
+          </button>
+        </div>
+
+        {/* Create Form */}
+        {showForm && (
+          <form onSubmit={handleSubmit} className="px-5 py-4 border-b border-slate-100 bg-slate-50 space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Tiêu đề *</label>
+              <input
+                value={subject} onChange={e => setSubject(e.target.value)}
+                placeholder="Mô tả ngắn vấn đề của bạn"
+                required maxLength={200}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Nội dung *</label>
+              <textarea
+                value={message} onChange={e => setMessage(e.target.value)}
+                placeholder="Mô tả chi tiết vấn đề..."
+                required rows={4}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Mức ưu tiên</label>
+              <select value={priority} onChange={e => setPriority(e.target.value as any)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                <option value="low">Thấp - Không gấp</option>
+                <option value="medium">Trung bình - Cần hỗ trợ</option>
+                <option value="high">Cao - Khẩn cấp</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button type="submit" disabled={createTicket.isPending || !subject.trim() || !message.trim()}
+                className="flex-1 py-2 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2">
+                {createTicket.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Gửi ticket
+              </button>
+              <button type="button" onClick={() => setShowForm(false)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-600 text-sm font-semibold rounded-lg transition">
+                Hủy
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Ticket List */}
+        {isLoading ? (
+          <div className="px-5 py-8 text-center">
+            <Loader2 className="h-6 w-6 animate-spin text-cyan-500 mx-auto" />
+          </div>
+        ) : (tickets as any[]).length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <Phone className="h-10 w-10 mx-auto mb-3 text-slate-200" />
+            <p className="text-sm font-medium text-slate-500">Chưa có ticket nào</p>
+            <p className="text-xs text-slate-400 mt-1">Nhấn "Tạo ticket" để gửi yêu cầu hỗ trợ</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {(tickets as any[]).map((ticket: any) => {
+              const status = statusMap[ticket.status] || { label: ticket.status, color: "bg-slate-100 text-slate-500" };
+              const prio = priorityMap[ticket.priority] || priorityMap.medium;
+              return (
+                <div key={ticket.id} className="px-5 py-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 line-clamp-1">{ticket.subject}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {new Date(ticket.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        {" · "}
+                        <span className={prio.color}>{prio.label}</span>
+                      </p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${status.color}`}>{status.label}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 line-clamp-2">{ticket.message}</p>
+                  {ticket.adminReply && (
+                    <div className="mt-3 bg-cyan-50 border border-cyan-100 rounded-xl p-3">
+                      <p className="text-[10px] font-bold text-cyan-600 mb-1 flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" /> Phản hồi từ admin
+                      </p>
+                      <p className="text-xs text-slate-700">{ticket.adminReply}</p>
+                      {ticket.repliedAt && (
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          {new Date(ticket.repliedAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function MyAccount() {
   const [location, navigate] = useLocation();
   const initialTab = (): TabType => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab");
-    if (tab === "referral" || tab === "orders" || tab === "points" || tab === "warranty" || tab === "profile") return tab as TabType;
+    if (tab === "referral" || tab === "orders" || tab === "points" || tab === "warranty" || tab === "profile" || tab === "support") return tab as TabType;
     return "overview";
   };
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
@@ -1035,6 +1196,7 @@ export default function MyAccount() {
     ...(isFeatureEnabled("points") ? [{ id: "points" as TabType, label: "Điểm", icon: Star, color: "text-yellow-500", activeColor: "bg-gradient-to-r from-yellow-400 to-orange-400" }] : []),
     ...(isFeatureEnabled("warranty") ? [{ id: "warranty" as TabType, label: "Bảo hành", icon: Shield, color: "text-teal-500", activeColor: "bg-gradient-to-r from-teal-500 to-emerald-500" }] : []),
     ...(isFeatureEnabled("referral") ? [{ id: "referral" as TabType, label: "Giới thiệu", icon: Users2, color: "text-indigo-500", activeColor: "bg-gradient-to-r from-indigo-500 to-violet-500" }] : []),
+    ...(isFeatureEnabled("ticket") ? [{ id: "support" as TabType, label: "Hỗ trợ", icon: Phone, color: "text-cyan-500", activeColor: "bg-gradient-to-r from-cyan-500 to-blue-500" }] : []),
     { id: "profile", label: "Hồ sơ & Bảo mật", icon: User, color: "text-slate-500", activeColor: "bg-gradient-to-r from-slate-600 to-slate-700" },
   ];
 
@@ -1876,6 +2038,10 @@ export default function MyAccount() {
           </div>
         )}
 
+        {/* ===== Tab: Hỗ trợ ===== */}
+        {activeTab === "support" && isFeatureEnabled("ticket") && (
+          <SupportTab token={token!} email={customer.email} name={customer.name || ""} />
+        )}
         {/* ===== Tab: Hồ sơ & Bảo mật ===== */}
         {activeTab === "profile" && (
           <div className="space-y-5">

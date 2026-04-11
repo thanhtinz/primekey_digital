@@ -413,11 +413,13 @@ export default function ProductCatalog() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs mt-1">
-                      <div className="flex items-center gap-0.5 text-amber-500">
-                        <Star className="h-3 w-3 fill-current" />
-                        <span className="font-medium">{product.avgRating > 0 ? Number(product.avgRating).toFixed(1) : "5.0"}</span>
-                        {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
-                      </div>
+                      {product.avgRating > 0 && (
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          <Star className="h-3 w-3 fill-current" />
+                          <span className="font-medium">{Number(product.avgRating).toFixed(1)}</span>
+                          {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
+                        </div>
+                      )}
                       {product.soldCount > 0 && (
                         <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
                       )}
@@ -465,11 +467,13 @@ export default function ProductCatalog() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs mt-1.5">
-                      <div className="flex items-center gap-0.5 text-amber-500">
-                        <Star className="h-3 w-3 fill-current" />
-                        <span className="font-medium">{product.avgRating > 0 ? Number(product.avgRating).toFixed(1) : "5.0"}</span>
-                        {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
-                      </div>
+                      {product.avgRating > 0 && (
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          <Star className="h-3 w-3 fill-current" />
+                          <span className="font-medium">{Number(product.avgRating).toFixed(1)}</span>
+                          {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
+                        </div>
+                      )}
                       {product.soldCount > 0 && (
                         <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
                       )}

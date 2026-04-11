@@ -940,9 +940,14 @@ export default function ProductDetail() {
                           <p className="text-xs font-semibold text-gray-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">{p.name}</p>
                           <div className="mt-auto">
                             {p.minPrice ? (
-                              <p className="text-sm font-bold text-red-500">{formatVND(p.minPrice)}</p>
+                              <p className="text-sm font-bold text-red-500">
+                                {p.maxPrice && p.maxPrice > p.minPrice
+                                  ? `${formatVND(p.minPrice)} ~ ${formatVND(p.maxPrice)}`
+                                  : formatVND(p.minPrice)
+                                }
+                              </p>
                             ) : (
-                              <p className="text-xs font-medium text-gray-400 italic">Liên hệ</p>
+                              <p className="text-xs font-semibold text-red-500">Liên hệ</p>
                             )}
                             {relAvgRating > 0 && (
                               <div className="flex items-center gap-0.5 text-amber-500 mt-0.5">

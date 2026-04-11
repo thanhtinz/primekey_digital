@@ -1623,14 +1623,19 @@ export const appRouter = router({
           const { inArray } = await import("drizzle-orm");
           const pkgs = await drizzleDb.select().from(productPackages)
             .where(and(inArray(productPackages.productId, productIds), eq(productPackages.isActive, true)));
+          let maxPricesMap: Record<number, number> = {};
           pkgs.forEach((pkg: any) => {
             const price = Number(pkg.price);
             if (!pricesMap[pkg.productId] || price < pricesMap[pkg.productId]) {
               pricesMap[pkg.productId] = price;
             }
+            if (!maxPricesMap[pkg.productId] || price > maxPricesMap[pkg.productId]) {
+              maxPricesMap[pkg.productId] = price;
+            }
           });
+          return related.map((p: any) => ({ ...p, minPrice: pricesMap[p.id] || null, maxPrice: maxPricesMap[p.id] || null }));
         }
-        return related.map((p: any) => ({ ...p, minPrice: pricesMap[p.id] || null }));
+        return related.map((p: any) => ({ ...p, minPrice: pricesMap[p.id] || null, maxPrice: null }));
       }),
 
     get: protectedProcedure
