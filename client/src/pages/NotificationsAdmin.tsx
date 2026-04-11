@@ -62,34 +62,56 @@ const toLocalDatetimeString = (d: Date) => {
 // ─── Tab Bar ─────────────────────────────────────────────────────────────────
 type TabId = "customer" | "website";
 
-const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: "customer", label: "Khách Hàng", icon: <Bell className="h-4 w-4" />,  desc: "Gửi vào chuông bell của khách" },
-  { id: "website",  label: "Website",    icon: <Globe className="h-4 w-4" />, desc: "Banner/popup trên trang khách" },
+const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string; color: string; activeBg: string; activeText: string; activeBorder: string }[] = [
+  {
+    id: "customer", label: "Khách Hàng", icon: <Bell className="h-5 w-5" />,
+    desc: "Gửi vào chuông bell của khách",
+    color: "text-violet-500", activeBg: "bg-violet-50", activeText: "text-violet-700", activeBorder: "border-violet-500",
+  },
+  {
+    id: "website", label: "Website", icon: <Globe className="h-5 w-5" />,
+    desc: "Banner/popup trên trang khách",
+    color: "text-sky-500", activeBg: "bg-sky-50", activeText: "text-sky-700", activeBorder: "border-sky-500",
+  },
 ];
 
 function TabBar({ active, onChange, counts }: { active: TabId; onChange: (t: TabId) => void; counts: Record<TabId, number> }) {
   return (
-    <div className="flex border-b border-gray-200 bg-white rounded-t-xl overflow-hidden">
-      {TABS.map((tab, i) => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(tab.id)}
-          className={`flex-1 flex flex-col items-center gap-0.5 px-4 py-3 text-sm font-medium transition-all relative
-            ${active === tab.id ? "text-blue-600 bg-blue-50/60" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}
-            ${i > 0 ? "border-l border-gray-200" : ""}
-          `}
-        >
-          <div className="flex items-center gap-1.5">
-            {tab.icon}
-            <span>{tab.label}</span>
-            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
-              active === tab.id ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
-            }`}>{counts[tab.id]}</span>
-          </div>
-          <span className="text-xs font-normal opacity-60 hidden sm:block">{tab.desc}</span>
-          {active === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
-        </button>
-      ))}
+    <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50/80 border-b border-gray-200">
+      {TABS.map((tab) => {
+        const isActive = active === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={`group relative flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all duration-200
+              ${
+                isActive
+                  ? `${tab.activeBg} ${tab.activeBorder} shadow-sm`
+                  : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
+              }
+            `}
+          >
+            <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors
+              ${isActive ? `${tab.activeBg} ${tab.color}` : "bg-gray-100 text-gray-400 group-hover:bg-gray-200"}
+            `}>
+              {tab.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-semibold truncate ${isActive ? tab.activeText : "text-gray-700"}`}>{tab.label}</span>
+                <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold flex-shrink-0
+                  ${isActive ? `${tab.activeBg} ${tab.activeText}` : "bg-gray-100 text-gray-500"}
+                `}>{counts[tab.id]}</span>
+              </div>
+              <p className={`text-xs mt-0.5 truncate ${isActive ? tab.color : "text-gray-400"}`}>{tab.desc}</p>
+            </div>
+            {isActive && (
+              <span className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${tab.color.replace("text-", "bg-")}`} />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }

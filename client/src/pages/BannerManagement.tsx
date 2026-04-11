@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, ImageIcon, Upload, Link, ExternalLink, GripVertical, LayoutDashboard, LayoutGrid, Grid3X3 } from "@/components/Icon";
 import { toast } from "sonner";
 
-// ─── Image Upload Field ───────────────────────────────────────────────────────
+// ------------------------------------------------------------
 function ImageUploadField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
   const [mode, setMode] = useState<"url" | "upload">("upload");
   const [uploading, setUploading] = useState(false);
@@ -83,47 +83,76 @@ function ImageUploadField({ value, onChange }: { value: string; onChange: (url: 
   );
 }
 
-// ─── Tab Bar ─────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 type TabId = "banners" | "side" | "mini";
 
-const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: "banners", label: "Banner Chính", icon: <LayoutDashboard className="h-4 w-4" />, desc: "Slideshow trang chủ" },
-  { id: "side",    label: "Side Banner",  icon: <LayoutGrid className="h-4 w-4" />,      desc: "Hai bên carousel PC" },
-  { id: "mini",    label: "Mini Banner",  icon: <Grid3X3 className="h-4 w-4" />,         desc: "Lưới 4 ô dưới carousel" },
+const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string; color: string; activeBg: string; activeText: string; activeBorder: string }[] = [
+  {
+    id: "banners", label: "Banner Chính", icon: <LayoutDashboard className="h-5 w-5" />,
+    desc: "Slideshow trang chủ",
+    color: "text-violet-500", activeBg: "bg-violet-50", activeText: "text-violet-700", activeBorder: "border-violet-500",
+  },
+  {
+    id: "side", label: "Side Banner", icon: <LayoutGrid className="h-5 w-5" />,
+    desc: "Hai bên carousel PC",
+    color: "text-sky-500", activeBg: "bg-sky-50", activeText: "text-sky-700", activeBorder: "border-sky-500",
+  },
+  {
+    id: "mini", label: "Mini Banner", icon: <Grid3X3 className="h-5 w-5" />,
+    desc: "Lưới 4 ô dưới carousel",
+    color: "text-emerald-500", activeBg: "bg-emerald-50", activeText: "text-emerald-700", activeBorder: "border-emerald-500",
+  },
 ];
 
 function TabBar({ active, onChange, counts }: { active: TabId; onChange: (t: TabId) => void; counts: Record<TabId, number> }) {
   return (
-    <div className="flex border-b border-gray-200 bg-white rounded-t-xl overflow-hidden">
-      {TABS.map((tab, i) => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(tab.id)}
-          className={`flex-1 flex flex-col items-center gap-0.5 px-4 py-3 text-sm font-medium transition-all relative
-            ${active === tab.id ? "text-blue-600 bg-blue-50/60" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}
-            ${i > 0 ? "border-l border-gray-200" : ""}
-          `}
-        >
-          <div className="flex items-center gap-1.5">
-            {tab.icon}
-            <span>{tab.label}</span>
-            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
-              active === tab.id ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
-            }`}>{counts[tab.id]}</span>
-          </div>
-          <span className="text-xs font-normal opacity-60 hidden sm:block">{tab.desc}</span>
-          {active === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
-        </button>
-      ))}
+    <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50/80 border-b border-gray-200">
+      {TABS.map((tab) => {
+        const isActive = active === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={`group relative flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all duration-200
+              ${
+                isActive
+                  ? `${tab.activeBg} ${tab.activeBorder} shadow-sm`
+                  : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
+              }
+            `}
+          >
+            {/* Icon box */}
+            <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors
+              ${isActive ? `${tab.activeBg} ${tab.color}` : `bg-gray-100 text-gray-400 group-hover:bg-gray-200`}
+            `}>
+              {tab.icon}
+            </div>
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-semibold truncate ${isActive ? tab.activeText : "text-gray-700"}`}>{tab.label}</span>
+                <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold flex-shrink-0
+                  ${isActive ? `${tab.activeBg} ${tab.activeText}` : "bg-gray-100 text-gray-500"}
+                `}>{counts[tab.id]}</span>
+              </div>
+              <p className={`text-xs mt-0.5 truncate ${isActive ? tab.color : "text-gray-400"}`}>{tab.desc}</p>
+            </div>
+            {/* Active indicator dot */}
+            {isActive && (
+              <span className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${tab.color.replace("text-", "bg-")}`} />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ------------------------------------------------------------
 export default function BannerManagement() {
   const [activeTab, setActiveTab] = useState<TabId>("banners");
 
-  // ── Tab 1: Main Banners ─────────────────────────────────────────────────────
+  // ------------------------------------------------------------
   const { data: banners = [], refetch: refetchBanners } = trpc.banner.list.useQuery();
   const createBannerMutation = trpc.banner.create.useMutation({
     onSuccess: () => { toast.success("Đã thêm banner"); setAddingBanner(false); setNewBanner({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0 }); refetchBanners(); },
@@ -140,7 +169,7 @@ export default function BannerManagement() {
   const [addingBanner, setAddingBanner] = useState(false);
   const [newBanner, setNewBanner] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0 });
 
-  // ── Tab 2: Side Banners ─────────────────────────────────────────────────────
+  // ------------------------------------------------------------
   const { data: sideBanners = [], refetch: refetchSideBanners } = trpc.sideBanners.list.useQuery();
   const upsertSideBannerMutation = trpc.sideBanners.upsert.useMutation({
     onSuccess: () => { toast.success("Đã lưu side banner"); refetchSideBanners(); setAddingSideBanner(false); setNewSideBanner({ position: "left", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true }); },
@@ -153,7 +182,7 @@ export default function BannerManagement() {
   const [newSideBanner, setNewSideBanner] = useState({ position: "left" as "left" | "right", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
   const [addingSideBanner, setAddingSideBanner] = useState(false);
 
-  // ── Tab 3: Mini Banners ─────────────────────────────────────────────────────
+  // ------------------------------------------------------------
   const { data: miniBanners = [], refetch: refetchMiniBanners } = trpc.miniBanners.list.useQuery();
   const upsertMiniBannerMutation = trpc.miniBanners.upsert.useMutation({
     onSuccess: () => { toast.success("Đã lưu mini banner"); refetchMiniBanners(); setAddingMiniBanner(false); setNewMiniBanner({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true }); },
