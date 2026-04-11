@@ -2770,6 +2770,40 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
         await db.upsertUserSettings(ctx.user.id, input);
+        // Sync to featureFlags table so useFeatureFlags() hook picks up changes
+        const { featureFlags } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (drizzleDb) {
+          const mapping: Record<string, string> = {
+            featureFlashSale: "flash_sale",
+            featureCoupons: "coupon",
+            featureAffiliate: "referral",
+            featureLoyalty: "points",
+            featureBlog: "blog",
+            featureWarranty: "warranty",
+            featureSpinWheel: "spin_wheel",
+            featureTopup: "wallet",
+            featureTicket: "ticket",
+            featureReview: "review",
+            featureCart: "cart",
+            featureWishlist: "wishlist",
+            featureCompare: "compare",
+          };
+          for (const [settingKey, flagKey] of Object.entries(mapping)) {
+            const val = (input as Record<string, boolean | undefined>)[settingKey];
+            if (val !== undefined) {
+              // Upsert: update if exists, insert if not
+              const existing = await drizzleDb.select().from(featureFlags).where(eq(featureFlags.key, flagKey));
+              if (existing.length > 0) {
+                await drizzleDb.update(featureFlags).set({ enabled: val }).where(eq(featureFlags.key, flagKey));
+              } else {
+                await drizzleDb.insert(featureFlags).values({ key: flagKey, label: settingKey, description: "", enabled: val, category: "feature" });
+              }
+            }
+          }
+        }
         return { success: true };
       }),
     updateTaxSettings: protectedProcedure

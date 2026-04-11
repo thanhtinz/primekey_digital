@@ -423,6 +423,8 @@ export default function Settings() {
     try {
       await updateFeaturesSettings.mutateAsync(features);
       await utils.settings.get.invalidate();
+      // Sync featureFlags cache so client pages update immediately
+      await utils.featureFlags.getAll.invalidate();
       toast.success("Đã lưu cài đặt tính năng!");
     } catch (e: any) {
       toast.error(e.message || "Lưu thất bại");
