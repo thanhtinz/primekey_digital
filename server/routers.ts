@@ -5520,7 +5520,7 @@ export const appRouter = router({
               if (_bTL?.botToken) {
                 const { sendTelegramMessage } = await import("./telegram");
                 const _msgTL = "\u26a0\ufe0f *C\u1ea3nh b\u00e1o b\u1ea3o m\u1eadt*\n\nT\u00e0i kho\u1ea3n c\u1ee7a b\u1ea1n v\u1eeba \u0111\u0103ng nh\u1eadp m\u1edbi.\n\n\u23f0 Th\u1eddi gian: " + _lt + "\n\ud83d\udce7 Email: " + input.email + "\n\nN\u1ebfu kh\u00f4ng ph\u1ea3i b\u1ea1n, h\u00e3y \u0111\u1ed5i m\u1eadt kh\u1ea9u ngay!";
-                await sendTelegramMessage(_bTL.botToken, customer.telegramChatId, _msgTL);
+                await sendTelegramMessage(_bTL.botToken, customer.telegramChatId!, _msgTL);
               }
             }
           }
