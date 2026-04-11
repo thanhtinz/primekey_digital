@@ -1,5 +1,5 @@
-// WebDev Auth TypeScript types
-// Auto-generated from protobuf definitions
+// Auth TypeScript types
+
 // Generated on: 2025-09-24T05:57:57.338Z
 
 export interface AuthorizeRequest {

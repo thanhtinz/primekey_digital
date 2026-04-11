@@ -8380,15 +8380,28 @@ export const appRouter = router({
         botToken: z.string().optional(),
         chatId: z.string().optional(),
         enabled: z.boolean().optional(),
+        // Admin bot notifications
         notifyNewOrder: z.boolean().optional(),
         notifyPayment: z.boolean().optional(),
         notifyRefund: z.boolean().optional(),
         notifyNewCustomer: z.boolean().optional(),
         notifyLowStock: z.boolean().optional(),
+        notifyStatusUpdate: z.boolean().optional(),
+        notifyNewReview: z.boolean().optional(),
+        notifyNewTopup: z.boolean().optional(),
+        notifyFlashSaleEnd: z.boolean().optional(),
+        notifyDailyReport: z.boolean().optional(),
+        notifyNewTicket: z.boolean().optional(),
+        notifyWithdrawal: z.boolean().optional(),
+        // User bot notifications
         notifyOrderStatus: z.boolean().optional(),
         notifyOrderCreated: z.boolean().optional(),
         notifyOrderPaid: z.boolean().optional(),
+        notifyOrderShipping: z.boolean().optional(),
         notifyOrderCompleted: z.boolean().optional(),
+        notifyWarranty: z.boolean().optional(),
+        notifyFlashSale: z.boolean().optional(),
+        notifyPromotion: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
