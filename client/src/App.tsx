@@ -67,6 +67,8 @@ const FlashSaleSubscriberSettings = lazy(() => import("./pages/FlashSaleSubscrib
 const VATInvoicePage = lazy(() => import("./pages/VATInvoicePage"));
 const ReferralSettings = lazy(() => import("./pages/ReferralSettings"));
 const BannerSettings = lazy(() => import("./pages/BannerSettings"));
+const NotificationsAdmin = lazy(() => import("./pages/NotificationsAdmin"));
+const BannerManagement = lazy(() => import("./pages/BannerManagement"));
 const TaxSettings = lazy(() => import("./pages/TaxSettings"));
 const ReferralWithdrawalsAdmin = lazy(() => import("./pages/ReferralWithdrawalsAdmin"));
 // Batch 6: Public pages
@@ -323,11 +325,13 @@ function Router() {
         <Route path="/settings/tax" component={() => isAdmin ? <TaxSettings /> : <ForbiddenPage />} />
         <Route path="/wallet-management" component={() => isAdmin ? <WalletManagement /> : <ForbiddenPage />} />
         <Route path="/admin/blog" component={() => isAdmin ? <BlogPosts /> : <ForbiddenPage />} />
-        <Route path="/admin/announcements" component={() => isAdmin ? <AnnouncementManagement /> : <ForbiddenPage />} />
-        {/* Removed duplicate /announcements route - use /admin/announcements instead */}
-        <Route path="/admin/notifications" component={() => isAdmin ? <AdminNotifications /> : <ForbiddenPage />} />
-        <Route path="/admin/avatar-gallery" component={() => isAdmin ? <AvatarGalleryAdmin /> : <ForbiddenPage />} />
-        <Route path="/admin/broadcasts" component={() => isAdmin ? <BroadcastsAdmin /> : <ForbiddenPage />} />
+               {/* Trang mới: gộp 3 loại thông báo */}
+        <Route path="/admin/notifications" component={() => isAdmin ? <NotificationsAdmin /> : <ForbiddenPage />} />
+        {/* Trang mới: gộp 3 loại banner */}
+        <Route path="/admin/banners" component={() => isAdmin ? <BannerManagement /> : <ForbiddenPage />} />
+        {/* Legacy routes - redirect sang trang mới */}
+        <Route path="/admin/announcements" component={() => isAdmin ? <NotificationsAdmin /> : <ForbiddenPage />} />
+        <Route path="/admin/broadcasts" component={() => isAdmin ? <NotificationsAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/license" component={() => isAdmin ? <LicenseAdmin /> : <ForbiddenPage />} />
         <Route path="/license-setup" component={() => <LicenseSetup onActivated={() => window.location.reload()} />} />
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />

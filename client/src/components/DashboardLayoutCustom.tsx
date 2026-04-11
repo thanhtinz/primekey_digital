@@ -80,12 +80,11 @@ const adminNavGroups = [
       { label: "Chuyên Mục", href: "/admin/blog/categories", icon: Tag },
     ],
   },
-  {
+    {
     label: "Nội Dung",
     items: [
       { label: "Kho Avatar", href: "/admin/avatar-gallery", icon: Image },
-      { label: "Thông Báo & Banner", href: "/admin/announcements", icon: Megaphone },
-      { label: "Thông Báo Dashboard", href: "/admin/broadcasts", icon: Bell },
+      { label: "Banner", href: "/admin/banners", icon: Megaphone },
       { label: "Tạo Trang", href: "/admin/page-builder", icon: Layers },
       { label: "Quản Lý Menu", href: "/admin/menu-manager", icon: Navigation },
       { label: "Trang Cảm Ơn", href: "/settings/thank-you", icon: Heart },
