@@ -331,42 +331,42 @@ export default function InventoryAdmin() {
         </div>
 
         {/* ── Stats Cards ── */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           {/* Total */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-              <Users className="h-6 w-6 text-blue-500" />
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 flex items-center gap-2 sm:gap-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+              <Users className="h-4 w-4 sm:h-6 sm:w-6 text-blue-500" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-0.5">Tổng số lượng</p>
-              <p className="text-2xl font-bold text-gray-900">{(stats?.total ?? 0).toLocaleString("vi-VN")}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 leading-tight">Tổng số lượng</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">{(stats?.total ?? 0).toLocaleString("vi-VN")}</p>
             </div>
           </div>
           {/* Available */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-              <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 flex items-center gap-2 sm:gap-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-500" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-0.5">Còn hàng</p>
-              <p className="text-2xl font-bold text-emerald-600">{(stats?.available ?? 0).toLocaleString("vi-VN")}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 leading-tight">Còn hàng</p>
+              <p className="text-lg sm:text-2xl font-bold text-emerald-600 leading-tight">{(stats?.available ?? 0).toLocaleString("vi-VN")}</p>
             </div>
           </div>
           {/* Used */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-              <XCircle className="h-6 w-6 text-red-500" />
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 flex items-center gap-2 sm:gap-4">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+              <XCircle className="h-4 w-4 sm:h-6 sm:w-6 text-red-500" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-0.5">Đã bán</p>
-              <p className="text-2xl font-bold text-red-500">{(stats?.used ?? 0).toLocaleString("vi-VN")}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 leading-tight">Đã bán</p>
+              <p className="text-lg sm:text-2xl font-bold text-red-500 leading-tight">{(stats?.used ?? 0).toLocaleString("vi-VN")}</p>
             </div>
           </div>
         </div>
 
         {/* ── Filter Panel ── */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
-          <div className="grid grid-cols-5 gap-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
             {/* Product filter */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-600">Sản phẩm</label>
@@ -435,7 +435,7 @@ export default function InventoryAdmin() {
             </div>
           </div>
           {/* Filter buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-1">
             <Button size="sm" onClick={applyFilters} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5">
               <Filter className="h-3.5 w-3.5" /> Lọc
             </Button>
@@ -447,7 +447,7 @@ export default function InventoryAdmin() {
 
         {/* ── Table ── */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-0">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
@@ -458,13 +458,13 @@ export default function InventoryAdmin() {
                       className="rounded"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-16">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Gói sản phẩm</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Giá trị kho hàng</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">Trạng thái</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Ngày tạo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Ngày cập nhật</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Thao tác</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-14">ID</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Gói sản phẩm</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Giá trị kho hàng</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-24">Trạng thái</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-32 hidden sm:table-cell">Ngày tạo</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-32 hidden lg:table-cell">Ngày cập nhật</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-28">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -513,50 +513,52 @@ export default function InventoryAdmin() {
                             className="rounded"
                           />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <span className="font-mono text-blue-600 font-semibold text-xs">{item.id}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <span className="text-blue-600 font-medium hover:underline cursor-pointer text-xs" onClick={() => setViewItem(item)}>
                             {productLabel}
                           </span>
                         </td>
-                        <td className="px-4 py-3 max-w-[200px]">
+                        <td className="px-3 py-3 max-w-[180px] hidden md:table-cell">
                           <span className="text-gray-600 text-xs font-mono break-all line-clamp-2">{stockPreview}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <StatusBadge status={item.status} />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 hidden sm:table-cell">
                           <span className="text-gray-500 text-xs">{formatDate(item.createdAt)}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 hidden lg:table-cell">
                           <span className="text-gray-500 text-xs">{formatDate(item.createdAt)}</span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-1 flex-wrap">
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 px-2 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 gap-1"
+                              className="h-7 px-1.5 sm:px-2 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 gap-1"
                               onClick={() => setViewItem(item)}
                             >
-                              <Eye className="h-3 w-3" /> Xem
+                              <Eye className="h-3 w-3" />
+                              <span className="hidden sm:inline">Xem</span>
                             </Button>
                             {item.status === "available" && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-7 px-2 text-xs border-amber-200 text-amber-600 hover:bg-amber-50 gap-1"
+                                className="h-7 px-1.5 sm:px-2 text-xs border-amber-200 text-amber-600 hover:bg-amber-50 gap-1"
                                 onClick={() => setEditItem(item)}
                               >
-                                <Pencil className="h-3 w-3" /> Sửa
+                                <Pencil className="h-3 w-3" />
+                                <span className="hidden sm:inline">Sửa</span>
                               </Button>
                             )}
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50 gap-1"
+                              className="h-7 px-1.5 sm:px-2 text-xs border-red-200 text-red-600 hover:bg-red-50 gap-1"
                               onClick={() => {
                                 if (confirm(`Xóa mục #${item.id}?`)) {
                                   deleteMutation.mutate({ id: item.id });
@@ -564,7 +566,8 @@ export default function InventoryAdmin() {
                               }}
                               disabled={deleteMutation.isPending}
                             >
-                              <Trash2 className="h-3 w-3" /> Xóa
+                              <Trash2 className="h-3 w-3" />
+                              <span className="hidden sm:inline">Xóa</span>
                             </Button>
                           </div>
                         </td>
