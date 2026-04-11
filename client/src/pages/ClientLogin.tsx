@@ -54,15 +54,8 @@ export default function ClientLogin() {
   const handleSuccess = (data: { token: string; email: string | null; name?: string | null; role?: string | null }) => {
     login(data.token, data.email || "", data.role);
     toast.success(`Chào mừng ${data.name || data.email}!`);
-    // If there's an explicit redirect param, always use it
-    if (redirectTo) {
-      navigate(decodeURIComponent(redirectTo));
-    } else if (data.role === "admin") {
-      // Admin without specific redirect → go to dashboard
-      navigate("/dashboard");
-    } else {
-      navigate("/");
-    }
+    // Always navigate to client side; admin can go to dashboard manually
+    navigate(redirectTo ? decodeURIComponent(redirectTo) : "/");
   };
 
   const loginMutation = trpc.customer.loginWithPassword.useMutation({
