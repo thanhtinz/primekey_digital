@@ -1958,3 +1958,10 @@ todo updated
 - [x] Trang tất cả sản phẩm (Catalog.tsx): sửa rating không hiện 5 sao khi chưa có đánh giá
 - [x] Trang tất cả sản phẩm (Catalog.tsx): sửa tag "Liên hệ" hiện màu đỏ đúng như ảnh
 - [x] Thêm trang/tab quản lý ticket hỗ trợ cho người dùng trong MyAccount
+
+## Session 2026-04-11 - Fix giá 0đ, tag %, email ticket
+
+- [x] Sửa LandingPage + ProductCatalog + ProductDetail: hiện "Liên hệ" thay vì "0 đ" khi sản phẩm không có gói
+- [x] ProductCatalog: bỏ tag % flash sale trên card sản phẩm
+- [x] ProductCatalog: sửa hiển thị "Chưa có đánh giá" khi chưa có đánh giá (không ẩn hẳn)
+- [x] Thêm email thông báo khi admin reply ticket (kiểm tra cài đặt thông báo email của user trước khi gửi)

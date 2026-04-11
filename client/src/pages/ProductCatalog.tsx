@@ -63,16 +63,25 @@ export default function ProductCatalog() {
 
   const getMinPrice = (product: any) => {
     if (product.packages && product.packages.length > 0) {
-      return Math.min(...product.packages.map((pkg: any) => parseFloat(pkg.price)));
+      const prices = product.packages.map((pkg: any) => parseFloat(pkg.price)).filter((v: number) => !isNaN(v) && v > 0);
+      return prices.length > 0 ? Math.min(...prices) : 0;
     }
     return parseFloat(product.price) || 0;
   };
 
   const getMaxPrice = (product: any) => {
     if (product.packages && product.packages.length > 0) {
-      return Math.max(...product.packages.map((pkg: any) => parseFloat(pkg.price)));
+      const prices = product.packages.map((pkg: any) => parseFloat(pkg.price)).filter((v: number) => !isNaN(v) && v > 0);
+      return prices.length > 0 ? Math.max(...prices) : 0;
     }
     return parseFloat(product.price) || 0;
+  };
+
+  const hasValidPrice = (product: any) => {
+    if (product.packages && product.packages.length > 0) {
+      return product.packages.some((pkg: any) => parseFloat(pkg.price) > 0);
+    }
+    return parseFloat(product.price) > 0;
   };
 
   const getMaxDiscount = (product: any) => {
@@ -362,8 +371,8 @@ export default function ProductCatalog() {
             {filtered.map((product: any) => {
               const minPrice = getMinPrice(product);
               const maxPrice = getMaxPrice(product);
-              const discount = getMaxDiscount(product);
-              const hasMultiPrice = product.packages && product.packages.length > 1;
+              const hasMultiPrice = product.packages && product.packages.filter((p: any) => parseFloat(p.price) > 0).length > 1;
+              const validPkg = hasValidPrice(product);
               const maxWarranty = (product.packages || []).length > 0
                 ? Math.max(...(product.packages || []).map((p: any) => p.warrantyMonths || 0))
                 : 0;
@@ -382,9 +391,7 @@ export default function ProductCatalog() {
                         <Package className="w-12 h-12 text-gray-300" />
                       </div>
                     )}
-                    {discount > 0 && (
-                      <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">-{discount}%</div>
-                    )}
+
                     {/* Product tags - đồng bộ với LandingPage */}
                     {(product.tags || []).length > 0 && (
                       <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
@@ -404,7 +411,7 @@ export default function ProductCatalog() {
                   <div className="p-3">
                     <h3 className="text-sm font-semibold text-gray-800 mb-1.5 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">{product.name}</h3>
                     <div className="mb-1">
-                      {(!product.packages || product.packages.length === 0) ? (
+                      {!validPkg ? (
                         <span className="text-red-600 font-bold text-sm">Liên hệ</span>
                       ) : (
                         <span className="text-red-500 font-bold text-sm">
@@ -413,12 +420,14 @@ export default function ProductCatalog() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs mt-1">
-                      {product.avgRating > 0 && (
+                      {product.avgRating > 0 ? (
                         <div className="flex items-center gap-0.5 text-amber-500">
                           <Star className="h-3 w-3 fill-current" />
                           <span className="font-medium">{Number(product.avgRating).toFixed(1)}</span>
                           {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
                         </div>
+                      ) : (
+                        <span className="text-gray-400 text-[10px]">Chưa có đánh giá</span>
                       )}
                       {product.soldCount > 0 && (
                         <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
@@ -435,8 +444,8 @@ export default function ProductCatalog() {
             {filtered.map((product: any) => {
               const minPrice = getMinPrice(product);
               const maxPrice = getMaxPrice(product);
-              const discount = getMaxDiscount(product);
-              const hasMultiPrice = product.packages && product.packages.length > 1;
+              const hasMultiPrice = product.packages && product.packages.filter((p: any) => parseFloat(p.price) > 0).length > 1;
+              const validPkg = hasValidPrice(product);
 
               return (
                 <div
@@ -450,15 +459,13 @@ export default function ProductCatalog() {
                     ) : (
                       <div className="w-full h-full flex items-center justify-center"><Package className="w-8 h-8 text-gray-300" /></div>
                     )}
-                    {discount > 0 && (
-                      <div className="absolute top-1 left-1 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">-{discount}%</div>
-                    )}
+
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">{product.name}</h3>
                     {product.description && <p className="text-xs text-gray-500 mb-2 line-clamp-1">{product.description}</p>}
                     <div className="flex items-center justify-between">
-                      {(!product.packages || product.packages.length === 0) ? (
+                      {!validPkg ? (
                         <span className="text-red-600 font-bold text-sm">Liên hệ</span>
                       ) : (
                         <span className="text-red-500 font-bold text-sm">
@@ -467,12 +474,14 @@ export default function ProductCatalog() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs mt-1.5">
-                      {product.avgRating > 0 && (
+                      {product.avgRating > 0 ? (
                         <div className="flex items-center gap-0.5 text-amber-500">
                           <Star className="h-3 w-3 fill-current" />
                           <span className="font-medium">{Number(product.avgRating).toFixed(1)}</span>
                           {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
                         </div>
+                      ) : (
+                        <span className="text-gray-400 text-[10px]">Chưa có đánh giá</span>
                       )}
                       {product.soldCount > 0 && (
                         <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>

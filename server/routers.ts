@@ -7258,16 +7258,53 @@ export const appRouter = router({
       status: z.enum(["open", "in_progress", "resolved", "closed"]),
       adminReply: z.string().optional(),
     })).mutation(async ({ input, ctx }) => {
-      const { supportTickets } = await import("../drizzle/schema");
+      const { supportTickets, customers } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq, and } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      // Get ticket info before update (for email)
+      const [ticket] = await drizzleDb.select().from(supportTickets).where(and(eq(supportTickets.id, input.id), eq(supportTickets.userId, ctx.user.id))).limit(1);
       await drizzleDb.update(supportTickets).set({
         status: input.status as any,
         adminReply: input.adminReply || null,
         repliedAt: input.adminReply ? new Date() : undefined,
       }).where(and(eq(supportTickets.id, input.id), eq(supportTickets.userId, ctx.user.id)));
+      // Send email notification if admin replied
+      if (input.adminReply && ticket && ticket.customerEmail) {
+        try {
+          // Check if customer has email notifications enabled
+          const [customer] = await drizzleDb.select({ notifyOrderStatus: customers.notifyOrderStatus, name: customers.name })
+            .from(customers)
+            .where(and(eq(customers.userId, ctx.user.id), eq(customers.email, ticket.customerEmail)))
+            .limit(1);
+          const shouldNotify = !customer || customer.notifyOrderStatus !== false;
+          if (shouldNotify) {
+            const { sendEmail } = await import("./email");
+            const statusLabels: Record<string, string> = { open: "Mới mở", in_progress: "Đang xử lý", resolved: "Đã giải quyết", closed: "Đóng" };
+            const html = `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                <h2 style="color:#3b82f6;">Phản hồi ticket hỗ trợ #${ticket.id}</h2>
+                <p>Xin chào ${ticket.customerName || ticket.customerEmail},</p>
+                <p>Ticket hỗ trợ của bạn đã được phản hồi.</p>
+                <div style="background:#f3f4f6;border-radius:8px;padding:16px;margin:16px 0;">
+                  <p style="margin:0 0 8px;"><strong>Tiêu đề:</strong> ${ticket.subject}</p>
+                  <p style="margin:0 0 8px;"><strong>Trạng thái:</strong> ${statusLabels[input.status] || input.status}</p>
+                </div>
+                <div style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:4px;padding:16px;margin:16px 0;">
+                  <p style="margin:0 0 8px;"><strong>Phản hồi từ hỗ trợ:</strong></p>
+                  <p style="margin:0;white-space:pre-wrap;">${input.adminReply}</p>
+                </div>
+                <p style="color:#6b7280;font-size:12px;">Bạn có thể xem lịch sử ticket trong trang tài khoản của mình.</p>
+              </div>
+            `;
+            await sendEmail({ to: ticket.customerEmail, subject: `[Hỗ trợ] Phản hồi ticket #${ticket.id}: ${ticket.subject}`, html, userId: ctx.user.id });
+          }
+        } catch (e) {
+          // Email failure should not block the update
+          console.error("Failed to send ticket reply email:", e);
+        }
+      }
       return { success: true };
     }),
   }),

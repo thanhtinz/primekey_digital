@@ -57,7 +57,7 @@ function LeaderboardMiniSection({ navigate }: { navigate: (href: string) => void
 // ProductCard tách ra ngoài để tránh re-render khi banner chuyển
 const ProductCard = React.memo(({ product, saleMap, navigate }: { product: any; saleMap: Map<number, any>; navigate: (href: string) => void }) => {
   const sale = saleMap.get(product.id) as any;
-  const pkgPrices = (product.packages || []).map((p: any) => parseFloat(p.price));
+  const pkgPrices = (product.packages || []).map((p: any) => parseFloat(p.price)).filter((v: number) => !isNaN(v) && v > 0);
   const minPkgPrice = pkgPrices.length > 0 ? Math.min(...pkgPrices) : null;
   const maxPkgPrice = pkgPrices.length > 0 ? Math.max(...pkgPrices) : null;
   const hasMultiPkg = pkgPrices.length > 1;
