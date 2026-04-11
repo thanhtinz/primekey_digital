@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DashboardLayout from "@/components/DashboardLayoutCustom";
-import { Star, CheckCircle, XCircle, Trash2, Eye, EyeOff, MessageSquare, Search, RefreshCw } from "@/components/Icon";
+import { Star, CheckCircle, XCircle, Trash2, MessageSquare, Search, RefreshCw, Send, Edit2, X } from "@/components/Icon";
 import { toast } from "sonner";
 
 function StarRating({ rating }: { rating: number }) {
@@ -27,10 +28,56 @@ function formatDate(date: Date | string | null | undefined) {
   return new Date(date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+function ReplyBox({ review, onClose }: { review: any; onClose: () => void }) {
+  const utils = trpc.useUtils();
+  const [text, setText] = useState(review.adminReply || "");
+
+  const replyMutation = trpc.products.replyReview.useMutation({
+    onSuccess: () => {
+      utils.products.getAllReviews.invalidate();
+      toast.success(text.trim() ? "Đã lưu phản hồi" : "Đã xóa phản hồi");
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <div className="mt-3 border-t border-border pt-3">
+      <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+        <MessageSquare className="h-3.5 w-3.5" />
+        Phản hồi từ Admin
+      </p>
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Nhập phản hồi của bạn cho khách hàng..."
+        className="text-sm min-h-[80px] resize-none"
+        autoFocus
+      />
+      <div className="flex gap-2 mt-2 justify-end">
+        <Button size="sm" variant="outline" onClick={onClose} className="h-7 px-3 text-xs">
+          <X className="h-3 w-3 mr-1" />
+          Hủy
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => replyMutation.mutate({ id: review.id, adminReply: text.trim() })}
+          disabled={replyMutation.isPending}
+          className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <Send className="h-3 w-3 mr-1" />
+          {text.trim() ? "Lưu phản hồi" : "Xóa phản hồi"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function FeedbacksAdmin() {
   const utils = trpc.useUtils();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+  const [replyingId, setReplyingId] = useState<number | null>(null);
 
   const { data: reviews, isLoading, refetch } = trpc.products.getAllReviews.useQuery();
 
@@ -74,11 +121,11 @@ export default function FeedbacksAdmin() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="ak-page-header">
-          <div>
-            <h1 className="ak-page-title">Quản Lý Feedback</h1>
-            <p className="ak-page-subtitle">Xem và xử lý phản hồi từ khách hàng</p>
+            <div>
+              <h1 className="ak-page-title">Quản Lý Feedback</h1>
+              <p className="ak-page-subtitle">Xem và xử lý phản hồi từ khách hàng</p>
+            </div>
           </div>
-        </div>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-1" />
             Làm mới
@@ -162,13 +209,14 @@ export default function FeedbacksAdmin() {
                           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                             Chờ Duyệt
                           </Badge>
-                        ) : review.isPublic ? (
+                        ) : (
                           <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                             Đã Duyệt
                           </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                            Ẩn
+                        )}
+                        {review.adminReply && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            Đã Phản Hồi
                           </Badge>
                         )}
                       </div>
@@ -181,9 +229,43 @@ export default function FeedbacksAdmin() {
                         <span className="text-xs text-muted-foreground">{review.customerEmail}</span>
                         <span>{formatDate(review.createdAt)}</span>
                       </div>
+
+                      {/* Existing admin reply display */}
+                      {review.adminReply && replyingId !== review.id && (
+                        <div className="mt-3 border-t border-border pt-3">
+                          <p className="text-xs font-medium text-blue-500 mb-1 flex items-center gap-1">
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Phản hồi của Admin
+                            {review.repliedAt && <span className="text-muted-foreground font-normal ml-1">· {formatDate(review.repliedAt)}</span>}
+                          </p>
+                          <p className="text-sm text-foreground bg-blue-50 dark:bg-blue-950/30 rounded-lg px-3 py-2 border border-blue-200/50 dark:border-blue-800/50">{review.adminReply}</p>
+                        </div>
+                      )}
+
+                      {/* Reply box */}
+                      {replyingId === review.id && (
+                        <ReplyBox review={review} onClose={() => setReplyingId(null)} />
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Reply button */}
+                      {replyingId !== review.id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setReplyingId(review.id)}
+                          className="h-8 px-3 text-blue-500 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                          title={review.adminReply ? "Sửa phản hồi" : "Phản hồi"}
+                        >
+                          {review.adminReply ? (
+                            <Edit2 className="h-3.5 w-3.5" />
+                          ) : (
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
+
                       {!review.isApproved ? (
                         <Button
                           size="sm"

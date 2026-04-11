@@ -1952,12 +1952,12 @@ export const appRouter = router({
     }),
     // Product reviews
     getReviews: publicProcedure.input(z.object({ productId: z.number() })).query(async ({ input }) => {
-      const { productReviews, customerSessions } = await import("../drizzle/schema");
+      const { productReviews, customers } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq, and, desc } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
-      // Join with customerSessions to get avatarUrl
+      // Join with customers (1 row per email) to get avatarUrl - avoids row duplication from customerSessions
       const rows = await drizzleDb
         .select({
           id: productReviews.id,
@@ -1969,10 +1969,11 @@ export const appRouter = router({
           invoiceId: productReviews.invoiceId,
           isApproved: productReviews.isApproved,
           createdAt: productReviews.createdAt,
-          avatarUrl: customerSessions.avatarUrl,
+          adminReply: (productReviews as any).adminReply,
+          avatarUrl: customers.avatarUrl,
         })
         .from(productReviews)
-        .leftJoin(customerSessions, eq(customerSessions.email, productReviews.customerEmail))
+        .leftJoin(customers, eq(customers.email, productReviews.customerEmail))
         .where(and(eq(productReviews.productId, input.productId), eq(productReviews.isApproved, true)))
         .orderBy(desc(productReviews.createdAt));
       return rows;
@@ -1993,14 +1994,34 @@ export const appRouter = router({
       return { success: true };
     }),
     getAllReviews: protectedProcedure.input(z.object({ productId: z.number().optional() }).optional()).query(async ({ ctx, input }) => {
-      const { productReviews } = await import("../drizzle/schema");
+      const { productReviews, customers } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { desc, eq, and } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) return [];
       const conditions: any[] = [];
       if (input?.productId) conditions.push(eq(productReviews.productId, input.productId));
-      return drizzleDb.select().from(productReviews).where(conditions.length > 0 ? and(...conditions) : undefined).orderBy(desc(productReviews.createdAt));
+      // Join with customers to get customerName fallback and avoid duplicate rows
+      const rows = await drizzleDb
+        .select({
+          id: productReviews.id,
+          productId: productReviews.productId,
+          customerEmail: productReviews.customerEmail,
+          customerName: productReviews.customerName,
+          rating: productReviews.rating,
+          comment: productReviews.comment,
+          invoiceId: productReviews.invoiceId,
+          isApproved: productReviews.isApproved,
+          adminReply: (productReviews as any).adminReply,
+          repliedAt: (productReviews as any).repliedAt,
+          createdAt: productReviews.createdAt,
+          avatarUrl: customers.avatarUrl,
+        })
+        .from(productReviews)
+        .leftJoin(customers, eq(customers.email, productReviews.customerEmail))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(productReviews.createdAt));
+      return rows;
     }),
     approveReview: protectedProcedure.input(z.object({ id: z.number(), isApproved: z.boolean() })).mutation(async ({ input, ctx }) => {
       if (!ctx.user) throw new Error("Unauthorized");
@@ -2020,6 +2041,18 @@ export const appRouter = router({
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
       await drizzleDb.delete(productReviews).where(eq(productReviews.id, input.id));
+      return { success: true };
+    }),
+    replyReview: protectedProcedure.input(z.object({ id: z.number(), adminReply: z.string() })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error("Unauthorized");
+      const { productReviews } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new Error("DB unavailable");
+      await drizzleDb.update(productReviews)
+        .set({ adminReply: input.adminReply || null, repliedAt: input.adminReply ? new Date() : null } as any)
+        .where(eq(productReviews.id, input.id));
       return { success: true };
     }),
     // Public: get product review info by per-product token

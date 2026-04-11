@@ -813,6 +813,8 @@ export const productReviews = mysqlTable("product_reviews", {
   comment: text("comment"),
   invoiceId: int("invoiceId"), // đơn hàng liên quan (chứng minh đã mua)
   isApproved: boolean("isApproved").default(false),
+  adminReply: text("adminReply"),
+  repliedAt: timestamp("repliedAt_pr"),
   createdAt: timestamp("createdAt_pr").defaultNow().notNull(),
 });
 export type ProductReview = typeof productReviews.$inferSelect;
