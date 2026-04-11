@@ -297,6 +297,8 @@ export const userSettings = mysqlTable("userSettings", {
   autoUpdate: boolean("autoUpdate").default(false),
   // License & Auto-Update settings
   licenseKey: varchar("licenseKey", { length: 255 }),
+  licenseEmail: varchar("licenseEmail", { length: 255 }),
+  licenseSignature: varchar("licenseSignature", { length: 512 }),
   licenseActivated: boolean("licenseActivated").default(false),
   licenseActivatedAt: timestamp("licenseActivatedAt"),
   licenseExpiresAt: timestamp("licenseExpiresAt"),

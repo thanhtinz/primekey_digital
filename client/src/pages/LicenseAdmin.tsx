@@ -65,7 +65,10 @@ function StatusBadge({ activated, expiresAt }: { activated: boolean; expiresAt?:
 
 export default function LicenseAdmin() {
   const [newKey, setNewKey] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newToken, setNewToken] = useState("");
   const [domain, setDomain] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
 
   const { data: status, isLoading, refetch } = trpc.license.getStatus.useQuery();
@@ -73,7 +76,7 @@ export default function LicenseAdmin() {
   const activateMutation = trpc.license.activate.useMutation({
     onSuccess: (data) => {
       toast.success(data.message || "Kích hoạt thành công!");
-      setNewKey(""); setDomain(""); refetch();
+      setNewKey(""); setNewEmail(""); setNewToken(""); setDomain(""); refetch();
     },
     onError: (err) => toast.error(err.message || "Kích hoạt thất bại"),
   });
@@ -88,7 +91,15 @@ export default function LicenseAdmin() {
 
   const handleActivate = () => {
     if (!newKey.trim()) { toast.error("Vui lòng nhập license key"); return; }
-    activateMutation.mutate({ licenseKey: newKey.trim(), domain: domain.trim() || undefined });
+    if (!newEmail.trim()) { toast.error("Vui lòng nhập email đăng ký"); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail.trim())) { toast.error("Email không hợp lệ"); return; }
+    activateMutation.mutate({
+      licenseKey: newKey.trim(),
+      email: newEmail.trim(),
+      domain: domain.trim() || undefined,
+      activationToken: newToken.trim() || undefined,
+    });
   };
 
   const plan = status?.plan || "standard";
@@ -137,6 +148,15 @@ export default function LicenseAdmin() {
                     </div>
                     {status?.activated ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
+                        {status.email && (
+                          <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2">
+                            <span className="text-blue-400 flex-shrink-0 text-sm">✉</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-gray-500">Email đăng ký</p>
+                              <p className="text-sm font-medium text-gray-800 truncate">{status.email}</p>
+                            </div>
+                          </div>
+                        )}
                         {status.licenseKey && (
                           <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
                             <Key className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -256,13 +276,30 @@ export default function LicenseAdmin() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="activateEmail">Email đăng ký <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">✉</span>
+                    <Input
+                      id="activateEmail"
+                      type="email"
+                      placeholder="email@example.com"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">Email phải khớp với email đã đăng ký mua license</p>
+                </div>
+                {/* License Key */}
                 <div className="space-y-2">
                   <Label htmlFor="licenseKey">License Key <span className="text-red-500">*</span></Label>
                   <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="licenseKey"
-                      placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"
+                      placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
                       value={newKey}
                       onChange={(e) => setNewKey(e.target.value.toUpperCase())}
                       className="pl-9 font-mono tracking-wider"
@@ -270,31 +307,56 @@ export default function LicenseAdmin() {
                     />
                   </div>
                 </div>
+                {/* Activation Token */}
                 <div className="space-y-2">
-                  <Label htmlFor="domain">
-                    Domain <span className="text-gray-400 font-normal text-xs">(tuỳ chọn)</span>
-                  </Label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="domain"
-                      placeholder="example.com"
-                      value={domain}
-                      onChange={(e) => setDomain(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Để trống để dùng domain hiện tại. Một số license yêu cầu khớp domain.
-                  </p>
+                  <Label htmlFor="activationToken">Activation Token <span className="text-red-500">*</span></Label>
+                  <textarea
+                    id="activationToken"
+                    placeholder="Dán activation token được cấp bởi nhà cung cấp..."
+                    value={newToken}
+                    onChange={(e) => setNewToken(e.target.value)}
+                    rows={3}
+                    className="w-full border border-input rounded-md px-3 py-2 text-xs font-mono bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                  />
+                  <p className="text-xs text-gray-500">Token xác thực chữ ký HMAC-SHA256 từ nhà cung cấp</p>
+                </div>
+                {/* Advanced: Domain */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <Globe className="h-3 w-3" />
+                    {showAdvanced ? "Ẩn" : "Hiện"} tùy chọn domain
+                  </button>
+                  {showAdvanced && (
+                    <div className="mt-3 space-y-2">
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="example.com (mặc định: domain hiện tại)"
+                          value={domain}
+                          onChange={(e) => setDomain(e.target.value)}
+                          className="pl-9 text-sm"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-400">Domain phải khớp với domain đã đăng ký trong license</p>
+                    </div>
+                  )}
+                </div>
+                {/* Security notice */}
+                <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                  <Shield className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-blue-600">Xác thực đồng thời: Email + License Key + Domain + Chữ ký HMAC-SHA256</p>
                 </div>
                 <Button
                   onClick={handleActivate}
-                  disabled={activateMutation.isPending || !newKey.trim()}
+                  disabled={activateMutation.isPending || !newKey.trim() || !newEmail.trim()}
                   className="w-full sm:w-auto"
                 >
                   {activateMutation.isPending ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Đang kích hoạt...</>
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Đang xác thực...</>
                   ) : (
                     <><ShieldCheck className="h-4 w-4 mr-2" /> Kích hoạt ngay</>
                   )}

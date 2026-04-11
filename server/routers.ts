@@ -8408,6 +8408,7 @@ export const licenseRouter = router({
     const rows = await db.select({
       licenseActivated: userSettings.licenseActivated,
       licenseKey: userSettings.licenseKey,
+      licenseEmail: userSettings.licenseEmail,
       licensePlan: userSettings.licensePlan,
       licenseExpiresAt: userSettings.licenseExpiresAt,
       licenseOwner: userSettings.licenseOwner,
@@ -8416,10 +8417,11 @@ export const licenseRouter = router({
       licenseActivatedAt: userSettings.licenseActivatedAt,
     }).from(userSettings).limit(1);
     const s = rows[0];
-    if (!s) return { activated: false, licenseKey: null, plan: null, expiresAt: null, owner: null, domain: null };
+    if (!s) return { activated: false, licenseKey: null, email: null, plan: null, expiresAt: null, owner: null, domain: null };
     return {
       activated: s.licenseActivated ?? false,
       licenseKey: s.licenseKey ? `${s.licenseKey.substring(0, 8)}...${s.licenseKey.slice(-4)}` : null,
+      email: s.licenseEmail || null,
       plan: s.licensePlan,
       expiresAt: s.licenseExpiresAt ? s.licenseExpiresAt.toISOString() : null,
       owner: s.licenseOwner,
@@ -8431,8 +8433,10 @@ export const licenseRouter = router({
 
   // Kích hoạt license key
   activate: publicProcedure.input(z.object({
-    licenseKey: z.string().min(8, "License key phải có ít nhất 8 ký tự"),
+    licenseKey: z.string().min(19, "License key không hợp lệ (format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)"),
+    email: z.string().email("Email không hợp lệ"),
     domain: z.string().optional(),
+    activationToken: z.string().optional(),
   })).mutation(async ({ input }) => {
     const { getDb } = await import("./db");
     const { userSettings } = await import("../drizzle/schema");
@@ -8440,61 +8444,92 @@ export const licenseRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database không khả dụng" });
 
-    // Xác thực license với server bên ngoài (nếu có)
-    const licenseServerUrl = process.env.LICENSE_SERVER_URL;
-    let licenseInfo: { valid: boolean; plan?: string; expiresAt?: string; owner?: string; message?: string } = {
-      valid: true, plan: "standard",
+    const { validateLicense, isValidKeyFormat, normalizeDomain, normalizeEmail } = await import("./license-crypto");
+
+    if (!isValidKeyFormat(input.licenseKey)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "License key không đúng định dạng (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)" });
+    }
+
+    const currentDomain = input.domain || process.env.APP_DOMAIN || "localhost";
+    let licenseInfo: { valid: boolean; plan: string; expiresAt?: string; owner?: string } = {
+      valid: false, plan: "standard",
     };
 
-    if (licenseServerUrl) {
-      try {
-        const domain = input.domain || process.env.APP_DOMAIN || "localhost";
-        const response = await fetch(`${licenseServerUrl}/api/verify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: input.licenseKey, domain }),
-          signal: AbortSignal.timeout(15_000),
+    // ─── Phương thức 1: Offline HMAC validation (nếu có activationToken) ────────
+    if (input.activationToken) {
+      const result = validateLicense(input.activationToken, input.email, currentDomain);
+      if (!result.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: result.reason || "License key không hợp lệ" });
+      }
+      licenseInfo = {
+        valid: true,
+        plan: result.payload?.plan || "standard",
+        expiresAt: result.payload?.expiresAt ? new Date(result.payload.expiresAt).toISOString() : undefined,
+        owner: result.payload?.owner,
+      };
+      console.log(`[License] Activated via offline HMAC for ${normalizeEmail(input.email)} on ${normalizeDomain(currentDomain)}`);
+    }
+    // ─── Phương thức 2: Online License Server validation ─────────────────────────
+    else {
+      const licenseServerUrl = process.env.LICENSE_SERVER_URL;
+      if (licenseServerUrl) {
+        try {
+          const response = await fetch(`${licenseServerUrl}/api/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              key: input.licenseKey,
+              email: normalizeEmail(input.email),
+              domain: normalizeDomain(currentDomain),
+            }),
+            signal: AbortSignal.timeout(15_000),
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({})) as any;
+            throw new TRPCError({ code: "BAD_REQUEST", message: data.message || "License key không hợp lệ" });
+          }
+          const serverResult = await response.json() as any;
+          if (!serverResult.valid) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: serverResult.message || "License key không hợp lệ" });
+          }
+          licenseInfo = { valid: true, plan: serverResult.plan || "standard", expiresAt: serverResult.expiresAt, owner: serverResult.owner };
+          console.log(`[License] Activated via License Server for ${normalizeEmail(input.email)}`);
+        } catch (err: any) {
+          if (err instanceof TRPCError) throw err;
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể xác thực license. Vui lòng liên hệ hỗ trợ." });
+        }
+      } else {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cần activation token để kích hoạt offline. Liên hệ nhà cung cấp để nhận token.",
         });
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({})) as any;
-          throw new TRPCError({ code: "BAD_REQUEST", message: data.message || "License key không hợp lệ" });
-        }
-        licenseInfo = await response.json() as typeof licenseInfo;
-        if (!licenseInfo.valid) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: licenseInfo.message || "License key không hợp lệ" });
-        }
-      } catch (err: any) {
-        if (err instanceof TRPCError) throw err;
-        // Nếu không kết nối được server → vẫn cho activate (offline mode)
-        console.warn("[License] Cannot reach license server, activating in offline mode");
       }
     }
 
-    // Lưu license vào DB
+    // ─── Lưu license vào DB ───────────────────────────────────────────────────────
     const rows = await db.select({ id: userSettings.id }).from(userSettings).limit(1);
     const settingsId = rows[0]?.id;
     const updateData: any = {
       licenseKey: input.licenseKey,
+      licenseEmail: normalizeEmail(input.email),
+      licenseSignature: input.activationToken || null,
       licenseActivated: true,
       licenseActivatedAt: new Date(),
       licensePlan: licenseInfo.plan || "standard",
       licenseOwner: licenseInfo.owner || null,
-      licenseDomain: input.domain || process.env.APP_DOMAIN || null,
+      licenseDomain: normalizeDomain(currentDomain),
       licenseMessage: null,
     };
     if (licenseInfo.expiresAt) {
       updateData.licenseExpiresAt = new Date(licenseInfo.expiresAt);
     }
-
     if (settingsId) {
       await db.update(userSettings).set(updateData).where(eq(userSettings.id, settingsId));
     } else {
       await db.insert(userSettings).values(updateData);
     }
-
     return { success: true, plan: licenseInfo.plan || "standard", message: "Kích hoạt license thành công!" };
   }),
-
   // Hủy kích hoạt license (admin only)
   deactivate: protectedProcedure.mutation(async ({ ctx }) => {
     if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });

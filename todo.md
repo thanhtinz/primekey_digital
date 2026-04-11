@@ -1904,3 +1904,12 @@ todo updated
 - [ ] UI: trang License Setup (first-run wizard)
 - [ ] UI: trang quản lý license trong admin (activate, deactivate, renew)
 - [ ] UI: trang quản lý Auto-Update trong admin (enable/disable, xem logs)
+
+## Feature: High-Security License System
+- [ ] License Key Generator: HMAC-SHA256 signed key (email + domain + plan + expiry)
+- [ ] License Validator: xác thực 3 lớp (email + key signature + domain match)
+- [ ] Cập nhật DB schema: thêm trường licenseEmail
+- [ ] Cập nhật licenseRouter.activate: yêu cầu email + key + domain
+- [ ] Cập nhật LicenseSetup UI: thêm trường email bắt buộc
+- [ ] Cập nhật LicenseAdmin UI: thêm trường email khi kích hoạt
+- [ ] Tài liệu hướng dẫn tạo license key cho developer (scripts/generate-license.ts)

@@ -281,6 +281,13 @@
       "when": 1775865407329,
       "tag": "0039_funny_violations",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1775867347917,
+      "tag": "0040_outgoing_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }
