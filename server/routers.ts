@@ -2569,6 +2569,15 @@ export const appRouter = router({
         themeColor1: userSettings.themeColor1,
         logoDarkUrl: userSettings.logoDarkUrl,
         fontFamily: userSettings.fontFamily,
+        featureCustom404: userSettings.featureCustom404,
+        custom404Title: userSettings.custom404Title,
+        custom404Message: userSettings.custom404Message,
+        custom404ButtonText: userSettings.custom404ButtonText,
+        custom404ButtonUrl: userSettings.custom404ButtonUrl,
+        custom404ImageUrl: userSettings.custom404ImageUrl,
+        custom404BgColor: userSettings.custom404BgColor,
+        custom404TextColor: userSettings.custom404TextColor,
+        custom404CustomHtml: (userSettings as any).custom404CustomHtml,
       }).from(userSettings).limit(1);
       // Lấy logo từ default template (fallback nếu không có brand logo)
       const templateRows = await drizzleDb.select({

@@ -81,6 +81,7 @@ const AdminNotifications = lazy(() => import("./pages/AdminNotifications"));
 
 // Client Portal
 const ClientLogin = lazy(() => import("./pages/ClientLogin"));
+const Client404Page = lazy(() => import("./pages/Client404Page"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CartPage = lazy(() => import("./pages/CartPage"));
@@ -235,6 +236,7 @@ function Router() {
           <Route path="/verify-email" component={() => <VerifyEmailPage />} />
           <Route path="/reset-password" component={() => <ResetPasswordPage />} />
           <Route path="/" component={() => <LandingPage />} />
+          <Route component={() => <Client404Page />} />
         </Switch>
       </Suspense>
     );
