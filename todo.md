@@ -1414,8 +1414,8 @@ todo updated
 - [x] Xóa links tính năng bị tắt khỏi MyAccount (wishlist, leaderboard, warranty, referral)
 - [x] Kho ảnh avatar: admin upload/quản lý avatar library
 - [x] Client chọn avatar từ kho hoặc upload ảnh riêng
-- [ ] Redesign toàn bộ admin dashboard: sidebar gọn gàng, gộp trang liên quan
-- [ ] Cải thiện admin layout: thống nhất design system, chuyên nghiệp hơn
+- [x] Redesign toàn bộ admin dashboard: sidebar gọn gàng, gộp trang liên quan
+- [x] Cải thiện admin layout: thống nhất design system, chuyên nghiệp hơn
 - [x] Fix tag trạng thái PAID hiển thị "Hoàn thành" → đổi thành "Đang xử lý"
 - [x] Fix progress bar mất cân bằng trong CartPage (đường kẻ không đều)
 - [x] Track order: nút "Xem chi tiết" dùng route /order/:invoiceNumber
@@ -1533,8 +1533,8 @@ todo updated
 
 ## Phase: Fix Popup Config & Sticky Bar (Apr 9, 2026)
 - [x] Thêm link trang cấu hình thông báo/popup/banner vào admin sidebar (Banner Trang Chủ, Thông Báo Website, Thông Báo Hệ Thống đã có sẵn)
-- [ ] Fix sticky bottom bar ProductDetail mobile: dùng position:fixed thay vì bị cuộn theo trang
-- [ ] ProductDetail: xóa sticky bottom bar mobile, gộp nút Giỏ hàng/Mua ngay vào card thông tin đặt hàng
+- [x] Fix sticky bottom bar ProductDetail mobile: dùng position:fixed thay vì bị cuộn theo trang
+- [x] ProductDetail: xóa sticky bottom bar mobile, gộp nút Giỏ hàng/Mua ngay vào card thông tin đặt hàng
 
 ## Phase: UI/UX Fixes (Apr 9, 2026 - Session 32)
 - [x] ProductCatalog grid view: xóa hardcode "Giao ngay" + số gói → hiển thị tag sản phẩm từ DB
@@ -1602,27 +1602,27 @@ todo updated
 - [x] ProductDetail: thêm card "Lưu ý sản phẩm" hiển thị mô tả gói đang chọn, tự động cập nhật khi bấm gói khác
 
 ## Phase Admin Redesign: AdminKit Style
-- [ ] Xây dựng AdminLayout mới (sidebar navy, header trắng) theo phong cách AdminKit
-- [ ] Redesign Dashboard, Orders, Products, Customers, Reports theo AdminKit
-- [ ] Redesign Wallet, Blog, Coupons, FlashSale, Warranty, Feedbacks, Referral, Staff theo AdminKit
-- [ ] Redesign Settings (gộp sub-settings), bỏ/gộp trang thừa
-- [ ] Dọn App.tsx: bỏ routes thừa, đảm bảo AdminLayout bao hết trang admin
-- [ ] Cập nhật menu sidebar: thêm Flash Sale Subscribers, Loyalty Rewards, Warranty Requests, Referral Withdrawals, Refunds, Spin Wheel, VAT Invoices
-- [ ] Tạo ReferralAdmin.tsx (gộp ReferralSettings + ReferralWithdrawalsAdmin)
-- [ ] Tạo LoyaltyAdmin.tsx (gộp LoyaltySettings + LoyaltyRewardsAdmin)
-- [ ] Tạo FlashSaleAdmin.tsx (gộp FlashSaleSettings + FlashSaleSubscriberSettings)
-- [ ] Cập nhật App.tsx routes cho các trang gộp mới
-- [ ] Redesign Dashboard theo AdminKit (cards trắng, shadow nhẹ, KPI đẹp)
-- [ ] Redesign Orders/Invoices theo AdminKit
-- [ ] Redesign Products theo AdminKit
-- [ ] Redesign Customers theo AdminKit
-- [ ] Redesign Reports theo AdminKit
-- [ ] Redesign WalletManagement theo AdminKit
-- [ ] Redesign Feedbacks theo AdminKit
-- [ ] Redesign Blog theo AdminKit
-- [ ] Redesign Coupons theo AdminKit
-- [ ] Redesign Staff theo AdminKit
-- [ ] Redesign Settings theo AdminKit
+- [x] Xây dựng AdminLayout mới (sidebar navy, header trắng) theo phong cách AdminKit
+- [x] Redesign Dashboard, Orders, Products, Customers, Reports theo AdminKit
+- [x] Redesign Wallet, Blog, Coupons, FlashSale, Warranty, Feedbacks, Referral, Staff theo AdminKit
+- [x] Redesign Settings (gộp sub-settings), bỏ/gộp trang thừa
+- [x] Dọn App.tsx: bỏ routes thừa, đảm bảo AdminLayout bao hết trang admin
+- [x] Cập nhật menu sidebar: thêm Flash Sale Subscribers, Loyalty Rewards, Warranty Requests, Referral Withdrawals, Refunds, Spin Wheel, VAT Invoices
+- [x] Tạo ReferralAdmin.tsx (gộp ReferralSettings + ReferralWithdrawalsAdmin)
+- [x] Tạo LoyaltyAdmin.tsx (gộp LoyaltySettings + LoyaltyRewardsAdmin)
+- [x] Tạo FlashSaleAdmin.tsx (gộp FlashSaleSettings + FlashSaleSubscriberSettings)
+- [x] Cập nhật App.tsx routes cho các trang gộp mới
+- [x] Redesign Dashboard theo AdminKit (cards trắng, shadow nhẹ, KPI đẹp)
+- [x] Redesign Orders/Invoices theo AdminKit
+- [x] Redesign Products theo AdminKit
+- [x] Redesign Customers theo AdminKit
+- [x] Redesign Reports theo AdminKit
+- [x] Redesign WalletManagement theo AdminKit
+- [x] Redesign Feedbacks theo AdminKit
+- [x] Redesign Blog theo AdminKit
+- [x] Redesign Coupons theo AdminKit
+- [x] Redesign Staff theo AdminKit
+- [x] Redesign Settings theo AdminKit
 
 ## Phase N: Redesign Admin + Gộp Settings + Dọn dẹp code
 - [x] Redesign Dashboard.tsx theo AdminKit (KPI cards + charts đẹp hơn)
@@ -1805,7 +1805,7 @@ todo updated
 ### Client theme đồng bộ
 - [x] Client đọc themeColor/themeColor1 từ API settings và áp dụng CSS variables qua GlobalBrandApplier
 - [x] Thêm dark/light mode toggle cho web client (nút sun/moon trong ClientHeader)
-- [ ] Logo client tự động chọn logo sáng/tối theo theme (cần logoDarkUrl trong settings)
+- [x] Logo client tự động chọn logo sáng/tối theo theme (cần logoDarkUrl trong settings)
 
 ### MyAccount cập nhật
 - [x] Thêm mục "Liên kết Telegram" trong tab Hồ sơ & Bảo mật (TelegramLinkSection)
@@ -1824,13 +1824,13 @@ todo updated
 - [x] Tạo ProductConfig.tsx - trang riêng thay thế popup cấu hình
 - [x] Route /products/:id/config trong App.tsx
 - [x] Thêm nút "Cấu hình" (⚙️) trong Products.tsx dẫn đến trang mới
-- [ ] Bỏ tab Packages/CustomFields khỏi dialog Products.tsx (giữ lại chỉ Thông tin cơ bản)
+- [x] Bỏ tab Packages/CustomFields khỏi dialog Products.tsx (giữ lại chỉ Thông tin cơ bản)
 
 ### Announcements - chọn trang hiển thị
 - [x] Schema: thêm cột targetPages (JSON array) vào announcements và banners table
 - [x] Backend: cập nhật create/update announcement để lưu targetPages
 - [x] Frontend: thêm checkbox chọn trang trong form tạo/sửa announcement
-- [ ] Client: filter announcement theo trang hiện tại (pathname) trong AnnouncementDisplay
+- [x] Client: filter announcement theo trang hiện tại (pathname) trong AnnouncementDisplay
 
 ### Redesign Dark Mode + màu sắc động
 - [x] index.css: định nghĩa đầy đủ CSS variables cho light/dark mode + dark mode overrides
@@ -1842,27 +1842,27 @@ todo updated
 ## Session 2026-04-10 - Dashboard License Banner, Page Builder, Product Management
 
 ### Dashboard License Banner & System Update
-- [ ] Dashboard: thêm LicenseBanner component (tên app + version + license key info + ẩn 24h)
-- [ ] Dashboard: thêm SystemUpdateWidget (kiểm tra version mới, cập nhật tự động bật/tắt)
-- [ ] Dashboard: thêm AdminBroadcastBanner (thông báo từ chủ src)
-- [ ] Backend: procedure getSystemInfo (version, licenseStatus, updateAvailable)
-- [ ] Settings: thêm toggle "Cập nhật tự động" trong tab Chung
+- [x] Dashboard: thêm LicenseBanner component (tên app + version + license key info + ẩn 24h)
+- [x] Dashboard: thêm SystemUpdateWidget (kiểm tra version mới, cập nhật tự động bật/tắt)
+- [x] Dashboard: thêm AdminBroadcastBanner (thông báo từ chủ src)
+- [x] Backend: procedure getSystemInfo (version, licenseStatus, updateAvailable)
+- [x] Settings: thêm toggle "Cập nhật tự động" trong tab Chung
 
 ### ThankYou & 404 Page Builder
-- [ ] ThankYouCustom: redesign thành page builder chuyên nghiệp (drag-drop sections)
-- [ ] ThankYouCustom: live preview full-screen trong iframe
-- [ ] ThankYouCustom: hỗ trợ custom HTML/CSS code
-- [ ] Custom404Admin: redesign thành page builder chuyên nghiệp
-- [ ] Custom404Admin: live preview full-screen trong iframe
-- [ ] Custom404Admin: hỗ trợ custom HTML/CSS code
+- [x] ThankYouCustom: redesign thành page builder chuyên nghiệp (drag-drop sections)
+- [x] ThankYouCustom: live preview full-screen trong iframe
+- [x] ThankYouCustom: hỗ trợ custom HTML/CSS code
+- [x] Custom404Admin: redesign thành page builder chuyên nghiệp
+- [x] Custom404Admin: live preview full-screen trong iframe
+- [x] Custom404Admin: hỗ trợ custom HTML/CSS code
 
 ### Product Management - Tách 4 trang riêng
-- [ ] ProductEdit.tsx: trang sửa thông tin sản phẩm (tên, mô tả, giá, ảnh, danh mục, tags)
-- [ ] ProductPackages.tsx: trang quản lý gói sản phẩm (CRUD gói, kho hàng)
-- [ ] ProductCustomFields.tsx: trang quản lý trường tùy chỉnh
-- [ ] ProductConfig.tsx: redesign lại đẹp hơn (cấu hình kho, hiển thị, SEO)
-- [ ] Products.tsx: bỏ dialog cũ, thêm nút dẫn đến 4 trang riêng
-- [ ] Menu sidebar: thêm submenu cho Products
+- [x] ProductEdit.tsx: trang sửa thông tin sản phẩm (tên, mô tả, giá, ảnh, danh mục, tags)
+- [x] ProductPackages.tsx: trang quản lý gói sản phẩm (CRUD gói, kho hàng)
+- [x] ProductCustomFields.tsx: trang quản lý trường tùy chỉnh
+- [x] ProductConfig.tsx: redesign lại đẹp hơn (cấu hình kho, hiển thị, SEO)
+- [x] Products.tsx: bỏ dialog cũ, thêm nút dẫn đến 4 trang riêng
+- [x] Menu sidebar: thêm submenu cho Products
 
 ## Checkpoint 2026-04-10 - Dashboard Banner, Page Builder, Product Split Pages
 - [x] Dashboard: LicenseBanner component (version, license key, ẩn 24h, thông báo admin)
@@ -1895,21 +1895,21 @@ todo updated
 
 ## Feature: License Gate & Auto-Update via GitHub
 
-- [ ] License Gate: màn hình setup bắt buộc nhập license key khi deploy mới (chưa có license)
-- [ ] License validation: verify license key với server (hoặc offline hash check)
-- [ ] License Gate middleware: chặn toàn bộ app nếu chưa activate license
-- [ ] Auto-Update: polling GitHub releases API để kiểm tra phiên bản mới
-- [ ] Auto-Update: webhook endpoint nhận push event từ GitHub
-- [ ] Auto-Update: khi có phiên bản mới, tự động pull code và restart server
-- [ ] UI: trang License Setup (first-run wizard)
-- [ ] UI: trang quản lý license trong admin (activate, deactivate, renew)
-- [ ] UI: trang quản lý Auto-Update trong admin (enable/disable, xem logs)
+- [x] License Gate: màn hình setup bắt buộc nhập license key khi deploy mới (chưa có license)
+- [x] License validation: verify license key với server (hoặc offline hash check)
+- [x] License Gate middleware: chặn toàn bộ app nếu chưa activate license
+- [x] Auto-Update: polling GitHub releases API để kiểm tra phiên bản mới
+- [x] Auto-Update: webhook endpoint nhận push event từ GitHub
+- [x] Auto-Update: khi có phiên bản mới, tự động pull code và restart server
+- [x] UI: trang License Setup (first-run wizard)
+- [x] UI: trang quản lý license trong admin (activate, deactivate, renew)
+- [x] UI: trang quản lý Auto-Update trong admin (enable/disable, xem logs)
 
 ## Feature: High-Security License System
-- [ ] License Key Generator: HMAC-SHA256 signed key (email + domain + plan + expiry)
-- [ ] License Validator: xác thực 3 lớp (email + key signature + domain match)
-- [ ] Cập nhật DB schema: thêm trường licenseEmail
-- [ ] Cập nhật licenseRouter.activate: yêu cầu email + key + domain
-- [ ] Cập nhật LicenseSetup UI: thêm trường email bắt buộc
-- [ ] Cập nhật LicenseAdmin UI: thêm trường email khi kích hoạt
-- [ ] Tài liệu hướng dẫn tạo license key cho developer (scripts/generate-license.ts)
+- [x] License Key Generator: HMAC-SHA256 signed key (email + domain + plan + expiry)
+- [x] License Validator: xác thực 3 lớp (email + key signature + domain match)
+- [x] Cập nhật DB schema: thêm trường licenseEmail
+- [x] Cập nhật licenseRouter.activate: yêu cầu email + key + domain
+- [x] Cập nhật LicenseSetup UI: thêm trường email bắt buộc
+- [x] Cập nhật LicenseAdmin UI: thêm trường email khi kích hoạt
+- [x] Tài liệu hướng dẫn tạo license key cho developer (scripts/generate-license.ts)

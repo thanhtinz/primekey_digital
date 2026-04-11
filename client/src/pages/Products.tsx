@@ -450,33 +450,14 @@ export default function Products() {
             <DialogDescription>{editingId ? "Cập nhật thông tin sản phẩm hoặc dịch vụ" : "Nhập thông tin sản phẩm mới vào danh mục"}</DialogDescription>
           </DialogHeader>
 
-          {/* Tabs */}
+          {/* Tabs - only Thông Tin Cơ Bản (Packages and CustomFields are on separate pages) */}
           <div className="flex border-b border-gray-200 mb-4">
             <button
               onClick={() => setActiveTab("info")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "info" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+              className="px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600"
             >
               Thông Tin Cơ Bản
             </button>
-            <button
-              onClick={() => setActiveTab("packages")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === "packages" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-            >
-              <Layers className="h-3.5 w-3.5" />
-              Gói Sản Phẩm
-              {packages.length > 0 && (
-                <span className="bg-blue-100 text-blue-600 text-xs px-1.5 py-0.5 rounded-full">{packages.length}</span>
-              )}
-            </button>
-            {editingId && (
-              <button
-                onClick={() => setActiveTab("customFields")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === "customFields" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-                Trường Tùy Chỉnh
-              </button>
-            )}
           </div>
 
           {activeTab === "info" && (

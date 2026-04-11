@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { X, Bell } from "@/components/Icon";
 
@@ -10,6 +11,7 @@ function useAnnouncements() {
   const { data: announcements = [] } = trpc.announcement.listPublic.useQuery(undefined, {
     staleTime: 60_000,
   });
+  const [location] = useLocation();
 
   // Banner inline: dismissed per day (reset every new day)
   const [dismissed, setDismissed] = useState<number[]>(() => {
@@ -27,11 +29,21 @@ function useAnnouncements() {
     } catch { return []; }
   });
 
+  // Filter by targetPages: if targetPages is empty/null, show on all pages
+  const isVisibleOnCurrentPage = (a: any) => {
+    const pages: string[] = Array.isArray(a.targetPages) ? a.targetPages : [];
+    if (pages.length === 0) return true; // no restriction = show everywhere
+    return pages.some(p => {
+      if (p === "/") return location === "/";
+      return location.startsWith(p);
+    });
+  };
+
   const bannerItems = (announcements as any[]).filter(
-    (a: any) => !a.showAsPopup && !dismissed.includes(a.id)
+    (a: any) => !a.showAsPopup && !dismissed.includes(a.id) && isVisibleOnCurrentPage(a)
   );
   const popupItems = (announcements as any[]).filter(
-    (a: any) => a.showAsPopup && !popupDismissed.includes(a.id)
+    (a: any) => a.showAsPopup && !popupDismissed.includes(a.id) && isVisibleOnCurrentPage(a)
   );
 
   const dismissBanner = (id: number) => {

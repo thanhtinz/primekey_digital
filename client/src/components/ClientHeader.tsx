@@ -40,7 +40,12 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
   const catDropRef = useRef<HTMLDivElement>(null);
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
-  const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
+  const { theme } = useTheme();
+  const isDarkTheme = theme === "dark";
+  const logoUrlLight = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
+  const logoUrlDark = (publicInfo as any)?.logoDarkUrl;
+  // Auto-select logo based on current theme: use dark logo if available and in dark mode
+  const logoUrl = (isDarkTheme && logoUrlDark) ? logoUrlDark : logoUrlLight;
   const companyName = publicInfo?.companyName || "ShopKey";
 
   const { token: ctxToken, isLoggedIn: ctxLoggedIn, logout: ctxLogout, customer: ctxCustomer } = useCustomerAuth();
