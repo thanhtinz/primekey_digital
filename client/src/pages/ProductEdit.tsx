@@ -26,7 +26,6 @@ export default function ProductEdit() {
     imageUrl: "",
     notes: "",
     categoryId: null as number | null,
-    inventoryType: "manual" as "manual" | "warehouse",
   });
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -42,7 +41,6 @@ export default function ProductEdit() {
         imageUrl: product.imageUrl || "",
         notes: product.notes || "",
         categoryId: product.categoryId || null,
-        inventoryType: (product as any).inventoryType || "manual",
       });
       setSelectedTagIds((product.tags || []).map((t: any) => t.id));
     }
@@ -94,7 +92,6 @@ export default function ProductEdit() {
       categoryId: formData.categoryId,
       imageUrl: formData.imageUrl || undefined,
       notes: formData.notes || undefined,
-      inventoryType: formData.inventoryType,
     });
     await assignTags.mutateAsync({ productId, tagIds: selectedTagIds });
   };
@@ -229,22 +226,6 @@ export default function ProductEdit() {
                   </optgroup>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium">Loại Kho Hàng</Label>
-              <div className="mt-1.5 flex gap-3">
-                {["manual", "warehouse"].map(type => (
-                  <label key={type} className={"flex-1 flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all " + (formData.inventoryType === type ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300")}>
-                    <input type="radio" name="inventoryType" value={type} checked={formData.inventoryType === type} onChange={() => setFormData(p => ({ ...p, inventoryType: type as any }))} className="hidden" />
-                    <i className={"fa-solid text-lg " + (type === "manual" ? "fa-hand-pointer" : "fa-warehouse") + " " + (formData.inventoryType === type ? "text-blue-500" : "text-gray-400")} />
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{type === "manual" ? "Thủ Công" : "Kho Hàng"}</p>
-                      <p className="text-xs text-gray-500">{type === "manual" ? "Nhập kho thủ công" : "Quản lý tự động"}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
             </div>
 
             <div>

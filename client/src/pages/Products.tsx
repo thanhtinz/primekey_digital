@@ -38,7 +38,6 @@ export default function Products() {
     name: "", description: "",
     imageUrl: "", notes: "",
     categoryId: null as number | null,
-    inventoryType: "manual" as "manual" | "warehouse",
   });
   const [packages, setPackages] = useState<PackageForm[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
@@ -115,7 +114,7 @@ export default function Products() {
   });
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", imageUrl: "", notes: "", categoryId: null, inventoryType: "manual" });
+    setFormData({ name: "", description: "", imageUrl: "", notes: "", categoryId: null });
     setPackages([]);
     setSelectedTagIds([]);
     setEditingId(null);
@@ -136,7 +135,6 @@ export default function Products() {
       categoryId: formData.categoryId,
       imageUrl: formData.imageUrl || undefined,
       notes: formData.notes || undefined,
-      inventoryType: formData.inventoryType,
     };
     let productId = editingId;
     if (editingId) {
@@ -157,7 +155,6 @@ export default function Products() {
       imageUrl: product.imageUrl || "",
       notes: product.notes || "",
       categoryId: product.categoryId || null,
-      inventoryType: (product as any).inventoryType || "manual",
     });
     setSelectedTagIds((product.tags || []).map((t: any) => t.id));
     const pkgs = (product.packages || []).map((p: any) => ({
@@ -580,39 +577,6 @@ export default function Products() {
                 )}
               </div>
 
-              {/* Inventory Type */}
-              <div>
-                <Label className="text-sm font-medium">📦 Loại Kho Hàng</Label>
-                <div className="flex gap-2 mt-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, inventoryType: "manual" }))}
-                    className={`flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-all text-left ${
-                      formData.inventoryType === "manual"
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="font-semibold">Thủ Công</div>
-                    <div className="text-xs opacity-70 mt-0.5">Giao hàng thủ công sau khi mua</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, inventoryType: "warehouse" }))}
-                    className={`flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-all text-left ${
-                      formData.inventoryType === "warehouse"
-                        ? "border-green-500 bg-green-50 text-green-700"
-                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="font-semibold">Kho Hàng</div>
-                    <div className="text-xs opacity-70 mt-0.5">Hệ thống tự động lấy từ kho</div>
-                  </button>
-                </div>
-                {formData.inventoryType === "warehouse" && (
-                  <p className="text-xs text-green-600 mt-1.5">✓ Số lượng tồn kho sẽ hiển thị trên trang sản phẩm. Vào <strong>Kho Hàng</strong> để nhập hàng.</p>
-                )}
-              </div>
 
               {/* Info box */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
