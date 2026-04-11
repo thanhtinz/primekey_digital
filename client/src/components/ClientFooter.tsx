@@ -1,16 +1,18 @@
 /**
  * ClientFooter - Footer dùng chung cho tất cả trang client
  * Dark navy theme, logo, liên hệ, liên kết, copyright
- * Thiết kế theo ảnh tham khảo (IMG_5245)
+ * Các liên kết được ẩn theo feature flags
  */
 import { useLocation } from "wouter";
-import { Mail, Phone, MapPin, Link2, HelpCircle, MessageCircle, ChevronUp } from "@/components/Icon";
+import { Mail, Phone, MapPin, Link2, HelpCircle, MessageCircle, ChevronUp, BookOpen, Tag } from "@/components/Icon";
 import { trpc } from "@/lib/trpc";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useState, useEffect } from "react";
 
 export function ClientFooter() {
   const [, navigate] = useLocation();
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const { isEnabled } = useFeatureFlags();
 
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
@@ -27,6 +29,13 @@ export function ClientFooter() {
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Build links list based on feature flags
+  const footerLinks = [
+    isEnabled("blog") ? { label: "Blog & Hướng dẫn", href: "/blog", icon: BookOpen } : null,
+    isEnabled("ticket") ? { label: "Liên hệ chúng tôi", href: "/support", icon: MessageCircle } : null,
+    isEnabled("coupon") ? { label: "Kho mã giảm giá", href: "/coupons", icon: Tag } : null,
+  ].filter(Boolean) as { label: string; href: string; icon: any }[];
 
   return (
     <footer className="bg-[#0f1629] text-white/80 border-t border-white/10 mt-auto">
@@ -93,32 +102,30 @@ export function ClientFooter() {
             </div>
           </div>
 
-          {/* Links Column */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="flex items-center gap-2 text-white font-semibold text-base mb-2">
-                <Link2 className="h-4 w-4 text-cyan-400" />
-                Liên kết
-              </h3>
-              <div className="w-16 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 mb-4" />
+          {/* Links Column - only show if there are enabled links */}
+          {footerLinks.length > 0 && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="flex items-center gap-2 text-white font-semibold text-base mb-2">
+                  <Link2 className="h-4 w-4 text-cyan-400" />
+                  Liên kết
+                </h3>
+                <div className="w-16 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 mb-4" />
+              </div>
+              <div className="space-y-3">
+                {footerLinks.map(link => (
+                  <button
+                    key={link.href}
+                    onClick={() => navigate(link.href)}
+                    className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors w-full text-left"
+                  >
+                    <link.icon className="h-4 w-4 text-white/30" />
+                    {link.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-3">
-              {[
-                { label: "Blog & Hướng dẫn", href: "/blog", icon: HelpCircle },
-                { label: "Liên hệ chúng tôi", href: "/support", icon: MessageCircle },
-                { label: "Kho mã giảm giá", href: "/coupons", icon: Link2 },
-              ].map(link => (
-                <button
-                  key={link.href}
-                  onClick={() => navigate(link.href)}
-                  className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors w-full text-left"
-                >
-                  <link.icon className="h-4 w-4 text-white/30" />
-                  {link.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
