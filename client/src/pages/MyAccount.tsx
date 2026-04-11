@@ -736,7 +736,9 @@ function NotificationPrefsSection({ token }: { token: string }) {
             </div>
             <span className="text-sm font-semibold text-slate-700">Thông báo Telegram</span>
             {hasTelegram ? (
-              <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">Đã liên kết</span>
+              <span className="text-[10px] bg-sky-100 text-sky-600 px-2 py-0.5 rounded-full font-medium">
+                {telegramItems.filter(i => !!(prefs as any)[i.key]).length}/{telegramItems.length} bật
+              </span>
             ) : (
               <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Chưa liên kết</span>
             )}
