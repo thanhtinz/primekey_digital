@@ -241,6 +241,37 @@ export const appRouter = router({
           updatedAt: new Date(),
         });
         
+        // Auto checkLowStock when order reaches WARRANTY (fulfilled)
+        if (input.status === "WARRANTY") {
+          try {
+            const { getDb: getLowStockDb } = await import("./db");
+            const { invoiceItems, productPackages } = await import("../drizzle/schema");
+            const { eq } = await import("drizzle-orm");
+            const { notifyOwner } = await import("./_core/notification");
+            const lsDb = await getLowStockDb();
+            if (lsDb) {
+              const items = await lsDb.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, input.id));
+              const checkedPackages = new Set<number>();
+              for (const item of items) {
+                const pkgId = (item as any).packageId;
+                if (!pkgId || checkedPackages.has(pkgId)) continue;
+                checkedPackages.add(pkgId);
+                const [pkg] = await lsDb.select().from(productPackages).where(eq(productPackages.id, pkgId));
+                if (!pkg || (pkg as any).deliveryType !== "warehouse") continue;
+                const threshold = (pkg as any).minStockThreshold ?? 5;
+                const { productInventory, products } = await import("../drizzle/schema");
+                const { and, sql: sqlFn } = await import("drizzle-orm");
+                const [countRow] = await lsDb.select({ cnt: sqlFn<number>`COUNT(*)` }).from(productInventory).where(and(eq(productInventory.packageId, pkgId), eq(productInventory.status, "available")));
+                const available = Number(countRow?.cnt ?? 0);
+                if (available <= threshold) {
+                  const [product] = await lsDb.select({ name: products.name }).from(products).where(eq(products.id, pkg.productId));
+                  await notifyOwner({ title: `⚠️ Kho sắp hết: ${product?.name ?? ""} - ${pkg.name}`, content: `Gói "${pkg.name}" còn ${available} mục (ngưỡng: ${threshold}). Hãy nhập thêm hàng.` }).catch(() => {});
+                }
+              }
+            }
+          } catch (lsErr) { console.error("[checkLowStock]", lsErr); }
+        }
+
         // Generate per-product review tokens for each item when status is WARRANTY
         if (input.status === "WARRANTY") {
           try {
@@ -8375,20 +8406,35 @@ export const appRouter = router({
         packageId: z.number().optional(),
         status: z.string().optional(),
         search: z.string().optional(),
+        lowStock: z.boolean().optional(),
         page: z.number().default(1),
         limit: z.number().default(20),
       }))
       .query(async ({ input }) => {
         const { productInventory, products, productPackages } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
-        const { eq, and, desc, like, count, sql } = await import("drizzle-orm");
+        const { eq, and, desc, like, count, sql, inArray } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) return { items: [], total: 0 };
+        // If lowStock filter: find packages with available count <= minStockThreshold
+        let lowStockPackageIds: number[] | undefined;
+        if (input.lowStock) {
+          const pkgRows = await drizzleDb.select({ id: productPackages.id, threshold: sql<number>`COALESCE(${productPackages.minStockThreshold}, 5)` }).from(productPackages).where(eq((productPackages as any).deliveryType, "warehouse"));
+          const pkgIds = pkgRows.map((r) => r.id);
+          if (pkgIds.length === 0) return { items: [], total: 0 };
+          const countRows = await drizzleDb.select({ packageId: productInventory.packageId, cnt: sql<number>`COUNT(*)` }).from(productInventory).where(and(inArray(productInventory.packageId, pkgIds), eq(productInventory.status, "available"))).groupBy(productInventory.packageId);
+          lowStockPackageIds = pkgRows.filter((pkg) => {
+            const row = countRows.find((r) => r.packageId === pkg.id);
+            return (Number(row?.cnt ?? 0)) <= Number(pkg.threshold);
+          }).map((p) => p.id);
+          if (lowStockPackageIds.length === 0) return { items: [], total: 0 };
+        }
         const conditions: any[] = [];
         if (input.productId) conditions.push(eq(productInventory.productId, input.productId));
         if (input.packageId) conditions.push(eq(productInventory.packageId, input.packageId));
         if (input.status) conditions.push(eq(productInventory.status, input.status as any));
         if (input.search) conditions.push(like(productInventory.stockData, `%${input.search}%`));
+        if (lowStockPackageIds) conditions.push(inArray(productInventory.packageId, lowStockPackageIds));
         const where = conditions.length > 0 ? and(...conditions) : undefined;
         const offset = (input.page - 1) * input.limit;
         // Get total count

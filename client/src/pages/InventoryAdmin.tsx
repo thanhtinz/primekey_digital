@@ -221,7 +221,8 @@ export default function InventoryAdmin() {
   // Build query params from applied filters
   const queryParams = useMemo(() => {
     const p: any = { page, limit: pageSize };
-    if (applied.status && applied.status !== "all") p.status = applied.status;
+    if (applied.status && applied.status !== "all" && applied.status !== "low_stock") p.status = applied.status;
+    if (applied.status === "low_stock") p.lowStock = true;
     if (applied.search) p.search = applied.search;
     return p;
   }, [page, pageSize, applied]);
@@ -431,6 +432,7 @@ export default function InventoryAdmin() {
                   <SelectItem value="available">Còn hàng</SelectItem>
                   <SelectItem value="used">Đã bán</SelectItem>
                   <SelectItem value="reserved">Đặt trước</SelectItem>
+                  <SelectItem value="low_stock">⚠️ Sắp hết hàng</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -707,7 +709,10 @@ function AddInventoryDialog({
               </SelectTrigger>
               <SelectContent>
                 {warehouseProducts.length === 0 && (
-                  <div className="px-3 py-4 text-center text-sm text-gray-400">Chưa có sản phẩm nào bật kho tự động</div>
+                  <div className="px-3 py-6 text-center">
+                    <p className="text-sm text-gray-400 mb-2">Chưa có sản phẩm nào bật kho tự động</p>
+                    <a href="/admin/products" className="text-xs text-blue-600 hover:underline font-medium">⚙️ Cấu hình ngay →</a>
+                  </div>
                 )}
                 {warehouseProducts.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
@@ -736,7 +741,10 @@ function AddInventoryDialog({
               </SelectContent>
             </Select>
             {selectedProductId && packages.length === 0 && (
-              <p className="text-xs text-amber-600">Sản phẩm này chưa có gói nào bật kho tự động. Vui lòng cấu hình gói trước.</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-amber-600">Sản phẩm này chưa có gói nào bật kho tự động.</p>
+                <a href={`/admin/products/${selectedProductId}/packages`} className="text-xs text-blue-600 hover:underline font-medium whitespace-nowrap">⚙️ Cấu hình ngay →</a>
+              </div>
             )}
           </div>
           {/* Bulk input */}
