@@ -1449,23 +1449,15 @@ export const appRouter = router({
 
     // Public: lấy sản phẩm của owner (single-tenant, userId=1) kèm packages + category
     listPublic: publicProcedure
-      .input(z.object({ categoryId: z.number().optional(), customerToken: z.string().optional() }).optional())
-      .query(async ({ input, ctx }) => {
+      .input(z.object({ categoryId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
         const { getDb } = await import("./db");
         const drizzleDb = await getDb();
         if (!drizzleDb) return [];
-        const { products: productsTable, productPackages, productCategories, users, productTags, productTagMappings, productReviews, invoiceItems, invoices, userSettings: userSettingsTable } = await import("../drizzle/schema");
+        const { products: productsTable, productPackages, productCategories, users, productTags, productTagMappings, productReviews, invoiceItems, invoices } = await import("../drizzle/schema");
         const { eq, and, inArray, avg, count, sum, sql } = await import("drizzle-orm");
         const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
         if (!owner) return [];
-        // Check requireLoginToView setting
-        const [ownerSettings] = await drizzleDb.select().from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
-        if (ownerSettings?.requireLoginToView) {
-          // Check if customer is logged in via session cookie or customerToken
-          const isLoggedIn = !!(ctx as any).customer || !!(ctx as any).customerSession;
-          if (!isLoggedIn && !input?.customerToken) return { requiresLogin: true, products: [] } as any;
-        }
-        const _showSoldCount = ownerSettings?.showSoldCount ?? false;
         const conditions: any[] = [eq(productsTable.userId, owner.id)];
         if (input?.categoryId) conditions.push(eq(productsTable.categoryId, input.categoryId));
         const productRows = await drizzleDb.select().from(productsTable).where(and(...conditions)).orderBy(productsTable.createdAt);
@@ -1538,7 +1530,7 @@ export const appRouter = router({
           tags: allTagMappings.filter((m: any) => m.productId === p.id).map((m: any) => allTagsList.find((t: any) => t.id === m.tagId)).filter(Boolean),
           avgRating: reviewStats.find(r => r.productId === p.id)?.avgRating || 0,
           reviewCount: reviewStats.find(r => r.productId === p.id)?.reviewCount || 0,
-          soldCount: _showSoldCount ? (soldStats.find((s: any) => s.productId === p.id)?.soldCount || 0) : undefined,
+          soldCount: soldStats.find((s: any) => s.productId === p.id)?.soldCount || 0,
         }));
       }),
     // Public: lấy 1 sản phẩm kèm packages theo id
@@ -1994,17 +1986,10 @@ export const appRouter = router({
       comment: z.string().optional(),
       invoiceId: z.number().optional(),
     })).mutation(async ({ input }) => {
-      const { productReviews, users, userSettings: userSettingsTable } = await import("../drizzle/schema");
+      const { productReviews } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
-      const { eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
-      // Check allowProductReview setting
-      const [owner] = await drizzleDb.select({ id: users.id }).from(users).limit(1);
-      if (owner) {
-        const [settings] = await drizzleDb.select().from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
-        if (settings && settings.allowProductReview === false) throw new Error("Tính năng đánh giá sản phẩm hiện đang tắt");
-      }
       await drizzleDb.insert(productReviews).values({ productId: input.productId, customerEmail: input.customerEmail, customerName: input.customerName || null, rating: input.rating, comment: input.comment || null, invoiceId: input.invoiceId || null, isApproved: false });
       return { success: true };
     }),
@@ -2593,18 +2578,6 @@ export const appRouter = router({
         custom404BgColor: userSettings.custom404BgColor,
         custom404TextColor: userSettings.custom404TextColor,
         custom404CustomHtml: userSettings.custom404CustomHtml,
-        // Additional public fields
-        siteTitle: userSettings.siteTitle,
-        hotline: userSettings.hotline,
-        fanpageUrl: userSettings.fanpageUrl,
-        copyrightFooter: userSettings.copyrightFooter,
-        maintenanceMode: userSettings.maintenanceMode,
-        showSlider: userSettings.showSlider,
-        showBanner: userSettings.showBanner,
-        showTelegramReminder: userSettings.showTelegramReminder,
-        showRecentlyViewed: userSettings.showRecentlyViewed,
-        showAvatar: userSettings.showAvatar,
-        requireStrongPassword: userSettings.requireStrongPassword,
       }).from(userSettings).limit(1);
       // Lấy logo từ default template (fallback nếu không có brand logo)
       const templateRows = await drizzleDb.select({
@@ -2718,8 +2691,6 @@ export const appRouter = router({
         siteKeywords: z.string().optional(),
         siteAuthor: z.string().optional(),
         siteTimezone: z.string().optional(),
-        companyEmail: z.string().email().optional().or(z.literal("")),
-        companyAddress: z.string().optional(),
         hotline: z.string().optional(),
         fanpageUrl: z.string().optional(),
         copyrightFooter: z.string().optional(),
@@ -5350,45 +5321,16 @@ export const appRouter = router({
         origin: z.string().optional(),
         referralCode: z.string().optional(), // mã giới thiệu từ ?ref=CODE
       }))
-      .mutation(async ({ input, ctx }) => {
-        const { customers, customerSessions, userSettings: userSettingsTable } = await import("../drizzle/schema");
+      .mutation(async ({ input }) => {
+        const { customers, customerSessions } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
-        const { eq, and, count } = await import("drizzle-orm");
+        const { eq, and } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new Error("DB unavailable");
         // Get owner
         const { users } = await import("../drizzle/schema");
         const [owner] = await drizzleDb.select().from(users).limit(1);
         if (!owner) throw new Error("Hệ thống chưa được cấu hình");
-        // Read owner security settings
-        const [ownerSettings] = await drizzleDb.select({
-          requireStrongPassword: userSettingsTable.requireStrongPassword,
-          maxRegisterPerIp: userSettingsTable.maxRegisterPerIp,
-          sessionDuration: userSettingsTable.sessionDuration,
-        }).from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
-        // Check requireStrongPassword
-        if (ownerSettings?.requireStrongPassword) {
-          const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
-          if (!strongPasswordRegex.test(input.password)) {
-            throw new Error("Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt");
-          }
-        }
-        // Check maxRegisterPerIp
-        const clientIp = (ctx as any)?.req?.headers?.["x-forwarded-for"]?.split(",")?.[0]?.trim() || (ctx as any)?.req?.socket?.remoteAddress || "unknown";
-        const maxPerIp = ownerSettings?.maxRegisterPerIp ?? 1000;
-        if (clientIp !== "unknown" && maxPerIp < 1000) {
-          try {
-            const { loginHistory } = await import("../drizzle/schema");
-            const [ipCount] = await drizzleDb.select({ cnt: count() }).from(loginHistory)
-              .where(and(eq((loginHistory as any).ipAddress, clientIp), eq((loginHistory as any).status, "register"))).limit(1);
-            if ((ipCount?.cnt ?? 0) >= maxPerIp) {
-              throw new Error("Đã đạt giới hạn đăng ký từ địa chỉ IP này");
-            }
-          } catch (e: any) {
-            if (e.message === "Đã đạt giới hạn đăng ký từ địa chỉ IP này") throw e;
-            // Ignore other errors (e.g., column not found)
-          }
-        }
         // Check if email already registered
         const [existing] = await drizzleDb.select({ id: customers.id, passwordHash: customers.passwordHash })
           .from(customers)
@@ -5429,9 +5371,7 @@ export const appRouter = router({
         } catch { /* ignore email errors */ }
         // Create session (allow login even before verification)
         const token = crypto.randomBytes(48).toString("hex");
-        // Use sessionDuration from settings (in seconds), default 30 days
-        const sessionDurationSec = ownerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
-        const expiresAt = new Date(Date.now() + sessionDurationSec * 1000);
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: input.name, token, expiresAt });
          // Process referral code if provided
         if (input.referralCode) {
@@ -5476,13 +5416,14 @@ export const appRouter = router({
         password: z.string(),
       }))
       .mutation(async ({ input }) => {
-         const { customers, customerSessions, users, userSettings: userSettingsTable } = await import("../drizzle/schema");
+        const { customers, customerSessions, users } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
         const { eq, and } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new Error("DB unavailable");
         const bcrypt = await import("bcryptjs");
         const crypto = await import("crypto");
+
         // ── Check admin users table first ──────────────────────────────────────
         const [adminUser] = await drizzleDb.select().from(users).where(eq(users.email, input.email)).limit(1);
         if (adminUser) {
@@ -5490,9 +5431,7 @@ export const appRouter = router({
           if (!validAdmin) throw new Error("Email hoặc mật khẩu không đúng");
           // Create customer session with isAdminSession flag
           const token = crypto.randomBytes(48).toString("hex");
-          const [adminOwnerSettings] = await drizzleDb.select({ sessionDuration: userSettingsTable.sessionDuration }).from(userSettingsTable).where(eq(userSettingsTable.userId, adminUser.id)).limit(1);
-          const adminSessionDurationSec = adminOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
-          const expiresAt = new Date(Date.now() + adminSessionDurationSec * 1000);
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
           const name = adminUser.name || adminUser.email.split("@")[0];
           await drizzleDb.insert(customerSessions).values({
             email: adminUser.email,
@@ -5532,9 +5471,7 @@ export const appRouter = router({
         if (!valid) {
           // Increment login attempts
           const attempts = ((customer as any).loginAttempts || 0) + 1;
-          // Read bfMaxLoginAttempts from owner settings
-          const [ownerSettings] = await drizzleDb.select({ bfMaxLoginAttempts: userSettingsTable.bfMaxLoginAttempts }).from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
-          const MAX_ATTEMPTS = ownerSettings?.bfMaxLoginAttempts ?? 5;
+          const MAX_ATTEMPTS = 5;
           const LOCK_DURATION = 15 * 60 * 1000; // 15 minutes
           const updateData: any = { loginAttempts: attempts, updatedAt: new Date() };
           if (attempts >= MAX_ATTEMPTS) {
@@ -5550,19 +5487,9 @@ export const appRouter = router({
         }
         // Reset login attempts on success
         await drizzleDb.update(customers).set({ loginAttempts: 0, lockedUntil: null, lastLoginAt: new Date(), updatedAt: new Date() } as any).where(eq(customers.id, customer.id));
-        // Check if 2FA is enabled
-        if ((customer as any).totpEnabled && (customer as any).totpSecret) {
-          // Return a temp token (short-lived, 10 minutes) for 2FA verification
-          const tempToken = "2fa_" + crypto.randomBytes(32).toString("hex");
-          const tempExpires = new Date(Date.now() + 10 * 60 * 1000);
-          await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token: tempToken, expiresAt: tempExpires } as any);
-          return { requires2fa: true, tempToken, name: customer.name, email: input.email, expiresAt: tempExpires } as any;
-        }
         // Create session
         const token = crypto.randomBytes(48).toString("hex");
-        const [loginOwnerSettings] = await drizzleDb.select({ sessionDuration: userSettingsTable.sessionDuration }).from(userSettingsTable).where(eq(userSettingsTable.userId, owner.id)).limit(1);
-        const loginSessionDurationSec = loginOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
-        const expiresAt = new Date(Date.now() + loginSessionDurationSec * 1000);
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token, expiresAt });
         // Record login history
         try {
@@ -5572,27 +5499,6 @@ export const appRouter = router({
             status: "success",
             sessionToken: token,
           } as any);
-        } catch {}
-        // Security alert: new login notification
-        try {
-          const _lt = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-          if (customer.telegramChatId) {
-            const { getTelegramBotConfig } = await import("./db");
-            const { users: _uTL } = await import("../drizzle/schema");
-            const [_oTL] = await drizzleDb.select({ id: _uTL.id }).from(_uTL).limit(1);
-            if (_oTL) {
-              const _bTL = await getTelegramBotConfig(_oTL.id, "user");
-              if (_bTL?.botToken) {
-                const { sendTelegramMessage } = await import("./telegram");
-                const _msgTL = "\u26a0\ufe0f *C\u1ea3nh b\u00e1o b\u1ea3o m\u1eadt*\n\nT\u00e0i kho\u1ea3n c\u1ee7a b\u1ea1n v\u1eeba \u0111\u0103ng nh\u1eadp m\u1edbi.\n\n\u23f0 Th\u1eddi gian: " + _lt + "\n\ud83d\udce7 Email: " + input.email + "\n\nN\u1ebfu kh\u00f4ng ph\u1ea3i b\u1ea1n, h\u00e3y \u0111\u1ed5i m\u1eadt kh\u1ea9u ngay!";
-                await sendTelegramMessage(_bTL.botToken, customer.telegramChatId!, _msgTL);
-              }
-            }
-          }
-          const { users: _uEL } = await import("../drizzle/schema");
-          const [_oEL] = await drizzleDb.select({ id: _uEL.id }).from(_uEL).limit(1);
-          const _hL = `<div style="font-family:sans-serif;padding:20px;border:1px solid #e5e7eb;border-radius:8px"><h3 style="color:#dc2626">&#9888;&#65039; C&#7843;nh b&#225;o b&#7843;o m&#7853;t</h3><p>T&#224;i kho&#7843;n c&#7911;a b&#7841;n v&#7915;a &#273;&#259;ng nh&#7853;p m&#7899;i.</p><p><b>Th&#7901;i gian:</b> ${_lt}</p><p><b>Email:</b> ${input.email}</p><p style="color:#6b7280">N&#7871;u kh&#244;ng ph&#7843;i b&#7841;n, h&#227;y &#273;&#7893;i m&#7853;t kh&#7849;u ngay.</p></div>`;
-          await sendEmail({ to: input.email, subject: "&#9888;&#65039; C&#7843;nh b&#225;o: &#272;&#259;ng nh&#7853;p m&#7899;i v&#224;o t&#224;i kho&#7843;n", html: _hL, userId: _oEL?.id ?? undefined });
         } catch {}
         return { token, name: customer.name, email: input.email, expiresAt };
       }),
@@ -5678,12 +5584,7 @@ export const appRouter = router({
         // Create new session
         const crypto = await import("crypto");
         const sessionToken = crypto.randomBytes(48).toString("hex");
-        // Read sessionDuration from owner settings
-        const { users: usersTable, userSettings: userSettingsTable2 } = await import("../drizzle/schema");
-        const [resetOwner] = await drizzleDb.select({ id: usersTable.id }).from(usersTable).limit(1);
-        const [resetOwnerSettings] = resetOwner ? await drizzleDb.select({ sessionDuration: userSettingsTable2.sessionDuration }).from(userSettingsTable2).where(eq(userSettingsTable2.userId, resetOwner.id)).limit(1) : [null];
-        const resetSessionDurationSec = resetOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
-        const expiresAt = new Date(Date.now() + resetSessionDurationSec * 1000);
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await drizzleDb.insert(customerSessions).values({ email: customer.email!, name: customer.name, token: sessionToken, expiresAt });
         return { success: true, token: sessionToken, name: customer.name, email: customer.email };
       }),
@@ -5804,27 +5705,6 @@ export const appRouter = router({
         const delta = totp.validate({ token: input.code, window: 1 });
         if (delta === null) throw new Error("Mã OTP không hợp lệ");
         await drizzleDb.update(customers).set({ totpEnabled: false, totpSecret: null } as any).where(eq(customers.id, customer.id));
-        // Security alert: 2FA disabled notification
-        try {
-          const _dt = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-          if (customer.telegramChatId) {
-            const { getTelegramBotConfig } = await import("./db");
-            const { users: _uTD } = await import("../drizzle/schema");
-            const [_oTD] = await drizzleDb.select({ id: _uTD.id }).from(_uTD).limit(1);
-            if (_oTD) {
-              const _bTD = await getTelegramBotConfig(_oTD.id, "user");
-              if (_bTD?.botToken) {
-                const { sendTelegramMessage } = await import("./telegram");
-                const _msgTD = "\ud83d\udd34 *C\u1ea3nh b\u00e1o b\u1ea3o m\u1eadt*\n\nX\u00e1c minh 2 b\u01b0\u1edbc (2FA) \u0111\u00e3 b\u1ecb *t\u1eaft* tr\u00ean t\u00e0i kho\u1ea3n c\u1ee7a b\u1ea1n.\n\n\u23f0 Th\u1eddi gian: " + _dt + "\n\n\u26a0\ufe0f N\u1ebfu kh\u00f4ng ph\u1ea3i b\u1ea1n, h\u00e3y b\u1eadt l\u1ea1i 2FA ngay!";
-                await sendTelegramMessage(_bTD.botToken, customer.telegramChatId!, _msgTD);
-              }
-            }
-          }
-          const { users: _uED } = await import("../drizzle/schema");
-          const [_oED] = await drizzleDb.select({ id: _uED.id }).from(_uED).limit(1);
-          const _hD = `<div style="font-family:sans-serif;padding:20px;border:2px solid #dc2626;border-radius:8px"><h3 style="color:#dc2626">&#128308; C&#7843;nh b&#225;o: 2FA b&#7883; t&#7855;t</h3><p>X&#225;c minh 2 b&#432;&#7899;c (2FA) &#273;&#227; b&#7883; t&#7855;t tr&#234;n t&#224;i kho&#7843;n c&#7911;a b&#7841;n.</p><p><b>Th&#7901;i gian:</b> ${_dt}</p><p><b>Email:</b> ${customer.email}</p><p style="color:#dc2626;font-weight:600">N&#7871;u kh&#244;ng ph&#7843;i b&#7841;n, h&#227;y b&#7853;t l&#7841;i 2FA v&#224; &#273;&#7893;i m&#7853;t kh&#7849;u ngay!</p></div>`;
-          await sendEmail({ to: customer.email ?? '', subject: "&#128308; C&#7843;nh b&#225;o: X&#225;c minh 2 b&#432;&#7899;c (2FA) &#273;&#227; b&#7883; t&#7855;t", html: _hD, userId: _oED?.id ?? undefined });
-        } catch {}
         return { success: true };
       }),
     // Lấy trạng thái 2FA
@@ -5939,62 +5819,6 @@ export const appRouter = router({
         return { isAdmin: isAdminSession };
       }),
 
-    // 2FA: Xác minh OTP sau khi login (dùng tempToken)
-    loginWith2fa: publicProcedure
-      .input(z.object({ tempToken: z.string(), code: z.string().length(6) }))
-      .mutation(async ({ input }) => {
-        const { customerSessions, customers } = await import("../drizzle/schema");
-        const { getDb } = await import("./db");
-        const { eq } = await import("drizzle-orm");
-        const crypto = await import("crypto");
-        const drizzleDb = await getDb();
-        if (!drizzleDb) throw new Error("DB unavailable");
-        // Validate temp token
-        const [tempSession] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.tempToken)).limit(1);
-        if (!tempSession || tempSession.expiresAt < new Date()) throw new Error("Phiên xác thực hết hạn. Vui lòng đăng nhập lại.");
-        // Get customer
-        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, tempSession.email)).limit(1);
-        if (!customer || !(customer as any).totpSecret) throw new Error("Tài khoản không có 2FA");
-        // Verify TOTP
-        const OTPAuth = await import("otpauth");
-        const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32((customer as any).totpSecret), algorithm: "SHA1", digits: 6, period: 30 });
-        const delta = totp.validate({ token: input.code, window: 1 });
-        if (delta === null) throw new Error("Mã OTP không hợp lệ. Vui lòng thử lại.");
-        // Delete temp session, create real session
-        await drizzleDb.delete(customerSessions).where(eq(customerSessions.token, input.tempToken));
-        const realToken = crypto.randomBytes(48).toString("hex");
-        // Read sessionDuration from owner settings
-        const { users: twoFaUsersTable, userSettings: twoFaUserSettingsTable } = await import("../drizzle/schema");
-        const [twoFaOwner] = await drizzleDb.select({ id: twoFaUsersTable.id }).from(twoFaUsersTable).limit(1);
-        const [twoFaOwnerSettings] = twoFaOwner ? await drizzleDb.select({ sessionDuration: twoFaUserSettingsTable.sessionDuration }).from(twoFaUserSettingsTable).where(eq(twoFaUserSettingsTable.userId, twoFaOwner.id)).limit(1) : [null];
-        const twoFaSessionDurationSec = twoFaOwnerSettings?.sessionDuration ?? (30 * 24 * 60 * 60);
-        const expiresAt = new Date(Date.now() + twoFaSessionDurationSec * 1000);
-        await drizzleDb.insert(customerSessions).values({ email: tempSession.email, name: tempSession.name, token: realToken, expiresAt });
-        try {
-          const { loginHistory } = await import("../drizzle/schema");
-          await drizzleDb.insert(loginHistory).values({ email: tempSession.email, status: "success", sessionToken: realToken } as any);
-        } catch {}
-        return { token: realToken, name: tempSession.name, email: tempSession.email, expiresAt };
-      }),
-    // 2FA: Xác minh OTP cho các hành động nhạy cảm (xem đơn hàng, thanh toán ví)
-    verifyOtpForAction: publicProcedure
-      .input(z.object({ token: z.string(), code: z.string().length(6) }))
-      .mutation(async ({ input }) => {
-        const { customerSessions, customers } = await import("../drizzle/schema");
-        const { getDb } = await import("./db");
-        const { eq } = await import("drizzle-orm");
-        const drizzleDb = await getDb();
-        if (!drizzleDb) throw new Error("DB unavailable");
-        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
-        if (!session || session.expiresAt < new Date()) throw new Error("Phiên đăng nhập hết hạn");
-        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
-        if (!customer || !(customer as any).totpEnabled || !(customer as any).totpSecret) throw new Error("2FA chưa được bật");
-        const OTPAuth = await import("otpauth");
-        const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32((customer as any).totpSecret), algorithm: "SHA1", digits: 6, period: 30 });
-        const delta = totp.validate({ token: input.code, window: 1 });
-        if (delta === null) throw new Error("Mã OTP không hợp lệ. Vui lòng thử lại.");
-        return { valid: true };
-      }),
     // Gửi tin nhắn test Telegram cho khách hàng
     sendTelegramTest: publicProcedure
       .input(z.object({ token: z.string() }))
@@ -6285,7 +6109,7 @@ export const appRouter = router({
       const { getDb } = await import("./db");
       const drizzleDb = await getDb();
       if (!drizzleDb) throw new Error("DB unavailable");
-      const { products: productsTable, productPackages, customers, invoices, invoiceItems, users, paymentGatewaysConfig, coupons, couponUsages, userSettings } = await import("../drizzle/schema");
+      const { products: productsTable, productPackages, customers, invoices, invoiceItems, users, paymentGatewaysConfig, coupons, couponUsages } = await import("../drizzle/schema");
       const { eq, and, sql } = await import("drizzle-orm");
 
       // Get owner (first user)
@@ -6372,21 +6196,8 @@ export const appRouter = router({
         } as any);
         [customer] = await drizzleDb.select().from(customers).where(and(eq(customers.userId, owner.id), eq(customers.email, input.email))).limit(1);
       }
-      // Generate invoice number using owner's orderCode settings
-      const [_ocSettings] = await drizzleDb.select().from(userSettings).where(eq(userSettings.userId, owner.id)).limit(1);
-      const _ocType = _ocSettings?.orderCodeType || "random";
-      const _ocLength = _ocSettings?.orderCodeLength || 8;
-      const _ocPrefix = _ocSettings?.orderCodePrefix || "";
-      let _ocBody: string;
-      if (_ocType === "sequential") {
-        const [lastInv] = await drizzleDb.select({ invoiceNumber: invoices.invoiceNumber }).from(invoices).where(eq(invoices.userId, owner.id)).orderBy(sql`id DESC`).limit(1);
-        const lastNum = lastInv ? parseInt(lastInv.invoiceNumber.replace(/[^0-9]/g, "")) || 0 : 0;
-        _ocBody = String(lastNum + 1).padStart(_ocLength, "0");
-      } else {
-        const _chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        _ocBody = Array.from({ length: _ocLength }, () => _chars[Math.floor(Math.random() * _chars.length)]).join("");
-      }
-      const invoiceNumber = `${_ocPrefix}${_ocBody}`;
+      // Generate invoice number
+      const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
       const orderCode = Date.now() % 9007199254740991;
       // Create invoice
       await drizzleDb.insert(invoices).values({

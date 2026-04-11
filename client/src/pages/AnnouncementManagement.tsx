@@ -184,13 +184,6 @@ export default function AnnouncementManagement() {
   });
   const [newSideBanner, setNewSideBanner] = useState({ position: "left" as "left" | "right", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
   const [addingSideBanner, setAddingSideBanner] = useState(false);
-  const [editingSideBanner, setEditingSideBanner] = useState<any | null>(null);
-  const [editSideBannerForm, setEditSideBannerForm] = useState({ position: "left" as "left" | "right", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
-  const openEditSideBanner = (sb: any) => { setEditSideBannerForm({ position: sb.position, imageUrl: sb.imageUrl || "", title: sb.title || "", linkUrl: sb.linkUrl || "", sortOrder: sb.sortOrder || 0, isActive: sb.isActive ?? true }); setEditingSideBanner(sb); };
-  const upsertSideBannerEditMutation = trpc.sideBanners.upsert.useMutation({
-    onSuccess: () => { toast.success("Đã cập nhật side banner"); refetchSideBanners(); setEditingSideBanner(null); },
-    onError: (e) => toast.error(e.message),
-  });
 
   // Mini Banners
   const { data: miniBanners = [], refetch: refetchMiniBanners } = trpc.miniBanners.list.useQuery();
@@ -204,13 +197,6 @@ export default function AnnouncementManagement() {
   });
   const [newMiniBanner, setNewMiniBanner] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
   const [addingMiniBanner, setAddingMiniBanner] = useState(false);
-  const [editingMiniBanner, setEditingMiniBanner] = useState<any | null>(null);
-  const [editMiniBannerForm, setEditMiniBannerForm] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
-  const openEditMiniBanner = (mb: any) => { setEditMiniBannerForm({ imageUrl: mb.imageUrl || "", title: mb.title || "", linkUrl: mb.linkUrl || "", sortOrder: mb.sortOrder || 0, isActive: mb.isActive ?? true }); setEditingMiniBanner(mb); };
-  const upsertMiniBannerEditMutation = trpc.miniBanners.upsert.useMutation({
-    onSuccess: () => { toast.success("Đã cập nhật mini banner"); refetchMiniBanners(); setEditingMiniBanner(null); },
-    onError: (e) => toast.error(e.message),
-  });
 
   // Announcement handlers
   const openCreateAnn = () => { setEditingAnnId(null); setAnnForm(defaultAnnForm); setAnnDialogOpen(true); };
@@ -289,32 +275,67 @@ export default function AnnouncementManagement() {
           </div>
         </div>
 
-        {/* ── Custom Tab Bar (pill-style, scrollable) ── */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-2">
-          <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            {([
-              { key: "announcements", label: "Thông Báo", Icon: Bell, count: (announcements as any[]).length },
-              { key: "banners", label: "Banner", Icon: ImageIcon, count: (banners as any[]).length },
-              { key: "side-banners", label: "Side Banner", Icon: ImageIcon, count: (sideBanners as any[]).length },
-              { key: "mini-banners", label: "Mini Banner", Icon: ImageIcon, count: (miniBanners as any[]).length },
-            ] as { key: string; label: string; Icon: any; count: number }[]).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                  activeTab === tab.key
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                }`}
-              >
-                <tab.Icon className="h-4 w-4 shrink-0" />
-                <span>{tab.label}</span>
-                <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-xs font-bold ${
-                  activeTab === tab.key ? "bg-white/25 text-white" : "bg-gray-100 text-gray-600"
-                }`}>{tab.count}</span>
-              </button>
-            ))}
-          </div>
+        {/* ── Custom Tab Bar ── */}
+        <div className="flex gap-0 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <button
+            onClick={() => setActiveTab("announcements")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "announcements"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <Bell className="h-4 w-4" />
+            <span>Thông Báo</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "announcements" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(announcements as any[]).length}</span>
+          </button>
+          <div className="w-px bg-gray-200" />
+          <button
+            onClick={() => setActiveTab("banners")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "banners"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>Banner</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "banners" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(banners as any[]).length}</span>
+          </button>
+          <div className="w-px bg-gray-200" />
+          <button
+            onClick={() => setActiveTab("side-banners")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "side-banners"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>Side Banner</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "side-banners" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(sideBanners as any[]).length}</span>
+          </button>
+          <div className="w-px bg-gray-200" />
+          <button
+            onClick={() => setActiveTab("mini-banners")}
+            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3 text-sm font-medium transition-all ${
+              activeTab === "mini-banners"
+                ? "bg-blue-600 text-white shadow-inner"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            }`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            <span>Mini Banner</span>
+            <span className={`inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold ${
+              activeTab === "mini-banners" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+            }`}>{(miniBanners as any[]).length}</span>
+          </button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -547,10 +568,6 @@ export default function AnnouncementManagement() {
                         <div className="flex items-center gap-3 mt-2">
                           <Switch checked={sb.isActive ?? true} onCheckedChange={checked => upsertSideBannerMutation.mutate({ id: sb.id, position: sb.position, imageUrl: sb.imageUrl, title: sb.title, linkUrl: sb.linkUrl, isActive: checked })} />
                           <span className="text-xs text-gray-500">{sb.isActive ? "Hiển thị" : "Ẩn"}</span>
-                          <button onClick={() => openEditSideBanner(sb)}
-                            className="h-7 px-2 flex items-center gap-1 rounded-lg text-xs text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors">
-                            <Pencil className="w-3.5 h-3.5" /> Sửa
-                          </button>
                           <button onClick={() => { if (confirm("Xóa side banner này?")) deleteSideBannerMutation.mutate({ id: sb.id }); }}
                             className="h-7 px-2 flex items-center gap-1 rounded-lg text-xs text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" /> Xóa
@@ -620,10 +637,6 @@ export default function AnnouncementManagement() {
                       )}
                       <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Switch checked={mb.isActive ?? true} onCheckedChange={checked => upsertMiniBannerMutation.mutate({ id: mb.id, imageUrl: mb.imageUrl, title: mb.title, linkUrl: mb.linkUrl, isActive: checked, sortOrder: mb.sortOrder })} />
-                        <button onClick={() => openEditMiniBanner(mb)}
-                          className="h-6 w-6 bg-blue-500 hover:bg-blue-600 text-white rounded-md flex items-center justify-center" title="Sửa">
-                          <Pencil className="w-3 h-3" />
-                        </button>
                         <button onClick={() => { if (confirm("Xóa mini banner?")) deleteMiniBannerMutation.mutate({ id: mb.id }); }}
                           className="h-6 w-6 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center">
                           <Trash2 className="w-3 h-3" />
@@ -737,104 +750,6 @@ export default function AnnouncementManagement() {
             <Button variant="outline" onClick={() => setAnnDialogOpen(false)}>Hủy</Button>
             <Button onClick={handleSubmitAnn} disabled={createAnnMutation.isPending || updateAnnMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
               {editingAnnId ? "Lưu thay đổi" : "Tạo thông báo"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Side Banner Dialog */}
-      <Dialog open={editingSideBanner !== null} onOpenChange={(open) => { if (!open) setEditingSideBanner(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Chỉnh sửa Side Banner</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-1">
-            <div className="space-y-1.5">
-              <Label>Vị trí</Label>
-              <Select value={editSideBannerForm.position} onValueChange={v => setEditSideBannerForm(f => ({ ...f, position: v as "left" | "right" }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="left">Bên trái</SelectItem>
-                  <SelectItem value="right">Bên phải</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Ảnh Banner <span className="text-red-500">*</span></Label>
-              <ImageUploadField value={editSideBannerForm.imageUrl} onChange={url => setEditSideBannerForm(f => ({ ...f, imageUrl: url }))} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Tiêu đề</Label>
-                <Input placeholder="Tiêu đề (tùy chọn)" value={editSideBannerForm.title} onChange={e => setEditSideBannerForm(f => ({ ...f, title: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Link khi click</Label>
-                <Input placeholder="/catalog hoặc https://..." value={editSideBannerForm.linkUrl} onChange={e => setEditSideBannerForm(f => ({ ...f, linkUrl: e.target.value }))} />
-              </div>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 bg-gray-50">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Hiển thị</p>
-                <p className="text-xs text-gray-400">Bật để hiển thị banner này trên trang chủ</p>
-              </div>
-              <Switch checked={editSideBannerForm.isActive} onCheckedChange={v => setEditSideBannerForm(f => ({ ...f, isActive: v }))} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingSideBanner(null)}>Hủy</Button>
-            <Button
-              onClick={() => upsertSideBannerEditMutation.mutate({ id: editingSideBanner?.id, ...editSideBannerForm })}
-              disabled={!editSideBannerForm.imageUrl || upsertSideBannerEditMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {upsertSideBannerEditMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Mini Banner Dialog */}
-      <Dialog open={editingMiniBanner !== null} onOpenChange={(open) => { if (!open) setEditingMiniBanner(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Chỉnh sửa Mini Banner</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-1">
-            <div className="space-y-1.5">
-              <Label>Ảnh Banner <span className="text-red-500">*</span></Label>
-              <ImageUploadField value={editMiniBannerForm.imageUrl} onChange={url => setEditMiniBannerForm(f => ({ ...f, imageUrl: url }))} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Tiêu đề</Label>
-                <Input placeholder="Tiêu đề (tùy chọn)" value={editMiniBannerForm.title} onChange={e => setEditMiniBannerForm(f => ({ ...f, title: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Link khi click</Label>
-                <Input placeholder="/catalog hoặc https://..." value={editMiniBannerForm.linkUrl} onChange={e => setEditMiniBannerForm(f => ({ ...f, linkUrl: e.target.value }))} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Thứ tự hiển thị</Label>
-              <Input type="number" value={editMiniBannerForm.sortOrder} onChange={e => setEditMiniBannerForm(f => ({ ...f, sortOrder: parseInt(e.target.value) || 0 }))} className="w-24" />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 bg-gray-50">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Hiển thị</p>
-                <p className="text-xs text-gray-400">Bật để hiển thị mini banner này trên trang chủ</p>
-              </div>
-              <Switch checked={editMiniBannerForm.isActive} onCheckedChange={v => setEditMiniBannerForm(f => ({ ...f, isActive: v }))} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingMiniBanner(null)}>Hủy</Button>
-            <Button
-              onClick={() => upsertMiniBannerEditMutation.mutate({ id: editingMiniBanner?.id, ...editMiniBannerForm })}
-              disabled={!editMiniBannerForm.imageUrl || upsertMiniBannerEditMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {upsertMiniBannerEditMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -12,7 +12,6 @@ import {
 } from "@/components/Icon";
 import { toast } from "sonner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import { OtpModal } from "@/components/OtpModal";
 
 const formatVND = (val: string | number | null | undefined) => {
   if (!val) return "0 ₫";
@@ -62,10 +61,6 @@ export default function ProductDetail() {
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [showAffiliatePopup, setShowAffiliatePopup] = useState(false);
   const [affiliateLinkCopied, setAffiliateLinkCopied] = useState(false);
-  // 2FA for wallet payment
-  const [showWalletOtpModal, setShowWalletOtpModal] = useState(false);
-  const [walletOtpError, setWalletOtpError] = useState<string | null>(null);
-  const [pendingWalletOrder, setPendingWalletOrder] = useState<any>(null);
 
   const { data: product, isLoading } = trpc.products.getPublicById.useQuery(
     { id: productId },
@@ -147,21 +142,6 @@ export default function ProductDetail() {
       toast.success("Đánh giá đã được gửi! Chờ duyệt.");
     },
     onError: (err) => toast.error(err.message),
-  });
-  const { data: twoFaStatusForWallet } = trpc.customer.get2faStatus.useQuery(
-    { token: customerToken },
-    { enabled: !!customerToken, staleTime: 60_000 }
-  );
-  const verifyOtpForWalletMutation = trpc.customer.verifyOtpForAction.useMutation({
-    onSuccess: () => {
-      setShowWalletOtpModal(false);
-      setWalletOtpError(null);
-      if (pendingWalletOrder) {
-        buyNow.mutate(pendingWalletOrder);
-        setPendingWalletOrder(null);
-      }
-    },
-    onError: (err: any) => setWalletOtpError(err.message),
   });
   const buyNow = trpc.checkout.buyNow.useMutation({
     onSuccess: (data) => {
@@ -299,7 +279,7 @@ export default function ProductDetail() {
     if (!validateCustomFields()) return;
     const pkgId = selectedPackage?.id || packages[0]?.id;
     if (!pkgId) { toast.error("Sản phẩm chưa có gói"); return; }
-    const orderData = {
+    buyNow.mutate({
       email,
       customerName: customer?.name || undefined,
       productId,
@@ -311,15 +291,7 @@ export default function ProductDetail() {
       origin: window.location.origin,
       payWithWallet: payWithWallet || undefined,
       customerToken: payWithWallet ? (localStorage.getItem("customerToken") || undefined) : undefined,
-    };
-    // If paying with wallet and 2FA is enabled, show OTP modal first
-    if (payWithWallet && twoFaStatusForWallet?.enabled) {
-      setPendingWalletOrder(orderData);
-      setWalletOtpError(null);
-      setShowWalletOtpModal(true);
-      return;
-    }
-    buyNow.mutate(orderData);
+    });
   };
 
   const handleAddToCart = () => {
@@ -1138,18 +1110,6 @@ export default function ProductDetail() {
       })()}
 
       <ClientFooter />
-      {/* 2FA OTP Modal for wallet payment */}
-      <OtpModal
-        open={showWalletOtpModal}
-        onClose={() => { setShowWalletOtpModal(false); setWalletOtpError(null); setPendingWalletOrder(null); }}
-        onVerify={async (code) => {
-          verifyOtpForWalletMutation.mutate({ token: customerToken, code });
-        }}
-        isPending={verifyOtpForWalletMutation.isPending}
-        error={walletOtpError}
-        title="Xác minh thanh toán số dư"
-        description="Nhập mã 6 số từ ứng dụng xác thực để xác nhận thanh toán bằng số dư ví"
-      />
     </div>
   );
 }

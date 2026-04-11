@@ -9,7 +9,6 @@ import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
-import { OtpModal } from "@/components/OtpModal";
 
 // TwoFASection component
 function TwoFASection({ token }: { token: string }) {
@@ -1161,10 +1160,6 @@ export default function MyAccount() {
     return "overview";
   };
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
-  // 2FA for orders tab
-  const [ordersOtpVerified, setOrdersOtpVerified] = useState(false);
-  const [showOrdersOtpModal, setShowOrdersOtpModal] = useState(false);
-  const [ordersOtpError, setOrdersOtpError] = useState<string | null>(null);
   const [orderFilter, setOrderFilter] = useState<"all" | "CREATED" | "PAID" | "SHIPPING" | "COMPLETED" | "WARRANTY" | "FAILED" | "REFUNDED" | "CANCELLED">("all");
   const { customer, token, logout, isLoading: authLoading } = useCustomerAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -1237,22 +1232,9 @@ export default function MyAccount() {
     updateProfileMutation.mutate({ token, name: editName || undefined, phone: editPhone || undefined });
   };
 
-  const verifyOtpForActionMutation = trpc.customer.verifyOtpForAction.useMutation({
-    onSuccess: () => {
-      setOrdersOtpVerified(true);
-      setShowOrdersOtpModal(false);
-      setOrdersOtpError(null);
-    },
-    onError: (err: any) => setOrdersOtpError(err.message),
-  });
-  const { data: twoFaStatusForOrders } = trpc.customer.get2faStatus.useQuery(
-    { token: token! },
-    { enabled: !!token, staleTime: 60_000 }
-  );
-  const ordersEnabled = !!token && (ordersOtpVerified || !twoFaStatusForOrders?.enabled);
   const { data: orders = [], isLoading: ordersLoading } = trpc.customer.myOrders.useQuery(
     { token: token! },
-    { enabled: ordersEnabled, staleTime: 30_000 }
+    { enabled: !!token, staleTime: 30_000 }
   );
 
   const { data: pointsData } = trpc.customer.myPoints.useQuery(
@@ -1337,10 +1319,6 @@ export default function MyAccount() {
 
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
   const avatarGalleryEnabled = isFeatureEnabled("avatarGallery");
-  // showTelegramReminder from admin settings
-  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
-  const showTelegramReminder = (publicInfo as any)?.showTelegramReminder ?? false;
-  const hasTelegramLinked = !!(customer as any)?.telegramChatId;
   const tabs: { id: TabType; label: string; icon: any; badge?: number; color: string; activeColor: string }[] = [
     { id: "overview", label: "Tổng quan", icon: BarChart3, color: "text-blue-500", activeColor: "bg-gradient-to-r from-blue-500 to-blue-600" },
     { id: "orders", label: "Đơn hàng", icon: Package, badge: pendingOrders > 0 ? pendingOrders : undefined, color: "text-orange-500", activeColor: "bg-gradient-to-r from-orange-500 to-amber-500" },
@@ -1418,23 +1396,8 @@ export default function MyAccount() {
   return (
     <div className="min-h-screen pt-16 lg:pt-24 bg-slate-50">
       <ClientHeader />
+
       <div className="max-w-3xl mx-auto px-4 py-5 space-y-4">
-        {/* ===== Telegram Reminder Banner ===== */}
-        {showTelegramReminder && !hasTelegramLinked && (
-          <div className="bg-sky-50 border border-sky-200 rounded-xl px-4 py-3 flex items-center gap-3">
-            <i className="fa-brands fa-telegram text-sky-500 text-xl flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-sky-800">Liên kết Telegram để nhận thông báo</p>
-              <p className="text-xs text-sky-600">Nhận thông báo đơn hàng, flash sale và ưu đãi qua Telegram ngay lập tức</p>
-            </div>
-            <button
-              onClick={() => setActiveTab("profile")}
-              className="flex-shrink-0 text-xs bg-sky-500 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-sky-600 transition"
-            >
-              Liên kết
-            </button>
-          </div>
-        )}
         {/* ===== Profile Hero ===== */}
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-5 text-white">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
@@ -1667,26 +1630,6 @@ export default function MyAccount() {
         {/* ===== Tab: Orders ===== */}
         {activeTab === "orders" && (
           <div className="space-y-3">
-            {/* 2FA Gate for orders */}
-            {twoFaStatusForOrders?.enabled && !ordersOtpVerified && (
-              <div className="flex flex-col items-center justify-center py-16 gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center">
-                  <Shield className="w-8 h-8 text-blue-600" />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-slate-800">Xác minh 2FA để xem đơn hàng</p>
-                  <p className="text-sm text-slate-500 mt-1">Tài khoản của bạn đang bật bảo mật 2 lớp</p>
-                </div>
-                <button
-                  onClick={() => setShowOrdersOtpModal(true)}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors flex items-center gap-2"
-                >
-                  <Shield className="w-4 h-4" /> Nhập mã OTP
-                </button>
-              </div>
-            )}
-            {(!twoFaStatusForOrders?.enabled || ordersOtpVerified) && (
-            <>
             {/* Header with stats + filter */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-2 overflow-x-auto pb-1 flex-1">
@@ -1793,10 +1736,9 @@ export default function MyAccount() {
               </div>
             );
             })()}
-            </>
-            )}
           </div>
         )}
+
         {/* ===== Tab: Points ===== */}
         {activeTab === "points" && (
           <div className="space-y-4">
@@ -2443,19 +2385,6 @@ export default function MyAccount() {
         )}
       </div>
       <ClientFooter />
-      {/* 2FA OTP Modal for orders */}
-      <OtpModal
-        open={showOrdersOtpModal}
-        onClose={() => { setShowOrdersOtpModal(false); setOrdersOtpError(null); }}
-        onVerify={async (code) => {
-          if (!token) return;
-          verifyOtpForActionMutation.mutate({ token, code });
-        }}
-        isPending={verifyOtpForActionMutation.isPending}
-        error={ordersOtpError}
-        title="Xác minh để xem đơn hàng"
-        description="Nhập mã 6 số từ ứng dụng xác thực để xem lịch sử đơn hàng"
-      />
     </div>
   );
 }

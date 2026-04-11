@@ -18,11 +18,8 @@ export function ClientFooter() {
   const logoUrl = (publicInfo as any)?.logoUrl || (publicInfo as any)?.companyLogo;
   const companyName = publicInfo?.companyName || "";
   const companyEmail = publicInfo?.companyEmail;
-  // hotline takes priority over companyPhone
-  const companyPhone = (publicInfo as any)?.hotline || publicInfo?.companyPhone;
-  const companyAddress = (publicInfo as any)?.companyAddress || publicInfo?.companyAddress;
-  const fanpageUrl = (publicInfo as any)?.fanpageUrl;
-  const copyrightFooter = (publicInfo as any)?.copyrightFooter;
+  const companyPhone = publicInfo?.companyPhone;
+  const companyAddress = publicInfo?.companyAddress;
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -133,19 +130,9 @@ export function ClientFooter() {
 
       {/* Bottom Bar */}
       <div className="border-t border-white/10 py-4">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/30">
-          <span>
-            {copyrightFooter ? copyrightFooter : (
-              <>© {new Date().getFullYear()} All Copyrights Reserved by{" "}
-              <span className="text-blue-400 font-medium">{companyName.toUpperCase()}</span></>
-            )}
-          </span>
-          {fanpageUrl && (
-            <a href={fanpageUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors">
-              <Link2 className="h-3 w-3" />
-              Fanpage
-            </a>
-          )}
+        <div className="max-w-7xl mx-auto px-4 text-center text-xs text-white/30">
+          © {new Date().getFullYear()} All Copyrights Reserved by{" "}
+          <span className="text-blue-400 font-medium">{companyName.toUpperCase()}</span>
         </div>
       </div>
 
