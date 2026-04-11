@@ -91,6 +91,12 @@ export default function ProductDetail() {
     { productId, packageId: selectedPackageId || undefined },
     { enabled: !!productId }
   );
+  // Determine if selected package uses warehouse delivery
+  // Must be computed after `packages` is available (after product loads)
+  // We use a helper to check deliveryType on the currently selected package
+  const _selectedPkgForDelivery = (product as any)?.packages?.find((p: any) => p.id === selectedPackageId)
+    || ((product as any)?.packages?.length === 1 ? (product as any)?.packages?.[0] : null);
+  const isWarehousePackage = _selectedPkgForDelivery?.deliveryType === "warehouse";
   const { data: relatedProducts = [] } = trpc.products.getRelated.useQuery(
     { productId, categoryId: product?.categoryId || undefined, limit: 8 },
     { enabled: !!productId && !!product }
@@ -115,7 +121,7 @@ export default function ProductDetail() {
       utils.cart.count.invalidate({ email });
       // Custom toast with inventory info
       const count = inventoryCount?.count ?? 0;
-      const isWarehouse = (product as any)?.inventoryType === "warehouse";
+      const isWarehouse = isWarehousePackage;
       if (isWarehouse) {
         toast.custom(() => (
           <div className="flex items-center gap-3 bg-white border border-emerald-200 rounded-2xl px-4 py-3 shadow-lg min-w-[260px]">
@@ -458,7 +464,7 @@ export default function ProductDetail() {
         )}
 
         {/* Stock - warehouse type: show inventory badge like the design */}
-        {(product as any).inventoryType === "warehouse" && (
+        {isWarehousePackage && (
           <div className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 ${
             (inventoryCount?.count || 0) > 0
               ? "bg-emerald-50 border border-emerald-100"
@@ -474,8 +480,8 @@ export default function ProductDetail() {
             </span>
           </div>
         )}
-        {/* Stock - legacy field */}
-        {(product as any).inventoryType !== "warehouse" && (product as any).stock !== undefined && (product as any).stock !== null && (
+        {/* Stock - legacy field: only show if selected package is manual or no package selected */}
+        {!isWarehousePackage && (product as any).stock !== undefined && (product as any).stock !== null && (
           <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3">
             <i className="fa-solid fa-box text-lg text-emerald-600" />
             <span className="text-sm font-semibold text-emerald-700">Kho hàng: <strong>{(product as any).stock} sản phẩm</strong></span>

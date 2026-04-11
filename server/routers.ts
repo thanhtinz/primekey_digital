@@ -8482,7 +8482,7 @@ export const appRouter = router({
           stockData: item,
           status: "available" as const,
         }));
-        await drizzleDb.insert(productInventory).values(rows);
+        await drizzleDb.insert(productInventory).values(rows as any);
         return { added: rows.length };
       }),
     delete: protectedProcedure
