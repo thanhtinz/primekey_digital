@@ -1781,6 +1781,7 @@ export const appRouter = router({
           description: input.description,
           warrantyMonths: input.warrantyMonths ?? 0,
           deliveryType: input.deliveryType ?? "manual",
+          minStockThreshold: input.minStockThreshold ?? 5,
           sortOrder: input.sortOrder ?? 0,
           isActive: input.isActive ?? true,
         });
@@ -8470,11 +8471,11 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { productInventory, productPackages } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
-        const { eq } = await import("drizzle-orm");
+        const { eq, and, sql } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        // Lookup productId from package
-        const [pkg] = await drizzleDb.select({ productId: productPackages.productId }).from(productPackages).where(eq(productPackages.id, input.packageId));
+        // Lookup productId and package info
+        const [pkg] = await drizzleDb.select({ productId: productPackages.productId, name: productPackages.name, minStockThreshold: productPackages.minStockThreshold }).from(productPackages).where(eq(productPackages.id, input.packageId));
         if (!pkg) throw new TRPCError({ code: "NOT_FOUND", message: "Gói sản phẩm không tồn tại" });
         const rows = input.items.map(item => ({
           productId: pkg.productId,
@@ -8484,6 +8485,36 @@ export const appRouter = router({
         }));
         await drizzleDb.insert(productInventory).values(rows as any);
         return { added: rows.length };
+      }),
+    checkLowStock: protectedProcedure
+      .input(z.object({ packageId: z.number() }))
+      .mutation(async ({ input }) => {
+        // Called after an order is fulfilled to check if stock dropped below threshold
+        const { productInventory, productPackages, products } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and, sql } = await import("drizzle-orm");
+        const { notifyOwner } = await import("./_core/notification");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return { notified: false };
+        const [pkg] = await drizzleDb
+          .select({ id: productPackages.id, name: productPackages.name, productId: productPackages.productId, minStockThreshold: productPackages.minStockThreshold })
+          .from(productPackages).where(eq(productPackages.id, input.packageId));
+        if (!pkg) return { notified: false };
+        const threshold = pkg.minStockThreshold ?? 5;
+        const [countRow] = await drizzleDb
+          .select({ cnt: sql<number>`COUNT(*)` })
+          .from(productInventory)
+          .where(and(eq(productInventory.packageId, input.packageId), eq(productInventory.status, "available")));
+        const available = Number(countRow?.cnt ?? 0);
+        if (available <= threshold) {
+          const [product] = await drizzleDb.select({ name: products.name }).from(products).where(eq(products.id, pkg.productId));
+          await notifyOwner({
+            title: `⚠️ Kho hàng sắp hết: ${product?.name ?? "Sản phẩm"} - ${pkg.name}`,
+            content: `Gói "${pkg.name}" của sản phẩm "${product?.name ?? ""}" hiện chỉ còn ${available} mục trong kho (ngưỡng cảnh báo: ${threshold}). Hãy nhập thêm hàng sớm.`,
+          });
+          return { notified: true, available, threshold };
+        }
+        return { notified: false, available, threshold };
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -8505,6 +8536,25 @@ export const appRouter = router({
         const drizzleDb = await getDb();
         if (!drizzleDb) return [];
         return drizzleDb.select().from(productInventory).where(eq(productInventory.assignedOrderId, input.orderId));
+      }),
+    statsByPackages: protectedProcedure
+      .input(z.object({ packageIds: z.array(z.number()) }))
+      .query(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq, and, inArray, sql } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb || input.packageIds.length === 0) return [];
+        const rows = await drizzleDb
+          .select({
+            packageId: productInventory.packageId,
+            available: sql<number>`SUM(CASE WHEN ${productInventory.status} = 'available' THEN 1 ELSE 0 END)`,
+            total: sql<number>`COUNT(*)`,
+          })
+          .from(productInventory)
+          .where(inArray(productInventory.packageId, input.packageIds))
+          .groupBy(productInventory.packageId);
+        return rows;
       }),
     countAvailable: publicProcedure
       .input(z.object({ productId: z.number(), packageId: z.number().optional() }))

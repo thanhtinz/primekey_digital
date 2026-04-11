@@ -27,12 +27,13 @@ interface PackageForm {
   sortOrder: string;
   isActive: boolean;
   deliveryType: "manual" | "warehouse";
+  minStockThreshold: string;
 }
 
 const emptyPkg = (sortOrder = 0): PackageForm => ({
   name: "", price: "", originalPrice: "", priceVip: "", priceWholesale: "",
   pricePartner: "", description: "", warrantyMonths: "0",
-  sortOrder: String(sortOrder), isActive: true, deliveryType: "manual",
+  sortOrder: String(sortOrder), isActive: true, deliveryType: "manual", minStockThreshold: "5",
 });
 
 export default function ProductPackages() {
@@ -65,10 +66,23 @@ export default function ProductPackages() {
         sortOrder: String(p.sortOrder ?? 0),
         isActive: p.isActive !== false,
         deliveryType: (p.deliveryType === "warehouse" ? "warehouse" : "manual") as "manual" | "warehouse",
+        minStockThreshold: String(p.minStockThreshold ?? 5),
       }));
       setPkgList(pkgs);
     }
   }, [product?.id, JSON.stringify((product as any)?.packages?.map((p: any) => p.id))]);
+
+  // Fetch inventory counts for all warehouse packages
+  const warehousePkgIds = pkgList.filter(p => (p as any).deliveryType === "warehouse" && p.id).map(p => p.id!);
+  const { data: inventoryStats } = trpc.inventory.statsByPackages.useQuery(
+    { packageIds: warehousePkgIds },
+    { enabled: warehousePkgIds.length > 0, staleTime: 30_000 }
+  );
+  const getStockCount = (pkgId: number | undefined): number | null => {
+    if (!pkgId || !inventoryStats) return null;
+    const stat = (inventoryStats as any[]).find((s: any) => s.packageId === pkgId);
+    return stat ? Number(stat.available) : 0;
+  };
 
   const createPkg = trpc.products.createPackage.useMutation({
     onSuccess: () => { toast.success("Đã tạo gói!"); utils.products.list.invalidate(); setShowDialog(false); },
@@ -114,6 +128,7 @@ export default function ProductPackages() {
       sortOrder: parseInt(form.sortOrder) || 0,
       isActive: form.isActive,
       deliveryType: form.deliveryType,
+      minStockThreshold: parseInt(form.minStockThreshold) || 5,
     };
     const editingPkg = editingIdx !== null ? pkgList[editingIdx] : null;
     if (editingPkg?.id) {
@@ -195,6 +210,15 @@ export default function ProductPackages() {
                       {(pkg as any).deliveryType === "warehouse" && (
                         <Badge className="text-xs bg-green-100 text-green-600 border-green-200">Kho tự động</Badge>
                       )}
+                      {(pkg as any).deliveryType === "warehouse" && pkg.id && (() => {
+                        const cnt = getStockCount(pkg.id);
+                        if (cnt === null) return null;
+                        return (
+                          <Badge className={`text-xs ${cnt > 0 ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-red-50 text-red-500 border-red-200"}`}>
+                            {cnt > 0 ? `${cnt} còn hàng` : "Hết hàng"}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-blue-600 font-bold text-sm">{formatCurrency(parseFloat(pkg.price) || 0)}</span>
@@ -283,6 +307,13 @@ export default function ProductPackages() {
               <Label className="text-sm">Mô Tả Gói</Label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả ngắn về gói này..." rows={2} className="mt-1 resize-none" />
             </div>
+            {form.deliveryType === "warehouse" && (
+              <div>
+                <Label className="text-sm">Ngưỡng Cảnh Báo Kho Thấp</Label>
+                <Input type="number" min="0" value={form.minStockThreshold} onChange={e => setForm(f => ({ ...f, minStockThreshold: e.target.value }))} placeholder="5" className="mt-1" />
+                <p className="text-xs text-gray-400 mt-1">Thông báo admin khi tồn kho ≤ ngưỡng này</p>
+              </div>
+            )}
             <div>
               <Label className="text-sm font-medium">Loại Giao Hàng</Label>
               <div className="flex gap-2 mt-1.5">

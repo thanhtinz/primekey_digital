@@ -97,6 +97,7 @@ export default function ProductDetail() {
   const _selectedPkgForDelivery = (product as any)?.packages?.find((p: any) => p.id === selectedPackageId)
     || ((product as any)?.packages?.length === 1 ? (product as any)?.packages?.[0] : null);
   const isWarehousePackage = _selectedPkgForDelivery?.deliveryType === "warehouse";
+  const isOutOfStock = isWarehousePackage && (inventoryCount?.count ?? 0) === 0;
   const { data: relatedProducts = [] } = trpc.products.getRelated.useQuery(
     { productId, categoryId: product?.categoryId || undefined, limit: 8 },
     { enabled: !!productId && !!product }
@@ -488,38 +489,48 @@ export default function ProductDetail() {
           </div>
         )}
 
+        {/* Out of stock banner */}
+        {isOutOfStock && (
+          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+            <i className="fa-solid fa-ban text-lg text-red-500" />
+            <span className="text-sm font-semibold text-red-600">Tạm hết hàng — Gói này hiện không có sẵn</span>
+          </div>
+        )}
         {/* Action Buttons */}
         {isLoggedIn ? (
           <div className="flex gap-2">
             <button
               onClick={handleAddToCart}
-              className="w-11 h-11 flex items-center justify-center border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0"
+              disabled={isOutOfStock}
+              className="w-11 h-11 flex items-center justify-center border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ShoppingCart className="w-5 h-5 text-gray-600" />
             </button>
             <button
-              disabled={buyNow.isPending}
+              disabled={buyNow.isPending || isOutOfStock}
               onClick={handleBuyNow}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
+              className="flex-1 flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {buyNow.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              {buyNow.isPending ? "Đang xử lý..." : "Đặt hàng ngay"}
+              {buyNow.isPending ? "Đang xử lý..." : isOutOfStock ? "Tạm hết hàng" : "Đặt hàng ngay"}
             </button>
           </div>
         ) : (
           <div className="flex gap-2">
             <button
               onClick={handleAddToCart}
-              className="w-11 h-11 flex items-center justify-center border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0"
+              disabled={isOutOfStock}
+              className="w-11 h-11 flex items-center justify-center border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ShoppingCart className="w-5 h-5 text-gray-600" />
             </button>
             <button
-              onClick={() => setLocation("/login")}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all"
+              disabled={isOutOfStock}
+              onClick={() => !isOutOfStock && setLocation("/login")}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Zap className="w-4 h-4" />
-              Đăng nhập để mua
+              {isOutOfStock ? "Tạm hết hàng" : "Đăng nhập để mua"}
             </button>
           </div>
         )}

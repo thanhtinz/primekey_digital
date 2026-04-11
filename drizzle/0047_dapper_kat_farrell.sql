@@ -1,0 +1,1 @@
+ALTER TABLE `product_packages` ADD `minStockThreshold` int DEFAULT 5;

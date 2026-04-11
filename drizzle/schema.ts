@@ -115,6 +115,7 @@ export const productPackages = mysqlTable("product_packages", {
   description: text("description"), // Mô tả ngắn về gói
   warrantyMonths: int("warrantyMonths").default(0), // Thời hạn bảo hành theo gói
   deliveryType: mysqlEnum("deliveryType", ["manual", "warehouse"]).default("manual").notNull(), // Loại giao hàng: thủ công hoặc kho tự động
+  minStockThreshold: int("minStockThreshold").default(5), // Ngưỡng cảnh báo kho thấp
   sortOrder: int("sortOrder").default(0),
   isActive: boolean("isActive").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
