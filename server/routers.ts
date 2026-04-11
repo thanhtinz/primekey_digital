@@ -5753,7 +5753,7 @@ export const appRouter = router({
           const { users: _uED } = await import("../drizzle/schema");
           const [_oED] = await drizzleDb.select({ id: _uED.id }).from(_uED).limit(1);
           const _hD = `<div style="font-family:sans-serif;padding:20px;border:2px solid #dc2626;border-radius:8px"><h3 style="color:#dc2626">&#128308; C&#7843;nh b&#225;o: 2FA b&#7883; t&#7855;t</h3><p>X&#225;c minh 2 b&#432;&#7899;c (2FA) &#273;&#227; b&#7883; t&#7855;t tr&#234;n t&#224;i kho&#7843;n c&#7911;a b&#7841;n.</p><p><b>Th&#7901;i gian:</b> ${_dt}</p><p><b>Email:</b> ${customer.email}</p><p style="color:#dc2626;font-weight:600">N&#7871;u kh&#244;ng ph&#7843;i b&#7841;n, h&#227;y b&#7853;t l&#7841;i 2FA v&#224; &#273;&#7893;i m&#7853;t kh&#7849;u ngay!</p></div>`;
-          await sendEmail({ to: customer.email, subject: "&#128308; C&#7843;nh b&#225;o: X&#225;c minh 2 b&#432;&#7899;c (2FA) &#273;&#227; b&#7883; t&#7855;t", html: _hD, userId: _oED?.id ?? undefined });
+          await sendEmail({ to: customer.email ?? '', subject: "&#128308; C&#7843;nh b&#225;o: X&#225;c minh 2 b&#432;&#7899;c (2FA) &#273;&#227; b&#7883; t&#7855;t", html: _hD, userId: _oED?.id ?? undefined });
         } catch {}
         return { success: true };
       }),
