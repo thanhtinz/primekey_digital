@@ -1275,7 +1275,7 @@ export default function MyAccount() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen pt-16 bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen pt-16 lg:pt-24 bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
           <p className="text-slate-500">Đang tải...</p>
@@ -1388,7 +1388,7 @@ export default function MyAccount() {
   };
 
   return (
-    <div className="min-h-screen pt-16 bg-slate-50">
+    <div className="min-h-screen pt-16 lg:pt-24 bg-slate-50">
       <ClientHeader />
 
       <div className="max-w-3xl mx-auto px-4 py-5 space-y-4">

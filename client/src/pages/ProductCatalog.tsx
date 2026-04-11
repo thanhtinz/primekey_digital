@@ -178,7 +178,7 @@ export default function ProductCatalog() {
   const childCats = selectedParentCat ? getChildCats(selectedParentCat) : [];
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-50">
+    <div className="min-h-screen pt-16 lg:pt-24 bg-gray-50">
       <ClientHeader />
 
       {/* ===== HEADER GRADIENT ===== */}

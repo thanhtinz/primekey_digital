@@ -8689,14 +8689,25 @@ export const licenseRouter = router({
     email: z.string().email("Email không hợp lệ"),
     domain: z.string().optional(),
     activationToken: z.string().optional(),
-  })).mutation(async ({ input }) => {
+  })).mutation(async ({ input, ctx }) => {
+    // Rate limiting: chống brute-force activation
+    const { checkActivationRateLimit } = await import("./license");
+    const clientIp = (ctx as any).req?.ip || (ctx as any).req?.socket?.remoteAddress || "unknown";
+    const rateCheck = checkActivationRateLimit(clientIp);
+    if (!rateCheck.allowed) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: `Quá nhiều lần thử kích hoạt. Vui lòng thử lại sau ${rateCheck.retryAfter} giây.`,
+      });
+    }
+
     const { getDb } = await import("./db");
     const { userSettings } = await import("../drizzle/schema");
     const { eq } = await import("drizzle-orm");
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database không khả dụng" });
 
-    const { validateLicense, isValidKeyFormat, normalizeDomain, normalizeEmail } = await import("./license-crypto");
+    const { validateLicense, isValidKeyFormat, normalizeDomain, normalizeEmail, createOfflineToken } = await import("./license-crypto");
 
     if (!isValidKeyFormat(input.licenseKey)) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "License key không đúng định dạng (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX)" });
@@ -8745,6 +8756,23 @@ export const licenseRouter = router({
             throw new TRPCError({ code: "BAD_REQUEST", message: serverResult.message || "License key không hợp lệ" });
           }
           licenseInfo = { valid: true, plan: serverResult.plan || "standard", expiresAt: serverResult.expiresAt, owner: serverResult.owner };
+          // Tạo activation token v2 (HMAC-signed) để lưu vào DB cho offline validation
+          // Token này sẽ được dùng để verify offline mà không cần gọi license server mỗi lần
+          try {
+            const offlineToken = createOfflineToken(
+              normalizeEmail(input.email),
+              normalizeDomain(currentDomain),
+              serverResult.plan || "standard",
+              serverResult.expiresAt ? new Date(serverResult.expiresAt).getTime() : 0,
+              input.licenseKey,
+              serverResult.owner,
+            );
+            // Ghi đè activationToken bằng token mới
+            (input as any).activationToken = offlineToken;
+          } catch (tokenErr: any) {
+            // Nếu không tạo được token (thiếu LICENSE_MASTER_KEY), vẫn lưu key nhưng không có offline token
+            console.warn("[License] Could not create offline token:", tokenErr.message);
+          }
           console.log(`[License] Activated via License Server for ${normalizeEmail(input.email)}`);
         } catch (err: any) {
           if (err instanceof TRPCError) throw err;

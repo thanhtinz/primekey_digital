@@ -2012,3 +2012,14 @@ todo updated
 - [x] Sửa lỗi form đặt hàng trong ProductDetail vẫn hiện mã giảm giá khi tắt feature flag - đã thêm couponFeatureEnabled
 - [x] Cải tiến: Nút "Gửi tin nhắn test" trong TelegramLinkSection - procedure sendTelegramTest + UI button
 - [x] Cải tiến: Trang quản lý subscriber Telegram trong admin - filter active/inactive, search, hiển thị email khách hàng
+
+## Session 2026-04-11 - Bảo mật giấy phép + Redesign header PC
+
+- [ ] Bảo mật giấy phép: phân tích lỗ hổng bypass, tăng cường validation server-side
+- [ ] Redesign header PC: tách 2 tầng (top bar logo+search+icons, nav bar danh mục+hotline+email)
+- [ ] Redesign banner PC: banner lớn full-width + mini banner 4 ô bên dưới
+
+## Session 2026-04-11 - Bảo mật giấy phép và Redesign Header PC
+
+- [x] Tăng cường bảo mật giấy phép: xóa default master key hardcode, xóa grace mode bypass, thêm rate limiting, thêm activation token v2 HMAC
+- [x] Redesign header PC: 2 tầng (tầng 1: Logo + Search + Icons, tầng 2: Nav + Hotline/Email), cập nhật pt-16 → lg:pt-24 cho tất cả trang client

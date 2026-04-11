@@ -99,7 +99,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col pt-16">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col pt-16 lg:pt-24">
       <ClientHeader />
       <div className="flex-1">
         {/* Hero Banner */}

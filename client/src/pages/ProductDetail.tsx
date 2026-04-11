@@ -528,7 +528,7 @@ export default function ProductDetail() {
       <ClientHeader />
 
       {/* ===== HERO SECTION ===== */}
-      <div className="bg-gradient-to-br from-teal-500 via-teal-400 to-cyan-400 pt-16">
+      <div className="bg-gradient-to-br from-teal-500 via-teal-400 to-cyan-400 pt-16 lg:pt-24">
         <div className="max-w-5xl mx-auto px-4 pt-4 pb-6">
 
           {/* Hero: mobile = stacked, desktop = side by side */}

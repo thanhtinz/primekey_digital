@@ -63,7 +63,7 @@ export default function BlogPostPage() {
     <div className="min-h-screen bg-white">
       <ClientHeader />
 
-      <div className="max-w-3xl mx-auto px-4 pt-16 pb-16">
+      <div className="max-w-3xl mx-auto px-4 pt-16 lg:pt-24 pb-16">
         {/* Back */}
         <button
           onClick={() => navigate("/blog")}

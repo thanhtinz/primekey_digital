@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col pt-16">
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col pt-16 lg:pt-24">
       <ClientHeader />
       <main className="flex-1 flex items-center justify-center px-4 py-16">
         <Card className="w-full max-w-md bg-[#111] border-[#222]">

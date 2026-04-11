@@ -55,7 +55,7 @@ export default function WishlistPage() {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
         <ClientHeader />
-        <main className="flex-1 pt-16 flex items-center justify-center px-4">
+        <main className="flex-1 pt-16 lg:pt-24 flex items-center justify-center px-4">
           <div className="text-center max-w-sm">
             <div className="w-20 h-20 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-5">
               <Heart className="h-10 w-10 text-red-400" />
@@ -79,7 +79,7 @@ export default function WishlistPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <ClientHeader />
-      <main className="flex-1 pt-16 pb-12">
+      <main className="flex-1 pt-16 lg:pt-24 pb-12">
         <div className="max-w-5xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">

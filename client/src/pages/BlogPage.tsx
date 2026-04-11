@@ -31,7 +31,7 @@ export default function BlogPage() {
   const rest = filtered.slice(1);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 pt-16 lg:pt-24">
       <ClientHeader />
       {/* Hero Banner */}
       <div className="mx-4 mt-4 mb-4">

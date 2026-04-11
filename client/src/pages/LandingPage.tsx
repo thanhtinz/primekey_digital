@@ -209,7 +209,7 @@ export default function LandingPage() {
       {/* ===== HEADER ===== */}
       <ClientHeader />
       {/* AnnouncementBanner is rendered globally in App.tsx */}
-      <div className="pt-16 flex-1">
+      <div className="pt-16 lg:pt-24 flex-1">
         {/* ===== IMAGE BANNER CAROUSEL ===== */}
         {(bannersData as any[]).length > 0 && (
           <div className="mx-4 mt-3 mb-2 relative overflow-hidden rounded-2xl" style={{maxWidth: "100%"}}>

@@ -71,7 +71,7 @@ export default function FlashSalePage() {
   const soldOutSales = sales.filter(s => s.maxQuantity && s.maxQuantity > 0 && (s.soldQuantity || 0) >= s.maxQuantity);
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-50">
+    <div className="min-h-screen pt-16 lg:pt-24 bg-gray-50">
       <ClientHeader />
       {/* Hero banner */}
       <div className="mx-4 mb-4">
