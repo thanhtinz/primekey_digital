@@ -781,10 +781,17 @@ function NotificationPrefsSection({ token }: { token: string }) {
 // TelegramLinkSection - liên kết tài khoản Telegram
 function TelegramLinkSection({ token }: { token: string }) {
   const utils = trpc.useUtils();
-  const { data: meData } = trpc.customer.me.useQuery({ token }, { enabled: !!token });
+  const { data: meData, refetch: refetchMe } = trpc.customer.me.useQuery({ token }, { enabled: !!token });
   const { data: botConfig } = trpc.telegramBot.getConfig.useQuery({ botType: "user" } as any, { staleTime: 300_000 });
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+
   const unlinkMutation = trpc.customer.unlinkTelegram.useMutation({
-    onSuccess: () => { utils.customer.me.invalidate(); toast.success("Hủy liên kết Telegram thành công"); },
+    onSuccess: () => {
+      utils.customer.me.invalidate();
+      setShowUnlinkConfirm(false);
+      toast.success("Hủy liên kết Telegram thành công");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -795,6 +802,23 @@ function TelegramLinkSection({ token }: { token: string }) {
   const isLinked = !!telegramChatId;
   const botEnabled = !!(botConfig as any)?.enabled;
 
+  // Auto-refresh polling: khi chưa liên kết và đang polling, check mỗi 5s
+  useEffect(() => {
+    if (!isPolling || isLinked) return;
+    const interval = setInterval(() => {
+      refetchMe();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isPolling, isLinked, refetchMe]);
+
+  // Dừng polling khi đã liên kết
+  useEffect(() => {
+    if (isLinked && isPolling) {
+      setIsPolling(false);
+      toast.success("🎉 Đã liên kết Telegram thành công!");
+    }
+  }, [isLinked, isPolling]);
+
   if (!botEnabled) return null;
 
   return (
@@ -803,33 +827,92 @@ function TelegramLinkSection({ token }: { token: string }) {
         <div className="w-8 h-8 rounded-xl bg-sky-500 flex items-center justify-center">
           <i className="fa-brands fa-telegram text-white text-sm" />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="text-sm font-bold text-slate-800">Liên kết Telegram</h3>
           <p className="text-[11px] text-slate-500">Nhận thông báo đơn hàng qua Telegram</p>
         </div>
+        {/* Badge trạng thái trong header */}
+        {isLinked ? (
+          <div className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-[10px] font-semibold">
+              {telegramUsername ? `@${telegramUsername}` : "Đã liên kết"}
+            </span>
+          </div>
+        ) : (
+          <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">Chưa liên kết</span>
+        )}
       </div>
       <div className="px-5 py-4">
         {isLinked ? (
           <div className="space-y-3">
+            {/* Card thông tin đã liên kết */}
             <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
-              <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                <i className="fa-brands fa-telegram text-green-600 text-base" />
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <i className="fa-brands fa-telegram text-green-600 text-lg" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-green-700">Đã liên kết thành công</p>
-                {telegramUsername && <p className="text-xs text-green-600">@{telegramUsername}</p>}
-                {telegramLinkedAt && <p className="text-[11px] text-green-500">{new Date(telegramLinkedAt).toLocaleDateString("vi-VN")}</p>}
+                {telegramUsername && (
+                  <p className="text-xs text-green-600 font-medium">@{telegramUsername}</p>
+                )}
+                {telegramLinkedAt && (
+                  <p className="text-[11px] text-green-500">
+                    Liên kết lúc {new Date(telegramLinkedAt).toLocaleString("vi-VN")}
+                  </p>
+                )}
               </div>
-              <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full font-medium">Hoạt động</span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-medium">Hoạt động</span>
+              </div>
             </div>
-            <button
-              onClick={() => unlinkMutation.mutate({ token })}
-              disabled={unlinkMutation.isPending}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition text-sm font-medium"
-            >
-              <i className="fa-solid fa-link-slash text-xs" />
-              Hủy liên kết Telegram
-            </button>
+
+            {/* Nút hủy liên kết - nổi bật hơn */}
+            {!showUnlinkConfirm ? (
+              <button
+                onClick={() => setShowUnlinkConfirm(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition text-sm font-semibold"
+              >
+                <i className="fa-solid fa-link-slash text-xs" />
+                Hủy liên kết Telegram
+              </button>
+            ) : (
+              /* Confirm dialog inline */
+              <div className="p-3.5 bg-red-50 border-2 border-red-200 rounded-xl space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <i className="fa-solid fa-triangle-exclamation text-red-500 text-sm" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-red-700">Xác nhận hủy liên kết?</p>
+                    <p className="text-xs text-red-500 mt-0.5">
+                      Bạn sẽ không còn nhận thông báo qua Telegram nữa.
+                      {telegramUsername && <> Tài khoản <strong>@{telegramUsername}</strong> sẽ bị ngắt kết nối.</>}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowUnlinkConfirm(false)}
+                    disabled={unlinkMutation.isPending}
+                    className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    onClick={() => unlinkMutation.mutate({ token })}
+                    disabled={unlinkMutation.isPending}
+                    className="flex-1 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 text-sm font-semibold transition flex items-center justify-center gap-1.5"
+                  >
+                    {unlinkMutation.isPending ? (
+                      <><i className="fa-solid fa-spinner fa-spin text-xs" /> Đang hủy...</>
+                    ) : (
+                      <><i className="fa-solid fa-link-slash text-xs" /> Xác nhận hủy</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -846,11 +929,25 @@ function TelegramLinkSection({ token }: { token: string }) {
                 href={`https://t.me/${botUsername}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => setIsPolling(true)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-sky-500 text-white hover:bg-sky-600 transition text-sm font-medium"
               >
                 <i className="fa-brands fa-telegram text-sm" />
                 Mở Telegram Bot
               </a>
+            )}
+            {/* Auto-refresh indicator */}
+            {isPolling && (
+              <div className="flex items-center justify-center gap-2 py-2 text-xs text-sky-600">
+                <i className="fa-solid fa-spinner fa-spin text-xs" />
+                Đang chờ xác nhận từ Telegram...
+                <button
+                  onClick={() => setIsPolling(false)}
+                  className="text-slate-400 hover:text-slate-600 underline"
+                >
+                  Dừng
+                </button>
+              </div>
             )}
           </div>
         )}

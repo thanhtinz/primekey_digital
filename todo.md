@@ -1987,3 +1987,10 @@ todo updated
 - [x] Sửa lỗi toggle Telegram Admin Bot: các nút toggle (Yêu cầu rút tiền, Nạp tiền ví, Đánh giá mới, Ticket hỗ trợ mới, Flash Sale sắp kết thúc, Báo cáo hàng ngày) không lưu được - thiếu fields trong Zod input schema
 - [x] Sửa trang Extensions: toggle Telegram Bot vẫn mở dialog cấu hình dù đã cấu hình rồi - đã đọc trạng thái thực từ DB (telegramBotConfig + smtpConfig) thay vì hardcode enabled:false
 - [x] Sửa procedure customer.me: thiếu telegramChatId, telegramUsername, telegramLinkedAt → hasTelegram luôn false → badge Chưa liên kết dù đã liên kết
+
+## Session 2026-04-11 - Cải tiến Telegram UX + kiểm tra giấy phép
+
+- [x] Telegram UX: nút "Hủy liên kết" hiển thị rõ hơn + dialog xác nhận trước khi hủy
+- [x] Telegram UX: hiển thị @username Telegram trong badge "Đã liên kết" (trong header card)
+- [x] Telegram UX: auto-refresh trạng thái liên kết sau khi bot xác nhận (polling 5s khi bấm Mở Telegram Bot)
+- [x] Kiểm tra giấy phép: không có bug - hệ thống hoạt động đúng thiết kế (dev mode khi không có LICENSE_KEY)
