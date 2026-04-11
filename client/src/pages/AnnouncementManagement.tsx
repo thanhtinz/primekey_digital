@@ -184,6 +184,13 @@ export default function AnnouncementManagement() {
   });
   const [newSideBanner, setNewSideBanner] = useState({ position: "left" as "left" | "right", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
   const [addingSideBanner, setAddingSideBanner] = useState(false);
+  const [editingSideBanner, setEditingSideBanner] = useState<any | null>(null);
+  const [editSideBannerForm, setEditSideBannerForm] = useState({ position: "left" as "left" | "right", imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
+  const openEditSideBanner = (sb: any) => { setEditSideBannerForm({ position: sb.position, imageUrl: sb.imageUrl || "", title: sb.title || "", linkUrl: sb.linkUrl || "", sortOrder: sb.sortOrder || 0, isActive: sb.isActive ?? true }); setEditingSideBanner(sb); };
+  const upsertSideBannerEditMutation = trpc.sideBanners.upsert.useMutation({
+    onSuccess: () => { toast.success("Đã cập nhật side banner"); refetchSideBanners(); setEditingSideBanner(null); },
+    onError: (e) => toast.error(e.message),
+  });
 
   // Mini Banners
   const { data: miniBanners = [], refetch: refetchMiniBanners } = trpc.miniBanners.list.useQuery();
@@ -197,6 +204,13 @@ export default function AnnouncementManagement() {
   });
   const [newMiniBanner, setNewMiniBanner] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
   const [addingMiniBanner, setAddingMiniBanner] = useState(false);
+  const [editingMiniBanner, setEditingMiniBanner] = useState<any | null>(null);
+  const [editMiniBannerForm, setEditMiniBannerForm] = useState({ imageUrl: "", title: "", linkUrl: "", sortOrder: 0, isActive: true });
+  const openEditMiniBanner = (mb: any) => { setEditMiniBannerForm({ imageUrl: mb.imageUrl || "", title: mb.title || "", linkUrl: mb.linkUrl || "", sortOrder: mb.sortOrder || 0, isActive: mb.isActive ?? true }); setEditingMiniBanner(mb); };
+  const upsertMiniBannerEditMutation = trpc.miniBanners.upsert.useMutation({
+    onSuccess: () => { toast.success("Đã cập nhật mini banner"); refetchMiniBanners(); setEditingMiniBanner(null); },
+    onError: (e) => toast.error(e.message),
+  });
 
   // Announcement handlers
   const openCreateAnn = () => { setEditingAnnId(null); setAnnForm(defaultAnnForm); setAnnDialogOpen(true); };
@@ -533,6 +547,10 @@ export default function AnnouncementManagement() {
                         <div className="flex items-center gap-3 mt-2">
                           <Switch checked={sb.isActive ?? true} onCheckedChange={checked => upsertSideBannerMutation.mutate({ id: sb.id, position: sb.position, imageUrl: sb.imageUrl, title: sb.title, linkUrl: sb.linkUrl, isActive: checked })} />
                           <span className="text-xs text-gray-500">{sb.isActive ? "Hiển thị" : "Ẩn"}</span>
+                          <button onClick={() => openEditSideBanner(sb)}
+                            className="h-7 px-2 flex items-center gap-1 rounded-lg text-xs text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors">
+                            <Pencil className="w-3.5 h-3.5" /> Sửa
+                          </button>
                           <button onClick={() => { if (confirm("Xóa side banner này?")) deleteSideBannerMutation.mutate({ id: sb.id }); }}
                             className="h-7 px-2 flex items-center gap-1 rounded-lg text-xs text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" /> Xóa
@@ -602,6 +620,10 @@ export default function AnnouncementManagement() {
                       )}
                       <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Switch checked={mb.isActive ?? true} onCheckedChange={checked => upsertMiniBannerMutation.mutate({ id: mb.id, imageUrl: mb.imageUrl, title: mb.title, linkUrl: mb.linkUrl, isActive: checked, sortOrder: mb.sortOrder })} />
+                        <button onClick={() => openEditMiniBanner(mb)}
+                          className="h-6 w-6 bg-blue-500 hover:bg-blue-600 text-white rounded-md flex items-center justify-center" title="Sửa">
+                          <Pencil className="w-3 h-3" />
+                        </button>
                         <button onClick={() => { if (confirm("Xóa mini banner?")) deleteMiniBannerMutation.mutate({ id: mb.id }); }}
                           className="h-6 w-6 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center">
                           <Trash2 className="w-3 h-3" />
@@ -715,6 +737,104 @@ export default function AnnouncementManagement() {
             <Button variant="outline" onClick={() => setAnnDialogOpen(false)}>Hủy</Button>
             <Button onClick={handleSubmitAnn} disabled={createAnnMutation.isPending || updateAnnMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
               {editingAnnId ? "Lưu thay đổi" : "Tạo thông báo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Side Banner Dialog */}
+      <Dialog open={editingSideBanner !== null} onOpenChange={(open) => { if (!open) setEditingSideBanner(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa Side Banner</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <Label>Vị trí</Label>
+              <Select value={editSideBannerForm.position} onValueChange={v => setEditSideBannerForm(f => ({ ...f, position: v as "left" | "right" }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Bên trái</SelectItem>
+                  <SelectItem value="right">Bên phải</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Ảnh Banner <span className="text-red-500">*</span></Label>
+              <ImageUploadField value={editSideBannerForm.imageUrl} onChange={url => setEditSideBannerForm(f => ({ ...f, imageUrl: url }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Tiêu đề</Label>
+                <Input placeholder="Tiêu đề (tùy chọn)" value={editSideBannerForm.title} onChange={e => setEditSideBannerForm(f => ({ ...f, title: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Link khi click</Label>
+                <Input placeholder="/catalog hoặc https://..." value={editSideBannerForm.linkUrl} onChange={e => setEditSideBannerForm(f => ({ ...f, linkUrl: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 bg-gray-50">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Hiển thị</p>
+                <p className="text-xs text-gray-400">Bật để hiển thị banner này trên trang chủ</p>
+              </div>
+              <Switch checked={editSideBannerForm.isActive} onCheckedChange={v => setEditSideBannerForm(f => ({ ...f, isActive: v }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingSideBanner(null)}>Hủy</Button>
+            <Button
+              onClick={() => upsertSideBannerEditMutation.mutate({ id: editingSideBanner?.id, ...editSideBannerForm })}
+              disabled={!editSideBannerForm.imageUrl || upsertSideBannerEditMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {upsertSideBannerEditMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Mini Banner Dialog */}
+      <Dialog open={editingMiniBanner !== null} onOpenChange={(open) => { if (!open) setEditingMiniBanner(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa Mini Banner</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <Label>Ảnh Banner <span className="text-red-500">*</span></Label>
+              <ImageUploadField value={editMiniBannerForm.imageUrl} onChange={url => setEditMiniBannerForm(f => ({ ...f, imageUrl: url }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Tiêu đề</Label>
+                <Input placeholder="Tiêu đề (tùy chọn)" value={editMiniBannerForm.title} onChange={e => setEditMiniBannerForm(f => ({ ...f, title: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Link khi click</Label>
+                <Input placeholder="/catalog hoặc https://..." value={editMiniBannerForm.linkUrl} onChange={e => setEditMiniBannerForm(f => ({ ...f, linkUrl: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Thứ tự hiển thị</Label>
+              <Input type="number" value={editMiniBannerForm.sortOrder} onChange={e => setEditMiniBannerForm(f => ({ ...f, sortOrder: parseInt(e.target.value) || 0 }))} className="w-24" />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 bg-gray-50">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Hiển thị</p>
+                <p className="text-xs text-gray-400">Bật để hiển thị mini banner này trên trang chủ</p>
+              </div>
+              <Switch checked={editMiniBannerForm.isActive} onCheckedChange={v => setEditMiniBannerForm(f => ({ ...f, isActive: v }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingMiniBanner(null)}>Hủy</Button>
+            <Button
+              onClick={() => upsertMiniBannerEditMutation.mutate({ id: editingMiniBanner?.id, ...editMiniBannerForm })}
+              disabled={!editMiniBannerForm.imageUrl || upsertMiniBannerEditMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {upsertMiniBannerEditMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </DialogFooter>
         </DialogContent>
