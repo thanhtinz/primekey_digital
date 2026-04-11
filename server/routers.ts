@@ -1758,6 +1758,7 @@ export const appRouter = router({
         pricePartner: z.number().optional(),
         description: z.string().optional(),
         warrantyMonths: z.number().min(0).optional(),
+        deliveryType: z.enum(["manual", "warehouse"]).optional(),
         sortOrder: z.number().optional(),
         isActive: z.boolean().optional(),
       }))
@@ -1779,6 +1780,7 @@ export const appRouter = router({
           pricePartner: input.pricePartner ? String(input.pricePartner) : null,
           description: input.description,
           warrantyMonths: input.warrantyMonths ?? 0,
+          deliveryType: input.deliveryType ?? "manual",
           sortOrder: input.sortOrder ?? 0,
           isActive: input.isActive ?? true,
         });
@@ -1795,6 +1797,7 @@ export const appRouter = router({
         pricePartner: z.number().nullable().optional(),
         description: z.string().optional(),
         warrantyMonths: z.number().min(0).optional(),
+        deliveryType: z.enum(["manual", "warehouse"]).optional(),
         sortOrder: z.number().optional(),
         isActive: z.boolean().optional(),
       }))

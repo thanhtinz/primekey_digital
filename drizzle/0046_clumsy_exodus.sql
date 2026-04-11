@@ -1,0 +1,1 @@
+ALTER TABLE `product_packages` ADD `deliveryType` enum('manual','warehouse') DEFAULT 'manual' NOT NULL;

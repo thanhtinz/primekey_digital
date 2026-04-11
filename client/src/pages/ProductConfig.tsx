@@ -24,6 +24,7 @@ interface PackageForm {
   pricePartner: string;
   description: string;
   warrantyMonths: string;
+  deliveryType: "manual" | "warehouse";
   sortOrder: string;
   isActive: boolean;
   _isNew?: boolean;
@@ -33,7 +34,7 @@ interface PackageForm {
 const emptyPkg = (sortOrder = 0): PackageForm => ({
   name: "", price: "", originalPrice: "", priceVip: "", priceWholesale: "",
   pricePartner: "", description: "", warrantyMonths: "0",
-  sortOrder: String(sortOrder), isActive: true, _isNew: true,
+  deliveryType: "manual", sortOrder: String(sortOrder), isActive: true, _isNew: true,
 });
 
 function formatPrice(val: string | number | null | undefined) {
@@ -154,6 +155,7 @@ export default function ProductConfig() {
         pricePartner: p.pricePartner || "",
         description: p.description || "",
         warrantyMonths: String(p.warrantyMonths ?? 0),
+        deliveryType: ((p.deliveryType as string) === "warehouse" ? "warehouse" : "manual") as "manual" | "warehouse",
         sortOrder: String(p.sortOrder ?? 0),
         isActive: p.isActive !== false,
       }));
@@ -183,6 +185,7 @@ export default function ProductConfig() {
         pricePartner: pkg.pricePartner ? Number(pkg.pricePartner) : undefined,
         description: pkg.description || undefined,
         warrantyMonths: Number(pkg.warrantyMonths) || 0,
+        deliveryType: pkg.deliveryType,
         sortOrder: Number(pkg.sortOrder) || 0,
         isActive: pkg.isActive,
       };
@@ -403,6 +406,41 @@ export default function ProductConfig() {
                               <Input value={pkg.description}
                                 onChange={e => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, description: e.target.value } : p))}
                                 className="mt-1 h-8 text-sm" placeholder="Mô tả ngắn..." />
+                            </div>
+                            <div className="col-span-full">
+                              <Label className="text-xs text-gray-500 mb-1.5 block">Loại giao hàng</Label>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, deliveryType: "manual" } : p))}
+                                  className={`flex-1 flex items-center gap-2 p-2.5 rounded-lg border-2 text-sm transition-all ${
+                                    pkg.deliveryType !== "warehouse"
+                                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                                      : "border-border hover:border-blue-300 text-muted-foreground"
+                                  }`}
+                                >
+                                  <Wrench className="h-4 w-4 flex-shrink-0" />
+                                  <div className="text-left">
+                                    <p className="font-medium text-xs">Thủ công</p>
+                                    <p className="text-[10px] opacity-70">Admin giao tay</p>
+                                  </div>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPackages(prev => prev.map((p, i) => i === idx ? { ...p, deliveryType: "warehouse" } : p))}
+                                  className={`flex-1 flex items-center gap-2 p-2.5 rounded-lg border-2 text-sm transition-all ${
+                                    pkg.deliveryType === "warehouse"
+                                      ? "border-green-500 bg-green-50 text-green-700"
+                                      : "border-border hover:border-green-300 text-muted-foreground"
+                                  }`}
+                                >
+                                  <Warehouse className="h-4 w-4 flex-shrink-0" />
+                                  <div className="text-left">
+                                    <p className="font-medium text-xs">Kho tự động</p>
+                                    <p className="text-[10px] opacity-70">Lấy từ kho</p>
+                                  </div>
+                                </button>
+                              </div>
                             </div>
                           </div>
 
