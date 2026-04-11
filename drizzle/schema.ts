@@ -1203,7 +1203,7 @@ export type InsertMenuItem = typeof menuItems.$inferInsert;
 export const productInventory = mysqlTable("product_inventory", {
   id: int("id").autoincrement().primaryKey(),
   productId: int("productId").notNull(),
-  packageId: int("packageId"),
+  packageId: int("packageId").notNull(),
   stockData: text("stockData").notNull(), // JSON array of stock items
   status: mysqlEnum("status", ["available", "used", "reserved"]).default("available").notNull(),
   assignedOrderId: int("assignedOrderId"),

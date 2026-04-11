@@ -8463,15 +8463,19 @@ export const appRouter = router({
         return { success: true };
       }),
     add: protectedProcedure
-      .input(z.object({ productId: z.number(), packageId: z.number().optional(), items: z.array(z.string()).min(1) }))
+      .input(z.object({ packageId: z.number(), items: z.array(z.string()).min(1) }))
       .mutation(async ({ input }) => {
-        const { productInventory } = await import("../drizzle/schema");
+        const { productInventory, productPackages } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        // Lookup productId from package
+        const [pkg] = await drizzleDb.select({ productId: productPackages.productId }).from(productPackages).where(eq(productPackages.id, input.packageId));
+        if (!pkg) throw new TRPCError({ code: "NOT_FOUND", message: "Gói sản phẩm không tồn tại" });
         const rows = input.items.map(item => ({
-          productId: input.productId,
-          packageId: input.packageId ?? null,
+          productId: pkg.productId,
+          packageId: input.packageId,
           stockData: item,
           status: "available" as const,
         }));

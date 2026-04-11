@@ -1,0 +1,1 @@
+ALTER TABLE `product_inventory` MODIFY COLUMN `packageId` int NOT NULL;

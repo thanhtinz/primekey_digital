@@ -654,7 +654,7 @@ export default function InventoryAdmin() {
         open={showAddDialog}
         onClose={() => setShowAddDialog(false)}
         products={products}
-        onAdd={(productId, packageId, items) => addMutation.mutate({ productId, packageId, items })}
+        onAdd={(packageId, items) => addMutation.mutate({ packageId, items })}
         isPending={addMutation.isPending}
       />
     </DashboardLayoutCustom>
@@ -667,7 +667,7 @@ function AddInventoryDialog({
   open: boolean;
   onClose: () => void;
   products: any[];
-  onAdd: (productId: number, packageId: number | undefined, items: string[]) => void;
+  onAdd: (packageId: number, items: string[]) => void;
   isPending: boolean;
 }) {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -675,18 +675,16 @@ function AddInventoryDialog({
   const [rawText, setRawText] = useState("");
 
   const selectedProduct = products.find((p) => String(p.id) === selectedProductId);
+  const allPackages: any[] = [];
+  products.forEach((p) => (p.packages ?? []).forEach((pkg: any) => allPackages.push({ ...pkg, productName: p.name })));
   const packages = selectedProduct?.packages ?? [];
 
   const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
 
   const handleSubmit = () => {
-    if (!selectedProductId) { toast.error("Vui lòng chọn sản phẩm"); return; }
+    if (!selectedPackageId) { toast.error("Vui lòng chọn gói sản phẩm"); return; }
     if (lines.length === 0) { toast.error("Chưa có dữ liệu nào"); return; }
-    onAdd(
-      Number(selectedProductId),
-      selectedPackageId ? Number(selectedPackageId) : undefined,
-      lines,
-    );
+    onAdd(Number(selectedPackageId), lines);
   };
 
   return (
@@ -699,7 +697,7 @@ function AddInventoryDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          {/* Product select */}
+          {/* Step 1: Chọn sản phẩm */}
           <div className="space-y-1.5">
             <Label className="text-sm font-medium">Sản phẩm <span className="text-red-500">*</span></Label>
             <Select value={selectedProductId} onValueChange={(v) => { setSelectedProductId(v); setSelectedPackageId(""); }}>
@@ -713,22 +711,30 @@ function AddInventoryDialog({
               </SelectContent>
             </Select>
           </div>
-          {/* Package select */}
-          {packages.length > 0 && (
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Gói sản phẩm</Label>
-              <Select value={selectedPackageId} onValueChange={setSelectedPackageId}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Chọn gói (tùy chọn)..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {packages.map((pkg: any) => (
-                    <SelectItem key={pkg.id} value={String(pkg.id)}>{pkg.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Step 2: Chọn gói - bắt buộc */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Gói sản phẩm <span className="text-red-500">*</span></Label>
+            <Select
+              value={selectedPackageId}
+              onValueChange={setSelectedPackageId}
+              disabled={!selectedProductId || packages.length === 0}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder={!selectedProductId ? "Chọn sản phẩm trước..." : packages.length === 0 ? "Sản phẩm không có gói" : "Chọn gói sản phẩm..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {packages.map((pkg: any) => (
+                  <SelectItem key={pkg.id} value={String(pkg.id)}>
+                    <span className="font-medium">{pkg.name}</span>
+                    {pkg.price && <span className="ml-2 text-xs text-gray-400">{Number(pkg.price).toLocaleString("vi-VN")}đ</span>}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedProductId && packages.length === 0 && (
+              <p className="text-xs text-amber-600">Sản phẩm này chưa có gói nào. Vui lòng thêm gói trước.</p>
+            )}
+          </div>
           {/* Bulk input */}
           <div className="space-y-1.5">
             <Label className="text-sm font-medium">
