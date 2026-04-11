@@ -3,30 +3,21 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
   Copy, EyeOff, RefreshCw, AlertTriangle, CheckCircle, XCircle,
-  Zap, Download, X, ChevronDown, ChevronUp, Key, Calendar,
-  Info, AlertCircle, CheckCircle2
+  Zap, Download, ChevronDown, ChevronUp, Key, Calendar
 } from "@/components/Icon";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
 const HIDE_KEY = "license_banner_hidden_until";
-const DISMISSED_KEY = "dismissed_broadcasts_v2";
-
 export default function LicenseBanner() {
   const [, setLocation] = useLocation();
   const [isHidden, setIsHidden] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [dismissedIds, setDismissedIds] = useState<number[]>([]);
 
   const { data: sysInfo, isLoading, refetch } = trpc.settings.getSystemInfo.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
   });
   const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
-
-  // Fetch broadcasts from DB (using any cast since broadcasts is added dynamically)
-  const { data: broadcasts = [] } = (trpc as any).broadcasts.getActive.useQuery(undefined, {
-    staleTime: 2 * 60 * 1000,
-  });
 
   const updateSettingsMutation = trpc.settings.updateGeneral.useMutation();
 
@@ -35,8 +26,6 @@ export default function LicenseBanner() {
     if (hiddenUntil && Date.now() < parseInt(hiddenUntil)) {
       setIsHidden(true);
     }
-    const dismissed = JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]");
-    setDismissedIds(dismissed);
   }, []);
 
   const handleHide24h = () => {
@@ -63,15 +52,8 @@ export default function LicenseBanner() {
     }
   };
 
-  const handleDismissBroadcast = (id: number) => {
-    const updated = [...dismissedIds, id];
-    setDismissedIds(updated);
-    localStorage.setItem(DISMISSED_KEY, JSON.stringify(updated));
-  };
-
   if (isHidden || isLoading) return null;
 
-  const activeBroadcasts = (broadcasts as any[]).filter((b: any) => !dismissedIds.includes(b.id));
   const licenseValid = sysInfo?.licenseValid ?? true;
   const isDevMode = sysInfo?.licensePlan === "development";
 
@@ -88,13 +70,6 @@ export default function LicenseBanner() {
   const getPlanLabel = () => isDevMode ? "Development" : "Giấy phép hợp lệ";
 
   const licenseStatus = getLicenseStatus();
-
-  const broadcastTypeConfig: Record<string, { icon: React.ReactNode; bg: string; border: string; textColor: string; subColor: string }> = {
-    info: { icon: <Info className="h-4 w-4 text-blue-500" />, bg: "bg-blue-50", border: "border-blue-200", textColor: "text-blue-800", subColor: "text-blue-600" },
-    warning: { icon: <AlertCircle className="h-4 w-4 text-amber-500" />, bg: "bg-amber-50", border: "border-amber-200", textColor: "text-amber-800", subColor: "text-amber-600" },
-    success: { icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />, bg: "bg-emerald-50", border: "border-emerald-200", textColor: "text-emerald-800", subColor: "text-emerald-600" },
-    error: { icon: <AlertTriangle className="h-4 w-4 text-red-500" />, bg: "bg-red-50", border: "border-red-200", textColor: "text-red-800", subColor: "text-red-600" },
-  };
 
   return (
     <div className="space-y-2 mb-4">
@@ -265,29 +240,7 @@ export default function LicenseBanner() {
         )}
       </div>
 
-      {/* ── Broadcasts từ chủ src ── */}
-      {activeBroadcasts.length > 0 && (
-        <div className="space-y-1.5">
-          {activeBroadcasts.map((broadcast: any) => {
-            const cfg = broadcastTypeConfig[broadcast.type] || broadcastTypeConfig.info;
-            return (
-              <div key={broadcast.id} className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${cfg.bg} ${cfg.border}`}>
-                <div className="flex-shrink-0 mt-0.5">{cfg.icon}</div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold ${cfg.textColor}`}>{broadcast.title}</p>
-                  <p className={`text-xs mt-0.5 ${cfg.subColor}`}>{broadcast.message}</p>
-                </div>
-                <button
-                  onClick={() => handleDismissBroadcast(broadcast.id)}
-                  className={`h-5 w-5 flex items-center justify-center rounded-md hover:bg-black/10 ${cfg.textColor} opacity-60 hover:opacity-100 flex-shrink-0 transition`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+
     </div>
   );
 }

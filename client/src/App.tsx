@@ -106,7 +106,6 @@ import BlogNewPost from "@/pages/BlogNewPost";
 import BlogPosts from "@/pages/BlogPosts";
 import ImageLibrary from "@/pages/ImageLibrary";
 const AvatarGalleryAdmin = lazy(() => import("./pages/AvatarGalleryAdmin"));
-const BroadcastsAdmin = lazy(() => import("./pages/BroadcastsAdmin"));
 const LicenseSetup = lazy(() => import("./pages/LicenseSetup"));
 const LicenseAdmin = lazy(() => import("./pages/LicenseAdmin"));
 const SystemStatus = lazy(() => import("./pages/SystemStatus"));
@@ -329,9 +328,8 @@ function Router() {
         <Route path="/admin/notifications" component={() => isAdmin ? <NotificationsAdmin /> : <ForbiddenPage />} />
         {/* Trang mới: gộp 3 loại banner */}
         <Route path="/admin/banners" component={() => isAdmin ? <BannerManagement /> : <ForbiddenPage />} />
-        {/* Legacy routes - redirect sang trang mới */}
+        {/* Legacy route - redirect sang trang mới */}
         <Route path="/admin/announcements" component={() => isAdmin ? <NotificationsAdmin /> : <ForbiddenPage />} />
-        <Route path="/admin/broadcasts" component={() => isAdmin ? <NotificationsAdmin /> : <ForbiddenPage />} />
         <Route path="/admin/license" component={() => isAdmin ? <LicenseAdmin /> : <ForbiddenPage />} />
         <Route path="/license-setup" component={() => <LicenseSetup onActivated={() => window.location.reload()} />} />
         <Route path="/refunds" component={() => isAdmin ? <RefundPage /> : <ForbiddenPage />} />
