@@ -674,10 +674,11 @@ function AddInventoryDialog({
   const [selectedPackageId, setSelectedPackageId] = useState<string>("");
   const [rawText, setRawText] = useState("");
 
-  const selectedProduct = products.find((p) => String(p.id) === selectedProductId);
-  const allPackages: any[] = [];
-  products.forEach((p) => (p.packages ?? []).forEach((pkg: any) => allPackages.push({ ...pkg, productName: p.name })));
-  const packages = selectedProduct?.packages ?? [];
+  // Chỉ hiện sản phẩm có ít nhất 1 gói kho tự động
+  const warehouseProducts = products.filter((p) => (p.packages ?? []).some((pkg: any) => pkg.deliveryType === "warehouse"));
+  const selectedProduct = warehouseProducts.find((p) => String(p.id) === selectedProductId);
+  // Chỉ hiện gói có deliveryType = warehouse
+  const packages = (selectedProduct?.packages ?? []).filter((pkg: any) => pkg.deliveryType === "warehouse");
 
   const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
 
@@ -705,7 +706,10 @@ function AddInventoryDialog({
                 <SelectValue placeholder="Chọn sản phẩm..." />
               </SelectTrigger>
               <SelectContent>
-                {products.map((p) => (
+                {warehouseProducts.length === 0 && (
+                  <div className="px-3 py-4 text-center text-sm text-gray-400">Chưa có sản phẩm nào bật kho tự động</div>
+                )}
+                {warehouseProducts.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -732,7 +736,7 @@ function AddInventoryDialog({
               </SelectContent>
             </Select>
             {selectedProductId && packages.length === 0 && (
-              <p className="text-xs text-amber-600">Sản phẩm này chưa có gói nào. Vui lòng thêm gói trước.</p>
+              <p className="text-xs text-amber-600">Sản phẩm này chưa có gói nào bật kho tự động. Vui lòng cấu hình gói trước.</p>
             )}
           </div>
           {/* Bulk input */}
