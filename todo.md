@@ -1986,3 +1986,4 @@ todo updated
 - [x] Sửa lỗi toggle Telegram User Bot: các nút toggle (Bảo hành, Flash Sale, Khuyến mãi & ưu đãi, Đang giao hàng) không lưu được - thiếu fields trong Zod input schema
 - [x] Sửa lỗi toggle Telegram Admin Bot: các nút toggle (Yêu cầu rút tiền, Nạp tiền ví, Đánh giá mới, Ticket hỗ trợ mới, Flash Sale sắp kết thúc, Báo cáo hàng ngày) không lưu được - thiếu fields trong Zod input schema
 - [x] Sửa trang Extensions: toggle Telegram Bot vẫn mở dialog cấu hình dù đã cấu hình rồi - đã đọc trạng thái thực từ DB (telegramBotConfig + smtpConfig) thay vì hardcode enabled:false
+- [x] Sửa procedure customer.me: thiếu telegramChatId, telegramUsername, telegramLinkedAt → hasTelegram luôn false → badge Chưa liên kết dù đã liên kết

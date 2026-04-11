@@ -4981,7 +4981,14 @@ export const appRouter = router({
           .where(eq(customerSessions.token, input.token)).limit(1);
         if (!session || session.expiresAt < new Date()) return null;
         // Get walletBalance, avatarUrl AND name from customers table (persistent across sessions)
-        const [cust] = await drizzleDb.select({ walletBalance: customers.walletBalance, avatarUrl: (customers as any).avatarUrl, name: customers.name }).from(customers).where(eq(customers.email, session.email)).limit(1);
+        const [cust] = await drizzleDb.select({
+          walletBalance: customers.walletBalance,
+          avatarUrl: (customers as any).avatarUrl,
+          name: customers.name,
+          telegramChatId: customers.telegramChatId,
+          telegramUsername: customers.telegramUsername,
+          telegramLinkedAt: customers.telegramLinkedAt,
+        }).from(customers).where(eq(customers.email, session.email)).limit(1);
         const avatarUrl = (session as any).avatarUrl || (cust as any)?.avatarUrl || null;
         // If this is an admin session, also return role from users table
         // MySQL boolean can return true/false, 1/0, or Buffer - handle all cases
@@ -5004,7 +5011,16 @@ export const appRouter = router({
         }
         // Always use name from customers table (persistent) so profile edits are reflected immediately
         const displayName = cust?.name || session.name;
-        return { email: session.email, name: displayName, avatarUrl, walletBalance: cust?.walletBalance || "0", role };
+        return {
+          email: session.email,
+          name: displayName,
+          avatarUrl,
+          walletBalance: cust?.walletBalance || "0",
+          role,
+          telegramChatId: cust?.telegramChatId || null,
+          telegramUsername: cust?.telegramUsername || null,
+          telegramLinkedAt: cust?.telegramLinkedAt || null,
+        };
       }),
 
     // Lịch sử đơn hàng của khách (theo email)
