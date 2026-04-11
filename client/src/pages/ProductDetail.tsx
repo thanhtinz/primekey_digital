@@ -753,24 +753,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* Contact info */}
-            {((publicInfo as any)?.companyPhone || (publicInfo as any)?.companyEmail) && (
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <p className="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">Liên hệ tư vấn</p>
-                <div className="flex flex-col gap-2">
-                  {(publicInfo as any).companyPhone && (
-                    <a href={`tel:${(publicInfo as any).companyPhone}`} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500">
-                      <Phone className="w-4 h-4" /> {(publicInfo as any).companyPhone}
-                    </a>
-                  )}
-                  {(publicInfo as any).companyEmail && (
-                    <a href={`mailto:${(publicInfo as any).companyEmail}`} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500">
-                      <Mail className="w-4 h-4" /> {(publicInfo as any).companyEmail}
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
+
 
             {/* Mobile: Order Info Card */}
             <div className="md:hidden">

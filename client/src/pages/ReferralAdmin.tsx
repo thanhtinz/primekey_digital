@@ -26,7 +26,7 @@ export default function ReferralAdmin() {
   const { data: referrals = [] } = trpc.referral.adminList.useQuery();
   const utils = trpc.useUtils();
   const saveMut = trpc.referral.saveSettings.useMutation({
-    onSuccess: () => { toast.success("Lưu cấu hình thành công"); utils.referral.getSettings.invalidate(); },
+    onSuccess: () => { toast.success("Lưu cấu hình thành công"); utils.referral.getSettings.invalidate(); utils.settings.get.invalidate(); utils.featureFlags.getAll.invalidate(); },
     onError: (err) => toast.error(err.message),
   });
   const [form, setForm] = useState({

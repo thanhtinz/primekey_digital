@@ -15,7 +15,7 @@ export default function AffiliateConfig() {
   const { data: settings, isLoading } = trpc.referral.getSettings.useQuery();
   const utils = trpc.useUtils();
   const saveMut = trpc.referral.saveSettings.useMutation({
-    onSuccess: () => { toast.success("Lưu cấu hình thành công"); utils.referral.getSettings.invalidate(); },
+    onSuccess: () => { toast.success("Lưu cấu hình thành công"); utils.referral.getSettings.invalidate(); utils.settings.get.invalidate(); utils.featureFlags.getAll.invalidate(); },
     onError: (err) => toast.error(err.message),
   });
 

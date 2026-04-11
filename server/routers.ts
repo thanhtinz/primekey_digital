@@ -4484,7 +4484,7 @@ export const appRouter = router({
       redeemRate: z.number().min(1),
       isEnabled: z.boolean(),
     })).mutation(async ({ input, ctx }) => {
-      const { loyaltySettings } = await import("../drizzle/schema");
+      const { loyaltySettings, featureFlags } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
@@ -4494,6 +4494,20 @@ export const appRouter = router({
         await drizzleDb.update(loyaltySettings).set(input).where(eq(loyaltySettings.userId, ctx.user.id));
       } else {
         await drizzleDb.insert(loyaltySettings).values({ ...input, userId: ctx.user.id });
+      }
+      // Sync featureFlags
+      const flagKey = "points";
+      const existingFlag = await drizzleDb.select().from(featureFlags).where(eq(featureFlags.key, flagKey)).limit(1);
+      if (existingFlag.length > 0) {
+        await drizzleDb.update(featureFlags).set({ enabled: input.isEnabled }).where(eq(featureFlags.key, flagKey));
+      } else {
+        await drizzleDb.insert(featureFlags).values({ key: flagKey, label: "Tích điểm", description: "", enabled: input.isEnabled, category: "feature" });
+      }
+      // Sync userSettings (so Settings page toggle stays in sync)
+      const { userSettings } = await import("../drizzle/schema");
+      const existingUS = await drizzleDb.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id)).limit(1);
+      if (existingUS.length > 0) {
+        await drizzleDb.update(userSettings).set({ featureLoyalty: input.isEnabled }).where(eq(userSettings.userId, ctx.user.id));
       }
       return { success: true };
     }),
@@ -5842,7 +5856,7 @@ export const appRouter = router({
       minOrderAmount: z.number().min(0).optional(),
       description: z.string().optional(),
     })).mutation(async ({ input, ctx }) => {
-      const { referralSettings } = await import("../drizzle/schema");
+      const { referralSettings, featureFlags } = await import("../drizzle/schema");
       const { getDb } = await import("./db");
       const { eq } = await import("drizzle-orm");
       const drizzleDb = await getDb();
@@ -5852,6 +5866,20 @@ export const appRouter = router({
         await drizzleDb.update(referralSettings).set({ ...input, rewardAmount: String(input.rewardAmount), minOrderAmount: String(input.minOrderAmount || 0) } as any).where(eq(referralSettings.id, existing.id));
       } else {
         await drizzleDb.insert(referralSettings).values({ userId: ctx.user.id, ...input, rewardAmount: String(input.rewardAmount), minOrderAmount: String(input.minOrderAmount || 0) } as any);
+      }
+      // Sync featureFlags
+      const flagKey = "referral";
+      const existingFlag = await drizzleDb.select().from(featureFlags).where(eq(featureFlags.key, flagKey)).limit(1);
+      if (existingFlag.length > 0) {
+        await drizzleDb.update(featureFlags).set({ enabled: input.isEnabled }).where(eq(featureFlags.key, flagKey));
+      } else {
+        await drizzleDb.insert(featureFlags).values({ key: flagKey, label: "Affiliate/Referral", description: "", enabled: input.isEnabled, category: "feature" });
+      }
+      // Sync userSettings (so Settings page toggle stays in sync)
+      const { userSettings } = await import("../drizzle/schema");
+      const existingUS = await drizzleDb.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id)).limit(1);
+      if (existingUS.length > 0) {
+        await drizzleDb.update(userSettings).set({ featureAffiliate: input.isEnabled }).where(eq(userSettings.userId, ctx.user.id));
       }
       return { success: true };
     }),
@@ -6894,7 +6922,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const { getDb } = await import("./db");
         const { eq } = await import("drizzle-orm");
-        const { spinWheelConfig } = await import("../drizzle/schema");
+        const { spinWheelConfig, featureFlags } = await import("../drizzle/schema");
         const drizzleDb = await getDb();
         if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         const existing = await drizzleDb.select().from(spinWheelConfig).where(eq(spinWheelConfig.userId, ctx.user.id)).limit(1);
@@ -6902,6 +6930,20 @@ export const appRouter = router({
           await drizzleDb.update(spinWheelConfig).set(input).where(eq(spinWheelConfig.userId, ctx.user.id));
         } else {
           await drizzleDb.insert(spinWheelConfig).values({ ...input, userId: ctx.user.id });
+        }
+        // Sync featureFlags
+        const flagKey = "spin_wheel";
+        const existingFlag = await drizzleDb.select().from(featureFlags).where(eq(featureFlags.key, flagKey)).limit(1);
+        if (existingFlag.length > 0) {
+          await drizzleDb.update(featureFlags).set({ enabled: input.isEnabled }).where(eq(featureFlags.key, flagKey));
+        } else {
+          await drizzleDb.insert(featureFlags).values({ key: flagKey, label: "Vòng quay may mắn", description: "", enabled: input.isEnabled, category: "feature" });
+        }
+        // Sync userSettings (so Settings page toggle stays in sync)
+        const { userSettings } = await import("../drizzle/schema");
+        const existingUS = await drizzleDb.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id)).limit(1);
+        if (existingUS.length > 0) {
+          await drizzleDb.update(userSettings).set({ featureSpinWheel: input.isEnabled }).where(eq(userSettings.userId, ctx.user.id));
         }
         return { success: true };
       }),

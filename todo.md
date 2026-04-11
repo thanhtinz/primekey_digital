@@ -1913,3 +1913,24 @@ todo updated
 - [x] Cập nhật LicenseSetup UI: thêm trường email bắt buộc
 - [x] Cập nhật LicenseAdmin UI: thêm trường email khi kích hoạt
 - [x] Tài liệu hướng dẫn tạo license key cho developer (scripts/generate-license.ts)
+
+## Session 2026-04-11 - Final Check & Cleanup
+
+### Fixes từ user feedback
+- [x] Ẩn nút "Chọn từ kho ảnh" trong MyAccount khi feature avatar_gallery bị tắt
+- [x] Bỏ card "Liên hệ tư vấn" trong trang ProductDetail
+- [x] Đổi tên "Ghi chú nội bộ" → "Ghi chú sản phẩm" trong form tạo/sửa sản phẩm (Products.tsx và ProductEdit.tsx)
+
+### Sync feature flags
+- [x] Các trang tính năng riêng (FlashSale, Coupons, Loyalty, Blog, Referral, Warranty...) đã có toggle bật/tắt → sync với featureFlags trong Settings
+- [x] Khi admin bật/tắt từ trang tính năng riêng thì Settings cũng cập nhật theo và ngược lại
+
+### Final check & cleanup
+- [x] Kiểm tra toàn bộ routes trong App.tsx có tương ứng với file page không
+- [x] Kiểm tra tất cả tRPC procedures trong routers.ts có được dùng ở frontend không
+- [x] Xóa các file page không còn được import/route (BlogManagement.tsx, NotFound.tsx, AdminLayout.tsx)
+- [x] Kiểm tra unused imports trong các file chính
+
+### Data & Documentation
+- [x] Tạo file scripts/init-data.sql: schema only + email/telegram templates (không có dữ liệu thật)
+- [x] Tạo file INSTALL.md: hướng dẫn cài đặt src đầy đủ (clone, env, db, license key)

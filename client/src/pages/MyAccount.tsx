@@ -1912,6 +1912,7 @@ export default function MyAccount() {
                   >
                     {uploadAvatarMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
                   </button>
+
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-slate-800">{customerName}</p>
@@ -1924,8 +1925,8 @@ export default function MyAccount() {
                   </button>
                 </div>
               </div>
-              {/* Avatar Gallery Modal */}
-              {showAvatarGallery && (
+              {/* Avatar Gallery Modal - only show when avatarGallery feature is enabled */}
+              {showAvatarGallery && avatarGalleryEnabled && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setShowAvatarGallery(false)}>
                   <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">

@@ -24,7 +24,7 @@ export default function LoyaltyAdmin() {
   // ── Settings ──
   const { data: settings } = trpc.loyalty.getSettings.useQuery();
   const saveSettingsMutation = trpc.loyalty.saveSettings.useMutation({
-    onSuccess: () => { utils.loyalty.getSettings.invalidate(); toast.success("Đã lưu cài đặt"); },
+    onSuccess: () => { utils.loyalty.getSettings.invalidate(); utils.settings.get.invalidate(); utils.featureFlags.getAll.invalidate(); toast.success("Đã lưu cài đặt"); },
     onError: (e) => toast.error(e.message),
   });
   const adjustMutation = trpc.loyalty.adjust.useMutation({

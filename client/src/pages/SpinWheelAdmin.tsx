@@ -16,7 +16,8 @@ export default function SpinWheelAdmin() {
   const [items, setItems] = useState<any[]>([]);
 
   const { data: wheelData, refetch } = trpc.spinWheel.getConfig.useQuery();
-  const saveConfigMutation = trpc.spinWheel.saveConfig.useMutation({ onSuccess: () => { toast.success("Đã lưu cấu hình vòng quay"); refetch(); } });
+  const utils = trpc.useUtils();
+  const saveConfigMutation = trpc.spinWheel.saveConfig.useMutation({ onSuccess: () => { toast.success("Đã lưu cấu hình vòng quay"); refetch(); utils.settings.get.invalidate(); utils.featureFlags.getAll.invalidate(); } });
   const saveItemsMutation = trpc.spinWheel.saveItems.useMutation({ onSuccess: () => { toast.success("Đã lưu các ô"); refetch(); } });
 
   useEffect(() => {

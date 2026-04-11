@@ -24,7 +24,7 @@ export default function LoyaltyConfig() {
   }, [settings]);
 
   const saveSettings = trpc.loyalty.saveSettings.useMutation({
-    onSuccess: () => { utils.loyalty.getSettings.invalidate(); toast.success("Đã lưu cài đặt tích điểm"); },
+    onSuccess: () => { utils.loyalty.getSettings.invalidate(); utils.settings.get.invalidate(); utils.featureFlags.getAll.invalidate(); toast.success("Đã lưu cài đặt tích điểm"); },
     onError: (e) => toast.error(e.message),
   });
 

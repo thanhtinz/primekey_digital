@@ -248,8 +248,8 @@ export default function ProductEdit() {
             </div>
 
             <div>
-              <Label className="text-sm font-medium">Ghi Chú Nội Bộ</Label>
-              <Textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Ghi chú nội bộ (không hiển thị cho khách)..." rows={2} className="mt-1.5 resize-none" />
+              <Label className="text-sm font-medium">Ghi Chú Sản Phẩm</Label>
+              <Textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Ghi chú về sản phẩm (hiển thị cho khách hàng)..." rows={2} className="mt-1.5 resize-none" />
             </div>
 
             {(allTags as any[]).length > 0 && (

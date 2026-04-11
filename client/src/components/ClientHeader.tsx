@@ -283,7 +283,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
 
 
 
-            {/* Cart Icon - always visible */}
+            {/* Cart Icon - only show when cart feature is enabled */}
+            {isEnabled("cart") && (
             <button
               onClick={() => go("/cart")}
               className="relative p-2.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
@@ -296,6 +297,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                   </span>
                 )}
             </button>
+            )}
             {/* Notification Bell */}
             {isLoggedIn && (
               <div ref={notifRef} className="relative">
