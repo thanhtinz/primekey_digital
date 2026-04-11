@@ -30,7 +30,7 @@ export default function LoyaltyPage() {
   }, [isLoggedIn, customer?.email]);
 
   const logo = publicInfo?.logoUrl;
-  const siteName = publicInfo?.companyName || "Invoice Prime";
+  const siteName = publicInfo?.companyName || "";
 
   function handleSearch() {
     if (!email.trim() || !email.includes("@")) return;

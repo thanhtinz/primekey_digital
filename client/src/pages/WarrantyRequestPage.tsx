@@ -43,7 +43,7 @@ export default function WarrantyRequestPage() {
   }, [isLoggedIn, customer?.email, customer?.name]);
 
   const logo = publicInfo?.logoUrl;
-  const siteName = publicInfo?.companyName || "Invoice Prime";
+  const siteName = publicInfo?.companyName || "";
 
   function handleSubmit() {
     if (!form.customerEmail || !form.description) {

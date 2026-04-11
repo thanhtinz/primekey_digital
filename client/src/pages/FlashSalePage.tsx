@@ -66,7 +66,7 @@ export default function FlashSalePage() {
     refetchInterval: 30000,
   });
 
-  const brandName = publicInfo?.companyName || "Invoice Prime";
+  const brandName = publicInfo?.companyName || "";
   const activeSales = sales.filter(s => !(s.maxQuantity && s.maxQuantity > 0 && (s.soldQuantity || 0) >= s.maxQuantity));
   const soldOutSales = sales.filter(s => s.maxQuantity && s.maxQuantity > 0 && (s.soldQuantity || 0) >= s.maxQuantity);
 

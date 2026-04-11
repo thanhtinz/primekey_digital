@@ -14,7 +14,7 @@ export default function FAQPage() {
   const [openId, setOpenId] = useState<number | null>(null);
 
   const logo = publicInfo?.logoUrl;
-  const siteName = publicInfo?.companyName || "Invoice Prime";
+  const siteName = publicInfo?.companyName || "";
 
   const filtered = (faqs as any[]).filter(f =>
     !search || f.question.toLowerCase().includes(search.toLowerCase()) || f.answer.toLowerCase().includes(search.toLowerCase())

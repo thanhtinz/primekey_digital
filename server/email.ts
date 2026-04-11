@@ -34,7 +34,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       });
 
       await transporter.sendMail({
-        from: `"${smtpCfg.fromName || 'Invoice Prime'}" <${smtpCfg.fromEmail || smtpCfg.user}>`,
+        from: `"${smtpCfg.fromName || ''}" <${smtpCfg.fromEmail || smtpCfg.user}>`,
         to: options.to,
         subject: options.subject,
         html: options.html,

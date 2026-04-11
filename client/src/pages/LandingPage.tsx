@@ -149,7 +149,7 @@ export default function LandingPage() {
   const { isEnabled } = useFeatureFlags();
 
   const description = (publicInfo as any)?.description || (publicInfo as any)?.companyDescription;
-  const companyName = publicInfo?.companyName || "ShopKey";
+  const companyName = publicInfo?.companyName || "";
 
   const products: any[] = Array.isArray(productsRaw) ? productsRaw : (productsRaw as any)?.items ?? [];
   const categories: any[] = (categoriesData as any) ?? [];

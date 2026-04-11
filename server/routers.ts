@@ -280,7 +280,7 @@ export const appRouter = router({
             // Try to load custom email template from DB, fallback to default
             const emailType = input.status as "CREATED" | "PAID" | "SHIPPING" | "WARRANTY" | "REVIEW";
             const customTemplate = await db.getEmailTemplateByType(ctx.user.id, emailType).catch(() => null);
-            const companyName = userSettings?.companyName || "Invoice Prime";
+            const companyName = userSettings?.companyName || "";
             const replaceVars = (str: string) => str
               .replace(/{{customerName}}/g, customer.name)
               .replace(/{{invoiceNumber}}/g, invoice.invoiceNumber)
@@ -558,7 +558,7 @@ export const appRouter = router({
             const customer = invoice.customerId ? await db.getCustomerById(invoice.customerId) : null;
             if (customer?.email) {
               const userSettings = await db.getUserSettings(ctx.user.id);
-              const companyName = userSettings?.companyName || "Invoice Prime";
+              const companyName = userSettings?.companyName || "";
               const origin = input.origin || "";
               const reviewUrl = reviewToken ? `${origin}/review/${reviewToken}` : undefined;
               const trackUrl = `${origin}/track-order`;
@@ -974,7 +974,7 @@ export const appRouter = router({
           const items = await db.getInvoiceItemsByInvoiceId(invoiceId);
           const template = invoice.templateId ? await db.getInvoiceTemplateById(invoice.templateId) : null;
           const userSettings = await db.getUserSettings(ctx.user.id);
-          const companyName = userSettings?.companyName || "Invoice Prime";
+          const companyName = userSettings?.companyName || "";
           try {
             const pdfBuf = await generateInvoicePDF({
               invoiceNumber: invoice.invoiceNumber,
@@ -2910,7 +2910,7 @@ export const appRouter = router({
       }
       return {
         appVersion: APP_VERSION,
-        appName: "Invoice Prime",
+        appName: settings?.companyName || "",
         licenseKey: licenseKey ? `${licenseKey.substring(0, 8)}...` : null,
         licenseValid: licenseInfo?.valid ?? true,
         licensePlan: licenseInfo?.plan ?? "development",
@@ -3413,9 +3413,11 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
         const { sendEmail } = await import("./email");
+        const smtpTestSettings = await db.getUserSettings(ctx.user.id);
+        const smtpTestAppName = smtpTestSettings?.companyName || "";
         const success = await sendEmail({
           to: input.testEmail,
-          subject: "Test Email - Invoice Prime",
+          subject: `Test Email${smtpTestAppName ? ` - ${smtpTestAppName}` : ""}`,
           html: "<p>Email SMTP đang hoạt động bình thường!</p>",
           userId: ctx.user.id,
         });
@@ -3841,7 +3843,7 @@ export const appRouter = router({
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: settings.telegramChatId, text: "✅ Invoice Prime: Kết nối Telegram thành công!" }),
+        body: JSON.stringify({ chat_id: settings.telegramChatId, text: `✅ ${settings.companyName || "Hệ thống"}: Kết nối Telegram thành công!` }),
       });
       const data = await res.json() as { ok: boolean; description?: string };
       if (!data.ok) throw new Error(data.description || "Gửi thất bại");
@@ -3876,7 +3878,7 @@ export const appRouter = router({
           thankYouTitle: settings?.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!",
           thankYouMessage: settings?.thankYouMessage || "Đơn hàng của bạn đã được xác nhận. Chúng tôi sẽ liên hệ sớm nhất có thể.",
           thankYouSocialLinks: (settings?.thankYouSocialLinks as Array<{platform: string; url: string}> | null) || [],
-          companyName: settings?.companyName || "Invoice Prime",
+          companyName: settings?.companyName || "",
           logoUrl: settings?.logoUrl || null,
           thankYouBgFrom: settings?.thankYouBgFrom || "#f0fdf4",
           thankYouBgTo: settings?.thankYouBgTo || "#eff6ff",
@@ -6220,7 +6222,7 @@ export const appRouter = router({
         if (shouldSendEmail) {
           const db = await import("./db");
           const userSettings = await db.getUserSettings(owner.id);
-          const companyName = userSettings?.companyName || "Invoice Prime";
+          const companyName = userSettings?.companyName || "";
           const paymentPageUrl = paymentUrl || `${input.origin}/pay/${createdInvoice.id}`;
           const customTemplate = await db.getEmailTemplateByType(owner.id, "CREATED").catch(() => null);
           const replaceVars = (str: string) => str
@@ -6491,7 +6493,7 @@ export const appRouter = router({
       try {
         const db = await import("./db");
         const userSettings = await db.getUserSettings(owner.id);
-        const companyName = userSettings?.companyName || "Invoice Prime";
+        const companyName = userSettings?.companyName || "";
         const paymentPageUrl = paymentUrl || `${input.origin}/pay/${createdInvoice.id}`;
         const customTemplate = await db.getEmailTemplateByType(owner.id, "CREATED").catch(() => null);
         const replaceVars = (str: string) => str

@@ -78,7 +78,7 @@ export default function ThankYou() {
   const title = thankYouConfig?.thankYouTitle || "Cảm Ơn Bạn Đã Thanh Toán!";
   const message = thankYouConfig?.thankYouMessage || "Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của chúng tôi. Đơn hàng của bạn đã được xác nhận.";
   const socialLinks = thankYouConfig?.thankYouSocialLinks || [];
-  const companyName = thankYouConfig?.companyName || "Invoice Prime";
+  const companyName = thankYouConfig?.companyName || "";
   const logoUrl = (thankYouConfig as any)?.logoUrl;
   const bgFrom = (thankYouConfig as any)?.thankYouBgFrom || "#f0fdf4";
   const bgTo = (thankYouConfig as any)?.thankYouBgTo || "#eff6ff";

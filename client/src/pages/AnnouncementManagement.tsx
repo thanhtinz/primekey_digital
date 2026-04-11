@@ -450,7 +450,7 @@ export default function AnnouncementManagement() {
             <div className="space-y-1.5">
               <Label>Tiêu đề <span className="text-red-500">*</span></Label>
               <Input
-                placeholder="Ví dụ: Chào mừng bạn đến với ShopKey!"
+                placeholder="Ví dụ: Chào mừng bạn đến với cửa hàng!"
                 value={annForm.title}
                 onChange={e => setAnnForm(f => ({ ...f, title: e.target.value }))}
               />

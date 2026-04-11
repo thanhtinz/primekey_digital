@@ -106,7 +106,7 @@ export default function WarrantyLookup() {
     });
   };
 
-  const brandName = publicInfo?.companyName || "Invoice Prime";
+  const brandName = publicInfo?.companyName || "";
 
   // Nếu đang loading auth
   if (authLoading) {

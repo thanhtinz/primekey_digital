@@ -502,7 +502,7 @@ export default function PaymentPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-400 pb-4">
-          Powered by Invoice Prime · Thanh toán an toàn qua PayOS
+          Powered by {invoice?.companyName || ""} · Thanh toán an toàn qua PayOS
         </p>
       </div>
     </div>

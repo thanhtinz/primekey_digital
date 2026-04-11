@@ -33,6 +33,9 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [step, setStep] = useState<"intro" | "activate" | "success">("intro");
 
+  const { data: publicInfo } = trpc.settings.getPublicInfo.useQuery(undefined, { staleTime: 300_000 });
+  const appName = publicInfo?.companyName || "";
+
   const activateMutation = trpc.license.activate.useMutation({
     onSuccess: (data) => {
       setStep("success");
@@ -77,7 +80,7 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
             <CheckCircle2 className="w-12 h-12 text-green-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Kích hoạt thành công!</h1>
-          <p className="text-gray-500 mb-6">Hệ thống Invoice Prime đã được kích hoạt và sẵn sàng sử dụng.</p>
+          <p className="text-gray-500 mb-6">Hệ thống {appName} đã được kích hoạt và sẵn sàng sử dụng.</p>
           <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <Loader2 className="w-4 h-4 animate-spin" />
             Đang chuyển hướng...
@@ -97,7 +100,7 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
               <Key className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white">Kích Hoạt License</h1>
-            <p className="text-slate-400 mt-1 text-sm">Nhập thông tin để kích hoạt hệ thống Invoice Prime</p>
+            <p className="text-slate-400 mt-1 text-sm">Nhập thông tin để kích hoạt hệ thống {appName}</p>
           </div>
 
           <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
@@ -235,7 +238,7 @@ export default function LicenseSetup({ onActivated }: LicenseSetupProps) {
           <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl shadow-blue-500/30">
             <Shield className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Invoice Prime</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{appName}</h1>
           <p className="text-slate-400 text-base">Hệ thống quản lý hóa đơn chuyên nghiệp</p>
         </div>
 
