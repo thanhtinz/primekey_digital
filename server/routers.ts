@@ -2921,6 +2921,9 @@ export const appRouter = router({
           { key: "coupon", label: "Mã giảm giá", description: "Kho mã giảm giá và voucher", enabled: true, category: "marketing" },
           { key: "wallet", label: "Ví điện tử", description: "Ví điện tử và nạp tiền", enabled: true, category: "payment" },
           { key: "review", label: "Đánh giá sản phẩm", description: "Hệ thống đánh giá và nhận xét sản phẩm", enabled: true, category: "ux" },
+          { key: "ticket", label: "Ticket hỗ trợ", description: "Hệ thống gửi yêu cầu hỗ trợ", enabled: true, category: "service" },
+          { key: "cart", label: "Giỏ hàng", description: "Giỏ hàng mua sắm", enabled: true, category: "ux" },
+          { key: "wishlist", label: "Yêu thích", description: "Danh sách sản phẩm yêu thích", enabled: true, category: "ux" },
         ];
         await drizzleDb.insert(featureFlags).values(defaults);
         return drizzleDb.select().from(featureFlags);

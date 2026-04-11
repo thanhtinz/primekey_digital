@@ -34,6 +34,7 @@ export default function TicketAdmin() {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [reply, setReply] = useState("");
   const [newStatus, setNewStatus] = useState("");
+  const [activeView, setActiveView] = useState<"open" | "all">("open");
 
   const { data: tickets = [], isLoading, refetch } = trpc.support.list.useQuery();
   const updateStatus = trpc.support.updateStatus.useMutation({
@@ -44,6 +45,9 @@ export default function TicketAdmin() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // Tickets đang mở (cần xử lý)
+  const openTickets = (tickets as any[]).filter((t: any) => t.status === "open" || t.status === "in_progress");
 
   const filtered = (tickets as any[]).filter((t: any) => {
     const matchSearch = !search || t.subject?.toLowerCase().includes(search.toLowerCase()) || t.customerEmail?.toLowerCase().includes(search.toLowerCase());
@@ -87,6 +91,37 @@ export default function TicketAdmin() {
             <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 w-8 p-0">
               <RefreshCw className="w-3.5 h-3.5" />
             </Button>
+          </div>
+
+          {/* View toggle: Open / All */}
+          <div className="flex gap-1 mb-3">
+            <button
+              onClick={() => setActiveView("open")}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                activeView === "open"
+                  ? "bg-yellow-500 text-white shadow-sm"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted/60"
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Đang mở
+              {openTickets.length > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeView === "open" ? "bg-white/30 text-white" : "bg-yellow-500 text-white"
+                }`}>{openTickets.length}</span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveView("all")}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                activeView === "all"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted/60"
+              }`}
+            >
+              <Headphones className="w-3.5 h-3.5" />
+              Tất cả ({counts.all})
+            </button>
           </div>
 
           {/* Stats row */}
@@ -148,14 +183,16 @@ export default function TicketAdmin() {
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               <p className="text-sm text-muted-foreground">Đang tải...</p>
             </div>
-          ) : filtered.length === 0 ? (
+          ) : (activeView === "open" ? openTickets : filtered).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Headphones className="w-12 h-12 text-muted-foreground opacity-20" />
-              <p className="text-muted-foreground text-sm">Không có ticket nào</p>
+              <p className="text-muted-foreground text-sm">
+                {activeView === "open" ? "Đã xử lý hết ticket!" : "Không có ticket nào"}
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {filtered.map((ticket: any) => {
+              {(activeView === "open" ? openTickets : filtered).map((ticket: any) => {
                 const status = STATUS_MAP[ticket.status] || STATUS_MAP.open;
                 const priority = PRIORITY_MAP[ticket.priority] || PRIORITY_MAP.medium;
                 const StatusIcon = status.icon;

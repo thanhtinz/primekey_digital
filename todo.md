@@ -1934,3 +1934,20 @@ todo updated
 ### Data & Documentation
 - [x] Tạo file scripts/init-data.sql: schema only + email/telegram templates (không có dữ liệu thật)
 - [x] Tạo file INSTALL.md: hướng dẫn cài đặt src đầy đủ (clone, env, db, license key)
+
+## Session 2026-04-11 - Bug Fixes & Feature Improvements
+
+### Menu feature flags
+- [x] Ẩn menu "Mã Giảm Giá" trong ClientHeader khi featureCoupon bị tắt
+- [x] Ẩn menu "Ticket Hỗ Trợ" trong ClientHeader khi featureTicket bị tắt
+
+### Ticket Admin
+- [x] Thêm tab/section quản lý ticket đang mở trong trang admin TicketAdmin
+
+### Card sản phẩm nổi bật
+- [x] Ẩn tag "Liên hệ" trên card sản phẩm khi sản phẩm không có tag liên hệ
+- [x] Sửa rating hiển thị 5 sao khi chưa có đánh giá nào (phải hiển thị 0 sao hoặc ẩn)
+
+### Trang chi tiết sản phẩm
+- [x] Redesign card sản phẩm liên quan (related products)
+- [x] Thêm badge "Đã mua hàng ✓" cho khách hàng đã mua khi họ đánh giá sản phẩm

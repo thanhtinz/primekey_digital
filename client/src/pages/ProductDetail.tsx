@@ -858,10 +858,18 @@ export default function ProductDetail() {
                             {(review.customerName || 'K')[0].toUpperCase()}
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-semibold text-gray-900">{review.customerName || 'Khách hàng'}</span>
-                            <div className="flex items-center gap-0.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-sm font-semibold text-gray-900 truncate">{review.customerName || 'Khách hàng'}</span>
+                              {review.invoiceId && (
+                                <span className="flex-shrink-0 inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                  Đã mua
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
                               {[1,2,3,4,5].map(i => (
                                 <Star key={i} className={`w-3 h-3 ${i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
                               ))}
@@ -897,25 +905,56 @@ export default function ProductDetail() {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {relatedProducts.slice(0, 4).map((p: any) => (
-                    <a
-                      key={p.id}
-                      href={`/product/${p.id}`}
-                      className="group bg-gray-50 rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all"
-                    >
-                      <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
-                        {p.imageUrl && (
-                          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        )}
-                      </div>
-                      <div className="p-2.5">
-                        <p className="text-xs font-medium text-gray-800 line-clamp-2 mb-1">{p.name}</p>
-                        {p.minPrice && (
-                          <p className="text-sm font-bold text-purple-600">{formatVND(p.minPrice)}</p>
-                        )}
-                      </div>
-                    </a>
-                  ))}
+                  {relatedProducts.slice(0, 4).map((p: any) => {
+                    const relAvgRating = p.avgRating || 0;
+                    const relTags = (p.tags || []) as any[];
+                    return (
+                      <a
+                        key={p.id}
+                        href={`/product/${p.id}`}
+                        className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all duration-200 flex flex-col"
+                      >
+                        {/* Image */}
+                        <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex-shrink-0">
+                          {p.imageUrl ? (
+                            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="w-8 h-8 text-gray-300" />
+                            </div>
+                          )}
+                          {/* Tags overlay */}
+                          {relTags.length > 0 && (
+                            <div className="absolute top-1.5 left-1.5">
+                              <div
+                                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm"
+                                style={{ backgroundColor: relTags[0].color || "#3b82f6", color: "#fff" }}
+                              >
+                                {relTags[0].name}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* Info */}
+                        <div className="p-2.5 flex flex-col gap-1 flex-1">
+                          <p className="text-xs font-semibold text-gray-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">{p.name}</p>
+                          <div className="mt-auto">
+                            {p.minPrice ? (
+                              <p className="text-sm font-bold text-red-500">{formatVND(p.minPrice)}</p>
+                            ) : (
+                              <p className="text-xs font-medium text-gray-400 italic">Liên hệ</p>
+                            )}
+                            {relAvgRating > 0 && (
+                              <div className="flex items-center gap-0.5 text-amber-500 mt-0.5">
+                                <Star className="w-2.5 h-2.5 fill-current" />
+                                <span className="text-[10px] font-medium">{relAvgRating.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             )}

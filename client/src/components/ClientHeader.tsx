@@ -239,7 +239,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
             {[
               isEnabled("blog") ? { label: "Blog", href: "/blog", icon: BookOpen } : null,
               isEnabled("leaderboard") ? { label: "Bảng Xếp Hạng", href: "/leaderboard", icon: Trophy } : null,
-              { label: "Hỗ trợ", href: "/support", icon: MessageSquare },
+              isEnabled("ticket") ? { label: "Hỗ trợ", href: "/support", icon: MessageSquare } : null,
             ].filter((item): item is { label: string; href: string; icon: any } => item !== null).map(item => (
               <button
                 key={item.href}
@@ -564,10 +564,10 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                 { icon: Home, label: "Trang chủ", href: "/" },
                 isEnabled("wallet") ? { icon: CreditCard, label: "Nạp tiền", href: "/wallet" } : null,
                 isEnabled("wallet") ? { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" } : null,
-                isEnabled("coupons") ? { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" } : null,
+                isEnabled("coupon") ? { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" } : null,
                 isEnabled("blog") ? { icon: BookOpen, label: "Blog", href: "/blog" } : null,
                 isEnabled("leaderboard") ? { icon: Trophy, label: "Bảng Xếp Hạng", href: "/leaderboard" } : null,
-                { icon: HelpCircle, label: "Hỗ trợ", href: "/support" },
+                isEnabled("ticket") ? { icon: HelpCircle, label: "Hỗ trợ", href: "/support" } : null,
               ].filter((link): link is { icon: any; label: string; href: string } => link !== null).map(link => (
                 <button
                   key={link.href}

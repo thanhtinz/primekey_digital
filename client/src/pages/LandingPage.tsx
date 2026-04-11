@@ -109,14 +109,20 @@ const ProductCard = React.memo(({ product, saleMap, navigate }: { product: any; 
           ) : product.price ? (
             <div className="text-sm font-bold text-red-500">{formatPrice(product.price)}</div>
           ) : (
-            <div className="text-sm font-bold text-red-600">Liên hệ</div>
+            <div className="text-sm font-medium text-gray-400 italic">Liên hệ</div>
           )}
         </div>
         <div className="flex items-center gap-2 text-xs mt-1">
-          <div className="flex items-center gap-0.5 text-amber-500">
-            <Star className="h-3 w-3 fill-current" />
-            <span className="font-medium">{avgRating > 0 ? avgRating.toFixed(1) : "5.0"}</span>
-            {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
+          <div className="flex items-center gap-0.5">
+            {avgRating > 0 ? (
+              <div className="flex items-center gap-0.5 text-amber-500">
+                <Star className="h-3 w-3 fill-current" />
+                <span className="font-medium">{avgRating.toFixed(1)}</span>
+                {product.reviewCount > 0 && <span className="text-gray-400">({product.reviewCount})</span>}
+              </div>
+            ) : (
+              <span className="text-gray-400 text-[10px]">Chưa có đánh giá</span>
+            )}
           </div>
           {product.soldCount > 0 && (
             <span className="text-gray-500">Đã bán {product.soldCount > 999 ? (product.soldCount / 1000).toFixed(1) + "k" : product.soldCount}</span>
