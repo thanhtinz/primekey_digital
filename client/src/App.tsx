@@ -115,7 +115,7 @@ const Extensions = lazy(() => import("./pages/Extensions"));
 const TicketAdmin = lazy(() => import("./pages/TicketAdmin"));
 const PageBuilder = lazy(() => import("./pages/PageBuilder"));
 const MenuManager = lazy(() => import("./pages/MenuManager"));
-const InventoryManagement = lazy(() => import("./pages/InventoryManagement"));
+const InventoryManagement = lazy(() => import("./pages/InventoryAdmin"));
 const RefundPage = lazy(() => import("./pages/RefundPage"));
 const SpinWheelPage = lazy(() => import("./pages/SpinWheelPage"));
 const SpinWheelAdmin = lazy(() => import("./pages/SpinWheelAdmin"));

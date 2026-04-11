@@ -8366,23 +8366,101 @@ export const appRouter = router({
   // ─── Product Inventory ────────────────────────────────────────────────────
   inventory: router({
     list: protectedProcedure
-      .input(z.object({ productId: z.number().optional(), packageId: z.number().optional(), status: z.string().optional(), page: z.number().default(1), limit: z.number().default(20) }))
+      .input(z.object({
+        productId: z.number().optional(),
+        packageId: z.number().optional(),
+        status: z.string().optional(),
+        search: z.string().optional(),
+        page: z.number().default(1),
+        limit: z.number().default(20),
+      }))
       .query(async ({ input }) => {
-        const { productInventory } = await import("../drizzle/schema");
+        const { productInventory, products, productPackages } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
-        const { eq, and, desc } = await import("drizzle-orm");
+        const { eq, and, desc, like, count, sql } = await import("drizzle-orm");
         const drizzleDb = await getDb();
         if (!drizzleDb) return { items: [], total: 0 };
-        const conditions = [];
+        const conditions: any[] = [];
         if (input.productId) conditions.push(eq(productInventory.productId, input.productId));
         if (input.packageId) conditions.push(eq(productInventory.packageId, input.packageId));
         if (input.status) conditions.push(eq(productInventory.status, input.status as any));
+        if (input.search) conditions.push(like(productInventory.stockData, `%${input.search}%`));
+        const where = conditions.length > 0 ? and(...conditions) : undefined;
         const offset = (input.page - 1) * input.limit;
-        const items = await drizzleDb.select().from(productInventory)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
+        // Get total count
+        const [{ total }] = await drizzleDb.select({ total: count() }).from(productInventory).where(where);
+        // Get items with product/package names via join
+        const rows = await drizzleDb
+          .select({
+            id: productInventory.id,
+            productId: productInventory.productId,
+            packageId: productInventory.packageId,
+            stockData: productInventory.stockData,
+            status: productInventory.status,
+            assignedOrderId: productInventory.assignedOrderId,
+            assignedAt: productInventory.assignedAt,
+            createdAt: productInventory.createdAt,
+            productName: products.name,
+            packageName: productPackages.name,
+          })
+          .from(productInventory)
+          .leftJoin(products, eq(productInventory.productId, products.id))
+          .leftJoin(productPackages, eq(productInventory.packageId, productPackages.id))
+          .where(where)
           .orderBy(desc(productInventory.createdAt))
-          .limit(input.limit).offset(offset);
-        return { items, total: items.length };
+          .limit(input.limit)
+          .offset(offset);
+        return { items: rows, total: Number(total) };
+      }),
+    stats: protectedProcedure.query(async () => {
+      const { productInventory } = await import("../drizzle/schema");
+      const { getDb } = await import("./db");
+      const { eq, count } = await import("drizzle-orm");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) return { total: 0, available: 0, used: 0, reserved: 0 };
+      const [totalRow] = await drizzleDb.select({ c: count() }).from(productInventory);
+      const [availRow] = await drizzleDb.select({ c: count() }).from(productInventory).where(eq(productInventory.status, "available"));
+      const [usedRow] = await drizzleDb.select({ c: count() }).from(productInventory).where(eq(productInventory.status, "used"));
+      const [resRow] = await drizzleDb.select({ c: count() }).from(productInventory).where(eq(productInventory.status, "reserved"));
+      return {
+        total: Number(totalRow?.c ?? 0),
+        available: Number(availRow?.c ?? 0),
+        used: Number(usedRow?.c ?? 0),
+        reserved: Number(resRow?.c ?? 0),
+      };
+    }),
+    updateStatus: protectedProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["available", "used", "reserved"]) }))
+      .mutation(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.update(productInventory).set({ status: input.status }).where(eq(productInventory.id, input.id));
+        return { success: true };
+      }),
+    bulkDelete: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()).min(1) }))
+      .mutation(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { inArray } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.delete(productInventory).where(inArray(productInventory.id, input.ids));
+        return { deleted: input.ids.length };
+      }),
+    updateStockData: protectedProcedure
+      .input(z.object({ id: z.number(), stockData: z.string() }))
+      .mutation(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await drizzleDb.update(productInventory).set({ stockData: input.stockData }).where(eq(productInventory.id, input.id));
+        return { success: true };
       }),
     add: protectedProcedure
       .input(z.object({ productId: z.number(), packageId: z.number().optional(), items: z.array(z.string()).min(1) }))
