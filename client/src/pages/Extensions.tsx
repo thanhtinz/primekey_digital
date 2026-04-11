@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Settings, AlertCircle, Puzzle, Shield, BarChart3, Bell, ExternalLink, ChevronRight } from "@/components/Icon";
+import { Settings, AlertCircle, Puzzle, Shield, BarChart3, Bell, ExternalLink } from "@/components/Icon";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 interface ConfigField {
   key: string;
@@ -18,27 +19,27 @@ interface ConfigField {
   hint?: string;
 }
 
-interface Extension {
+interface ExtensionDef {
   id: string;
   name: string;
   subtitle: string;
   category: "auth" | "notification" | "analytics" | "monitoring";
   icon: string;
-  enabled: boolean;
-  settingsPath?: string;
   description: string;
   docsUrl?: string;
+  settingsPath?: string;
   configFields?: ConfigField[];
+  // Nếu true: trạng thái enabled đọc từ DB, không hardcode
+  dynamicEnabled?: boolean;
 }
 
-const EXTENSIONS: Extension[] = [
+const EXTENSION_DEFS: ExtensionDef[] = [
   {
     id: "google_oauth",
     name: "Google OAuth",
     subtitle: "ĐĂNG NHẬP",
     category: "auth",
     icon: "https://www.google.com/favicon.ico",
-    enabled: false,
     description: "Cho phép khách hàng đăng nhập bằng tài khoản Google",
     docsUrl: "https://console.cloud.google.com/",
     configFields: [
@@ -52,7 +53,6 @@ const EXTENSIONS: Extension[] = [
     subtitle: "ĐĂNG NHẬP",
     category: "auth",
     icon: "https://github.com/favicon.ico",
-    enabled: false,
     description: "Cho phép khách hàng đăng nhập bằng tài khoản GitHub",
     docsUrl: "https://github.com/settings/developers",
     configFields: [
@@ -66,7 +66,6 @@ const EXTENSIONS: Extension[] = [
     subtitle: "BẢO MẬT",
     category: "auth",
     icon: "",
-    enabled: false,
     description: "Bảo vệ form đăng ký và đăng nhập khỏi bot",
     docsUrl: "https://www.google.com/recaptcha/admin",
     configFields: [
@@ -80,14 +79,11 @@ const EXTENSIONS: Extension[] = [
     subtitle: "THÔNG BÁO",
     category: "notification",
     icon: "https://telegram.org/favicon.ico",
-    enabled: false,
-    settingsPath: "/settings/telegram",
     description: "Nhận thông báo đơn hàng và cảnh báo qua Telegram",
     docsUrl: "https://core.telegram.org/bots",
-    configFields: [
-      { key: "botToken", label: "Bot Token", placeholder: "123456:ABC-...", type: "password", hint: "Lấy từ @BotFather trên Telegram" },
-      { key: "chatId", label: "Chat ID", placeholder: "-100...", hint: "ID của group hoặc channel nhận thông báo" },
-    ],
+    settingsPath: "/settings/telegram",
+    dynamicEnabled: true,
+    // Không có configFields vì cấu hình ở trang riêng
   },
   {
     id: "smtp_email",
@@ -95,15 +91,10 @@ const EXTENSIONS: Extension[] = [
     subtitle: "THÔNG BÁO",
     category: "notification",
     icon: "",
-    enabled: true,
-    settingsPath: "/settings/smtp",
     description: "Gửi email xác nhận đơn hàng, reset mật khẩu qua SMTP",
-    configFields: [
-      { key: "host", label: "SMTP Host", placeholder: "smtp.gmail.com" },
-      { key: "port", label: "Port", placeholder: "587" },
-      { key: "user", label: "Email", placeholder: "your@gmail.com" },
-      { key: "pass", label: "App Password", placeholder: "...", type: "password" },
-    ],
+    settingsPath: "/settings/smtp",
+    dynamicEnabled: true,
+    // Không có configFields vì cấu hình ở trang riêng
   },
   {
     id: "google_analytics",
@@ -111,7 +102,6 @@ const EXTENSIONS: Extension[] = [
     subtitle: "PHÂN TÍCH",
     category: "analytics",
     icon: "https://www.google.com/favicon.ico",
-    enabled: false,
     description: "Theo dõi lưu lượng truy cập và hành vi người dùng",
     docsUrl: "https://analytics.google.com/",
     configFields: [
@@ -124,7 +114,6 @@ const EXTENSIONS: Extension[] = [
     subtitle: "PHÂN TÍCH",
     category: "analytics",
     icon: "https://www.facebook.com/favicon.ico",
-    enabled: false,
     description: "Theo dõi chuyển đổi và remarketing trên Facebook Ads",
     docsUrl: "https://business.facebook.com/events_manager",
     configFields: [
@@ -137,7 +126,6 @@ const EXTENSIONS: Extension[] = [
     subtitle: "GIÁM SÁT",
     category: "monitoring",
     icon: "",
-    enabled: false,
     description: "Theo dõi uptime và cảnh báo khi hệ thống gặp sự cố",
     configFields: [
       { key: "webhookUrl", label: "Webhook URL", placeholder: "https://...", hint: "URL nhận cảnh báo khi downtime" },
@@ -173,7 +161,7 @@ function ConfigDialog({
   onClose,
   onConfirm,
 }: {
-  ext: Extension;
+  ext: ExtensionDef;
   open: boolean;
   onClose: () => void;
   onConfirm: (values: Record<string, string>) => void;
@@ -247,23 +235,38 @@ function ConfigDialog({
 
 function ExtensionCard({
   ext,
+  enabled,
   onToggle,
   onConfigure,
 }: {
-  ext: Extension;
+  ext: ExtensionDef;
+  enabled: boolean;
   onToggle: (id: string) => void;
-  onConfigure: (ext: Extension) => void;
+  onConfigure: (ext: ExtensionDef) => void;
 }) {
   const [, navigate] = useLocation();
   const IconComponent = CATEGORY_ICONS[ext.category];
   const catColor = CATEGORY_COLORS[ext.category];
 
+  const handleBtnClick = () => {
+    if (!enabled && ext.configFields && ext.configFields.length > 0) {
+      // Có configFields riêng → mở dialog
+      onConfigure(ext);
+    } else if (!enabled && ext.settingsPath) {
+      // Đã cấu hình ở trang riêng nhưng chưa bật → bật trực tiếp
+      onToggle(ext.id);
+    } else {
+      // Tắt hoặc bật bình thường
+      onToggle(ext.id);
+    }
+  };
+
   return (
-    <Card className={`transition-all duration-200 hover:shadow-md ${ext.enabled ? "ring-1 ring-green-200" : ""}`}>
+    <Card className={`transition-all duration-200 hover:shadow-md ${enabled ? "ring-1 ring-green-200" : ""}`}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           {/* Icon */}
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${ext.enabled ? "bg-green-50" : "bg-muted"}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${enabled ? "bg-green-50" : "bg-muted"}`}>
             {ext.icon ? (
               <img
                 src={ext.icon}
@@ -288,26 +291,20 @@ function ExtensionCard({
           </div>
 
           {/* Status */}
-          <Badge className={`flex-shrink-0 text-xs ${ext.enabled ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
-            {ext.enabled ? "Bật" : "Tắt"}
+          <Badge className={`flex-shrink-0 text-xs ${enabled ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
+            {enabled ? "Bật" : "Tắt"}
           </Badge>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
           <Button
-            variant={ext.enabled ? "outline" : "default"}
+            variant={enabled ? "outline" : "default"}
             size="sm"
-            className={`flex-1 text-xs h-8 ${ext.enabled ? "text-red-600 border-red-200 hover:bg-red-50" : ""}`}
-            onClick={() => {
-              if (!ext.enabled && ext.configFields && ext.configFields.length > 0) {
-                onConfigure(ext);
-              } else {
-                onToggle(ext.id);
-              }
-            }}
+            className={`flex-1 text-xs h-8 ${enabled ? "text-red-600 border-red-200 hover:bg-red-50" : ""}`}
+            onClick={handleBtnClick}
           >
-            {ext.enabled ? "Tắt" : "Bật"}
+            {enabled ? "Tắt" : "Bật"}
           </Button>
           {ext.settingsPath && (
             <Button
@@ -320,6 +317,13 @@ function ExtensionCard({
               <Settings className="w-3.5 h-3.5" />
             </Button>
           )}
+          {ext.docsUrl && !ext.settingsPath && (
+            <a href={ext.docsUrl} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0 flex-shrink-0" title="Tài liệu">
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Button>
+            </a>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -327,28 +331,98 @@ function ExtensionCard({
 }
 
 export default function Extensions() {
-  const [extensions, setExtensions] = useState<Extension[]>(EXTENSIONS);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [configExt, setConfigExt] = useState<Extension | null>(null);
+  const [configExt, setConfigExt] = useState<ExtensionDef | null>(null);
+  // Local enabled state cho các extension không có DB (static)
+  const [localEnabled, setLocalEnabled] = useState<Record<string, boolean>>({});
 
-  const handleToggle = (id: string) => {
-    setExtensions(prev => prev.map(e => {
-      if (e.id !== id) return e;
-      const newEnabled = !e.enabled;
-      toast.success(`${newEnabled ? "Đã bật" : "Đã tắt"} ${e.name}`);
-      return { ...e, enabled: newEnabled };
-    }));
+  // Đọc trạng thái thực từ DB
+  const { data: telegramAdminConfig } = trpc.telegramBot.getConfig.useQuery({ botType: "admin" });
+  const { data: telegramUserConfig } = trpc.telegramBot.getConfig.useQuery({ botType: "user" });
+  const { data: smtpConfig } = trpc.smtp.get.useQuery();
+
+  // Mutation để toggle enabled cho Telegram và SMTP
+  const saveTelegramAdmin = trpc.telegramBot.saveConfig.useMutation({
+    onSuccess: () => { toast.success("Đã cập nhật Telegram Admin Bot"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const saveTelegramUser = trpc.telegramBot.saveConfig.useMutation({
+    onSuccess: () => { toast.success("Đã cập nhật Telegram User Bot"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const updateSmtp = trpc.smtp.update.useMutation({
+    onSuccess: () => { toast.success("Đã cập nhật SMTP Email"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Tính trạng thái enabled cho từng extension
+  const getEnabled = (id: string): boolean => {
+    if (id === "telegram") {
+      // Telegram bật khi ít nhất 1 trong 2 bot được bật
+      const adminEnabled = (telegramAdminConfig as any)?.enabled ?? false;
+      const userEnabled = (telegramUserConfig as any)?.enabled ?? false;
+      return adminEnabled || userEnabled;
+    }
+    if (id === "smtp_email") {
+      return (smtpConfig as any)?.enabled ?? false;
+    }
+    return localEnabled[id] ?? false;
   };
 
-  const handleConfigure = (ext: Extension) => {
+  const handleToggle = (id: string) => {
+    if (id === "telegram") {
+      // Toggle cả 2 bot cùng lúc
+      const currentEnabled = getEnabled("telegram");
+      const newEnabled = !currentEnabled;
+      const adminConfigured = !!(telegramAdminConfig as any)?.botToken;
+      const userConfigured = !!(telegramUserConfig as any)?.botToken;
+
+      if (newEnabled && !adminConfigured && !userConfigured) {
+        toast.error("Chưa cấu hình Telegram Bot. Vào Cài đặt > Telegram để cấu hình.");
+        return;
+      }
+      if (adminConfigured) {
+        saveTelegramAdmin.mutate({ botType: "admin", enabled: newEnabled });
+      }
+      if (userConfigured) {
+        saveTelegramUser.mutate({ botType: "user", enabled: newEnabled });
+      }
+      if (!adminConfigured && !userConfigured) {
+        // Không có bot nào được cấu hình
+        return;
+      }
+      return;
+    }
+
+    if (id === "smtp_email") {
+      const currentEnabled = getEnabled("smtp_email");
+      const newEnabled = !currentEnabled;
+      const smtpConfigured = !!(smtpConfig as any)?.host;
+
+      if (newEnabled && !smtpConfigured) {
+        toast.error("Chưa cấu hình SMTP. Vào Cài đặt > SMTP Email để cấu hình.");
+        return;
+      }
+      updateSmtp.mutate({ enabled: newEnabled });
+      return;
+    }
+
+    // Static extensions
+    setLocalEnabled(prev => {
+      const newEnabled = !prev[id];
+      const def = EXTENSION_DEFS.find(e => e.id === id);
+      toast.success(`${newEnabled ? "Đã bật" : "Đã tắt"} ${def?.name}`);
+      return { ...prev, [id]: newEnabled };
+    });
+  };
+
+  const handleConfigure = (ext: ExtensionDef) => {
     setConfigExt(ext);
   };
 
   const handleConfigConfirm = (values: Record<string, string>) => {
     if (!configExt) return;
-    setExtensions(prev => prev.map(e =>
-      e.id === configExt.id ? { ...e, enabled: true } : e
-    ));
+    setLocalEnabled(prev => ({ ...prev, [configExt.id]: true }));
     toast.success(`Đã bật và lưu cấu hình ${configExt.name}`);
     setConfigExt(null);
   };
@@ -356,10 +430,10 @@ export default function Extensions() {
   const categories = ["all", "auth", "notification", "analytics", "monitoring"];
 
   const filtered = activeCategory === "all"
-    ? extensions
-    : extensions.filter(e => e.category === activeCategory);
+    ? EXTENSION_DEFS
+    : EXTENSION_DEFS.filter(e => e.category === activeCategory);
 
-  const enabledCount = extensions.filter(e => e.enabled).length;
+  const enabledCount = EXTENSION_DEFS.filter(e => getEnabled(e.id)).length;
 
   return (
     <DashboardLayoutCustom>
@@ -371,7 +445,7 @@ export default function Extensions() {
             <p className="ak-page-subtitle">Tích hợp dịch vụ bên thứ ba vào hệ thống</p>
           </div>
           <Badge className="self-start sm:self-auto bg-blue-50 text-blue-700 border-blue-200 text-sm px-3 py-1">
-            {enabledCount}/{extensions.length} đang bật
+            {enabledCount}/{EXTENSION_DEFS.length} đang bật
           </Badge>
         </div>
 
@@ -379,7 +453,7 @@ export default function Extensions() {
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
           {categories.map(cat => {
             const Icon = cat === "all" ? Puzzle : CATEGORY_ICONS[cat];
-            const count = cat === "all" ? extensions.length : extensions.filter(e => e.category === cat).length;
+            const count = cat === "all" ? EXTENSION_DEFS.length : EXTENSION_DEFS.filter(e => e.category === cat).length;
             return (
               <button
                 key={cat}
@@ -412,6 +486,7 @@ export default function Extensions() {
               <ExtensionCard
                 key={ext.id}
                 ext={ext}
+                enabled={getEnabled(ext.id)}
                 onToggle={handleToggle}
                 onConfigure={handleConfigure}
               />

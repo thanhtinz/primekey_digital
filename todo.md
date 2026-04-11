@@ -1975,8 +1975,14 @@ todo updated
 
 ## Session 2026-04-10 - Setup Wizard lần đầu tiên
 
-- [ ] Backend: thêm procedure `system.checkSetup` (public) - kiểm tra DB có dữ liệu chưa
-- [ ] Backend: thêm procedure `system.completeSetup` (public) - lưu thông tin setup lần đầu
-- [ ] Frontend: tạo trang `/setup` với wizard nhiều bước (thông tin website, tài khoản admin, thông tin liên hệ)
-- [ ] Frontend: App.tsx redirect về `/setup` nếu chưa setup (kiểm tra qua checkSetup)
-- [ ] Frontend: sau khi setup xong redirect về `/login`
+- [x] Backend: thêm procedure `system.checkSetup` (public) - kiểm tra DB có dữ liệu chưa
+- [x] Backend: thêm procedure `system.completeSetup` (public) - lưu thông tin setup lần đầu
+- [x] Frontend: tạo trang `/setup` với wizard nhiều bước (thông tin website, tài khoản admin, thông tin liên hệ)
+- [x] Frontend: App.tsx redirect về `/setup` nếu chưa setup (kiểm tra qua checkSetup)
+- [x] Frontend: sau khi setup xong redirect về `/login`
+
+## Session 2026-04-11 - Sửa lỗi Telegram Bot settings
+
+- [x] Sửa lỗi toggle Telegram User Bot: các nút toggle (Bảo hành, Flash Sale, Khuyến mãi & ưu đãi, Đang giao hàng) không lưu được - thiếu fields trong Zod input schema
+- [x] Sửa lỗi toggle Telegram Admin Bot: các nút toggle (Yêu cầu rút tiền, Nạp tiền ví, Đánh giá mới, Ticket hỗ trợ mới, Flash Sale sắp kết thúc, Báo cáo hàng ngày) không lưu được - thiếu fields trong Zod input schema
+- [x] Sửa trang Extensions: toggle Telegram Bot vẫn mở dialog cấu hình dù đã cấu hình rồi - đã đọc trạng thái thực từ DB (telegramBotConfig + smtpConfig) thay vì hardcode enabled:false
