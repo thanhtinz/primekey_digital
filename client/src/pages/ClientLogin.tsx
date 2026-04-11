@@ -54,10 +54,14 @@ export default function ClientLogin() {
   const handleSuccess = (data: { token: string; email: string | null; name?: string | null; role?: string | null }) => {
     login(data.token, data.email || "", data.role);
     toast.success(`Chào mừng ${data.name || data.email}!`);
-    if (data.role === "admin") {
+    // If there's an explicit redirect param, always use it
+    if (redirectTo) {
+      navigate(decodeURIComponent(redirectTo));
+    } else if (data.role === "admin") {
+      // Admin without specific redirect → go to dashboard
       navigate("/dashboard");
     } else {
-      navigate(redirectTo ? decodeURIComponent(redirectTo) : "/");
+      navigate("/");
     }
   };
 
