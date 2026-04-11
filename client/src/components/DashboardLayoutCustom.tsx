@@ -5,6 +5,7 @@ import { Menu, X, LogOut, Home, FileText, History, Users, Package, FileStack, Ba
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -171,7 +172,37 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const navGroups = (user as any)?.role === "admin" ? adminNavGroups : staffNavGroups;
+  const { isEnabled: isFeatureEnabled } = useFeatureFlags();
+  // Feature-gated group labels: hide entire group when feature is off
+  const featureGatedGroups: Record<string, string> = {
+    "Affiliate": "referral",
+    "Tích Điểm": "points",
+    "Blog": "blog",
+  };
+  // Feature-gated individual items: hide specific items when feature is off
+  const featureGatedItems: Record<string, string> = {
+    "/admin/flash-sale": "flash_sale",
+    "/settings/coupons": "coupon",
+    "/admin/spin-wheel": "spin_wheel",
+    "/admin/avatar-gallery": "avatarGallery",
+  };
+  const rawNavGroups = (user as any)?.role === "admin" ? adminNavGroups : staffNavGroups;
+  const navGroups = rawNavGroups
+    .filter(group => {
+      if (group.label && featureGatedGroups[group.label]) {
+        return isFeatureEnabled(featureGatedGroups[group.label]);
+      }
+      return true;
+    })
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        const flagKey = featureGatedItems[item.href];
+        if (flagKey) return isFeatureEnabled(flagKey);
+        return true;
+      }),
+    }))
+    .filter(group => group.items.length > 0);
 
   useEffect(() => {
     const checkMobile = () => {

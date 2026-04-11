@@ -288,6 +288,13 @@
       "when": 1775867347917,
       "tag": "0040_outgoing_johnny_blaze",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1775868822612,
+      "tag": "0041_mysterious_iron_fist",
+      "breakpoints": true
     }
   ]
 }

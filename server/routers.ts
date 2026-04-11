@@ -2766,6 +2766,7 @@ export const appRouter = router({
         featureCart: z.boolean().optional(),
         featureWishlist: z.boolean().optional(),
         featureCompare: z.boolean().optional(),
+        featureLeaderboard: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user) throw new Error("Unauthorized");
@@ -2791,6 +2792,7 @@ export const appRouter = router({
             featureCart: "cart",
             featureWishlist: "wishlist",
             featureCompare: "compare",
+            featureLeaderboard: "leaderboard",
           };
           for (const [settingKey, flagKey] of Object.entries(mapping)) {
             const val = (input as Record<string, boolean | undefined>)[settingKey];

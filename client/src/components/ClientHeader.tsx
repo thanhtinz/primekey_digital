@@ -398,26 +398,28 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
                         </div>
                       </div>
                       {/* Wallet Balance */}
-                      <button
-                        onClick={() => go("/wallet")}
-                        className="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between transition-colors"
-                      >
-                        <div className="flex items-center gap-2 text-white/60 text-sm">
-                          <Wallet className="h-4 w-4" />
-                          <span>Số dư ví</span>
-                        </div>
-                        <span className="text-blue-400 font-bold text-sm">{formatBalance(walletBalance)}</span>
-                      </button>
+                      {isEnabled("wallet") && (
+                        <button
+                          onClick={() => go("/wallet")}
+                          className="mt-3 w-full bg-white/5 hover:bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between transition-colors"
+                        >
+                          <div className="flex items-center gap-2 text-white/60 text-sm">
+                            <Wallet className="h-4 w-4" />
+                            <span>Số dư ví</span>
+                          </div>
+                          <span className="text-blue-400 font-bold text-sm">{formatBalance(walletBalance)}</span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Menu Items */}
                     <div className="py-1">
                       {[
                         { icon: User, label: "Trang cá nhân", href: "/my-account" },
-                        { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
+                        isEnabled("wallet") ? { icon: CreditCard, label: "Nạp tiền", href: "/wallet" } : null,
                         { icon: ShoppingCart, label: "Đơn hàng", href: "/track-order" },
-                        { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" },
-                      ].map(item => (
+                        isEnabled("wallet") ? { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" } : null,
+                      ].filter((item): item is { icon: any; label: string; href: string } => item !== null).map(item => (
                         <button
                           key={item.href}
                           onClick={() => go(item.href)}
@@ -536,7 +538,7 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto overscroll-contain">
             {/* Balance (if logged in) */}
-            {isLoggedIn && (
+            {isLoggedIn && isEnabled("wallet") && (
               <button
                 onClick={() => go("/wallet")}
                 className="mx-4 mt-3 w-[calc(100%-2rem)] bg-white/5 hover:bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between transition-colors"
@@ -553,8 +555,8 @@ export function ClientHeader({ maxWidth = "max-w-7xl" }: ClientHeaderProps) {
             <nav className="px-2 py-3 space-y-0.5">
               {[
                 { icon: Home, label: "Trang chủ", href: "/" },
-                { icon: CreditCard, label: "Nạp tiền", href: "/wallet" },
-                { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" },
+                isEnabled("wallet") ? { icon: CreditCard, label: "Nạp tiền", href: "/wallet" } : null,
+                isEnabled("wallet") ? { icon: Wallet, label: "Lịch sử dòng tiền", href: "/wallet-history" } : null,
                 isEnabled("coupons") ? { icon: Tag, label: "Kho Mã Giảm Giá", href: "/coupons" } : null,
                 isEnabled("blog") ? { icon: BookOpen, label: "Blog", href: "/blog" } : null,
                 isEnabled("leaderboard") ? { icon: Trophy, label: "Bảng Xếp Hạng", href: "/leaderboard" } : null,

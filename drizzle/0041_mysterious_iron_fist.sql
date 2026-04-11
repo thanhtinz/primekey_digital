@@ -1,0 +1,1 @@
+ALTER TABLE `userSettings` ADD `featureLeaderboard` boolean DEFAULT true;

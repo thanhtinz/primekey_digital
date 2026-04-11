@@ -205,6 +205,8 @@ export default function Settings() {
     featureCart: true,
     featureWishlist: true,
     featureCompare: false,
+    featureLeaderboard: true,
+    featureAvatarGallery: true,
   });
   const [featuresSaving, setFeaturesSaving] = useState(false);
 
@@ -319,6 +321,8 @@ export default function Settings() {
       featureCart: s.featureCart ?? true,
       featureWishlist: s.featureWishlist ?? true,
       featureCompare: s.featureCompare ?? false,
+      featureLeaderboard: s.featureLeaderboard ?? true,
+      featureAvatarGallery: s.featureAvatarGallery ?? true,
     });
     // Tax
     setTax({
@@ -1156,6 +1160,8 @@ export default function Settings() {
                       { key: "featureWarranty",   label: "Bảo hành",           hint: "Quản lý bảo hành sản phẩm" },
                       { key: "featureBlog",       label: "Blog",                hint: "Hiển thị trang blog trên website" },
                       { key: "featureCompare",    label: "So sánh sản phẩm",  hint: "Cho phép so sánh nhiều sản phẩm" },
+                      { key: "featureLeaderboard", label: "Bảng Xếp Hạng",       hint: "Hiển thị trang bảng xếp hạng khách hàng" },
+                      { key: "featureAvatarGallery", label: "Kho Avatar",        hint: "Cho phép khách hàng chọn avatar từ kho ảnh" },
                     ] as { key: keyof typeof features; label: string; hint: string }[]).map(({ key, label, hint }) => (
                       <SwitchRow key={key} label={label} hint={hint}
                         checked={features[key]}

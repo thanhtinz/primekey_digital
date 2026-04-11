@@ -391,6 +391,7 @@ export const userSettings = mysqlTable("userSettings", {
   featureCart: boolean("featureCart").default(true),
   featureWishlist: boolean("featureWishlist").default(true),
   featureCompare: boolean("featureCompare").default(false),
+  featureLeaderboard: boolean("featureLeaderboard").default(true),
   // Tax config
   taxEnabled: boolean("taxEnabled").default(false),
   taxName: varchar("taxName", { length: 50 }).default("VAT"),
