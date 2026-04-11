@@ -2577,7 +2577,7 @@ export const appRouter = router({
         custom404ImageUrl: userSettings.custom404ImageUrl,
         custom404BgColor: userSettings.custom404BgColor,
         custom404TextColor: userSettings.custom404TextColor,
-        custom404CustomHtml: (userSettings as any).custom404CustomHtml,
+        custom404CustomHtml: userSettings.custom404CustomHtml,
       }).from(userSettings).limit(1);
       // Lấy logo từ default template (fallback nếu không có brand logo)
       const templateRows = await drizzleDb.select({

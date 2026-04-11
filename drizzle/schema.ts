@@ -378,6 +378,7 @@ export const userSettings = mysqlTable("userSettings", {
   custom404ImageUrl: text("custom404ImageUrl"),
   custom404BgColor: varchar("custom404BgColor", { length: 20 }),
   custom404TextColor: varchar("custom404TextColor", { length: 20 }),
+  custom404CustomHtml: text("custom404CustomHtml"),
   featureFlashSale: boolean("featureFlashSale").default(true),
   featureCoupons: boolean("featureCoupons").default(true),
   featureAffiliate: boolean("featureAffiliate").default(true),

@@ -302,6 +302,13 @@
       "when": 1775873191729,
       "tag": "0042_secret_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1775876174156,
+      "tag": "0043_chilly_jack_flag",
+      "breakpoints": true
     }
   ]
 }
