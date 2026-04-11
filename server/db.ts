@@ -784,7 +784,7 @@ export async function getTelegramSubscribers(userId: number) {
 export async function upsertTelegramSubscriber(userId: number, customerId: number, chatId: string, data: any) {
   const db = await getDb();
   if (!db) return null;
-  const { telegramSubscribers } = await import("../drizzle/schema");
+  const { telegramSubscribers, customers } = await import("../drizzle/schema");
   const { and, eq } = await import("drizzle-orm");
   const rows = await db.select().from(telegramSubscribers)
     .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.chatId, chatId)));
@@ -793,6 +793,22 @@ export async function upsertTelegramSubscriber(userId: number, customerId: numbe
       .where(and(eq(telegramSubscribers.userId, userId), eq(telegramSubscribers.chatId, chatId)));
   } else {
     await db.insert(telegramSubscribers).values({ userId, customerId, chatId, ...data });
+  }
+  // Sync telegramChatId/Username/LinkedAt to customers table so customer.me returns correct data
+  if (data.isActive !== false) {
+    // Linking: update customers table
+    await db.update(customers).set({
+      telegramChatId: chatId,
+      telegramUsername: data.username || null,
+      telegramLinkedAt: new Date(),
+    }).where(eq(customers.id, customerId));
+  } else {
+    // Unlinking via /stop: clear customers table too
+    await db.update(customers).set({
+      telegramChatId: null,
+      telegramUsername: null,
+      telegramLinkedAt: null,
+    }).where(eq(customers.id, customerId));
   }
 }
 

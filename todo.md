@@ -1994,3 +1994,8 @@ todo updated
 - [x] Telegram UX: hiển thị @username Telegram trong badge "Đã liên kết" (trong header card)
 - [x] Telegram UX: auto-refresh trạng thái liên kết sau khi bot xác nhận (polling 5s khi bấm Mở Telegram Bot)
 - [x] Kiểm tra giấy phép: không có bug - hệ thống hoạt động đúng thiết kế (dev mode khi không có LICENSE_KEY)
+
+## Session 2026-04-11 - Sửa lỗi Telegram + Feature Flags giỏ hàng
+
+- [x] Sửa lỗi Telegram: upsertTelegramSubscriber chỉ lưu vào telegramSubscribers table, không cập nhật customers.telegramChatId → đã sửa db.ts để sync cả 2 table
+- [x] Sửa lỗi Feature Flags: CartPage.tsx chưa dùng useFeatureFlags → đã thêm couponEnabled và referralEnabled, ẩn card khi tắt

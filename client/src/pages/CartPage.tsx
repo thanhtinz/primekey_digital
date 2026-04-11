@@ -8,6 +8,7 @@ import { ClientFooter } from "@/components/ClientFooter";
 import { trpc } from "@/lib/trpc";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { useLocation } from "wouter";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 // Progress steps
 const STEPS = [
@@ -57,6 +58,9 @@ export default function CartPage() {
   const { customer } = useCustomerAuth();
   const email = customer?.email || "";
   const [, navigate] = useLocation();
+  const { isEnabled } = useFeatureFlags();
+  const couponEnabled = isEnabled("coupon");
+  const referralEnabled = isEnabled("referral");
   const [couponCode, setCouponCode] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -368,8 +372,8 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Coupon card - accordion */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Coupon card - accordion (only if feature enabled) */}
+            {couponEnabled && <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <button
                 onClick={() => { if (!appliedCoupon) setShowCouponInput(v => !v); }}
                 className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
@@ -390,10 +394,10 @@ export default function CartPage() {
                   <Button size="sm" onClick={handleApplyCoupon} className="bg-orange-500 hover:bg-orange-600 whitespace-nowrap text-white mt-3">Áp dụng</Button>
                 </div>
               )}
-            </div>
+            </div>}
 
-            {/* Referral card - accordion */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Referral card - accordion (only if feature enabled) */}
+            {referralEnabled && <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <button
                 onClick={() => { if (!appliedReferral) setShowReferralInput(v => !v); }}
                 className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
@@ -416,7 +420,7 @@ export default function CartPage() {
                   </Button>
                 </div>
               )}
-            </div>
+            </div>}
 
             {/* Notes */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
