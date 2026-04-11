@@ -1968,7 +1968,15 @@ todo updated
 
 ## Session 2026-04-11 - Sửa tìm kiếm header
 
-- [ ] ClientHeader: khi submit search form, chuyển đến /products?q=<keyword>
-- [ ] ClientHeader: thêm dropdown gợi ý sản phẩm khi gõ (live search)
-- [ ] ProductCatalog: đọc ?q= từ URL và áp dụng filter search ngay khi load trang
-- [ ] ProductCatalog: khi URL có ?q=, hiển thị kết quả tìm kiếm với heading "Kết quả tìm kiếm: <keyword>"
+- [x] ClientHeader: khi submit search form, chuyển đến /products?q=<keyword>
+- [x] ClientHeader: thêm dropdown gợi ý sản phẩm khi gõ (live search)
+- [x] ProductCatalog: đọc ?q= từ URL và áp dụng filter search ngay khi load trang
+- [x] ProductCatalog: khi URL có ?q=, hiển thị kết quả tìm kiếm với heading "Kết quả tìm kiếm: <keyword>"
+
+## Session 2026-04-10 - Setup Wizard lần đầu tiên
+
+- [ ] Backend: thêm procedure `system.checkSetup` (public) - kiểm tra DB có dữ liệu chưa
+- [ ] Backend: thêm procedure `system.completeSetup` (public) - lưu thông tin setup lần đầu
+- [ ] Frontend: tạo trang `/setup` với wizard nhiều bước (thông tin website, tài khoản admin, thông tin liên hệ)
+- [ ] Frontend: App.tsx redirect về `/setup` nếu chưa setup (kiểm tra qua checkSetup)
+- [ ] Frontend: sau khi setup xong redirect về `/login`

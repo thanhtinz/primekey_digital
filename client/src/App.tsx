@@ -82,6 +82,7 @@ const AdminNotifications = lazy(() => import("./pages/AdminNotifications"));
 // Client Portal
 const ClientLogin = lazy(() => import("./pages/ClientLogin"));
 const Client404Page = lazy(() => import("./pages/Client404Page"));
+const SetupWizard = lazy(() => import("./pages/SetupWizard"));
 const MyAccount = lazy(() => import("./pages/MyAccount"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CartPage = lazy(() => import("./pages/CartPage"));
@@ -402,15 +403,36 @@ function GlobalBrandApplier() {
   return null;
 }
 
+function SetupGate({ children }: { children: React.ReactNode }) {
+  const { data: setupStatus, isLoading } = trpc.setup.check.useQuery(undefined, {
+    staleTime: Infinity, // Cache vĩnh viễn - chỉ cần check 1 lần
+    retry: false,
+  });
+
+  if (isLoading) return <PageLoader />;
+
+  if (setupStatus?.setupRequired) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <SetupWizard onComplete={() => window.location.replace("/client-login")} />
+      </Suspense>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light" switchable={true}>
         <TooltipProvider>
           <Toaster />
-          <GlobalBrandApplier />
-          <AnnouncementBanner />
-          <Router />
+          <SetupGate>
+            <GlobalBrandApplier />
+            <AnnouncementBanner />
+            <Router />
+          </SetupGate>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

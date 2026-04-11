@@ -8798,11 +8798,79 @@ export const updateRouter = router({
 // ─────────────────────────────────────────────────────────────────────────────
 // Full Router - Merge all sub-routers (MUST be at the end of file)
 // ─────────────────────────────────────────────────────────────────────────────
+// ─── Setup Wizard ────────────────────────────────────────────────────────────
+const setupRouter = router({
+  // Kiểm tra xem hệ thống đã được setup chưa (public - không cần auth)
+  check: publicProcedure.query(async () => {
+    const { getDb } = await import("./db");
+    const drizzleDb = await getDb();
+    if (!drizzleDb) return { setupRequired: true };
+    const { users } = await import("../drizzle/schema");
+    const adminUsers = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+    return { setupRequired: adminUsers.length === 0 };
+  }),
+
+  // Hoàn tất setup lần đầu (public - chỉ hoạt động khi chưa có user nào)
+  complete: publicProcedure
+    .input(z.object({
+      // Thông tin website
+      companyName: z.string().min(1, "Tên website là bắt buộc"),
+      siteTitle: z.string().optional(),
+      siteDescription: z.string().optional(),
+      companyPhone: z.string().optional(),
+      companyEmail: z.string().email().optional().or(z.literal("")),
+      companyAddress: z.string().optional(),
+      website: z.string().optional(),
+      hotline: z.string().optional(),
+      // Tài khoản admin
+      adminUsername: z.string().min(3, "Tên đăng nhập tối thiểu 3 ký tự"),
+      adminPassword: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+      adminName: z.string().min(1, "Tên admin là bắt buộc"),
+      adminEmail: z.string().email("Email không hợp lệ"),
+    }))
+    .mutation(async ({ input }) => {
+      const { getDb } = await import("./db");
+      const drizzleDb = await getDb();
+      if (!drizzleDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database không khả dụng" });
+      const { users, userSettings } = await import("../drizzle/schema");
+      // Kiểm tra lại: chỉ cho phép setup khi chưa có user nào
+      const existingUsers = await drizzleDb.select({ id: users.id }).from(users).limit(1);
+      if (existingUsers.length > 0) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Hệ thống đã được cài đặt. Không thể chạy setup lại." });
+      }
+      // Tạo tài khoản admin
+      const bcrypt = await import("bcryptjs");
+      const hashedPassword = await bcrypt.hash(input.adminPassword, 10);
+      const adminEmail = input.adminEmail || `${input.adminUsername}@admin.local`;
+      const [adminResult] = await drizzleDb.insert(users).values({
+        email: adminEmail,
+        password: hashedPassword,
+        name: input.adminName,
+        role: "admin",
+      });
+      const adminId = (adminResult as any).insertId as number;
+      // Lưu thông tin website vào settings
+      await drizzleDb.insert(userSettings).values({
+        userId: adminId,
+        companyName: input.companyName,
+        siteTitle: input.siteTitle || input.companyName,
+        siteDescription: input.siteDescription || "",
+        companyPhone: input.companyPhone || "",
+        companyEmail: input.companyEmail || adminEmail,
+        companyAddress: input.companyAddress || "",
+        website: input.website || "",
+        hotline: input.hotline || "",
+      });
+      return { success: true, message: "Cài đặt hoàn tất! Bạn có thể đăng nhập ngay bây giờ." };
+    }),
+});
+
 const appRouterFull = router({
   ...appRouter._def.record,
   broadcasts: broadcastsRouter,
   license: licenseRouter,
   update: updateRouter,
+  setup: setupRouter,
 });
 export { appRouterFull };
 export type AppRouter = typeof appRouterFull;
