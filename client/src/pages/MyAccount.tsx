@@ -1028,6 +1028,7 @@ export default function MyAccount() {
   const isAdmin = adminCheckData?.isAdmin === true;
 
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
+  const avatarGalleryEnabled = isFeatureEnabled("avatarGallery");
   const tabs: { id: TabType; label: string; icon: any; badge?: number; color: string; activeColor: string }[] = [
     { id: "overview", label: "Tổng quan", icon: BarChart3, color: "text-blue-500", activeColor: "bg-gradient-to-r from-blue-500 to-blue-600" },
     { id: "orders", label: "Đơn hàng", icon: Package, badge: pendingOrders > 0 ? pendingOrders : undefined, color: "text-orange-500", activeColor: "bg-gradient-to-r from-orange-500 to-amber-500" },
@@ -1905,7 +1906,7 @@ export default function MyAccount() {
                   {/* Nút camera - mở popup chọn/upload avatar */}
                   <button
                     className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition disabled:opacity-50 border-2 border-white"
-                    onClick={() => setShowAvatarGallery(true)}
+                    onClick={() => avatarGalleryEnabled ? setShowAvatarGallery(true) : handleAvatarUpload()}
                     disabled={uploadAvatarMutation.isPending}
                     title="Đổi ảnh đại diện"
                   >
@@ -1916,7 +1917,7 @@ export default function MyAccount() {
                   <p className="font-bold text-slate-800">{customerName}</p>
                   <p className="text-xs text-slate-500 truncate">{customer.email}</p>
                   <button
-                    onClick={() => setShowAvatarGallery(true)}
+                    onClick={() => avatarGalleryEnabled ? setShowAvatarGallery(true) : handleAvatarUpload()}
                     className="mt-1.5 text-[10px] text-blue-600 hover:text-blue-700 font-medium px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 transition flex items-center gap-1"
                   >
                     <Camera className="h-3 w-3" /> Đổi ảnh đại diện

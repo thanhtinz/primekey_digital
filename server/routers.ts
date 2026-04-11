@@ -2777,6 +2777,7 @@ export const appRouter = router({
         const drizzleDb = await getDb();
         if (drizzleDb) {
           const mapping: Record<string, string> = {
+            featureAvatarGallery: "avatarGallery",
             featureFlashSale: "flash_sale",
             featureCoupons: "coupon",
             featureAffiliate: "referral",
