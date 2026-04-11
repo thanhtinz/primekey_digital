@@ -9,6 +9,7 @@ import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ClientHeader } from "@/components/ClientHeader";
 import { ClientFooter } from "@/components/ClientFooter";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { OtpModal } from "@/components/OtpModal";
 
 // TwoFASection component
 function TwoFASection({ token }: { token: string }) {
@@ -1160,6 +1161,10 @@ export default function MyAccount() {
     return "overview";
   };
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  // 2FA for orders tab
+  const [ordersOtpVerified, setOrdersOtpVerified] = useState(false);
+  const [showOrdersOtpModal, setShowOrdersOtpModal] = useState(false);
+  const [ordersOtpError, setOrdersOtpError] = useState<string | null>(null);
   const [orderFilter, setOrderFilter] = useState<"all" | "CREATED" | "PAID" | "SHIPPING" | "COMPLETED" | "WARRANTY" | "FAILED" | "REFUNDED" | "CANCELLED">("all");
   const { customer, token, logout, isLoading: authLoading } = useCustomerAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -1232,9 +1237,22 @@ export default function MyAccount() {
     updateProfileMutation.mutate({ token, name: editName || undefined, phone: editPhone || undefined });
   };
 
+  const verifyOtpForActionMutation = trpc.customer.verifyOtpForAction.useMutation({
+    onSuccess: () => {
+      setOrdersOtpVerified(true);
+      setShowOrdersOtpModal(false);
+      setOrdersOtpError(null);
+    },
+    onError: (err: any) => setOrdersOtpError(err.message),
+  });
+  const { data: twoFaStatusForOrders } = trpc.customer.get2faStatus.useQuery(
+    { token: token! },
+    { enabled: !!token, staleTime: 60_000 }
+  );
+  const ordersEnabled = !!token && (ordersOtpVerified || !twoFaStatusForOrders?.enabled);
   const { data: orders = [], isLoading: ordersLoading } = trpc.customer.myOrders.useQuery(
     { token: token! },
-    { enabled: !!token, staleTime: 30_000 }
+    { enabled: ordersEnabled, staleTime: 30_000 }
   );
 
   const { data: pointsData } = trpc.customer.myPoints.useQuery(
@@ -1630,6 +1648,26 @@ export default function MyAccount() {
         {/* ===== Tab: Orders ===== */}
         {activeTab === "orders" && (
           <div className="space-y-3">
+            {/* 2FA Gate for orders */}
+            {twoFaStatusForOrders?.enabled && !ordersOtpVerified && (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-blue-600" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-slate-800">Xác minh 2FA để xem đơn hàng</p>
+                  <p className="text-sm text-slate-500 mt-1">Tài khoản của bạn đang bật bảo mật 2 lớp</p>
+                </div>
+                <button
+                  onClick={() => setShowOrdersOtpModal(true)}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors flex items-center gap-2"
+                >
+                  <Shield className="w-4 h-4" /> Nhập mã OTP
+                </button>
+              </div>
+            )}
+            {(!twoFaStatusForOrders?.enabled || ordersOtpVerified) && (
+            <>
             {/* Header with stats + filter */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-2 overflow-x-auto pb-1 flex-1">
@@ -1736,9 +1774,10 @@ export default function MyAccount() {
               </div>
             );
             })()}
+            </>
+            )}
           </div>
         )}
-
         {/* ===== Tab: Points ===== */}
         {activeTab === "points" && (
           <div className="space-y-4">
@@ -2385,6 +2424,19 @@ export default function MyAccount() {
         )}
       </div>
       <ClientFooter />
+      {/* 2FA OTP Modal for orders */}
+      <OtpModal
+        open={showOrdersOtpModal}
+        onClose={() => { setShowOrdersOtpModal(false); setOrdersOtpError(null); }}
+        onVerify={async (code) => {
+          if (!token) return;
+          verifyOtpForActionMutation.mutate({ token, code });
+        }}
+        isPending={verifyOtpForActionMutation.isPending}
+        error={ordersOtpError}
+        title="Xác minh để xem đơn hàng"
+        description="Nhập mã 6 số từ ứng dụng xác thực để xem lịch sử đơn hàng"
+      />
     </div>
   );
 }

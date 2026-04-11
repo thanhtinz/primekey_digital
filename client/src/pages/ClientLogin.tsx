@@ -6,6 +6,7 @@ import {
   Mail, Lock, Eye, EyeOff, Phone, User, KeyRound, ArrowLeft, CheckCircle, Loader2, ShieldCheck,
 } from "@/components/Icon";
 import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
+import { OtpModal } from "@/components/OtpModal";
 
 type View = "login" | "register" | "forgot" | "reset";
 
@@ -34,6 +35,13 @@ export default function ClientLogin() {
   const [showRegPwd, setShowRegPwd] = useState(false);
   const [regReferralCode, setRegReferralCode] = useState(refCode);
 
+  // 2FA state
+  const [show2faModal, setShow2faModal] = useState(false);
+  const [tempToken2fa, setTempToken2fa] = useState("");
+  const [pending2faName, setPending2faName] = useState("");
+  const [pending2faEmail, setPending2faEmail] = useState("");
+  const [otp2faError, setOtp2faError] = useState<string | null>(null);
+
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
@@ -57,8 +65,27 @@ export default function ClientLogin() {
     navigate(redirectTo ? decodeURIComponent(redirectTo) : "/");
   };
 
+  const loginWith2faMutation = trpc.customer.loginWith2fa.useMutation({
+    onSuccess: (data) => {
+      setShow2faModal(false);
+      setOtp2faError(null);
+      handleSuccess(data as any);
+    },
+    onError: (err) => setOtp2faError(err.message),
+  });
+
   const loginMutation = trpc.customer.loginWithPassword.useMutation({
-    onSuccess: handleSuccess,
+    onSuccess: (data: any) => {
+      if (data.requires2fa) {
+        setTempToken2fa(data.tempToken);
+        setPending2faName(data.name || "");
+        setPending2faEmail(data.email || "");
+        setOtp2faError(null);
+        setShow2faModal(true);
+        return;
+      }
+      handleSuccess(data);
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -388,6 +415,18 @@ export default function ClientLogin() {
           </button>
         </div>
       </div>
+      {/* 2FA OTP Modal */}
+      <OtpModal
+        open={show2faModal}
+        onClose={() => { setShow2faModal(false); setOtp2faError(null); }}
+        onVerify={async (code) => {
+          loginWith2faMutation.mutate({ tempToken: tempToken2fa, code });
+        }}
+        isPending={loginWith2faMutation.isPending}
+        error={otp2faError}
+        title="Xác minh 2 bước"
+        description={`Nhập mã 6 số từ ứng dụng xác thực để đăng nhập vào tài khoản ${pending2faEmail}`}
+      />
     </div>
   );
 }

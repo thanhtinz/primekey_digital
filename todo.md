@@ -2032,3 +2032,16 @@ todo updated
 - [x] Admin: trang quản lý Side Banners (2 banner dọc 2 bên) với upload ảnh, link, bật/tắt
 - [x] Admin: trang quản lý Mini Banners (4 ô banner nhỏ bên dưới) với upload ảnh, link, thứ tự, bật/tắt
 - [x] Sửa lỗi Telegram User Bot: trang cài đặt thông báo client chỉ hiện 3 tính năng (Trạng thái đơn hàng, Flash Sale, Khuyến mãi) - đã thêm đủ 7 tính năng
+
+## Session 2026-04-11 - Bảo mật 2FA cho 3 luồng
+
+- [x] Backend: thêm procedure customer.check2faRequired(email) - trả về {required: bool} để frontend biết có cần nhập OTP không
+- [x] Backend: thêm procedure customer.verifyOtpCode(email, code) - xác minh OTP, trả về {valid: bool} (không tạo session)
+- [x] Backend: sửa loginWithPassword - nếu 2FA bật, trả về {requires2fa: true, tempToken} thay vì session token
+- [x] Backend: thêm procedure customer.loginWith2fa(tempToken, code) - xác minh OTP rồi tạo session thật
+- [x] Backend: thêm procedure customer.verifyOtpForAction(token, code) - xác minh OTP cho các hành động nhạy cảm (xem đơn hàng, thanh toán ví)
+- [x] Backend: thêm input otpCode vào createOrder khi payWithWallet - kiểm tra OTP trước khi trừ tiền
+- [x] Frontend: ClientLogin - sau login thành công nếu requires2fa=true, hiện modal nhập OTP 6 số
+- [x] Frontend: MyAccount OrdersTab - khi load tab orders, nếu 2FA bật hiện modal OTP trước khi fetch đơn hàng
+- [x] Frontend: ProductDetail - khi chọn thanh toán bằng số dư, nếu 2FA bật hiện modal OTP trước khi submit
+- [x] Frontend: tạo component OtpModal dùng chung cho cả 3 luồng

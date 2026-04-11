@@ -5487,6 +5487,14 @@ export const appRouter = router({
         }
         // Reset login attempts on success
         await drizzleDb.update(customers).set({ loginAttempts: 0, lockedUntil: null, lastLoginAt: new Date(), updatedAt: new Date() } as any).where(eq(customers.id, customer.id));
+        // Check if 2FA is enabled
+        if ((customer as any).totpEnabled && (customer as any).totpSecret) {
+          // Return a temp token (short-lived, 10 minutes) for 2FA verification
+          const tempToken = "2fa_" + crypto.randomBytes(32).toString("hex");
+          const tempExpires = new Date(Date.now() + 10 * 60 * 1000);
+          await drizzleDb.insert(customerSessions).values({ email: input.email, name: customer.name, token: tempToken, expiresAt: tempExpires } as any);
+          return { requires2fa: true, tempToken, name: customer.name, email: input.email, expiresAt: tempExpires } as any;
+        }
         // Create session
         const token = crypto.randomBytes(48).toString("hex");
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -5819,6 +5827,57 @@ export const appRouter = router({
         return { isAdmin: isAdminSession };
       }),
 
+    // 2FA: Xác minh OTP sau khi login (dùng tempToken)
+    loginWith2fa: publicProcedure
+      .input(z.object({ tempToken: z.string(), code: z.string().length(6) }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const crypto = await import("crypto");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        // Validate temp token
+        const [tempSession] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.tempToken)).limit(1);
+        if (!tempSession || tempSession.expiresAt < new Date()) throw new Error("Phiên xác thực hết hạn. Vui lòng đăng nhập lại.");
+        // Get customer
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, tempSession.email)).limit(1);
+        if (!customer || !(customer as any).totpSecret) throw new Error("Tài khoản không có 2FA");
+        // Verify TOTP
+        const OTPAuth = await import("otpauth");
+        const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32((customer as any).totpSecret), algorithm: "SHA1", digits: 6, period: 30 });
+        const delta = totp.validate({ token: input.code, window: 1 });
+        if (delta === null) throw new Error("Mã OTP không hợp lệ. Vui lòng thử lại.");
+        // Delete temp session, create real session
+        await drizzleDb.delete(customerSessions).where(eq(customerSessions.token, input.tempToken));
+        const realToken = crypto.randomBytes(48).toString("hex");
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await drizzleDb.insert(customerSessions).values({ email: tempSession.email, name: tempSession.name, token: realToken, expiresAt });
+        try {
+          const { loginHistory } = await import("../drizzle/schema");
+          await drizzleDb.insert(loginHistory).values({ email: tempSession.email, status: "success", sessionToken: realToken } as any);
+        } catch {}
+        return { token: realToken, name: tempSession.name, email: tempSession.email, expiresAt };
+      }),
+    // 2FA: Xác minh OTP cho các hành động nhạy cảm (xem đơn hàng, thanh toán ví)
+    verifyOtpForAction: publicProcedure
+      .input(z.object({ token: z.string(), code: z.string().length(6) }))
+      .mutation(async ({ input }) => {
+        const { customerSessions, customers } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { eq } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) throw new Error("DB unavailable");
+        const [session] = await drizzleDb.select().from(customerSessions).where(eq(customerSessions.token, input.token)).limit(1);
+        if (!session || session.expiresAt < new Date()) throw new Error("Phiên đăng nhập hết hạn");
+        const [customer] = await drizzleDb.select().from(customers).where(eq(customers.email, session.email)).limit(1);
+        if (!customer || !(customer as any).totpEnabled || !(customer as any).totpSecret) throw new Error("2FA chưa được bật");
+        const OTPAuth = await import("otpauth");
+        const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32((customer as any).totpSecret), algorithm: "SHA1", digits: 6, period: 30 });
+        const delta = totp.validate({ token: input.code, window: 1 });
+        if (delta === null) throw new Error("Mã OTP không hợp lệ. Vui lòng thử lại.");
+        return { valid: true };
+      }),
     // Gửi tin nhắn test Telegram cho khách hàng
     sendTelegramTest: publicProcedure
       .input(z.object({ token: z.string() }))
