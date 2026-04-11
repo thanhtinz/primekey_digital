@@ -106,8 +106,6 @@ const ProductCard = React.memo(({ product, saleMap, navigate }: { product: any; 
             <div className="text-sm font-bold text-red-500">
               {hasMultiPkg ? `${formatPrice(minPkgPrice)} ~ ${formatPrice(maxPkgPrice!)}` : formatPrice(minPkgPrice)}
             </div>
-          ) : product.price ? (
-            <div className="text-sm font-bold text-red-500">{formatPrice(product.price)}</div>
           ) : (
             <div className="text-sm font-bold text-red-600">Liên hệ</div>
           )}

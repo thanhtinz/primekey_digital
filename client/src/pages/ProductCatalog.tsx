@@ -6,8 +6,9 @@ import { ClientFooter } from "@/components/ClientFooter";
 import { Search, Package, Grid3X3, List, Shield, Star, ShoppingBag, Filter, RotateCcw } from "@/components/Icon";
 
 const formatVND = (val: string | number | null | undefined) => {
-  if (!val) return "0 ₫";
+  if (val === null || val === undefined || val === '' || val === 0) return "Liên hệ";
   const num = typeof val === "string" ? parseFloat(val) : val;
+  if (!num || num <= 0) return "Liên hệ";
   return new Intl.NumberFormat("vi-VN").format(num) + " ₫";
 };
 
@@ -64,24 +65,24 @@ export default function ProductCatalog() {
   const getMinPrice = (product: any) => {
     if (product.packages && product.packages.length > 0) {
       const prices = product.packages.map((pkg: any) => parseFloat(pkg.price)).filter((v: number) => !isNaN(v) && v > 0);
-      return prices.length > 0 ? Math.min(...prices) : 0;
+      return prices.length > 0 ? Math.min(...prices) : null;
     }
-    return parseFloat(product.price) || 0;
+    return null;
   };
 
   const getMaxPrice = (product: any) => {
     if (product.packages && product.packages.length > 0) {
       const prices = product.packages.map((pkg: any) => parseFloat(pkg.price)).filter((v: number) => !isNaN(v) && v > 0);
-      return prices.length > 0 ? Math.max(...prices) : 0;
+      return prices.length > 0 ? Math.max(...prices) : null;
     }
-    return parseFloat(product.price) || 0;
+    return null;
   };
 
   const hasValidPrice = (product: any) => {
     if (product.packages && product.packages.length > 0) {
       return product.packages.some((pkg: any) => parseFloat(pkg.price) > 0);
     }
-    return parseFloat(product.price) > 0;
+    return false;
   };
 
   const getMaxDiscount = (product: any) => {
@@ -120,11 +121,11 @@ export default function ProductCatalog() {
     if (filtersApplied) {
       if (priceFrom) {
         const min = parseFloat(priceFrom);
-        list = list.filter(p => getMinPrice(p) >= min);
+        list = list.filter(p => (getMinPrice(p) ?? 0) >= min);
       }
       if (priceTo) {
         const max = parseFloat(priceTo);
-        list = list.filter(p => getMinPrice(p) <= max);
+        list = list.filter(p => (getMinPrice(p) ?? 0) <= max);
       }
     }
 
@@ -138,8 +139,8 @@ export default function ProductCatalog() {
 
     // Sort
     switch (sortBy) {
-      case "price_asc": list.sort((a, b) => getMinPrice(a) - getMinPrice(b)); break;
-      case "price_desc": list.sort((a, b) => getMinPrice(b) - getMinPrice(a)); break;
+      case "price_asc": list.sort((a, b) => (getMinPrice(a) ?? 0) - (getMinPrice(b) ?? 0)); break;
+      case "price_desc": list.sort((a, b) => (getMinPrice(b) ?? 0) - (getMinPrice(a) ?? 0)); break;
       case "newest": list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
       case "name_az": list.sort((a, b) => a.name.localeCompare(b.name)); break;
     }
