@@ -2054,8 +2054,8 @@ todo updated
 
 ## Session 2026-04-11 - Redesign tabs + Fix backend settings
 
-- [ ] Redesign tab navigation trong AnnouncementManagement (xấu trên mobile)
-- [ ] Backend: áp dụng requireLoginToView vào products.listPublic và getPublicById
-- [ ] Backend: áp dụng showSoldCount vào listPublic (ẩn soldCount nếu tắt)
-- [ ] Backend: áp dụng allowProductReview vào review procedures
-- [ ] Backend: áp dụng orderCodeType/Length/Prefix vào buyNow procedure
+- [x] Redesign tab navigation trong AnnouncementManagement (xấu trên mobile)
+- [x] Backend: áp dụng requireLoginToView vào products.listPublic và getPublicById
+- [x] Backend: áp dụng showSoldCount vào listPublic (ẩn soldCount nếu tắt)
+- [x] Backend: áp dụng allowProductReview vào review procedures
+- [x] Backend: áp dụng orderCodeType/Length/Prefix vào buyNow procedure
