@@ -143,6 +143,16 @@ router.post("/payos", async (req, res) => {
         paidAt: new Date(),
       });
 
+      // Auto-assign warehouse inventory items to this order
+      void (async () => {
+        try {
+          const { autoAssignInventory } = await import("./inventoryHelper");
+          await autoAssignInventory(invoice.id);
+        } catch (invErr) {
+          console.error("[PayOS Webhook] autoAssignInventory error:", invErr);
+        }
+      })();
+
       await db.createActivityLog(
         invoice.userId,
         "PAYMENT_RECEIVED",

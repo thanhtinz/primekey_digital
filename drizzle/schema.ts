@@ -212,6 +212,7 @@ export const invoices = mysqlTable("invoices", {
   notes: text("notes"),
   orderInfo: text("orderInfo"), // JSON: custom field values
   publicNote: text("publicNote"),
+  deliveredData: text("deliveredData"), // JSON: [{inventoryId, stockData}] - dữ liệu kho đã giao tự động
   warrantyStartDate: timestamp("warrantyStartDate"), // Ngày bắt đầu bảo hành
   warrantyExpiryDate: timestamp("warrantyExpiryDate"), // Ngày hết hạn bảo hành
   warrantyMonths: int("warrantyMonths").default(0), // Số tháng bảo hành
@@ -236,6 +237,7 @@ export const invoiceItems = mysqlTable("invoiceItems", {
   taxId: int("taxId"),
   taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0"),
    totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
+  packageId: int("packageId"), // gói sản phẩm đã mua
   productReviewToken: varchar("productReviewToken", { length: 64 }), // per-product review token
   productReviewSubmitted: boolean("productReviewSubmitted").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1205,7 +1207,7 @@ export type InsertMenuItem = typeof menuItems.$inferInsert;
 export const productInventory = mysqlTable("product_inventory", {
   id: int("id").autoincrement().primaryKey(),
   productId: int("productId").notNull(),
-  packageId: int("packageId").notNull(),
+  packageId: int("packageId"),
   stockData: text("stockData").notNull(), // JSON array of stock items
   status: mysqlEnum("status", ["available", "used", "reserved"]).default("available").notNull(),
   assignedOrderId: int("assignedOrderId"),

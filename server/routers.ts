@@ -240,6 +240,16 @@ export const appRouter = router({
           paidAt: input.status === "PAID" ? new Date() : invoice.paidAt,
           updatedAt: new Date(),
         });
+
+        // Auto-assign warehouse inventory when PAID
+        if (input.status === "PAID") {
+          void (async () => {
+            try {
+              const { autoAssignInventory } = await import("./inventoryHelper");
+              await autoAssignInventory(input.id);
+            } catch (invErr) { console.error("[updateInvoice] autoAssignInventory error:", invErr); }
+          })();
+        }
         
         // Auto checkLowStock when order reaches WARRANTY (fulfilled)
         if (input.status === "WARRANTY") {
@@ -533,10 +543,18 @@ export const appRouter = router({
           paymentTransactionId: paymentLinkId || invoice.paymentTransactionId,
           warrantyStartDate: warrantyStartDate || null,
           warrantyExpiryDate: warrantyExpiryDate || null,
-          warrantyMonths,
+           warrantyMonths,
           updatedAt: new Date(),
         });
-
+        // Auto-assign warehouse inventory when PAID
+        if (input.newStatus === "PAID") {
+          void (async () => {
+            try {
+              const { autoAssignInventory } = await import("./inventoryHelper");
+              await autoAssignInventory(input.id);
+            } catch (invErr) { console.error("[updateOrderStatus] autoAssignInventory error:", invErr); }
+          })();
+        }
         // Auto-send email for all transitions (except FAILED/EXPIRED unless explicitly noted)
         let emailSentOk = false;
         let emailError: string | undefined;
@@ -1790,6 +1808,7 @@ export const appRouter = router({
         description: z.string().optional(),
         warrantyMonths: z.number().min(0).optional(),
         deliveryType: z.enum(["manual", "warehouse"]).optional(),
+        minStockThreshold: z.number().min(0).optional(),
         sortOrder: z.number().optional(),
         isActive: z.boolean().optional(),
       }))
@@ -6263,6 +6282,7 @@ export const appRouter = router({
       await drizzleDb.insert(invoiceItems).values({
         invoiceId: createdInvoice.id,
         productId: input.productId,
+        packageId: input.packageId || null,
         name: `${product.name} - ${pkg.name}`,
         quantity: String(qty),
         unitPrice: String(unitPrice),
@@ -6293,6 +6313,13 @@ export const appRouter = router({
         });
         await drizzleDb.update(invoices).set({ status: "PAID", paymentMethod: "WALLET" } as any).where(eq(invoices.id, createdInvoice.id));
         await drizzleDb.update(customers).set({ totalPaid: String(parseFloat(customer.totalPaid || "0") + totalAmount) } as any).where(eq(customers.id, customer.id));
+        // Auto-assign warehouse inventory
+        void (async () => {
+          try {
+            const { autoAssignInventory } = await import("./inventoryHelper");
+            await autoAssignInventory(createdInvoice.id);
+          } catch (invErr) { console.error("[buyNow wallet] autoAssignInventory error:", invErr); }
+        })();
         return { success: true, invoiceId: createdInvoice.id, invoiceNumber, paymentUrl: "", qrCode: "" };
       }
       // Create PayOS payment link
@@ -6527,11 +6554,12 @@ export const appRouter = router({
         await drizzleDb.insert(couponUsages).values({ couponId, invoiceId: createdInvoice.id, customerEmail: input.email, discountAmount: String(discountAmount) } as any);
       }
 
-      // Create invoice items
+       // Create invoice items
       for (const item of input.items) {
         await drizzleDb.insert(invoiceItems).values({
           invoiceId: createdInvoice.id,
           productId: item.productId,
+          packageId: (item as any).packageId || null,
           name: item.name,
           quantity: String(item.quantity),
           unitPrice: String(item.unitPrice),
@@ -6540,7 +6568,6 @@ export const appRouter = router({
           totalAmount: String(item.unitPrice * item.quantity),
         } as any);
       }
-
       // Wallet payment or PayOS payment
       let paymentUrl = "";
       let qrCode = "";
@@ -6569,6 +6596,13 @@ export const appRouter = router({
         await drizzleDb.update(invoices).set({ status: "PAID", paymentMethod: "WALLET" } as any).where(eq(invoices.id, createdInvoice.id));
         // Update customer total paid
         await drizzleDb.update(customers).set({ totalPaid: String((parseFloat(customer.totalPaid || "0") + totalAmount)) } as any).where(eq(customers.id, customer.id));
+        // Auto-assign warehouse inventory
+        void (async () => {
+          try {
+            const { autoAssignInventory } = await import("./inventoryHelper");
+            await autoAssignInventory(createdInvoice.id);
+          } catch (invErr) { console.error("[checkout wallet] autoAssignInventory error:", invErr); }
+        })();
       } else {
         // Create PayOS payment link
         try {
@@ -8513,7 +8547,7 @@ export const appRouter = router({
         return { success: true };
       }),
     add: protectedProcedure
-      .input(z.object({ packageId: z.number(), items: z.array(z.string()).min(1) }))
+      .input(z.object({ productId: z.number(), packageId: z.number(), items: z.array(z.string()).min(1) }))
       .mutation(async ({ input }) => {
         const { productInventory, productPackages } = await import("../drizzle/schema");
         const { getDb } = await import("./db");
@@ -8614,6 +8648,25 @@ export const appRouter = router({
         if (input.packageId) conditions.push(eq(productInventory.packageId, input.packageId));
         const items = await drizzleDb.select().from(productInventory).where(and(...conditions));
         return { count: items.length };
+      }),
+    getStatsTimeseries: protectedProcedure
+      .input(z.object({ days: z.number().min(1).max(365).default(30) }))
+      .query(async ({ input }) => {
+        const { productInventory } = await import("../drizzle/schema");
+        const { getDb } = await import("./db");
+        const { sql } = await import("drizzle-orm");
+        const drizzleDb = await getDb();
+        if (!drizzleDb) return [];
+        const days = input.days;
+        const rows = await drizzleDb.select({
+          date: sql<string>`DATE(${productInventory.createdAt})`  ,
+          available: sql<number>`SUM(CASE WHEN ${productInventory.status} = 'available' THEN 1 ELSE 0 END)`,
+          used: sql<number>`SUM(CASE WHEN ${productInventory.status} = 'used' THEN 1 ELSE 0 END)`,
+        }).from(productInventory)
+          .where(sql`${productInventory.createdAt} >= DATE_SUB(NOW(), INTERVAL ${days} DAY)`)
+          .groupBy(sql`DATE(${productInventory.createdAt})`)
+          .orderBy(sql`DATE(${productInventory.createdAt})`);
+        return rows;
       }),
   }),
 

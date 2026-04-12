@@ -214,8 +214,12 @@ export default function ProductPackages() {
                         const cnt = getStockCount(pkg.id);
                         if (cnt === null) return null;
                         return (
-                          <Badge className={`text-xs ${cnt > 0 ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-red-50 text-red-500 border-red-200"}`}>
-                            {cnt > 0 ? `${cnt} còn hàng` : "Hết hàng"}
+                          <Badge className={`text-xs ${
+                            cnt === 0 ? "bg-red-50 text-red-500 border-red-200" :
+                            cnt <= ((pkg as any).minStockThreshold ?? 5) ? "bg-orange-50 text-orange-500 border-orange-200" :
+                            "bg-blue-50 text-blue-600 border-blue-200"
+                          }`}>
+                            {cnt === 0 ? "Hết hàng" : cnt <= ((pkg as any).minStockThreshold ?? 5) ? `⚠ ${cnt} sắp hết` : `${cnt} còn hàng`}
                           </Badge>
                         );
                       })()}

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Package, CheckCircle2, XCircle, Filter, X, Eye, Pencil, Trash2,
-  ChevronLeft, ChevronRight, Users, AlertCircle, Clock, Search,
+  ChevronLeft, ChevronRight, Users, AlertCircle, Clock, Search, TrendingUp,
 } from "@/components/Icon";
 import { toast } from "sonner";
 
@@ -217,6 +217,7 @@ export default function InventoryAdmin() {
 
   // ── Data ─────────────────────────────────────────────────────────────────────
   const { data: stats, refetch: refetchStats } = trpc.inventory.stats.useQuery();
+  const { data: chartData } = trpc.inventory.getStatsTimeseries.useQuery({ days: 30 }) as any;
 
   // Build query params from applied filters
   const queryParams = useMemo(() => {
@@ -345,6 +346,61 @@ export default function InventoryAdmin() {
             )}
           </div>
         </div>
+
+        {/* ── Chart Section ── */}
+        {chartData && chartData.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Thống kê nhập/xuất kho (30 ngày)</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <svg viewBox="0 0 800 300" className="w-full h-64 border border-gray-100 rounded-lg">
+                {/* Grid lines */}
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <line key={`grid-${i}`} x1="60" y1={50 + i * 50} x2="780" y2={50 + i * 50} stroke="#e5e7eb" strokeWidth="1" />
+                ))}
+                {/* Axes */}
+                <line x1="60" y1="50" x2="60" y2="250" stroke="#374151" strokeWidth="2" />
+                <line x1="60" y1="250" x2="780" y2="250" stroke="#374151" strokeWidth="2" />
+                {/* Data line - Available */}
+                <polyline
+                  points={chartData.map((d: any, i: number) => {
+                    const x = 60 + (i / (chartData.length - 1)) * 720;
+                    const maxVal = Math.max(...chartData.map((cd: any) => cd.available || 0));
+                    const y = 250 - ((d.available || 0) / (maxVal || 1)) * 200;
+                    return `${x},${y}`;
+                  }).join(' ')}
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="2"
+                />
+                {/* Data line - Used */}
+                <polyline
+                  points={chartData.map((d: any, i: number) => {
+                    const x = 60 + (i / (chartData.length - 1)) * 720;
+                    const maxVal = Math.max(...chartData.map((cd: any) => cd.used || 0));
+                    const y = 250 - ((d.used || 0) / (maxVal || 1)) * 200;
+                    return `${x},${y}`;
+                  }).join(' ')}
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+            <div className="flex gap-6 mt-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                <span className="text-gray-600">Còn hàng</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-gray-600">Đã bán</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Stats Cards ── */}
         <div className="grid grid-cols-3 gap-3">
@@ -656,7 +712,7 @@ export default function InventoryAdmin() {
         open={showAddDialog}
         onClose={() => setShowAddDialog(false)}
         products={products}
-        onAdd={(packageId, items) => addMutation.mutate({ packageId, items })}
+        onAdd={(packageId, items, productId) => addMutation.mutate({ packageId, items, productId })}
         isPending={addMutation.isPending}
       />
     </DashboardLayoutCustom>
@@ -669,7 +725,7 @@ function AddInventoryDialog({
   open: boolean;
   onClose: () => void;
   products: any[];
-  onAdd: (packageId: number, items: string[]) => void;
+  onAdd: (packageId: number, items: string[], productId: number) => void;
   isPending: boolean;
 }) {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -685,9 +741,10 @@ function AddInventoryDialog({
   const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
 
   const handleSubmit = () => {
+    if (!selectedProductId) { toast.error("Vui lòng chọn sản phẩm"); return; }
     if (!selectedPackageId) { toast.error("Vui lòng chọn gói sản phẩm"); return; }
     if (lines.length === 0) { toast.error("Chưa có dữ liệu nào"); return; }
-    onAdd(Number(selectedPackageId), lines);
+    onAdd(Number(selectedPackageId), lines, Number(selectedProductId));
   };
 
   return (

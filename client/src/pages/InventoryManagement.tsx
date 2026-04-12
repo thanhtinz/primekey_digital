@@ -53,7 +53,10 @@ export default function InventoryManagement() {
     if (!selectedPackageId) { toast.error("Vui lòng chọn gói sản phẩm"); return; }
     const lines = stockInput.split("\n").map(l => l.trim()).filter(Boolean);
     if (lines.length === 0) { toast.error("Vui lòng nhập ít nhất 1 sản phẩm"); return; }
+    const pkg = packages.find((p: any) => p.id === selectedPackageId);
+    if (!pkg) { toast.error("Gói sản phẩm không tồn tại"); return; }
     addItemsMut.mutate({
+      productId: pkg.productId,
       packageId: selectedPackageId,
       items: lines,
     });

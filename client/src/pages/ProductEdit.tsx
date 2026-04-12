@@ -29,6 +29,7 @@ export default function ProductEdit() {
   });
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
 
   const parentCategories = (categories as any[]).filter((c: any) => !c.parentId);
   const getChildren = (parentId: number) => (categories as any[]).filter((c: any) => c.parentId === parentId);
@@ -43,8 +44,13 @@ export default function ProductEdit() {
         categoryId: product.categoryId || null,
       });
       setSelectedTagIds((product.tags || []).map((t: any) => t.id));
+      // Auto-set parent dropdown from loaded product
+      if (product.categoryId) {
+        const cat = (categories as any[]).find((c: any) => c.id === product.categoryId);
+        if (cat?.parentId) setSelectedParentId(cat.parentId);
+      }
     }
-  }, [product?.id]);
+  }, [product?.id, categories]);
 
   const updateProduct = trpc.products.update.useMutation({
     onSuccess: () => {
@@ -214,18 +220,34 @@ export default function ProductEdit() {
 
             <div>
               <Label className="text-sm font-medium">Danh Mục</Label>
-              <select value={formData.categoryId || ""} onChange={e => setFormData(p => ({ ...p, categoryId: e.target.value ? parseInt(e.target.value) : null }))}
-                className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                <option value="">-- Không có danh mục --</option>
-                {parentCategories.map((cat: any) => (
-                  <optgroup key={cat.id} label={cat.name}>
-                    <option value={cat.id}>{cat.name}</option>
-                    {getChildren(cat.id).map((child: any) => (
-                      <option key={child.id} value={child.id}>  ↳ {child.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <div className="grid grid-cols-2 gap-2 mt-1.5">
+                <select
+                  value={selectedParentId ?? ""}
+                  onChange={e => {
+                    const val = e.target.value ? Number(e.target.value) : null;
+                    setSelectedParentId(val);
+                    setFormData(p => ({ ...p, categoryId: null }));
+                  }}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Danh mục lớn --</option>
+                  {parentCategories.map((cat: any) => (
+                    <option key={cat.id} value={cat.id}>{cat.icon ? `${cat.icon} ` : ""}{cat.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={formData.categoryId ?? ""}
+                  onChange={e => setFormData(p => ({ ...p, categoryId: e.target.value ? Number(e.target.value) : null }))}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!selectedParentId}
+                >
+                  <option value="">-- Danh mục nhỏ --</option>
+                  {getChildren(selectedParentId ?? 0).map((child: any) => (
+                    <option key={child.id} value={child.id}>{child.icon ? `${child.icon} ` : ""}{child.name}</option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Chọn danh mục lớn trước, sau đó chọn danh mục nhỏ</p>
             </div>
 
             <div>
