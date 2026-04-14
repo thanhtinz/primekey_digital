@@ -110,6 +110,41 @@ async function startServer() {
 
   // Check license on startup (non-blocking)
   await checkLicenseOnStartup();
+  
+  // Seed license on startup (nếu chưa có)
+  try {
+    const { getDb } = await import("../db");
+    const { userSettings } = await import("../../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    const db = await getDb();
+    if (db) {
+      const existing = await db.select().from(userSettings).where(eq(userSettings.id, 1)).limit(1);
+      if (existing.length > 0 && !existing[0].licenseActivated) {
+        const licenseKey = '787DC-275FA-069D7-B13C0-37124';
+        const email = 'thanhtinz23072003@gmail.com';
+        const domain = process.env.APP_DOMAIN || 'localhost';
+        const now = new Date();
+        const expiresAt = new Date('2099-12-31');
+        
+        await db.update(userSettings)
+          .set({
+            licenseActivated: true,
+            licenseKey,
+            licenseEmail: email,
+            licenseActivatedAt: now,
+            licenseExpiresAt: expiresAt,
+            licensePlan: 'premium',
+            licenseDomain: domain,
+            licenseOwner: 'PrimeShop',
+          })
+          .where(eq(userSettings.id, 1));
+        
+        console.log('[License] ✅ Giấy phép đã được kích hoạt tự động');
+      }
+    }
+  } catch (err) {
+    console.warn('[License] Không thể seed license:', (err as any).message);
+  }
   // Start GitHub update polling (checks for new versions every hour)
   const { startUpdatePolling } = await import("../auto-update");
   startUpdatePolling();

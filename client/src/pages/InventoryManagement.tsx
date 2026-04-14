@@ -254,14 +254,37 @@ export default function InventoryManagement() {
                               {item.status === "used" && item.assignedOrderId && (
                                 <span className="text-xs text-muted-foreground">Đơn #{item.assignedOrderId}</span>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => { setViewItem(item); setShowViewDialog(true); }}
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-blue-600 hover:bg-blue-50"
+                                  onClick={() => { setViewItem(item); setShowViewDialog(true); }}
+                                  title="Xem"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-orange-600 hover:bg-orange-50"
+                                  title="Sửa"
+                                  onClick={() => toast.info("Tính năng sửa sẽ được thêm sớm")}
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-red-600 hover:bg-red-50"
+                                  title="Xoá"
+                                  onClick={() => toast.info("Tính năng xoá sẽ được thêm sớm")}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}
